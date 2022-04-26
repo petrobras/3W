@@ -19,6 +19,8 @@
 
 This is the supporting repository for a Petrobras' project called **3W**, which provides and uses data from ***3*** different sources related to undesirable events that occur in offshore oil ***W***ells during their respective production phases.
 
+[this](discussions/3)
+
 ## Purpose
 
 The 3W project intends to promote experimentation of Machine Learning-based approaches and algorithms for specific problems related to undesirable events that occur in offshore oil wells during their respective production phases.
