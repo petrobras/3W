@@ -74,7 +74,7 @@ This code of conduct applies within all project spaces, and it also applies when
 
 We do not believe that all conflict is bad; healthy debate and disagreement often yield positive results. However, it is never okay to be disrespectful or to engage in behavior that violates this code of conduct.
 
-Reports should be directed to `ricardo.vargas at petrobras dot com dot br` and `jeanaraujo at petrobras dot com dot br`. We will investigate every complaint, but you may not receive a direct response. We will use our discretion in determining when and how to follow up on reported incidents, which may range from not taking action to permanent expulsion from the project and project-sponsored spaces. We will notify the accused of the report and provide them an opportunity to discuss it before any action is taken. The identity of the reporter will be omitted from the details of the report supplied to the accused. In potentially harmful situations, such as ongoing harassment or threats to anyone’s safety, we may take action without notice.
+Reports should be directed to `modulocodigoaberto@petrobras.com.br`. We will investigate every complaint, but you may not receive a direct response. We will use our discretion in determining when and how to follow up on reported incidents, which may range from not taking action to permanent expulsion from the project and project-sponsored spaces. We will notify the accused of the report and provide them an opportunity to discuss it before any action is taken. The identity of the reporter will be omitted from the details of the report supplied to the accused. In potentially harmful situations, such as ongoing harassment or threats to anyone’s safety, we may take action without notice.
 
 ## Attribution
 
@@ -85,4 +85,4 @@ This code of conduct is adapted from the Go Community Code of Conduct, available
 * Treat everyone with respect and kindness;
 * Be thoughtful in how you communicate;
 * Don’t be destructive or inflammatory;
-* If you encounter an issue, please mail to `ricardo.vargas at petrobras dot com dot br` and `jeanaraujo at petrobras dot com dot br`.
+* If you encounter an issue, please mail to `modulocodigoaberto@petrobras.com.br`.

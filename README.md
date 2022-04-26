@@ -51,7 +51,7 @@ With this project, Petrobras intends to develop (fix, improve, supplement, etc.)
   * [CONTRIBUTOR LICENSE AGREEMENT](CONTRIBUTOR_LICENSE_AGREEMENT.md);
   * [CONTRIBUTING GUIDELINES](CONTRIBUTING_GUIDELINES.md);
   * [CODE OF CONDUCT](CODE_OF_CONDUCT.md).
-* If you have questions about this project, please write an e-mail to `ricardo.vargas at petrobras dot com dot br` and `jeanaraujo at petrobras dot com dot br`.
+* If you have questions, see the discussions section. If you don't get clarification from this feature, please open discussions to ask yours questions so we can answer them.
 
 # 3W dataset
 
@@ -99,7 +99,7 @@ abstract = "Detection of undesirable events in oil and gas wells can help preven
 Vargas, Ricardo; Munaro, Celso; Ciarelli, Patrick; Medeiros, André; Amaral, Bruno; Barrionuevo, Daniel; Araújo, Jean; Ribeiro, Jorge; Magalhães, Lucas (2019), “Data for: A Realistic and Public Dataset with Rare Undesirable Real Events in Oil Wells”, Mendeley Data, v1. http://dx.doi.org/10.17632/r7774rwc7v.1
 ```
 
-As far as we know, the 3W dataset was useful and cited by the works listed below. If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by e-mail (`ricardo.vargas at petrobras dot com dot br` and `jeanaraujo at petrobras dot com dot br`).
+As far as we know, the 3W dataset was useful and cited by the works listed below. If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) discussion.
 
 1. R.E.V. Vargas, C.J. Munaro, P.M. Ciarelli. A methodology for generating datasets for development of anomaly detectors in oil wells based on Artificial Intelligence techniques. I Congresso Brasileiro em Engenharia de Sistemas em Processos. 2019. https://www.ufrgs.br/psebr/wp-content/uploads/2019/04/Abstract_A019_Vargas.pdf.
 
