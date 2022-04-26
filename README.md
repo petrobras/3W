@@ -19,7 +19,7 @@
 
 This is the supporting repository for a Petrobras' project called **3W**, which provides and uses data from ***3*** different sources related to undesirable events that occur in offshore oil ***W***ells during their respective production phases.
 
-[this](discussions/3)
+[this](https://github.com/Petrobras/3W/discussions/3)
 
 ## Purpose
 
