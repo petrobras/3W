@@ -144,9 +144,7 @@ class EventFold:
 
         assert len(y_prev_soft) == len(
             y_teste
-        ), "Número incorreto de previsões: esperado {}, encontrado {}".format(
-            len(y_teste), len(y_prev_soft)
-        )
+        ), f"Número incorreto de previsões: esperado {len(y_teste)}, encontrado {len(y_prev_soft)}"
 
         # códigos das classes para a tarefa que esse fold faz parte
         codigos_classes = self.event_folds.experiment.codigos_classes
@@ -171,10 +169,9 @@ class EventFold:
 
         # Predições soft com shape correto
         shape_ok = (len(y_teste), n_codigos)
-        assert y_prev_soft.shape == shape_ok, (
-            "Predição deve ter shape "
-            "(n_samples, n_classes) = ({},{})".format(*shape_ok)
-        )
+        assert (
+            y_prev_soft.shape == shape_ok
+        ), f"Predição deve ter shape (n_samples, n_classes) = ({shape_ok[0]},{shape_ok[1]})"
 
         # Todos os códigos devem aparecer em ordem_codigos_evento
         codigos_faltando = set(lista_codigos) - set(
@@ -182,7 +179,7 @@ class EventFold:
         )
         assert (
             len(codigos_faltando) == 0
-        ), "Códigos faltando em 'idx_to_codigo': {}".format(codigos_faltando)
+        ), f"Códigos faltando em 'idx_to_codigo': {codigos_faltando}"
 
         # Calculando predição da classe
         y_prev_idx = y_prev_soft.argmax(1)

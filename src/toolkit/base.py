@@ -37,8 +37,8 @@ def load_config_in_dataset_ini():
     # Check if the configuration file exists in the expected path
     if not exists(PATH_DATASET_INI):
         raise Exception(
-            "the 3w dataset's main configuration file was not "
-            "found in {}".format(PATH_DATASET_INI)
+            f"the 3w dataset's main configuration file was not found "
+            f"in {PATH_DATASET_INI}"
         )
 
     # Load the configuration file
@@ -48,8 +48,8 @@ def load_config_in_dataset_ini():
         dataset_ini.read(PATH_DATASET_INI)
     except Exception as e:
         raise Exception(
-            "the 3w dataset's main configuration file ({}) could "
-            "not be loaded. {}".format(PATH_DATASET_INI, e)
+            f"the 3w dataset's main configuration file "
+            f"({PATH_DATASET_INI}) could not be loaded. {e}"
         )
 
     return dict(dataset_ini)
