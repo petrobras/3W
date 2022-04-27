@@ -245,12 +245,9 @@ def load_instance(instance):
         df = pd.read_csv(fp, index_col="timestamp", parse_dates=["timestamp"])
         assert (
             df.columns == COLUMNS_DATA_FILES[1:]
-        ).all(), "invalid columns in \
-            the file {}: {}".format(
-            str(fp), str(df.columns.tolist())
-        )
+        ).all(), f"invalid columns in the file {fp}: {df.columns.tolist()}"
     except Exception as e:
-        raise Exception("error reading file {}: {}".format(fp, e))
+        raise Exception(f"error reading file {fp}: {e}")
 
     # Incorporates the loaded metadata
     df["label"] = label
@@ -405,7 +402,7 @@ def count_properties_instance(instance):
         # Read the CSV file
         df = pd.read_csv(fp, index_col="timestamp", parse_dates=["timestamp"])
     except Exception as e:
-        raise Exception("error reading file {}: {}".format(fp, e))
+        raise Exception(f"error reading file {fp}: {e}")
 
     # Counts properties
     vars = df.columns[:-1]  # Last column with class is not considered
@@ -496,15 +493,15 @@ def calc_stats_instances(real_instances, simulated_instances, drawn_instances):
     stats = {
         "Missing Variables": [
             n_vars_missing,
-            "{:.2f}% of {}".format(100 * n_vars_missing / n_vars, n_vars),
+            f"{100*n_vars_missing/n_vars:.2f}% of {n_vars}",
         ],
         "Frozen Variables": [
             n_vars_frozen,
-            "{:.2f}% of {}".format(100 * n_vars_frozen / n_vars, n_vars),
+            f"{100*n_vars_frozen/n_vars:.2f}% of {n_vars}",
         ],
         "Unlabeled Observations": [
             n_obs_unlabeled,
-            "{:.2f}% of {}".format(100 * n_obs_unlabeled / n_obs, n_obs),
+            f"{100*n_obs_unlabeled/n_obs:.2f}% of {n_obs}",
         ],
     }
 
