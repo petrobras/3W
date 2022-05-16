@@ -1,8 +1,6 @@
 # Petrobras Individual Contributor License Agreement
 
-```
-By signing this contributor license agreement, I understand and agree that this project and contributions to it are public and that a record of the contribution (including all personal information I submit with it, including my full name and email address) is maintained indefinitely and may be redistributed consistent with this project, compliance with the open source license(s) involved, and maintenance of authorship attribution.
-```
+```By signing this contributor license agreement, I understand and agree that this project and contributions to it are public and that a record of the contribution (including all personal information I submit with it, including my full name and email address) is maintained indefinitely and may be redistributed consistent with this project, compliance with the open source license(s) involved, and maintenance of authorship attribution.```
 
 In order to clarify the intellectual property license granted with Contributions from any person or entity, Petróleo Brasileiro S.A. ("Petrobras") must have a Contributor License Agreement ("CLA") on file that has been signed by each Contributor, indicating agreement to the license terms below. This license is for your protection as a Contributor as well as the protection of Petrobras; it does not change your rights to use your own Contributions for any other purpose.
 
