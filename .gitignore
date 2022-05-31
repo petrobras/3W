@@ -1,0 +1,15 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoint
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# 3W toolkit documentation
+html/
+*.html
+
+# VS Code configuration
+.vscode/

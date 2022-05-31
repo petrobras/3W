@@ -1,0 +1,127 @@
+[![Apache 2.0][apache-shield]][apache] 
+[![CC BY 4.0][cc-by-shield]][cc-by]
+
+[apache]: https://opensource.org/licenses/Apache-2.0
+[apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
+[cc-by]: http://creativecommons.org/licenses/by/4.0/
+[cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+
+# Welcome to the 3W project contributing guide
+
+:+1::tada::sparkles: Thank you for investing your time in contributing to the 3W project! :sparkles::tada::+1:
+
+We expect to receive various types of contributions from individuals, research institutions, startups, companies and partner oil operators. 
+
+In this guide we present how you can propose each type of contributions that we expect.
+
+# Table of Content
+
+* [Getting started](#getting-started)
+* [Making questions](#making-questions)
+* [Before contributing](#before-contributing)
+    * [Levels for contributions](#levels-for-contributions)
+    * [3W dataset's structure](#3w-datasets-structure)
+    * [3W toolkit's structure](#3w-toolkits-structure)
+    * [Executing examples](#executing-examples)
+* [Proposing contributions](#proposing-contributions)
+    * [Bugs](#bugs)
+    * [Documentation improvements](#documentation-improvements)
+    * [Cosmetic improvements](#cosmetic-improvements)
+    * [Other improvements](#other-improvements)
+    * [New 3W dataset's overviews](#new-3w-datasets-overviews)
+    * [New approaches and algorithms](#new-approaches-and-algorithms)
+* [Backlog](#backlog)
+
+# Getting started
+
+The recommended first step is to read this [README](README.md) for an overview of the 3W project.
+
+# Making questions
+
+Please do not open an issue to ask questions. Click on the Discussions link that appears in the top menu. If you don't get clarification, please open discussions to ask your questions so we can answer them.
+
+# Before contributing
+
+Before you can contribute to this project, you need to read and agree to the following documents:
+
+* [CODE OF CONDUCT](CODE_OF_CONDUCT.md);
+* [CONTRIBUTOR LICENSE AGREEMENT](CONTRIBUTOR_LICENSE_AGREEMENT.md);
+* This contributing guide.
+
+It is also very important to know, participate and follow the discussions. Click on the Discussions link that appears in the top menu.
+
+## Levels for contributions
+
+We expect to receive contributions at different levels, as shown in the figure below. Some examples at each level are:
+
+* Level 1: 
+    * You can identify and report issues with data or annotations;
+    * You can propose adding real, simulated or hand-drawn instances.
+* Level 2:
+    * You can identify, report and fix bugs;
+    * You can propose documentation improvements;
+    * You can recommend new specific problems.
+* Level 3:
+    * You can develop and propose approaches and algorithms for already incorporated problems;
+    * You can elaborate and send us new overvies;
+    * You can idealize, develop and propose new useful tools.
+* Level 4:
+    * You can develop and submit us ensemble methods;
+    * You can generate and propose more complex and complete tools.
+* Level n:
+    * We see no limit to the levels for contributions.
+
+![Levels for contributions](images/levels_for_contributions.png)
+
+## 3W dataset's structure
+
+At level 1, the 3W dataset consists of all CSV files in the subdirectories of the [dataset](dataset) directory and structured as detailed [here](3W_DATASET_STRUCTURE.md).
+
+## 3W toolkit's structure
+
+At level 2, the 3W toolkit is implemented in sub-modules as discribed [here](3W_TOOLKIT_STRUCTURE.md).
+
+## Executing examples
+
+Before executing examples of how to use the 3W toolkit available in this repository, we 
+recommend that you set up a Python Virtual Environment with the packages versions listed in the [requirements.txt](requirements.txt). This file is generated automatically with the [pipreqs](https://pypi.org/project/pipreqs/).
+
+# Proposing contributions
+
+For each type of expected contribution, there is a subsection below with specific instructions.
+
+## Bugs
+
+Please open an **issue** to report any bug. If you've implemented a fix, please create a **pull request**.
+
+## Documentation improvements
+
+We believe that any part of the documentation for this project can be improved, including this guide. You can work on that and then create **pull requests** directly.
+
+It is important to keep in mind that this toolkit's documentation is generated in english and in Google format with [autoDocstring - Python Docstring Generator](https://github.com/NilsJPWerner/autoDocstring), which follows [PEP 257](https://peps.python.org/pep-0257/), and [pdoc3](https://pdoc3.github.io/pdoc/).
+
+## Cosmetic improvements
+
+Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the 3W project are also welcome. In this case, please create **pull requests** directly.
+
+## Other improvements
+
+If you intend to work and propose a more significant improvement, please consult our [backlog](BACKLOG.md) first. If you have any questions about the most aligned strategy for the 3W project, please consult or create **discussions**. When your improvement is ready, please create a **pull request**.
+
+It is important to keep in mind that all source code is implemented according to the style guide established by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with the use of the [Black formatter](https://github.com/psf/black).
+
+## New 3W dataset's overviews
+
+Visualization is one of the most important steps in this type of project. Therefore, you can propose [Jupyter Notebooks](https://jupyter.org/) with different views. For this, submit a **pull request** with a file named `overviews\[your_name_here]\main.ipynb` that you've developed. If we like your overview, your file could be listed in this repository as a 3W toolkit's example of use.
+
+## New approaches and algorithms
+
+Would you like to share in this repository as 3W toolkit's examples of use approaches and algorithms for already incorporated problems? The procedure for this is to submit a **pull request** with [Jupyter Notebooks](https://jupyter.org/) that you've developed in the directory corresponding to the chosen problem. 
+
+Specific problems will be incorporated into this project gradually. At this point, we can work on:
+
+* [Binary classifier of Spurious Closure of DHSV](problems/01_binary_classifier_of_spurious_closure_of_dhsv/README.md).
+
+# Backlog
+
+The list of priority improvements for the 3W project that we intend to develop collaboratively with the community is detailed in the file [BACKLOG.md](BACKLOG.md).
