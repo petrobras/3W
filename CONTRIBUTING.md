@@ -24,6 +24,7 @@ In this guide we present how you can propose each type of contributions that we 
     * [3W toolkit's structure](#3w-toolkits-structure)
     * [Executing examples](#executing-examples)
 * [Proposing contributions](#proposing-contributions)
+    * [Citation](#citation)
     * [Bugs](#bugs)
     * [Documentation improvements](#documentation-improvements)
     * [Cosmetic improvements](#cosmetic-improvements)
@@ -89,6 +90,10 @@ recommend that you set up a Python Virtual Environment with the packages version
 # Proposing contributions
 
 For each type of expected contribution, there is a subsection below with specific instructions.
+
+## Citation
+
+As far as we know, the 3W dataset was useful and cited by the works listed [here](CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) **discussion**. If you use the 3W dataset with any purpose, please cite [this](https://doi.org/10.1016/j.petrol.2019.106223) paper and the 3W dataset itself as specified [here](CITE.md).
 
 ## Bugs
 

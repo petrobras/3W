@@ -18,7 +18,6 @@
 * [3W dataset](#3w-dataset)
   * [Structure](#structure)
   * [Overview](#overview)
-  * [Citation](#citation)
 * [3W toolkit](#3w-toolkit)
   * [Structure](#structure-1)
   * [Incorporated Problems](#incorporated-problems)
@@ -28,7 +27,7 @@
 
 This is the first Petrobras' repository on GitHub. It supports the 3W project and promotes experimentation of Machine Learning-based approaches and algorithms for specific problems related to undesirable events that occur in offshore oil wells. 
 				
-The 3W project is based on the 3W dataset, a database described in [this paper](https://doi.org/10.1016/j.petrol.2019.106223), and on the 3W toolkit, a software package that promotes experimentation with the 3W dataset for specific problems. The name **3W** was chosen because this dataset is composed of instances from ***3*** different sources and which contain undesirable events that occur in oil ***W***ells.
+The 3W project is based on the 3W dataset, a database described in [this](https://doi.org/10.1016/j.petrol.2019.106223) paper, and on the 3W toolkit, a software package that promotes experimentation with the 3W dataset for specific problems. The name **3W** was chosen because this dataset is composed of instances from ***3*** different sources and which contain undesirable events that occur in oil ***W***ells.
 
 ## Motivation
 
@@ -88,10 +87,6 @@ The 3W dataset consists of all CSV files in the subdirectories of the [dataset](
 ## Overview
 
 A 3W dataset's general presentation with some quantities and statistics is available in [this](overviews/_baseline/main.ipynb) Jupyter Notebook.
-
-## Citation
-
-As far as we know, the 3W dataset was useful and cited by the works listed [here](CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) discussion. If you use the 3W dataset with any purpose, please cite the aforementioned paper and the 3W dataset itself as specified [here](CITE.md).
 
 # 3W toolkit
 
