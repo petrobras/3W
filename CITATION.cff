@@ -1,0 +1,72 @@
+cff-version: 1.2.0
+message: "If you use any resource published in this repository, please cite it as below."
+authors:
+- family-names: "Vaz Vargas"
+  given-names: "Ricardo Emanuel"
+  email: ricardo.vargas@petrobras.com.br
+  affiliation: Petróleo Brasileiro S.A.
+  orcid: "https://orcid.org/0000-0001-6243-4590"
+title: "3W"
+version: 1.0.0
+date-released: "2022-05-31"
+url: "https://github.com/petrobras/3w"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Vaz Vargas"
+    given-names: "Ricardo Emanuel"
+    email: ricardo.vargas@petrobras.com.br
+    affiliation: Petróleo Brasileiro S.A.
+    orcid: "https://orcid.org/0000-0001-6243-4590"
+  - family-names: "Munaro"
+    given-names: "Celso José"
+    email: munaro@ele.ufes.br
+    affiliation: Universidade Federal do Espírito Santo
+    orcid: "https://orcid.org/0000-0002-2297-7395"
+  - family-names: "Marques Ciarelli"
+    given-names: "Patrick"
+    email: patrick.ciarelli@ufes.br
+    affiliation: Universidade Federal do Espírito Santo
+    orcid: "https://orcid.org/0000-0003-3177-4028"
+  - family-names: "Gonçalves Medeiros"
+    given-names: "André"
+    email: andremedeiros@petrobras.com.br
+    affiliation: Petróleo Brasileiro S.A.
+    orcid: "https://orcid.org/0000-0002-7010-9760"
+  - family-names: "Guberfain do Amaral"
+    given-names: "Bruno"
+    email: bruno.do.amaral@petrobras.com.br
+    affiliation: Petróleo Brasileiro S.A.
+    orcid: "https://orcid.org/0000-0002-9500-2652"
+  - family-names: "Centurion Barrionuevo"
+    given-names: "Daniel"
+    email: dcbarrionuevo@petrobras.com.br
+    affiliation: Petróleo Brasileiro S.A.
+  - family-names: "Dias de Araújo"
+    given-names: "Jean Carlos"
+    email: jeanaraujo@petrobras.com.br
+    affiliation: Petróleo Brasileiro S.A.
+  - family-names: "Lins Ribeiro"
+    given-names: "Jorge"
+    email: jorge_lribeiro@petrobras.com.br
+    affiliation: Petróleo Brasileiro S.A.
+  - family-names: "Pierezan Magalhães"
+    given-names: "Lucas"
+    email: lucas.magalhaes@petrobras.com.br
+    affiliation: Petróleo Brasileiro S.A.
+  journal: "Journal of Petroleum Science and Engineering"
+  issn: "0920-4105"
+  issue-date: "October 2019"
+  month: 7
+  pages: 106223
+  title: "A realistic and public dataset with rare undesirable real events in oil wells"
+  volume: 181
+  year: 2019
+  doi: "10.1016/j.petrol.2019.106223"
+  url: "http://www.sciencedirect.com/science/article/pii/S0920410519306357"
+  keywords:
+    - "Fault detection and diagnosis"
+    - "Oil well monitoring"
+    - "Abnormal event management"
+    - "Multivariate time series classification"
+  abstract: "Detection of undesirable events in oil and gas wells can help prevent production losses, environmental accidents, and human casualties and reduce maintenance costs. The scarcity of measurements in such processes is a drawback due to the low reliability of instrumentation in such hostile environments. Another issue is the absence of adequately structured data related to events that should be detected. To contribute to providing a priori knowledge about undesirable events for diagnostic algorithms in offshore naturally flowing wells, this work presents an original and valuable dataset with instances of eight types of undesirable events characterized by eight process variables. Many hours of expert work were required to validate historical instances and to produce simulated and hand-drawn instances that can be useful to distinguish normal and abnormal actual events under different operating conditions. The choices made during this dataset's preparation are described and justified, and specific benchmarks that practitioners and researchers can use together with the published dataset are defined. This work has resulted in two relevant contributions. A challenging public dataset that can be used as a benchmark for the development of (i) machine learning techniques related to inherent difficulties of actual data, and (ii) methods for specific tasks associated with detecting and diagnosing undesirable events in offshore naturally flowing oil and gas wells. The other contribution is the proposal of the defined benchmarks."
