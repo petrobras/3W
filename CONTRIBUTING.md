@@ -97,31 +97,31 @@ As far as we know, the 3W dataset was useful and cited by the works listed [here
 
 ## Bugs
 
-Please open an **issue** to report any bug. If you've implemented a fix, please create a **pull request**.
+Please open an **issue** to report any bug. If you've implemented a fix, please create a **pull request** on a branch called `bugs`.
 
 ## Documentation improvements
 
-We believe that any part of the documentation for this project can be improved, including this guide. You can work on that and then create **pull requests** directly.
+We believe that any part of the documentation for this project can be improved, including this guide. You can work on that and then create a **pull requests** on a branch called `documentation_improvements` directly.
 
 It is important to keep in mind that this toolkit's documentation is generated in english and in Google format with [autoDocstring - Python Docstring Generator](https://github.com/NilsJPWerner/autoDocstring), which follows [PEP 257](https://peps.python.org/pep-0257/), and [pdoc3](https://pdoc3.github.io/pdoc/).
 
 ## Cosmetic improvements
 
-Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the 3W project are also welcome. In this case, please create **pull requests** directly.
+Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the 3W project are also welcome. In this case, please create a **pull requests** on a branch called `cosmetic_improvements` directly.
 
 ## Other improvements
 
-If you intend to work and propose a more significant improvement, please consult our [backlog](BACKLOG.md) first. If you have any questions about the most aligned strategy for the 3W project, please consult or create **discussions**. When your improvement is ready, please create a **pull request**.
+If you intend to work and propose a more significant improvement, please consult our [backlog](BACKLOG.md) first. If you have any questions about the most aligned strategy for the 3W project, please consult or create **discussions**. When your improvement is ready, please create a **pull request** on a branch called `other_improvements`.
 
 It is important to keep in mind that all source code is implemented according to the style guide established by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with the use of the [Black formatter](https://github.com/psf/black).
 
 ## New 3W dataset's overviews
 
-Visualization is one of the most important steps in this type of project. Therefore, you can propose [Jupyter Notebooks](https://jupyter.org/) with different views. For this, submit a **pull request** with a file named `overviews\[your_name_here]\main.ipynb` that you've developed. If we like your overview, your file could be listed in this repository as a 3W toolkit's example of use.
+Visualization is one of the most important steps in this type of project. Therefore, you can propose [Jupyter Notebooks](https://jupyter.org/) with different views. For this, submit a **pull request** on a branch called `new_3w_datasets_overviews` with a file named `overviews\[your_name_here]\main.ipynb` that you've developed. If we like your overview, your file could be listed in this repository as a 3W toolkit's example of use.
 
 ## New approaches and algorithms
 
-Would you like to share in this repository as 3W toolkit's examples of use approaches and algorithms for already incorporated problems? The procedure for this is to submit a **pull request** with [Jupyter Notebooks](https://jupyter.org/) that you've developed in the directory corresponding to the chosen problem. 
+Would you like to share in this repository as 3W toolkit's examples of use approaches and algorithms for already incorporated problems? The procedure for this is to submit a **pull request** on a branch called `new_approaches_and_algorithms` with [Jupyter Notebooks](https://jupyter.org/) that you've developed in the directory corresponding to the chosen problem. 
 
 Specific problems will be incorporated into this project gradually. At this point, we can work on:
 
