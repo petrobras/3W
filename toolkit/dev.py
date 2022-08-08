@@ -20,7 +20,7 @@ matplotlib.use("agg")
 from matplotlib import pyplot as plt
 from pathlib import Path, PurePosixPath
 from sklearn import metrics
-from tqdm import tqdm
+from alive_progress import alive_bar
 from itertools import chain, compress, repeat
 from functools import lru_cache
 from zipfile import ZipFile
@@ -312,7 +312,7 @@ class EventFolds:
         self.event_type = experiment.event_type
         self.use_instancias_extras = experiment.use_instancias_extras
         self.pad_mode = experiment.pad_mode
-        self.pbar = tqdm if experiment.pbar else lambda x: x
+        self.pbar = experiment.pbar
         self.warnings = experiment.warnings
         self.forca_binario = experiment.forca_binario
 
@@ -347,10 +347,19 @@ class EventFolds:
             lambda fold: fold != EXTRA_INSTANCES_TRAINING
         )
         self.instancias = {}
-        for nome_instancia in self.pbar(nomes_instancias_evento):
-            self.instancias[nome_instancia] = self.carregue_instancia(
-                nome_instancia
-            )
+        with alive_bar(
+            len(nomes_instancias_evento),
+            disable=not (self.pbar),
+            force_tty=True,
+            title=f"Loading instances",
+            bar="bubbles",
+            spinner=None,
+        ) as bar:
+            for nome_instancia in nomes_instancias_evento:
+                self.instancias[nome_instancia] = self.carregue_instancia(
+                    nome_instancia
+                )
+                bar()
 
         # Cria folds, agrupado por fold_num
         self.folds = []
@@ -524,10 +533,12 @@ class EventFolds:
     def extraia_amostras_simuladas_e_desenhadas(self):
         # Obtém instâncias extras (simuladas e desenhadas, representadas pelo
         # fold==EXTRA_INSTANCES_TRAINING)
-        instancias_extras = [
-            self.carregue_instancia(nome_instancia)
-            for nome_instancia in self.pbar(self.nomes_instancias_extras)
-        ]
+        instancias_extras = []
+        with alive_bar(len(self.nomes_instancias_extras)) as bar:
+            for nome_instancia in self.pbar(self.nomes_instancias_extras):
+                instancias_extras.append(self.carregue_instancia(nome_instancia))
+                bar()
+
         instancias_extras_passo = [
             (X[:: self.step], y[:: self.step]) for X, y in instancias_extras
         ]  # Aplica passo de treino
