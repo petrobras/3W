@@ -47,7 +47,7 @@ def label_and_file_generator(real=True, simulated=False, drawn=False):
                 for fp in i.iterdir():
                     # Considers only csv files
                     if fp.suffix == ".csv":
-                        # Considers only instances from the requested 
+                        # Considers only instances from the requested
                         # source
                         if (
                             (simulated and fp.stem.startswith("SIMULATED"))
@@ -60,7 +60,7 @@ def label_and_file_generator(real=True, simulated=False, drawn=False):
                         ):
                             yield label, fp
         except:
-            # Otherwise (e.g. files or directory without instances), do 
+            # Otherwise (e.g. files or directory without instances), do
             # nothing
             pass
 
@@ -142,7 +142,7 @@ def create_table_of_instances(real_instances, simulated_instances, drawn_instanc
     # Transforms the list of dicts into a pandas.DataFrame
     df_instances = pd.DataFrame(list_instances)
 
-    # Creates the table of instances with relevant information and 
+    # Creates the table of instances with relevant information and
     # desired format
     toi = (
         df_instances.groupby(["INSTANCE LABEL", "SOURCE"])
@@ -191,7 +191,7 @@ def filter_rare_undesirable_events(toi, threshold, simulated=False, drawn=False)
             (real, simulated and hand-drawn instances) and by instance
             label.
     """
-    # Simulated and hand-drawn instances are optional, but real 
+    # Simulated and hand-drawn instances are optional, but real
     # instances are always considered
     totals = 0
     if simulated:

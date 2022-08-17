@@ -38,7 +38,7 @@ from .base import (
     VARS,
 )
 
-# Transforma lista de instâncias (lista de tuplas (X, y)) em lista de 
+# Transforma lista de instâncias (lista de tuplas (X, y)) em lista de
 # exemplos (X, y).
 # Adicionalmente, também filtra alvos inválidos
 def extraia_exemplos(instancias, retornar_grupos=False):
@@ -84,7 +84,7 @@ class EventFold:
     ):
         self.event_folds: EventFolds = event_folds
 
-        # Nota: `instancias_treino` e `instancias_teste` são listas de 
+        # Nota: `instancias_treino` e `instancias_teste` são listas de
         # tuplas (X, y)
 
         # Aplica passo em instâncias de treino
@@ -98,7 +98,7 @@ class EventFold:
         self.nome_instancias_treino = nome_instancias_treino
         self.nome_instancias_teste = nome_instancias_teste
 
-        # Verfica se alguma das instâncias ficou vazia depois de 
+        # Verfica se alguma das instâncias ficou vazia depois de
         # aplicado passo
         for instancia in self.instancias_treino + self.instancias_teste:
             X, y = instancia
@@ -127,8 +127,8 @@ class EventFold:
     ):
         """
         idx_to_codigo (list or dict):
-            idx_to_codigo[i] = j indica que a i-ésima coluna de 
-            y_prev_soft corresponde ao código da classe j da tarefa 
+            idx_to_codigo[i] = j indica que a i-ésima coluna de
+            y_prev_soft corresponde ao código da classe j da tarefa
             corrente.
         """
         _, y_teste, grupos_teste = self.extraia_amostras_teste_completo(
@@ -174,7 +174,7 @@ class EventFold:
         y_prev_idx = y_prev_soft.argmax(1)
         y_prev = list(map(idx_to_codigo.__getitem__, y_prev_idx))
 
-        # Calculando probabilidade predita de regime + transiente para 
+        # Calculando probabilidade predita de regime + transiente para
         # plotar
         y_prob_nao_normal = y_prev_soft[:, coluna_regime].copy()
         if coluna_transiente is not None:
@@ -385,14 +385,14 @@ class EventFolds:
     def extrai_arrays(self, instancia_abs, pad_mode="na"):
         """
         Extrai np.arrays X e y a partir do csv em instancia_abs.
-        Na extração os valore de referência são calculados e incluídos 
-        como colunas em X. X tem ses dados completados segundo pad_mode 
+        Na extração os valore de referência são calculados e incluídos
+        como colunas em X. X tem ses dados completados segundo pad_mode
         para formar primeiras janelas.
 
         pad_mode:
-            'na'    : completa X com NA alinhando com primeiro dado 
+            'na'    : completa X com NA alinhando com primeiro dado
             anotado em y
-            'valid' : descarta os dados que não cabem na primeira janela 
+            'valid' : descarta os dados que não cabem na primeira janela
             de detecção
         """
         # Leitura do arquivo CSV que contém a instância
@@ -407,7 +407,7 @@ class EventFolds:
         inicio_X = first_class - self.window + 1
         inicio_y = first_class
 
-        # Verifica o tamanho da jenala solicitada e aplica pad se 
+        # Verifica o tamanho da jenala solicitada e aplica pad se
         # necessário
         if inicio_X < 0:
             if self.warnings:
@@ -430,12 +430,12 @@ class EventFolds:
                 )
                 inicio_X = 0
             elif pad_mode == "valid":
-                # Descartando (-inicio_X) instantes do df para ter 1a 
+                # Descartando (-inicio_X) instantes do df para ter 1a
                 # janela válida
                 inicio_y += -inicio_X
                 inicio_X = 0
 
-                # Validando se janela solicitada é maior do que dados 
+                # Validando se janela solicitada é maior do que dados
                 # disponíveis
                 if inicio_y >= df.shape[0]:
                     raise (
@@ -444,7 +444,7 @@ class EventFolds:
                         )
                     )
 
-                # Validando se mais de 50% dos dados normais foram 
+                # Validando se mais de 50% dos dados normais foram
                 # descartados (ou algum outro controle de qualidade?)
                 # TODO
 
@@ -474,11 +474,11 @@ class EventFolds:
             min(Xw_treino.shape) > 0
         ), f'Janela especificada gerou instância sem amostras para o arquivo "{instancia_abs}"'
 
-        # Ao usar instâncias de outros eventos para o treinamento do 
+        # Ao usar instâncias de outros eventos para o treinamento do
         # evento corrente (self.event_type)
         # códigos de outros eventos podem surgir em y_treino.
         # y_treino deve ter somente os códigos do evento corrente.
-        # Os códigos novos (derivados de outros eventos) são convertidos 
+        # Os códigos novos (derivados de outros eventos) são convertidos
         # para código do evento Normal (0).
         y_finite_mask = np.isfinite(y_treino)
         outro_codigo_mask = y_finite_mask & np.isin(
@@ -492,7 +492,7 @@ class EventFolds:
             )
         y_treino[outro_codigo_mask] = 0
 
-        # Tratamento para classificação binária : codigo_transitente -> 
+        # Tratamento para classificação binária : codigo_transitente ->
         # codigo_regime
         if self.TRANSIENT and self.forca_binario:
             codigo_regime = self.LABEL
@@ -521,7 +521,7 @@ class EventFolds:
 
     @lru_cache(1)
     def extraia_amostras_simuladas_e_desenhadas(self):
-        # Obtém instâncias extras (simuladas e desenhadas, representadas 
+        # Obtém instâncias extras (simuladas e desenhadas, representadas
         # pelo fold==EXTRA_INSTANCES_TRAINING)
         instancias_extras = []
         with alive_bar(len(self.nomes_instancias_extras)) as bar:
@@ -593,9 +593,9 @@ class Experiment:
     @property
     def event_labels(self):  # WIP
         """
-        Dicionário com os códigos das classes que envolvem essa tarefa 
-        de classificação. As classes podem ser 'normal', 'regime' e 
-        'transiente'. A classe transiente não existe para tarefas de 
+        Dicionário com os códigos das classes que envolvem essa tarefa
+        de classificação. As classes podem ser 'normal', 'regime' e
+        'transiente'. A classe transiente não existe para tarefas de
         classificação binária.
         """
         codigos = {"normal": 0, "regime": self.LABEL}

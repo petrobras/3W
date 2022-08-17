@@ -30,8 +30,8 @@ def load_config_in_dataset_ini():
 
     Returns:
         dict: Dict with all configurations present in the 3W dataset's
-            main configuration file. This dict is formated with the 
-            basic configuration language used by the configparser 
+            main configuration file. This dict is formated with the
+            basic configuration language used by the configparser
             module.
     """
     # Check if the configuration file exists in the expected path
@@ -55,8 +55,8 @@ def load_config_in_dataset_ini():
     return dict(dataset_ini)
 
 
-# Loads all configurations present in the 3W dataset's main 
-# configuration file and provides specific configurations in different 
+# Loads all configurations present in the 3W dataset's main
+# configuration file and provides specific configurations in different
 # granularity and formats
 #
 DATASET_INI = load_config_in_dataset_ini()
