@@ -1,0 +1,11 @@
+name: action-black
+on: [push, pull_request]
+jobs:
+  linter_name:
+    name: Check python code using the rickstaa/action-black 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: rickstaa/action-black@v1
+        with:
+          black_args: ". --check --verbose --diff --exclude toolkit/rolling_window.py"
