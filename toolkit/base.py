@@ -55,8 +55,9 @@ def load_config_in_dataset_ini():
     return dict(dataset_ini)
 
 
-# Loads all configurations present in the 3W dataset's main configuration file
-# and provides specific configurations in different granularity and formats
+# Loads all configurations present in the 3W dataset's main
+# configuration file and provides specific configurations in different
+# granularity and formats
 #
 DATASET_INI = load_config_in_dataset_ini()
 

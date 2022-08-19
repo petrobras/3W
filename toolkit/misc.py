@@ -47,7 +47,8 @@ def label_and_file_generator(real=True, simulated=False, drawn=False):
                 for fp in i.iterdir():
                     # Considers only csv files
                     if fp.suffix == ".csv":
-                        # Considers only instances from the requested source
+                        # Considers only instances from the requested
+                        # source
                         if (
                             (simulated and fp.stem.startswith("SIMULATED"))
                             or (drawn and fp.stem.startswith("DRAWN"))
@@ -59,7 +60,8 @@ def label_and_file_generator(real=True, simulated=False, drawn=False):
                         ):
                             yield label, fp
         except:
-            # Otherwise (e.g. files or directory without instances), do nothing
+            # Otherwise (e.g. files or directory without instances), do
+            # nothing
             pass
 
 
@@ -87,9 +89,7 @@ def get_all_labels_and_files():
     return real_instances, simulated_instances, drawn_instances
 
 
-def create_table_of_instances(
-    real_instances, simulated_instances, drawn_instances
-):
+def create_table_of_instances(real_instances, simulated_instances, drawn_instances):
     """Creates a table of instances (pandas.DataFrame) that shows the
     amount of instances that compose the 3W dataset, by knowledge source
     (real, simulated and hand-drawn instances) and by instance label.
@@ -118,27 +118,21 @@ def create_table_of_instances(
     list_instances = (
         [
             {
-                "INSTANCE LABEL": str(label)
-                + " - "
-                + LABELS_DESCRIPTIONS[label],
+                "INSTANCE LABEL": str(label) + " - " + LABELS_DESCRIPTIONS[label],
                 "SOURCE": "REAL",
             }
             for label, fp in real_instances
         ]
         + [
             {
-                "INSTANCE LABEL": str(label)
-                + " - "
-                + LABELS_DESCRIPTIONS[label],
+                "INSTANCE LABEL": str(label) + " - " + LABELS_DESCRIPTIONS[label],
                 "SOURCE": "SIMULATED",
             }
             for label, fp in simulated_instances
         ]
         + [
             {
-                "INSTANCE LABEL": str(label)
-                + " - "
-                + LABELS_DESCRIPTIONS[label],
+                "INSTANCE LABEL": str(label) + " - " + LABELS_DESCRIPTIONS[label],
                 "SOURCE": "HAND-DRAWN",
             }
             for label, fp in drawn_instances
@@ -148,8 +142,8 @@ def create_table_of_instances(
     # Transforms the list of dicts into a pandas.DataFrame
     df_instances = pd.DataFrame(list_instances)
 
-    # Creates the table of instances with relevant information and desired
-    # format
+    # Creates the table of instances with relevant information and
+    # desired format
     toi = (
         df_instances.groupby(["INSTANCE LABEL", "SOURCE"])
         .size()
@@ -167,9 +161,7 @@ def create_table_of_instances(
     return toi
 
 
-def filter_rare_undesirable_events(
-    toi, threshold, simulated=False, drawn=False
-):
+def filter_rare_undesirable_events(toi, threshold, simulated=False, drawn=False):
     """Generates a table of instances (pandas.DataFrame) that shows the
     amount of filtered instances, by knowledge source (real, `simulated`
     and `hand-drawn` instances) and by instance label. This filter keeps
@@ -199,8 +191,8 @@ def filter_rare_undesirable_events(
             (real, simulated and hand-drawn instances) and by instance
             label.
     """
-    # Simulated and hand-drawn instances are optional, but real instances are
-    # always considered
+    # Simulated and hand-drawn instances are optional, but real
+    # instances are always considered
     totals = 0
     if simulated:
         totals += toi["SIMULATED"]

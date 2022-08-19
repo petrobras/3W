@@ -56,9 +56,7 @@ __authors__ = [
     "Jean Carlos Dias de Araújo",
     "Lucas Pierezan Magalhães",
 ]
-__maintainer__ = [
-    "Ricardo Emanuel Vaz Vargas <ricardo.vargas@petrobras.com.br>"
-]
+__maintainer__ = ["Ricardo Emanuel Vaz Vargas <ricardo.vargas@petrobras.com.br>"]
 
 # Imports and exposes objects from the 'base' sub-module
 from .base import (

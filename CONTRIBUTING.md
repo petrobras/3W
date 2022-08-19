@@ -31,6 +31,7 @@ In this guide we present how you can propose each type of contributions that we 
     * [Other improvements](#other-improvements)
     * [New 3W dataset's overviews](#new-3w-datasets-overviews)
     * [New approaches and algorithms](#new-approaches-and-algorithms)
+    * [Additional requirements](#additional-requirements)
 * [Backlog](#backlog)
 
 # Getting started
@@ -89,7 +90,7 @@ recommend that you set up a Python Virtual Environment with the packages version
 
 # Proposing contributions
 
-For each type of expected contribution, there is a subsection below with specific instructions.
+For each type of expected contribution, there is a subsection below with specific instructions. The last subsection specifies additional requirements for contributions to be incorporated into this project.
 
 ## Citation
 
@@ -113,7 +114,7 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 If you intend to work and propose a more significant improvement, please consult our [backlog](BACKLOG.md) first. If you have any questions about the most aligned strategy for the 3W project, please consult or create **discussions**. When your improvement is ready, please create a **pull request** on a branch called `other_improvements`.
 
-It is important to keep in mind that all source code is implemented according to the style guide established by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with the use of the [Black formatter](https://github.com/psf/black).
+It is important to keep in mind that all source code is implemented according to the style guide established by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with the use of the [Black formatter](https://github.com/psf/black) with default options. Therefore, while codes have lines up to 88 characters (Black formatter's default option), each line with docstring or comment must be up to 72 characters long as established in PEP 8.
 
 ## New 3W dataset's overviews
 
@@ -126,6 +127,12 @@ Would you like to share in this repository as 3W toolkit's examples of use appro
 Specific problems will be incorporated into this project gradually. At this point, we can work on:
 
 * [Binary classifier of Spurious Closure of DHSV](problems/01_binary_classifier_of_spurious_closure_of_dhsv/README.md).
+
+## Additional requirements
+
+Here are additional requirements for contributions to be incorporated into this project:
+
+* Pushes and PRs will only be accepted if they pass the check automatically performed by the GitHub Action specified in [action-black.yml](.github/workflows/action-black.yml). If this check fails, check the generated log, use the latest version of [Black formatter](https://github.com/psf/black) to locally format the files as needed, then generate another push/PR.
 
 # Backlog
 
