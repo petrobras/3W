@@ -38,29 +38,22 @@ from .base import (
     VARS,
 )
 
-# Transforma lista de instâncias (lista de tuplas (X, y)) em lista de exemplos
-# (X, y).
+# Transforma lista de instâncias (lista de tuplas (X, y)) em lista de
+# exemplos (X, y).
 # Adicionalmente, também filtra alvos inválidos
 def extraia_exemplos(instancias, retornar_grupos=False):
     if len(instancias) == 0:
         return ([], [])
 
     # Busca alvos nulos
-    y_finite = map(
-        np.isfinite, chain(*(instancia[1] for instancia in instancias))
-    )
+    y_finite = map(np.isfinite, chain(*(instancia[1] for instancia in instancias)))
     X_iter = chain(*(instancia[0] for instancia in instancias))
     y_iter = chain(*(instancia[1] for instancia in instancias))
 
     # Adiciona iterador de grupos
     if retornar_grupos:
         grupos = list(
-            chain(
-                *(
-                    repeat(grupo, len(X))
-                    for grupo, (X, y) in enumerate(instancias)
-                )
-            )
+            chain(*(repeat(grupo, len(X)) for grupo, (X, y) in enumerate(instancias)))
         )
 
         iter_zip = zip(X_iter, y_iter, grupos)
@@ -76,8 +69,8 @@ def extraia_exemplos(instancias, retornar_grupos=False):
     return tuple(result)
 
 
-# Classe cujo objeto contém todas as informações necessárias para uma rodada do
-# K-fold do classificador de evento.
+# Classe cujo objeto contém todas as informações necessárias para uma
+# rodada do K-fold do classificador de evento.
 class EventFold:
     def __init__(
         self,
@@ -91,13 +84,11 @@ class EventFold:
     ):
         self.event_folds: EventFolds = event_folds
 
-        # Nota: `instancias_treino` e `instancias_teste` são listas de tuplas
-        # (X, y)
+        # Nota: `instancias_treino` e `instancias_teste` são listas de
+        # tuplas (X, y)
 
         # Aplica passo em instâncias de treino
-        self.instancias_treino = [
-            (X[::step], y[::step]) for X, y in instancias_treino
-        ]
+        self.instancias_treino = [(X[::step], y[::step]) for X, y in instancias_treino]
 
         # Aplica passo em instâncias de teste
         self.instancias_teste = [
@@ -107,7 +98,8 @@ class EventFold:
         self.nome_instancias_treino = nome_instancias_treino
         self.nome_instancias_teste = nome_instancias_teste
 
-        # Verfica se alguma das instâncias ficou vazia depois de aplicado passo
+        # Verfica se alguma das instâncias ficou vazia depois de
+        # aplicado passo
         for instancia in self.instancias_treino + self.instancias_teste:
             X, y = instancia
             assert min(X.shape) > 0 and min(
@@ -135,8 +127,9 @@ class EventFold:
     ):
         """
         idx_to_codigo (list or dict):
-            idx_to_codigo[i] = j indica que a i-ésima coluna de y_prev_soft corresponde ao código
-            da classe j da tarefa corrente.
+            idx_to_codigo[i] = j indica que a i-ésima coluna de
+            y_prev_soft corresponde ao código da classe j da tarefa
+            corrente.
         """
         _, y_teste, grupos_teste = self.extraia_amostras_teste_completo(
             retornar_grupos=True
@@ -152,9 +145,7 @@ class EventFold:
         lista_codigos = list(event_labels.values())
         codigo_regime = event_labels["regime"]
         codigo_transiente = (
-            event_labels["transiente"]
-            if "transiente" in event_labels
-            else None
+            event_labels["transiente"] if "transiente" in event_labels else None
         )
         coluna_regime = next(
             i for i, j in enumerate(idx_to_codigo) if j == codigo_regime
@@ -162,9 +153,7 @@ class EventFold:
         coluna_transiente = None
         if codigo_transiente is not None:
             coluna_transiente = next(
-                i
-                for i, j in enumerate(idx_to_codigo)
-                if j == codigo_transiente
+                i for i, j in enumerate(idx_to_codigo) if j == codigo_transiente
             )
 
         # Predições soft com shape correto
@@ -185,7 +174,8 @@ class EventFold:
         y_prev_idx = y_prev_soft.argmax(1)
         y_prev = list(map(idx_to_codigo.__getitem__, y_prev_idx))
 
-        # Calculando probabilidade predita de regime + transiente para plotar
+        # Calculando probabilidade predita de regime + transiente para
+        # plotar
         y_prob_nao_normal = y_prev_soft[:, coluna_regime].copy()
         if coluna_transiente is not None:
             y_prob_nao_normal += y_prev_soft[:, coluna_transiente]
@@ -322,9 +312,7 @@ class EventFolds:
         self.window = experiment.window
         self.step = experiment.step
 
-        assert (
-            not self.use_instancias_extras
-        ), "Funcionalidade não implementada"
+        assert not self.use_instancias_extras, "Funcionalidade não implementada"
 
         # Filtro de nomes de eventos
         self.filtre_nomes_instancias = lambda filtro: list(
@@ -338,9 +326,7 @@ class EventFolds:
 
         # Obtém código de todos os folds, ignorando o fold negativo (utilizado
         # sempre para treino)
-        self.folds_nums = sorted(
-            set(folds_instancias) - {EXTRA_INSTANCES_TRAINING}
-        )
+        self.folds_nums = sorted(set(folds_instancias) - {EXTRA_INSTANCES_TRAINING})
 
         # Carrega instâncias do evento
         nomes_instancias_evento = self.filtre_nomes_instancias(
@@ -399,12 +385,15 @@ class EventFolds:
     def extrai_arrays(self, instancia_abs, pad_mode="na"):
         """
         Extrai np.arrays X e y a partir do csv em instancia_abs.
-        Na extração os valore de referência são calculados e incluídos como colunas em X.
-        X tem ses dados completados segundo pad_mode para formar primeiras janelas.
+        Na extração os valore de referência são calculados e incluídos
+        como colunas em X. X tem ses dados completados segundo pad_mode
+        para formar primeiras janelas.
 
         pad_mode:
-            'na'    : completa X com NA alinhando com primeiro dado anotado em y
-            'valid' : descarta os dados que não cabem na primeira janela de detecção
+            'na'    : completa X com NA alinhando com primeiro dado
+            anotado em y
+            'valid' : descarta os dados que não cabem na primeira janela
+            de detecção
         """
         # Leitura do arquivo CSV que contém a instância
         with instancia_abs.open() as f:
@@ -418,7 +407,8 @@ class EventFolds:
         inicio_X = first_class - self.window + 1
         inicio_y = first_class
 
-        # Verifica o tamanho da jenala solicitada e aplica pad se necessário
+        # Verifica o tamanho da jenala solicitada e aplica pad se
+        # necessário
         if inicio_X < 0:
             if self.warnings:
                 warnings.warn(
@@ -440,12 +430,13 @@ class EventFolds:
                 )
                 inicio_X = 0
             elif pad_mode == "valid":
-                # Descartando (-inicio_X) instantes do df para ter 1a janela
-                # válida
+                # Descartando (-inicio_X) instantes do df para ter 1a
+                # janela válida
                 inicio_y += -inicio_X
                 inicio_X = 0
 
-                # Validando se janela solicitada é maior do que dados disponíveis
+                # Validando se janela solicitada é maior do que dados
+                # disponíveis
                 if inicio_y >= df.shape[0]:
                     raise (
                         Exception(
@@ -453,8 +444,8 @@ class EventFolds:
                         )
                     )
 
-                # Validando se mais de 50% dos dados normais foram descartados
-                # (ou algum outro controle de qualidade?)
+                # Validando se mais de 50% dos dados normais foram
+                # descartados (ou algum outro controle de qualidade?)
                 # TODO
 
             else:
@@ -472,9 +463,7 @@ class EventFolds:
         )
 
         # Aplicação de janela deslizante
-        Xw_treino = rolling_window(
-            X_treino_extra, self.window, axes=0, toend=False
-        )
+        Xw_treino = rolling_window(X_treino_extra, self.window, axes=0, toend=False)
 
         # Check de sanidade
         assert len(y_treino) == len(
@@ -485,12 +474,12 @@ class EventFolds:
             min(Xw_treino.shape) > 0
         ), f'Janela especificada gerou instância sem amostras para o arquivo "{instancia_abs}"'
 
-        # Ao usar instâncias de outros eventos para o treinamento do evento
-        # corrente (self.event_type)
+        # Ao usar instâncias de outros eventos para o treinamento do
+        # evento corrente (self.event_type)
         # códigos de outros eventos podem surgir em y_treino.
         # y_treino deve ter somente os códigos do evento corrente.
-        # Os códigos novos (derivados de outros eventos) são convertidos para
-        # código do evento Normal (0).
+        # Os códigos novos (derivados de outros eventos) são convertidos
+        # para código do evento Normal (0).
         y_finite_mask = np.isfinite(y_treino)
         outro_codigo_mask = y_finite_mask & np.isin(
             y_treino, list(self.OBSERVATION_LABELS), invert=True
@@ -503,7 +492,8 @@ class EventFolds:
             )
         y_treino[outro_codigo_mask] = 0
 
-        # Tratamento para classificação binária : codigo_transitente -> codigo_regime
+        # Tratamento para classificação binária : codigo_transitente ->
+        # codigo_regime
         if self.TRANSIENT and self.forca_binario:
             codigo_regime = self.LABEL
             codigo_transiente = self.LABEL + TRANSIENT_OFFSET
@@ -531,8 +521,8 @@ class EventFolds:
 
     @lru_cache(1)
     def extraia_amostras_simuladas_e_desenhadas(self):
-        # Obtém instâncias extras (simuladas e desenhadas, representadas pelo
-        # fold==EXTRA_INSTANCES_TRAINING)
+        # Obtém instâncias extras (simuladas e desenhadas, representadas
+        # pelo fold==EXTRA_INSTANCES_TRAINING)
         instancias_extras = []
         with alive_bar(len(self.nomes_instancias_extras)) as bar:
             for nome_instancia in self.pbar(self.nomes_instancias_extras):
@@ -544,19 +534,17 @@ class EventFolds:
         ]  # Aplica passo de treino
         return extraia_exemplos(instancias_extras_passo)
 
-    # Método para consulta/cálculo de métricas parciais e globais (média e std)
+    # Método para consulta/cálculo de métricas parciais e globais (média
+    # e std)
     def get_metrics(self, boxplot=False):
         folds_metrics = {
-            i: metrics
-            for i, (_, metrics) in enumerate(self.folds_metricas.items())
+            i: metrics for i, (_, metrics) in enumerate(self.folds_metricas.items())
         }
         df_metricas = pd.DataFrame.from_dict(folds_metrics, orient="index")
         if boxplot:
             for metrica in ["F_BETA [%]", "MEAN_LOG_LOSS"]:
                 plt.figure(figsize=(11, 1))
-                sns.boxplot(
-                    x=df_metricas[metrica], width=0.4, palette="colorblind"
-                )
+                sns.boxplot(x=df_metricas[metrica], width=0.4, palette="colorblind")
                 sns.stripplot(
                     x=df_metricas[metrica],
                     jitter=True,
@@ -605,9 +593,10 @@ class Experiment:
     @property
     def event_labels(self):  # WIP
         """
-        Dicionário com os códigos das classes que envolvem essa tarefa de classificação.
-        As classes podem ser 'normal', 'regime' e 'transiente'.
-        A classe transiente não existe para tarefas de classificação binária.
+        Dicionário com os códigos das classes que envolvem essa tarefa
+        de classificação. As classes podem ser 'normal', 'regime' e
+        'transiente'. A classe transiente não existe para tarefas de
+        classificação binária.
         """
         codigos = {"normal": 0, "regime": self.LABEL}
         if self.TRANSIENT and (not self.forca_binario):
