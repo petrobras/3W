@@ -9,8 +9,6 @@ Federal do Espírito Santo. Doctoral thesis. 2019. https://github.com/ricardovva
 
 1. Tao Lu, Wen Xia, Xiangyu Zou, Qianbin Xia. Adaptively Compressing IoT Data on the Resource-constrained Edge. 3rd {USENIX} Workshop on Hot Topics in Edge Computing (HotEdge 20). 2020. https://www.usenix.org/system/files/hotedge20_paper_lu.pdf.
 
-1. Matheus A. Marins, Bettina D. Barros, Ismael H. Santos, Daniel C. Barrionuevo, Ricardo E.V. Vargas, Thiago de M. Prego, Amaro A. de Lima, Marcello L.R. de Campos, Eduardo A.B. da Silva, Sergio L. Netto. Fault detection and classification in oil wells and production/service lines using random forest. Journal of Petroleum Science and Engineering. 2020. https://doi.org/10.1016/j.petrol.2020.107879.
-
 1. W. Fernandes Junior, R.E.V. Vargas, K.S. Komati, K.A. de Souza Gazolli. Detecção de anomalias em poços produtores de petróleo usando aprendizado de máquina. XXIII Congresso Brasileiro de Automática. 2020. https://www.sba.org.br/open_journal_systems/index.php/cba/article/download/1405/1005.
 
 1. Jiangguo Liu, Jianli Gu, Huishu Li, Kenneth H. Carlson. Machine learning and transport simulations for groundwater anomaly detection,
@@ -23,6 +21,8 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. Luiz Müller, Marcelo Ramos Martins. Proposition of Reliability-based Methodology for Well Integrity Management During Operational Phase. 30th European Safety and Reliability Conference and 15th Probabilistic Safety Assessment and Management Conference. 2020. https://doi.org/10.3850%2F978-981-14-8593-0_3682-cd.
 
 1. R.S.F. Nascimento, B.H.G. Barbosa, R.E.V. Vargas, I.H.F. Santos. Detecção de falhas com Stacked Autoencoders e técnicas de reconhecimento de padrões em poços de petróleo operados por gas lift. XXIII Congresso Brasileiro de Automática. 2020. https://www.sba.org.br/open_journal_systems/index.php/cba/article/view/1462/1300.
+
+1. Matheus A. Marins, Bettina D. Barros, Ismael H. Santos, Daniel C. Barrionuevo, Ricardo E.V. Vargas, Thiago de M. Prego, Amaro A. de Lima, Marcello L.R. de Campos, Eduardo A.B. da Silva, Sergio L. Netto. Fault detection and classification in oil wells and production/service lines using random forest. Journal of Petroleum Science and Engineering. 2021. https://doi.org/10.1016/j.petrol.2020.107879.
 
 1. R.S.F. Nascimento, B.H.G. Barbosa, R.E.V. Vargas, I.H.F. Santos. Detecção de anomalias em poços de petróleo surgentes com Stacked Autoencoders. Simpósio Brasileiro de Automação Inteligente. 2021. 
 
@@ -55,3 +55,5 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. E.G.S. Nascimento, I.S. Figueirêdo, L.L.N. Guarieiro. A Novel Self Deep Learning Semi-Supervised Approach to Classify Unlabeled Multivariate Time Series Data. GPU Technology Conference Digital Spring. 2022. https://www.nvidia.com/en-us/on-demand/session/gtcspring22-s41405.
 
 1. A.L. D’Almeida, N.C.R. Bergiante, G.S. Ferreira, F.R. Leta, C.B.C. Lima, G.B.A. Lima. Digital transformation: a review on artificial intelligence techniques in drilling and production applications. The International Journal of Advanced Manufacturing Technology. 2022. https://doi.org/10.1007/s00170-021-08631-w.
+
+1. A.P.F. Machado, R.E.V. Vargas, P.M. Ciarelli, C.J. Munaro. Improving performance of one-class classifiers applied to anomaly detection in oil wells. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110983.
