@@ -55,3 +55,5 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. E.G.S. Nascimento, I.S. Figueirêdo, L.L.N. Guarieiro. A Novel Self Deep Learning Semi-Supervised Approach to Classify Unlabeled Multivariate Time Series Data. GPU Technology Conference Digital Spring. 2022. https://www.nvidia.com/en-us/on-demand/session/gtcspring22-s41405.
 
 1. A.L. D’Almeida, N.C.R. Bergiante, G.S. Ferreira, F.R. Leta, C.B.C. Lima, G.B.A. Lima. Digital transformation: a review on artificial intelligence techniques in drilling and production applications. The International Journal of Advanced Manufacturing Technology. 2022. https://doi.org/10.1007/s00170-021-08631-w.
+
+1. A.P.F. Machado, R.E.V. Vargas, P.M. Ciarelli, C.J. Munaro. Improving performance of one-class classifiers applied to anomaly detection in oil wells. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110983.
