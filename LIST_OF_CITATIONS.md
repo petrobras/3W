@@ -57,3 +57,5 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. A.L. D’Almeida, N.C.R. Bergiante, G.S. Ferreira, F.R. Leta, C.B.C. Lima, G.B.A. Lima. Digital transformation: a review on artificial intelligence techniques in drilling and production applications. The International Journal of Advanced Manufacturing Technology. 2022. https://doi.org/10.1007/s00170-021-08631-w.
 
 1. A.P.F. Machado, R.E.V. Vargas, P.M. Ciarelli, C.J. Munaro. Improving performance of one-class classifiers applied to anomaly detection in oil wells. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110983.
+
+1. N. Aslam, I.U. Khan, A. Alansari, M. Alrammah, A. Alghwairy, R. Alqahtani, R. Alqahtani, M. Almushikes, M.A. Hashim. Anomaly Detection Using Explainable Random Forest for the Prediction of Undesirable Events in Oil Wells. Applied Computational Intelligence and Soft Computing. 2022. https://doi.org/10.1155/2022/1558381.
