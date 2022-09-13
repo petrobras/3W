@@ -59,3 +59,9 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. A.P.F. Machado, R.E.V. Vargas, P.M. Ciarelli, C.J. Munaro. Improving performance of one-class classifiers applied to anomaly detection in oil wells. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110983.
 
 1. N. Aslam, I.U. Khan, A. Alansari, M. Alrammah, A. Alghwairy, R. Alqahtani, R. Alqahtani, M. Almushikes, M.A. Hashim. Anomaly Detection Using Explainable Random Forest for the Prediction of Undesirable Events in Oil Wells. Applied Computational Intelligence and Soft Computing. 2022. https://doi.org/10.1155/2022/1558381.
+
+1. F. Gatta, F. Giampaolo, D. Chiaro, F. Piccialli. Predictive maintenance for offshore oil wells by means of deep learning features extraction. Expert Systems. 2022. https://doi.org/10.1111/exsy.13128.
+
+1. A. Melo, M.M. Câmara, N. Clavijo, J.C. Pinto. Open benchmarks for assessment of process monitoring and fault diagnosis techniques: A review and critical analysis. Computers & Chemical Engineering. 2022. https://doi.org/10.1016/j.compchemeng.2022.107964.
+
+1. D. Leite, A. Martins, D. Rativa, J.F.L. de Oliveira, A.M.A. Maciel. An Automated Machine Learning Approach for Real-Time Fault Detection and Diagnosis. Sensors (Basel). 2022. https://doi.org/10.3390%2Fs22166138.
