@@ -43,7 +43,7 @@ Creating a dataset and making it public to be openly experienced can greatly fom
 
 ## Strategy
 
-The 3W is the pilot of a Petrobras' program called [Conexões para Inovação - Módulo Open Lab](https://tecnologia.petrobras.com.br/modulo-open-lab.html). This pilot is an ***open project*** composed by two major resources:
+The 3W is the pilot of a Petrobras' program called [Conexões para Inovação - Módulo Open Lab](https://tecnologia.petrobras.com.br/modulo-open-lab). This pilot is an ***open project*** composed by two major resources:
 
 * The [3W dataset](#3w-dataset), which will be evolved and supplemented with more instances from time to time; 
 * The [3W toolkit](#3w-toolkit), which will also be evolved (in many ways) to cover an increasing number of undesirable events during its development.
