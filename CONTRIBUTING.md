@@ -85,9 +85,8 @@ At level 2, the 3W toolkit is implemented in sub-modules as discribed [here](3W_
 
 ## Executing examples
 
-Before executing examples of how to use the 3W toolkit available in this repository, we 
-recommend that you set up a Python Virtual Environment with the packages versions listed in the [requirements.txt](requirements.txt). This file is generated automatically with the [pipreqs](https://pypi.org/project/pipreqs/).
-
+To execute examples of how to use the 3W toolkit available in this repository, see the instructions related to [reproducibility](README.md#reproducibility).
+ 
 # Proposing contributions
 
 For each type of expected contribution, there is a subsection below with specific instructions. The last subsection specifies additional requirements for contributions to be incorporated into this project.
