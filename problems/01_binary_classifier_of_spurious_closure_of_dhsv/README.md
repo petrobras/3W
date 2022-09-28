@@ -11,7 +11,7 @@ To submit a **pull request** with the approach you developed for this specific p
 
 1. Your [Jupyter Notebooks](https://jupyter.org/) must be named as `problems\01_binary_classifier_of_spurious_closure_of_dhsv\[your_name_here]\main.ipynb`;
 1. You can include any module or feature you need in this subdirectory;
-1. Include in this subdirectory a `requirements.txt` with all packages used;
+1. If necessary, include in this subdirectory a `environment.yml` generated with [conda](https://docs.conda.io) with all used packages and their versions;
 1. The `.ipynb_checkpoints` must not be included in your **pull request**;
 1. For each test sample you need to estimate an array of probabilities associated with the following labels:
     * Negative class;
