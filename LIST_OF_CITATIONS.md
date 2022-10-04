@@ -65,3 +65,6 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. A. Melo, M.M. Câmara, N. Clavijo, J.C. Pinto. Open benchmarks for assessment of process monitoring and fault diagnosis techniques: A review and critical analysis. Computers & Chemical Engineering. 2022. https://doi.org/10.1016/j.compchemeng.2022.107964.
 
 1. D. Leite, A. Martins, D. Rativa, J.F.L. de Oliveira, A.M.A. Maciel. An Automated Machine Learning Approach for Real-Time Fault Detection and Diagnosis. Sensors (Basel). 2022. https://doi.org/10.3390%2Fs22166138.
+
+1. M.C.K. de Oliveira, R.L.A. Pinto, J.N.E. Carneiro.
+A digital transformation journey in flow assurance. T&B Petroleum magazine. 2022. https://tbpetroleum.com.br/revistas/2022/41.
