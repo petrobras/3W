@@ -7,7 +7,7 @@ class StratifiedGroupKFold(BaseCrossValidator):
     GroupKFold with stratification based on the event type.
 
     * Constructor arguments:
-        - **n_splits: int** -- Number of folds   
+        - **n_splits: int** -- Number of folds
 
     * Methods:
 

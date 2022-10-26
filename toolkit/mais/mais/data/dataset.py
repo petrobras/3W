@@ -169,7 +169,7 @@ class MAEDataset:
                 - **tgt: STRING** - Target location
 
             * Returns:
-                - **fname**: STRING - Filename    
+                - **fname**: STRING - Filename
             """
             df = pandas.read_csv(
                 fname,
@@ -229,7 +229,7 @@ class MAEDataset:
 
     def _make_set(self, events=None):
         """
-        Loads all instances of target classes from the desired types, transforming the raw data to obtain its 
+        Loads all instances of target classes from the desired types, transforming the raw data to obtain its
         features by calling the *feature_mapper()* method for each instance.
 
         * Parameters:

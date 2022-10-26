@@ -26,6 +26,7 @@ class RollingLabelStrategy:
         - **__call__(labels, event_type)**
 
     """
+
     def __init__(self, window_size, stride=1, offset=0):
         self.window_size = window_size
         self.stride = stride

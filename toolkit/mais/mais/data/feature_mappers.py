@@ -11,7 +11,7 @@ import torch
 class StatisticalFeatureMapper:
     """
     Generates statistical descriptor for a window of our data
-    
+
     """
 
     FEATURES = {
@@ -257,7 +257,7 @@ class TorchWaveletFeatureMapper:
 class MixedMapper:
     """
     Join features of multiple mappers. Feature sizes must be consistent.
-    
+
     """
 
     def __init__(self, *args):
