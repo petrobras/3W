@@ -36,7 +36,7 @@ class MAEDataset:
 
         - **n_jobs: INT** -- number of processes to use
 
-        -- **events**
+        - **events**
 
     * Important fields:
 
@@ -57,17 +57,17 @@ class MAEDataset:
 
         - **_make_set()**
 
-        -  **process(fname, event_type)**
+        - **process(fname, event_type)**
 
     """
 
-    # tag corresponding to instance label
+    # Tag corresponding to instance label
     LABEL_NAME = "class"
 
-    # tag corresponding to index
+    # Tag corresponding to index
     INDEX_NAME = "timestamp"
 
-    # fault description
+    # Fault description
     CLASS_NAMES = {
         0: "NORMAL",
         1: "ABRUPT_INCREASE_OF_BSW",
@@ -80,10 +80,10 @@ class MAEDataset:
         8: "HYDRATE_IN_PRODUCTION_LINE",
     }
 
-    # list of used classes
+    # List of used classes
     KNOWN_CLASSES = list(CLASS_NAMES.keys())
 
-    # transient properties of events
+    # Transient properties of events
     TRANSIENT_CLASS = {
         0: False,
         1: True,
@@ -118,7 +118,9 @@ class MAEDataset:
         feature_mapper=tuple,  # transformer from event to features
         n_jobs=-1,
     ):
-        """Load and process dataset using supplied strategies"""
+        """
+        Load and process dataset using supplied strategies.
+        """
 
         # save parameters
         self.root_dir = root_dir
@@ -127,14 +129,16 @@ class MAEDataset:
         self.n_jobs = n_jobs
         self.feature_mapper = feature_mapper
 
-        # call the heavy load _make_set passing the (maybe Null) events
+        # Call the heavy load _make_set passing the (maybe Null) events
         self._make_set(events)
 
     def _instance_type(fname):
-        """Detects if instance type is selected
+        """
+        Detects if instance type is selected.
 
         * Parameters:
             - **fname**: STRING - name of the instance file
+
         * Returns:
             - **STRING** - string representing the instance type of the input file name
 
@@ -147,9 +151,26 @@ class MAEDataset:
             return "real"
 
     def load_events(data_root, n_jobs=-1):
-        """scan data_root for raw files and return dict. useful for preloads"""
+        """
+        Scan data_root for raw files and return dict. useful for preloads.
+
+        * Parameters:
+            - **data_root: STRING** - base location of events separated by event type
+
+        * Returns:
+            - **events**: [LIST] - Optional list of preloaded events
+        """
 
         def _read(tgt, fname):
+            """
+            Return a dict with the summary of a target.
+
+            * Parameters:
+                - **tgt: STRING** - Target location
+
+            * Returns:
+                - **fname**: STRING - Filename    
+            """
             df = pandas.read_csv(
                 fname,
                 index_col=MAEDataset.INDEX_NAME,
@@ -179,7 +200,9 @@ class MAEDataset:
     def transform_events(
         events, raw_mapper, tgt_events=None, instance_types=None, n_jobs=-1
     ):
-        """apply raw_mapper to list of events, filtering by target events and instance types"""
+        """
+        Apply raw_mapper to list of events, filtering by target events and instance types
+        """
         if tgt_events is not None:
             events = [e for e in events if (e["event_type"] in tgt_events)]
         if instance_types is not None:
@@ -205,9 +228,9 @@ class MAEDataset:
         return Dataset(X=X, y=y, g=g, g_class=g_class)
 
     def _make_set(self, events=None):
-        """Loads all instances of target classes from the desired types,
-           transforming the raw data to obtain its features by calling the
-           *feature_mapper()* method for each instance.
+        """
+        Loads all instances of target classes from the desired types, transforming the raw data to obtain its 
+        features by calling the *feature_mapper()* method for each instance.
 
         * Parameters:
             - **events**: [LIST] - Optional list of preloaded events

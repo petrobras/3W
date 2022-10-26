@@ -22,13 +22,16 @@ def plot_confusion_matrix(cm):
 
     """
 
+    # Normalizaed confusion matrix
     cm_norm = cm / cm.sum(axis=1, keepdims=True)
 
+    # Fix for nan values
     cm_fix = cm_norm.copy()
     cm_fix[np.isnan(cm_fix)] = 0
 
     plt.matshow(cm_fix.T)
 
+    # Plotting with text
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
 
@@ -54,22 +57,22 @@ def plot_confusion_matrix(cm):
 @click.option("--report-path", type=click.Path(exists=True))
 @click.option("--output-location", type=click.STRING, default="tex")
 def main(report_path, output_location):
-    """Creates a report containg the test results from a model, inclusing the ROC curve, AUC result the confusion matrix for each class.
+    """Creates a report containg the test results from a model, including the ROC curve, AUC result the confusion matrix for each class.
+    Saves the complete report on the chosen destination.
 
     * Parameters:
 
             - **report_path**: STRING - Reports location
-
             - **output_location**: STRING - Folder to save the report
-
     """
+    # Create folder
     out_path = f"{report_path}/{output_location}/"
     os.makedirs(out_path, exist_ok=True)
 
     with open(f"{report_path}/test_score.pkl", "rb") as f:
         test_score = pickle.load(f)
 
-    # plot global metrics
+    # Plot global metrics
     fpr, tpr, t = metrics.roc_curve(
         test_score["label"], test_score["predicted"], drop_intermediate=True
     )
@@ -87,7 +90,7 @@ def main(report_path, output_location):
     )
     plt.close()
 
-    # find false alarm shift
+    # Dind false alarm shift
     false_alarm_threshold_idx = np.argwhere(fpr == 0)[-1][0]
     false_alarm_threshold = t[false_alarm_threshold_idx]
 

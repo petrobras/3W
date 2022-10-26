@@ -73,6 +73,15 @@ The name of theses experiments reflect what they implements, for examples, the e
 * mixed = both statistical and wavelet features; 
 * select = Feature selector; and
 * wavelets = Wavelets
+
+For example, between experiments 4 and 6, the difference is the kind of features will be computed. In the first on the exponentially weighted statistical features are used and in the second one, just the wavelets. And to do that, the difference is basically assign the correspondent feature wrapper. The following image is the wrapper for the Experiment 4 of the examples list.
+
+![Statistical Wrapper](images/README/stats.jpg "Statistical features wrapper")
+
+And for experiment 6, we have:
+
+![Wavelets Wrapper](images/README/wavelets.jpg "Wavelets features wrapper")
+
 # How to use
 
 After creating the experiment and putting it into the experiment folder (for example, 'experiments/multiclass/experiments/example.py', 
