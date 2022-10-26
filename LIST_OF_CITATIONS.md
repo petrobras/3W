@@ -2,8 +2,7 @@ As far as we know, the 3W dataset was useful and cited by the works listed below
 
 1. R.E.V. Vargas, C.J. Munaro, P.M. Ciarelli. A methodology for generating datasets for development of anomaly detectors in oil wells based on Artificial Intelligence techniques. I Congresso Brasileiro em Engenharia de Sistemas em Processos. 2019. https://www.ufrgs.br/psebr/wp-content/uploads/2019/04/Abstract_A019_Vargas.pdf.
 
-1. R.E.V. Vargas. Base de dados e benchmarks para prognóstico de anomalias em sistemas de elevação de petróleo. Universidade
-Federal do Espírito Santo. Doctoral thesis. 2019. https://github.com/ricardovvargas/3w_dataset/raw/master/docs/doctoral_thesis_ricardo_vargas.pdf.
+1. R.E.V. Vargas. Base de dados e benchmarks para prognóstico de anomalias em sistemas de elevação de petróleo. Universidade Federal do Espírito Santo. Doctoral thesis. 2019. https://github.com/ricardovvargas/3w_dataset/raw/master/docs/doctoral_thesis_ricardo_vargas.pdf.
 
 1. Yan Li, Tingjian Ge, Cindy Chen. Data Stream Event Prediction Based on Timing Knowledge and State Transitions. PVLDB, 13(10): 1779-1792. 2020. http://www.vldb.org/pvldb/vol13/p1779-li.pdf.
 
@@ -66,5 +65,8 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. D. Leite, A. Martins, D. Rativa, J.F.L. de Oliveira, A.M.A. Maciel. An Automated Machine Learning Approach for Real-Time Fault Detection and Diagnosis. Sensors (Basel). 2022. https://doi.org/10.3390%2Fs22166138.
 
-1. M.C.K. de Oliveira, R.L.A. Pinto, J.N.E. Carneiro.
-A digital transformation journey in flow assurance. T&B Petroleum magazine. 2022. https://tbpetroleum.com.br/revistas/2022/41.
+1. M.C.K. de Oliveira, R.L.A. Pinto, J.N.E. Carneiro. A digital transformation journey in flow assurance. T&B Petroleum magazine. 2022. https://tbpetroleum.com.br/revistas/2022/41.
+
+1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais Specialization Monograph. 2022. https://github.com/ricardovvargas/3w_dataset/raw/master/docs/specialization_monograph_gustavo_momm.pdf.
+
+1. L.H.S. Mello, T.O Santos, F.M.Varejão, M.P. Ribeiro, A.L Rodrigues. Ensemble of metric learners for improving electrical submersible pump fault diagnosis. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110875.
