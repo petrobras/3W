@@ -50,7 +50,6 @@ dependencies:
   - jupyter=1.0.0=py310h5588dad_7
   - jupyter_client=7.3.5=pyhd8ed1ab_0
   - jupyter_console=6.4.4=pyhd8ed1ab_0
-  - jupyter_core=4.11.1=py310h5588dad_0
   - jupyterlab_pygments=0.2.2=pyhd8ed1ab_0
   - jupyterlab_widgets=3.0.3=pyhd8ed1ab_0
   - kiwisolver=1.4.4=py310h476a331_0
@@ -181,3 +180,4 @@ dependencies:
     - about-time==3.1.1
     - alive-progress==2.4.1
     - grapheme==0.6.0
+    - jupyter-core==4.11.2
