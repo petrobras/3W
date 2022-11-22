@@ -1,4 +1,4 @@
-name: 3w
+name: 3W
 channels:
   - conda-forge
   - defaults
@@ -111,7 +111,6 @@ dependencies:
   - patsy=0.5.2=pyhd8ed1ab_0
   - pcre2=10.37=hdfff0fc_1
   - pickleshare=0.7.5=py_1003
-  - pillow=9.2.0=py310h52929f7_2
   - pip=22.2.2=pyhd8ed1ab_0
   - pkgutil-resolve-name=1.3.10=pyhd8ed1ab_0
   - ply=3.11=py_1
@@ -181,3 +180,4 @@ dependencies:
     - alive-progress==2.4.1
     - grapheme==0.6.0
     - jupyter-core==4.11.2
+    - pillow==9.3.0
