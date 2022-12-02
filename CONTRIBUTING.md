@@ -54,7 +54,7 @@ It is also very important to know, participate and follow the discussions. Click
 
 ## Levels for contributions
 
-We expect to receive contributions at different levels, as shown in the figure below. Some examples at each level are:
+We expect to receive contributions at different levels, as shown in the figure below. Objects with background in yellow indicate types of contributions enabled by the 3W project current version. The other objects above the 3W project indicate types of contributions that will be enabled in the next versions. Some examples of contributions at each level are:
 
 * Level 1: 
     * You can identify and report issues with data or annotations;
