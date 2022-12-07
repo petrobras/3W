@@ -1,6 +1,7 @@
 [![Apache 2.0][apache-shield]][apache] 
 [![CC BY 4.0][cc-by-shield]][cc-by]
 [![Code style][black-shield]][black]
+[![Versioning][semver-shield]][semver]
 
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
@@ -8,6 +9,8 @@
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
 [black]: https://github.com/psf/black
 [black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
+[semver]: https://semver.org
+[semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 
 # Table of Content
 
@@ -17,6 +20,7 @@
   * [Ambition](#ambition)
   * [Contributions](#contributions)
   * [Licenses](#licenses)
+  * [Versioning](#versioning)
   * [Questions](#questions)
 * [3W dataset](#3w-dataset)
   * [Structure](#structure)
@@ -75,6 +79,20 @@ It is also very important to know, participate and follow the discussions. See t
 ## Licenses
 
 All the code of this project is licensed under the [Apache 2.0 License][apache] and all 3W dataset data files (CSV files in the subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
+
+## Versioning
+
+In the 3W project, three types of versions will be managed as follows.
+
+* Version of the 3W toolkit: specified in the [__init__.py](toolkit/__init__.py) file;
+* Version of the 3W dataset: specified in the [dataset.ini](dataset/dataset.ini) file;
+* Version of the 3W project: specified with tags in the git repository;
+* We will exclusively use the semantic versioning defined in https://semver.org;
+* Versions will always be updated manually;
+* Versioning of the 3W toolkit and 3W dataset are completely independent of each other;
+* The version of the 3W project will be updated whenever, and only when, there is a new commit in the `main` branch of the repository, regardless of the updated resource: 3W toolkit, 3W dataset, project documentation, example of use, etc;
+* We will only use annotated tags and for each tag there will be a release in the remote repository (GitHub);
+* Content for each release will be automatically generated with functionality provided by GitHub.
 
 ## Questions
 
