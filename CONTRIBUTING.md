@@ -1,10 +1,16 @@
 [![Apache 2.0][apache-shield]][apache] 
 [![CC BY 4.0][cc-by-shield]][cc-by]
+[![Code style][black-shield]][black]
+[![Versioning][semver-shield]][semver]
 
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [cc-by]: http://creativecommons.org/licenses/by/4.0/
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+[black]: https://github.com/psf/black
+[black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
+[semver]: https://semver.org
+[semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 
 # Welcome to the 3W project contributing guide
 

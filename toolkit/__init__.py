@@ -47,7 +47,7 @@ the use of the [Black formatter](https://github.com/psf/black).
 """
 
 __status__ = "Development"
-__version__ = "1.0"
+__version__ = "1.0.0"
 __license__ = "Apache License 2.0"
 __copyright__ = "Copyright 2022, Petróleo Brasileiro S.A."
 __authors__ = [
