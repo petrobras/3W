@@ -20,6 +20,7 @@
   * [Ambition](#ambition)
   * [Contributions](#contributions)
   * [Licenses](#licenses)
+  * [Versioning](#versioning)
   * [Questions](#questions)
 * [3W dataset](#3w-dataset)
   * [Structure](#structure)
