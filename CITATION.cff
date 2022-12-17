@@ -7,8 +7,8 @@ authors:
   affiliation: Petróleo Brasileiro S.A.
   orcid: "https://orcid.org/0000-0001-6243-4590"
 title: "3W"
-version: 1.0.0
-date-released: "2022-05-31"
+version: specify the used version from those registered at "https://github.com/petrobras/3W/releases".
+date-released: specify the release date registered at "https://github.com/petrobras/3W/releases" for the used version.
 url: "https://github.com/petrobras/3w"
 preferred-citation:
   type: article
