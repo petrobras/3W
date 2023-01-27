@@ -9,7 +9,10 @@ import torch
 
 
 class StatisticalFeatureMapper:
-    """generates statistical descriptor for a window of our data"""
+    """
+    Generates statistical descriptor for a window of our data
+
+    """
 
     FEATURES = {
         "mean": lambda x: x.mean(),
@@ -48,7 +51,9 @@ class StatisticalFeatureMapper:
 
 
 class TorchStatisticalFeatureMapper:
-    """PyTorch implementation of the statistical feature mapper"""
+    """
+    PyTorch implementation of the statistical feature mapper
+    """
 
     FEATURES = ["mean", "std", "skew", "kurt", "min", "1qrt", "med", "3qrt", "max"]
 
@@ -250,7 +255,10 @@ class TorchWaveletFeatureMapper:
 
 
 class MixedMapper:
-    """join features of multiple mappers. Feature sizes must be consistent"""
+    """
+    Join features of multiple mappers. Feature sizes must be consistent.
+
+    """
 
     def __init__(self, *args):
         self.mappers = args
