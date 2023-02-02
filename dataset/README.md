@@ -36,8 +36,9 @@ Highlights:
 1. New instances have been added as follows:
     * 1 instance of event type 7.
 1. Instances have been removed due to issues identified as follows:
-	* 3 instance of event type 0;
-	* 1 instance of event type 5.
+	* 3 instances of event type 0;
+	* 1 instance of event type 5;
+  * 3 instances of event type 8, when compared to what is described in the paper **A realistic and public dataset with rare undesirable real events in oil wells** published in the **Journal of Petroleum Science and Engineering** (link [here](https://doi.org/10.1016/j.petrol.2019.106223)).
 1. Normal periods of certain instances with anomalies have been increased as possible. We tried to have instances with minimum normal periods of 1 hour;
 1. Names of certain files with instances have changed due to increased normal periods;
 1. Periods of certain instances have been relabeled;
