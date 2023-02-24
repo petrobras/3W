@@ -15,7 +15,15 @@ from multiprocessing.dummy import Pool as ThreadPool
 from collections import defaultdict
 from natsort import natsorted
 
-from .base import COLUMNS_DATA_FILES, LABELS_DESCRIPTIONS, PATH_DATASET
+import warnings
+warnings.simplefilter("ignore", FutureWarning)
+import plotly.offline as py 
+import plotly.graph_objs as go 
+import glob
+import pandas as pd
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
+
+from .base import COLUMNS_DATA_FILES, LABELS_DESCRIPTIONS, PATH_DATASET, VARS, EVENT_NAMES
 
 # Methods
 #
@@ -500,3 +508,135 @@ def calc_stats_instances(real_instances, simulated_instances, drawn_instances):
     return pd.DataFrame.from_dict(
         stats, orient="index", columns=["Amount", "Percentage"]
     )
+
+
+def resample(data, n, class_number):
+    """Downsampling for instances.
+
+    Args:
+        data (string): Instance path
+        n (integer): Factor to downsampling the instance.
+        class_number (integer):  integer that represents the event class [0-8]
+
+    Returns:
+        pandas.DataFrame: Downsamplig instance DataFrame
+    """
+    # Group Timestamp and get last value
+    resampleTimestamp = data.timestamp.groupby(data.index // n).max()
+    # Replace transient label from 100 to 0.5
+    tempClassLabel = data['class'].replace(class_number+100,0.5)
+    # Get the max value from the group Class column
+    resampleClass = tempClassLabel.groupby(tempClassLabel.index // n).max()
+    # back with transient label value
+    resampleClass.replace(0.5,class_number+100,inplace=True)
+    # non overlap group and get the average value from the data 
+    dfResample = data.groupby(data.index // n).mean()
+    # Drop class column
+    dfResample.drop(['class'],axis=1, inplace=True)
+    # Insert new class label values group by non overlap
+    dfResample.insert(8,'class', resampleClass)
+    # Insert new timestamp values group by non overlap
+    dfResample.insert(0,'timestamp', resampleTimestamp)
+    return dfResample
+
+
+def plot_instance(class_number, instance_index, resample_factor):
+    """Plot one especific event class and instance. By default the instance is downsampling (n=100) and Z-score Scaler. 
+        In order to help the visualization transient labels was changed to '0.5'.
+
+    Args:
+        class_number (integer): integer that represents the event class [0-8]
+        instance_index (integer): input the instance file index
+    """
+    instances_path = PATH_DATASET + '\\'+str(class_number)+'\\*.csv'
+    instances_path_list = glob.glob(instances_path)
+    if class_number > 8 or class_number < 0:
+        print(f'invalid class number: {class_number} - Type a valid class number 0 to 8')
+    elif instance_index >= len(instances_path_list):
+        print(f'instance index {instance_index} out of range - Insert a valid index between 0 and {len(instances_path_list)-1}')
+    else:
+        df_instance = pd.read_csv(instances_path_list[instance_index], sep=',', header=0)
+        df_instance_resampled = resample(df_instance, resample_factor, class_number)
+        df_drop_resampled = df_instance_resampled.drop(['timestamp','class'], axis=1)
+        df_drop_resampled.interpolate(method='linear', limit_direction='both', axis=0, inplace=True)
+        df_drop_resampled.fillna(0, inplace=True, )
+        scaler_resampled = TimeSeriesScalerMeanVariance().fit_transform(df_drop_resampled)
+        df_scaler_resampled = pd.DataFrame(scaler_resampled.squeeze(), index=df_drop_resampled.index, columns=df_drop_resampled.columns)
+
+        data = [
+            go.Scatter(
+                x=df_instance_resampled['timestamp'],
+                y=df_scaler_resampled[VARS[0]],
+                mode='lines+markers',
+                marker_symbol='circle',
+                marker_size=3,
+                name=VARS[0]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'], 
+                y=df_scaler_resampled[VARS[1]],
+                mode='lines+markers',
+                marker_symbol='diamond',
+                marker_size=3,
+                name=VARS[1]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'],
+                y=df_scaler_resampled[VARS[2]],
+                mode='lines+markers',
+                marker_symbol='x',
+                marker_size=3,
+                name=VARS[2]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'], 
+                y=df_scaler_resampled[VARS[3]],
+                mode='lines+markers',
+                marker_symbol='star',
+                marker_size=3,
+                name=VARS[3]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'],
+                y=df_scaler_resampled[VARS[4]],
+                mode='lines+markers',
+                marker_symbol='triangle-up',
+                marker_size=3,
+                name=VARS[4]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'],
+                y=df_scaler_resampled[VARS[5]],
+                mode='lines',
+                name=VARS[5]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'],
+                y=df_scaler_resampled[VARS[6]],
+                mode='lines',
+                name=VARS[6]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'],
+                y=df_scaler_resampled[VARS[7]],
+                mode='lines',
+                name=VARS[7]
+                ),
+            go.Scatter(
+                x=df_instance_resampled['timestamp'], 
+                y=df_instance_resampled['class'].replace(100+int(class_number),0.5),
+                mode='markers',
+                name='Label'
+                ),
+            
+        ]
+
+        fig = go.Figure(data)
+        fileName = instances_path_list[instance_index].split('\\')
+        fig.update_layout(title=EVENT_NAMES[class_number]+' - '+fileName[-1],
+                        xaxis_title='Time(s)',
+                        yaxis_title='Scaled',
+                        font=dict(size=12))
+        fig.show()
+
+
