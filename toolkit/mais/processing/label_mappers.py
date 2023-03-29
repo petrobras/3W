@@ -98,7 +98,6 @@ class TorchLabelStrategy:
         raise NotImplementedError
 
     def __call__(self, labels, event_type):
-
         # store index
         index = labels.index
 

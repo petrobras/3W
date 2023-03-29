@@ -46,7 +46,6 @@ class Experiment(BaseExperiment):
         *args,
         **kwargs,
     ):
-
         super().__init__()
 
         # save params

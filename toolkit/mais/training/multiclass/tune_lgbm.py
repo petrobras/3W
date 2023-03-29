@@ -256,7 +256,6 @@ def cross_val_score(events, experiment, model, num_splits, n_jobs=-1):
 
 
 def hyperparameter_search(events, experiment_sampler, model_sampler, config):
-
     # single trial is a k-fold
     def objective(trial):
         experiment = experiment_sampler(trial)
@@ -400,7 +399,6 @@ def nested_cv(ctx, **kwargs):
     config = {**ctx.obj, **kwargs}
 
     with joblib.parallel_backend("loky", n_jobs=config["n_jobs"]):
-
         # preload events
         events = MAEDataset.load_events(config["data_root"], -1)
 
