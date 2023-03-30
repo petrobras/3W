@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats as sp
 import torch
 
-from mais.data.dataset import MAEDataset
+from dataset.dataset import MAEDataset
 
 
 class RollingLabelStrategy:
@@ -98,7 +98,6 @@ class TorchLabelStrategy:
         raise NotImplementedError
 
     def __call__(self, labels, event_type):
-
         # store index
         index = labels.index
 

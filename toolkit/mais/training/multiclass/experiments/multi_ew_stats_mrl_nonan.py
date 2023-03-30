@@ -11,11 +11,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 
-from mais.data.feature_mappers import TorchStatisticalFeatureMapper
-from mais.data.label_mappers import TorchMulticlassMRLStrategy
+from processing.feature_mappers import TorchStatisticalFeatureMapper
+from processing.label_mappers import TorchMulticlassMRLStrategy
 
 from .base_experiment import BaseExperiment
-from mais.data.dataset import MAEDataset
+from dataset.dataset import MAEDataset
 
 
 MAX_WINDOW = 1000

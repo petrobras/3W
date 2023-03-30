@@ -34,7 +34,6 @@ def plot_confusion_matrix(cm):
     # Plotting with text
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-
             cn = "--" if np.isnan(cm_norm[i, j]) else f"{100*cm_norm[i,j]:.1f}"
             s = f"{cm[i,j]} ({cn}\%)"
             plt.text(

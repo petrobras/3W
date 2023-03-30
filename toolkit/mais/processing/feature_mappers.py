@@ -32,14 +32,12 @@ class StatisticalFeatureMapper:
         self.offset = offset
 
     def __call__(self, tags, event_type=None):
-
         # apply rolling window
         tag_names = tags.columns
         tags = tags.rolling(window=self.window_size)
 
         feats = []
         for f in StatisticalFeatureMapper.FEATURES:
-
             # apply feature mapping
             feat = StatisticalFeatureMapper.FEATURES[f](tags)
             # append feature_name to column

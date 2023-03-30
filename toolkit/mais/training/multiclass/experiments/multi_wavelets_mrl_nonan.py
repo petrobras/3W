@@ -1,7 +1,6 @@
 """ definitions for experiment 3 module
     Multiclass classification
     Wavelet features
-    Random forest feature selection
     Most-Recent Label strategy
     Drop windows with NaN label
 """
@@ -10,13 +9,13 @@ import numpy as np
 from sklearn.metrics import accuracy_score, get_scorer
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
 
-from mais.data.feature_mappers import TorchWaveletFeatureMapper
-from mais.data.label_mappers import TorchMulticlassMRLStrategy
+from processing.feature_mappers import TorchWaveletFeatureMapper
+from processing.label_mappers import TorchMulticlassMRLStrategy
 
 from .base_experiment import BaseExperiment
-from mais.data.dataset import MAEDataset
+from dataset.dataset import MAEDataset
 
 
 MAX_LEVEL = 10
@@ -26,7 +25,7 @@ def sample(trial, *args, **kwargs):
     return Experiment(
         level=trial.suggest_int("level", 4, MAX_LEVEL, step=1),
         stride=trial.suggest_int("stride", 10, 10),
-        n_features=trial.suggest_float("n_features", 0.1, 1.0),
+        n_components=trial.suggest_float("n_components", 0.9, 1.0),
         normal_balance=trial.suggest_int("normal_balance", 1, 10, step=1),
     )
 
@@ -38,7 +37,7 @@ class Experiment(BaseExperiment):
         self,
         level,
         stride,
-        n_features,
+        n_components,
         normal_balance,
         *args,
         **kwargs,
@@ -48,7 +47,7 @@ class Experiment(BaseExperiment):
         # save params
         self.window_size = 2**level
         self.level = level
-        self.n_features = n_features
+        self.n_components = n_components
         self.stride = stride
         self.normal_balance = normal_balance
 
@@ -61,6 +60,7 @@ class Experiment(BaseExperiment):
         labels = event["labels"]
         event_type = event["event_type"]
 
+        # trim estabilished fault if has transient
         if transient_only and MAEDataset.TRANSIENT_CLASS[event_type]:
             transients = labels.values != event_type
             tags = tags[transients]
@@ -93,15 +93,12 @@ class Experiment(BaseExperiment):
     def fit(self, X, y=None):
         X = self._scaler.fit_transform(X)
         X = self._imputer.fit_transform(X)
-        self._forest.fit(X, y)
+        self._pca.fit(X)
 
     def transform(self, X, y=None):
         X = self._scaler.transform(X)
         X = self._imputer.transform(X)
-        # filter most important features
-        importances = self._forest.feature_importances_
-        importance_order = np.argsort(importances)
-        X = X[:, importance_order[: int(self.n_features * importances.size)]]
+        X = self._pca.transform(X)
         return X, y
 
     def _init_raw_mappers(self):
@@ -120,5 +117,5 @@ class Experiment(BaseExperiment):
         self._scaler = StandardScaler()
         # remove nans
         self._imputer = SimpleImputer(strategy="mean")
-        # feature selection
-        self._forest = RandomForestClassifier(n_jobs=-1)
+        # pca
+        self._pca = PCA(n_components=self.n_components, whiten=True)

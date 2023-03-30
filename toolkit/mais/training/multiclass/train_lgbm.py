@@ -22,7 +22,7 @@ from sklearn.model_selection import train_test_split
 import mlflow
 import optuna
 
-from mlpbr.data.dataset import MAEDataset
+from dataset.dataset import MAEDataset
 from .tune_lgbm import prepare_data
 
 

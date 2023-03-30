@@ -8,8 +8,8 @@
 import numpy as np
 
 # raw transformers
-from mais.data.feature_mappers import TorchStatisticalFeatureMapper
-from mais.data.label_mappers import TorchMulticlassMRLStrategy
+from processing.feature_mappers import TorchStatisticalFeatureMapper
+from processing.label_mappers import TorchMulticlassMRLStrategy
 
 # standard preprocessing
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -18,7 +18,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectPercentile
 
 from .base_experiment import BaseExperiment
-from mais.data.dataset import MAEDataset
+from dataset.dataset import MAEDataset
 
 
 MAX_WINDOW = 1000
