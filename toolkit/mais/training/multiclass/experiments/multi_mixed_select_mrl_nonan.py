@@ -13,15 +13,15 @@ from sklearn.ensemble import RandomForestClassifier
 
 # from sklearn.feature_selection import f_classif, SelectPercentile
 
-from mais.data.feature_mappers import (
+from processing.feature_mappers import (
     TorchWaveletFeatureMapper,
     TorchStatisticalFeatureMapper,
     MixedMapper,
 )
-from mais.data.label_mappers import TorchMulticlassMRLStrategy
+from processing.label_mappers import TorchMulticlassMRLStrategy
 
 from .base_experiment import BaseExperiment
-from mais.data.dataset import MAEDataset
+from dataset.dataset import MAEDataset
 
 
 MAX_LEVEL = 10
