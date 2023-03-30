@@ -60,6 +60,7 @@ class Experiment(BaseExperiment):
         labels = event["labels"]
         event_type = event["event_type"]
 
+        # trim estabilished fault if has transient
         if transient_only and MAEDataset.TRANSIENT_CLASS[event_type]:
             transients = labels.values != event_type
             tags = tags[transients]

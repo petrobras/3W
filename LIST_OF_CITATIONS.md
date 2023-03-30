@@ -70,3 +70,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/main/docs/specialization_monograph_gustavo_momm.pdf.
 
 1. L.H.S. Mello, T.O Santos, F.M.Varejão, M.P. Ribeiro, A.L Rodrigues. Ensemble of metric learners for improving electrical submersible pump fault diagnosis. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110875.
+
+1. Y.F. Yeung, A.P. Ajuwape, F. Tahiry, M. Furokawa,T. Hirano, K.Y. Toumi. RoSA:A Mechatronically Synthesized Dataset for Rotodynamic System Anomaly Detection. IEEE International Conference on Intelligent Robots and Systems. 2022. https://doi.org/10.1109/IROS47612.2022.9982146.
+
+1. Y.S.A. ElWahab, M.M. Nasr, F.K.A. Sheref. An intelligent oil accident predicting and classifying system using deep learning techniques. Indonesian Journal of Electrical Engineering and Computer Science. 2023. https://doi.org/10.11591/ijeecs.v29.i1.pp460-471.

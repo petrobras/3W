@@ -1,0 +1,12 @@
+name: Lint
+on: [push, pull_request]
+jobs:
+  lint:
+    name: Check python code using the official black action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
+        with:
+          src: "."
+          options: "--check --verbose --diff --exclude toolkit/rolling_window.py"

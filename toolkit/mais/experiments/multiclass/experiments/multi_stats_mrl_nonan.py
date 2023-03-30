@@ -6,6 +6,7 @@
 """
 import numpy as np
 
+from sklearn.metrics import accuracy_score, get_scorer
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
@@ -58,6 +59,7 @@ class Experiment(BaseExperiment):
         labels = event["labels"]
         event_type = event["event_type"]
 
+        # trim estabilished fault if has transient
         if transient_only and MAEDataset.TRANSIENT_CLASS[event_type]:
             transients = labels.values != event_type
             tags = tags[transients]

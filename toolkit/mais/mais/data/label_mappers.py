@@ -1,5 +1,3 @@
-""" Strategies for deciding on label for a given region of data, using pandas or torch backends """
-
 import pandas as pd
 import numpy as np
 import scipy.stats as sp
@@ -9,8 +7,25 @@ from mais.data.dataset import MAEDataset
 
 
 class RollingLabelStrategy:
-    """Base class that just wraps applications of apply,
-    leverages pandas' Rolling function"""
+    """
+    Base class that just wraps applications of apply,
+    leverages pandas' Rolling function
+
+
+    * Constructor arguments:
+        - **window_size: INT** -- Size of sliding window
+
+        - **stride: INT** -- Number of samples between consecutive windows
+
+        - **offset: INT** -- Control how much to offset each window
+
+    * Methods:
+
+        - **apply(y, event_type)**
+
+        - **__call__(labels, event_type)**
+
+    """
 
     def __init__(self, window_size, stride=1, offset=0):
         self.window_size = window_size
@@ -29,26 +44,36 @@ class RollingLabelStrategy:
 
 
 class BinaryMCLStrategy(RollingLabelStrategy):
-    """Window label gets assigned to most common value,
-    mapping transients and faults of ALL classes to true"""
+    """
+    Window label gets assigned to most common value,
+    mapping transients and faults of ALL classes to true
+    """
 
     def apply(self, y, event_type=None):
-        """map all fault types to True and apply mode over window"""
+        """
+        Map all fault types to True and apply mode over window
+        """
         return sp.mode(y > 0)[0]
 
 
 class MulticlassMCLStrategy(RollingLabelStrategy):
-    """Window label gets assigned to most common value,
-    mapping transients and faults to the CORRESPONDING CLASS CODE"""
+    """
+    Window label gets assigned to most common value,
+    mapping transients and faults to the CORRESPONDING CLASS CODE
+    """
 
     def apply(self, y, event_type=None):
-        """map transient codes to fault codes and apply mode over window"""
+        """
+        Map transient codes to fault codes and apply mode over window
+        """
         return sp.mode(y % 100)[0]
 
 
 class OVAMCLStrategy(RollingLabelStrategy):
-    """Window label gets assigned to most common value,
-    mapping transients and faults of SPECIFIC CLASS to true"""
+    """
+    Window label gets assigned to most common value,
+    mapping transients and faults of SPECIFIC CLASS to true
+    """
 
     def __init__(self, fault_code, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -59,8 +84,10 @@ class OVAMCLStrategy(RollingLabelStrategy):
 
 
 class TorchLabelStrategy:
-    """Base class that just wraps applications of apply,
-    leverages pytorch unfold function"""
+    """
+    Base class that just wraps applications of apply,
+    leverages pytorch unfold function
+    """
 
     def __init__(self, window_size, stride=1, offset=0):
         self.window_size = window_size
@@ -99,21 +126,27 @@ class TorchLabelStrategy:
 
 
 class TorchBinaryMCLStrategy(TorchLabelStrategy):
-    """any fault indicator, most common label"""
+    """
+    Any fault indicator, most common label
+    """
 
     def apply(self, y, event_type=None):
         return torch.mode(y, dim=-1)[0] > 0
 
 
 class TorchBinaryMRLStrategy(TorchLabelStrategy):
-    """any fault indicator, most recent label"""
+    """
+    Any fault indicator, most recent label
+    """
 
     def apply(self, y, event_type=None):
         return y[:, -1] > 0
 
 
 class TorchOVAMCLStrategy(TorchLabelStrategy):
-    """specific class indicator, most common label"""
+    """
+    Specific class indicator, most common label
+    """
 
     def __init__(self, fault_code, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -124,7 +157,9 @@ class TorchOVAMCLStrategy(TorchLabelStrategy):
 
 
 class TorchOVATransientMCLStrategy(TorchLabelStrategy):
-    """transients of specific class, most common label"""
+    """
+    Transients of specific class, most common label
+    """
 
     def __init__(self, fault_code, *args, **kwargs):
         super().__init__(*args, **kwargs)
