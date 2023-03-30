@@ -18,7 +18,6 @@ PATH_DATASET = os.path.join(PATH_3W_PROJECT, "dataset")
 PATH_FOLDS = os.path.join(PATH_DATASET, "folds")
 PATH_DATASET_INI = os.path.join(PATH_DATASET, "dataset.ini")
 
-
 # Methods
 #
 def load_config_in_dataset_ini():
@@ -95,7 +94,6 @@ for n in EVENT_NAMES:
         }
     else:
         EVENT_NAMES_OBSERVATION_LABELS[n] = {NORMAL_LABEL, l}
-
 
 # Classes
 #
