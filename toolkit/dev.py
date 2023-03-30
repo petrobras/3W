@@ -38,6 +38,7 @@ from .base import (
     VARS,
 )
 
+
 # Transforma lista de instâncias (lista de tuplas (X, y)) em lista de
 # exemplos (X, y).
 # Adicionalmente, também filtra alvos inválidos
@@ -195,7 +196,6 @@ class EventFold:
 
         self.event_folds.salve_metricas_parciais(self, metricas)
         if apresente:
-
             # Carregando configuração padrão de apresentação
             def set_config(name, value, overwrite=False):
                 if overwrite or (name not in apresente_conf):
@@ -297,7 +297,6 @@ class EventFolds:
         nomes_instancias,
         folds_instancias,
     ):
-
         self.experiment: Experiment = experiment
         self.event_type = experiment.event_type
         self.use_instancias_extras = experiment.use_instancias_extras
