@@ -102,4 +102,6 @@ from .misc import (
     label_and_file_generator,
     load_instance,
     load_instances,
+    resample,
+    plot_instance,
 )
