@@ -39,7 +39,7 @@ dependencies:
   - importlib_resources=5.9.0=pyhd8ed1ab_0
   - intel-openmp=2022.1.0=h57928b3_3787
   - ipykernel=6.16.0=pyh025b116_0
-  - ipython=8.5.0=pyh08f2357_1
+  - ipython=8.12.0=pyh08f2357_0
   - ipython_genutils=0.2.0=py_1
   - ipywidgets=8.0.2=pyhd8ed1ab_1
   - jedi=0.18.1=pyhd8ed1ab_2
@@ -50,7 +50,6 @@ dependencies:
   - jupyter=1.0.0=py310h5588dad_7
   - jupyter_client=7.3.5=pyhd8ed1ab_0
   - jupyter_console=6.4.4=pyhd8ed1ab_0
-  - jupyter_core=5.1.5=py310h5588dad_0
   - jupyterlab_pygments=0.2.2=pyhd8ed1ab_0
   - jupyterlab_widgets=3.0.3=pyhd8ed1ab_0
   - kiwisolver=1.4.4=py310h476a331_0
@@ -106,7 +105,7 @@ dependencies:
   - numba=0.56.4=py310h19bcfe9_0
   - numpy=1.23.3=py310h4a8f9c9_0
   - openjpeg=2.5.0=hc9384bd_1
-  - openssl=1.1.1s=hcfcfb64_1
+  - openssl=1.1.1t=hcfcfb64_0
   - packaging=21.3=pyhd8ed1ab_0
   - pandas=1.5.0=py310h1c4a608_0
   - pandoc=2.19.2=h57928b3_0
@@ -206,4 +205,3 @@ dependencies:
       - typeguard==2.13.3
       - urllib3==1.26.14
       - visions==0.7.5
-prefix: C:\Users\UR8D\Anaconda3\envs\3W
