@@ -47,4 +47,16 @@ Highlights:
 1. Time series of certain variables have been completely changed due to these variables having been recontextualized after the creation of the previous version of the 3W dataset;
 1. Certain variable values ​​have undergone minimal change due to different rounding;
 1. The 3W dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
-1. The Jupyter Notebook with the [3W dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated;
+1. The Jupyter Notebook with the [3W dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.
+
+## 1.1.1
+
+Release: April 09, 2023.
+
+Highlights:
+
+1. Issue #60 has been resolved;
+1. Issue #65 has been resolved;
+1. Certain variable values ​​have undergone minimal change due to different rounding;
+1. The 3W dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
+1. The Jupyter Notebook with the [3W dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.
