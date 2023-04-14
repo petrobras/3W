@@ -561,82 +561,301 @@ def plot_instance(class_number, instance_index, resample_factor):
         df_drop_resampled.interpolate(method='linear', limit_direction='both', axis=0, inplace=True)
         df_drop_resampled.fillna(0, inplace=True, )
         scaler_resampled = TimeSeriesScalerMeanVariance().fit_transform(df_drop_resampled)
+        # scaler_resampled = df_drop_resampled
+        # rescale each variable to be between 0 and 1
+        # variable_min = np.min(scaler_resampled, axis=(0, 1))
+        # variable_max = np.max(scaler_resampled, axis=(0, 1))
+        # rescaled_data = (scaler_resampled - variable_min) / (variable_max - variable_min)
         df_scaler_resampled = pd.DataFrame(scaler_resampled.squeeze(), index=df_drop_resampled.index, columns=df_drop_resampled.columns)
+        df_instance_resampled['class'] = df_instance_resampled['class'].replace(100+int(class_number),0.5)
+        df_instance_resampled['class'] = df_instance_resampled['class'].replace(int(class_number), 1)
 
-        data = [
-            go.Scatter(
-                x=df_instance_resampled['timestamp'],
-                y=df_scaler_resampled[VARS[0]],
-                mode='lines+markers',
-                marker_symbol='circle',
-                marker_size=3,
-                name=VARS[0]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'], 
-                y=df_scaler_resampled[VARS[1]],
-                mode='lines+markers',
-                marker_symbol='diamond',
-                marker_size=3,
-                name=VARS[1]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'],
-                y=df_scaler_resampled[VARS[2]],
-                mode='lines+markers',
-                marker_symbol='x',
-                marker_size=3,
-                name=VARS[2]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'], 
-                y=df_scaler_resampled[VARS[3]],
-                mode='lines+markers',
-                marker_symbol='star',
-                marker_size=3,
-                name=VARS[3]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'],
-                y=df_scaler_resampled[VARS[4]],
-                mode='lines+markers',
-                marker_symbol='triangle-up',
-                marker_size=3,
-                name=VARS[4]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'],
-                y=df_scaler_resampled[VARS[5]],
-                mode='lines',
-                name=VARS[5]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'],
-                y=df_scaler_resampled[VARS[6]],
-                mode='lines',
-                name=VARS[6]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'],
-                y=df_scaler_resampled[VARS[7]],
-                mode='lines',
-                name=VARS[7]
-                ),
-            go.Scatter(
-                x=df_instance_resampled['timestamp'], 
-                y=df_instance_resampled['class'].replace(100+int(class_number),0.5),
-                mode='markers',
-                name='Label'
-                ),
+        # data = [
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'],
+        #         y=df_scaler_resampled[VARS[0]],
+        #         mode='lines+markers',
+        #         marker_symbol='circle',
+        #         marker_size=3,
+        #         name=VARS[0]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'], 
+        #         y=df_scaler_resampled[VARS[1]],
+        #         mode='lines+markers',
+        #         marker_symbol='diamond',
+        #         marker_size=3,
+        #         name=VARS[1]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'],
+        #         y=df_scaler_resampled[VARS[2]],
+        #         mode='lines+markers',
+        #         marker_symbol='x',
+        #         marker_size=3,
+        #         name=VARS[2]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'], 
+        #         y=df_scaler_resampled[VARS[3]],
+        #         mode='lines+markers',
+        #         marker_symbol='star',
+        #         marker_size=3,
+        #         name=VARS[3]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'],
+        #         y=df_scaler_resampled[VARS[4]],
+        #         mode='lines+markers',
+        #         marker_symbol='triangle-up',
+        #         marker_size=3,
+        #         name=VARS[4]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'],
+        #         y=df_scaler_resampled[VARS[5]],
+        #         mode='lines',
+        #         name=VARS[5]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'],
+        #         y=df_scaler_resampled[VARS[6]],
+        #         mode='lines',
+        #         name=VARS[6]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'],
+        #         y=df_scaler_resampled[VARS[7]],
+        #         mode='lines',
+        #         name=VARS[7]
+        #         ),
+        #     go.Scatter(
+        #         x=df_instance_resampled['timestamp'], 
+        #         y=df_instance_resampled['class'].replace(100+int(class_number),0.5),
+        #         mode='markers',
+        #         name='Label'
+        #         ),
             
-        ]
-
-        fig = go.Figure(data)
+        # ]
+        colors_traces = ["#008080","#3498DB", "#E74C3C", "#884EA0", "#D4AC0D", "#AF601A", "#D35400", "#839192", "#2E4053"]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'],
+            y=df_scaler_resampled[VARS[0]],
+            mode='lines+markers',
+            marker_symbol='circle',
+            marker_size=3,
+            name=VARS[0],
+            yaxis="y1",
+            line_color=colors_traces[0]
+        )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'], 
+            y=df_scaler_resampled[VARS[1]],
+            mode='lines+markers',
+            marker_symbol='diamond',
+            marker_size=3,
+            name=VARS[1],
+            yaxis="y2",
+            line_color=colors_traces[1]
+            )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'],
+            y=df_scaler_resampled[VARS[2]],
+            mode='lines+markers',
+            marker_symbol='x',
+            marker_size=3,
+            name=VARS[2],
+            yaxis="y3",
+            line_color=colors_traces[2]
+            )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'], 
+            y=df_scaler_resampled[VARS[3]],
+            mode='lines+markers',
+            marker_symbol='star',
+            marker_size=3,
+            name=VARS[3],
+            yaxis="y4",
+            line_color=colors_traces[3]
+            )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'],
+            y=df_scaler_resampled[VARS[4]],
+            mode='lines+markers',
+            marker_symbol='triangle-up',
+            marker_size=3,
+            name=VARS[4],
+            yaxis="y5",
+            line_color=colors_traces[4]
+            )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'],
+            y=df_scaler_resampled[VARS[5]],
+            mode='lines',
+            name=VARS[5],
+            yaxis="y6",
+            line_color=colors_traces[5]
+            )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'],
+            y=df_scaler_resampled[VARS[6]],
+            mode='lines',
+            name=VARS[6],
+            yaxis="y7",
+            line_color=colors_traces[6]
+            )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'],
+            y=df_scaler_resampled[VARS[7]],
+            mode='lines',
+            name=VARS[7],
+            yaxis="y8",
+            line_color=colors_traces[7]
+            )),
+        fig.add_trace(go.Scatter(
+            x=df_instance_resampled['timestamp'], 
+            y=df_instance_resampled['class'],
+            mode='markers',
+            name='Label',
+            yaxis="y9",
+            line_color=colors_traces[8]
+            )),
         fileName = instances_path_list[instance_index].split('\\')
         fig.update_layout(title=EVENT_NAMES[class_number]+' - '+fileName[-1],
                         xaxis_title='Time(s)',
-                        yaxis_title='Scaled',
-                        font=dict(size=12))
+                        yaxis_title='z-score',
+                        font=dict(size=12),
+                        yaxis1=dict(
+                            # title="yaxis1 title",
+                            # titlefont=dict(
+                            #     color="#1f77b4"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[0]
+                            ),
+                            position=0,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                        yaxis2=dict(
+                            # title="yaxis2 title",
+                            # titlefont=dict(
+                            #     color="#ff7f0e"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[1]
+                            ),
+                            # anchor="free",
+                            overlaying="y",
+                            side="left",
+                            position=0.05,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                        yaxis3=dict(
+                            # title="yaxis3 title",
+                            # titlefont=dict(
+                            #     color="#d62728"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[2]
+                            ),
+                            # anchor="x",
+                            overlaying="y",
+                            side="left",
+                            position=0.10,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                        yaxis4=dict(
+                            # title="yaxis4 title",
+                            # titlefont=dict(
+                            #     color="#9467bd"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[3]
+                            ),
+                            # anchor="free",
+                            overlaying="y",
+                            side="left",
+                            position=0.15,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                        yaxis5=dict(
+                            # title="yaxis5 title",
+                            # titlefont=dict(
+                            #     color="#d62728"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[4]
+                            ),
+                            # anchor="x",
+                            overlaying="y",
+                            side="left",
+                            position=0.2,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                        yaxis6=dict(
+                            # title="yaxis6 title",
+                            # titlefont=dict(
+                            #     color="#d62728"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[5]
+                            ),
+                            # anchor="x",
+                            overlaying="y",
+                            side="left",
+                            position=0.25,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                        yaxis7=dict(
+                            # title="yaxis7 title",
+                            # titlefont=dict(
+                            #     color="#d62728"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[6]
+                            ),
+                            # anchor="x",
+                            overlaying="y",
+                            side="left",
+                            position=0.3,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                        yaxis8=dict(
+                            # title="yaxis8 title",
+                            # titlefont=dict(
+                            #     color="#d62728"
+                            # ),
+                            tickfont=dict(
+                                color=colors_traces[7]
+                            ),
+                            # anchor="x",
+                            overlaying="y",
+                            side="left",
+                            position=0.35,
+                            tickformat= ".2f",
+                            showticklabels = False
+                        ),
+                         yaxis9=dict(
+                            # title="class",
+                            # titlefont=dict(
+                            #     color=colors_traces[8]
+                            # ),
+                            tickfont=dict(
+                               color=colors_traces[8]
+                            ),
+                            anchor="x",
+                            overlaying="y",
+                            side="left",
+                        ),
+                    )
         fig.show()
 
 
