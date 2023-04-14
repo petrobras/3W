@@ -1,4 +1,4 @@
-As far as we know, the 3W dataset was useful and cited by the works listed below. If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) discussion. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
+As far as we know, the 3W dataset was useful and cited by the works listed below. If you know any other paper, final graduation project, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) discussion. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
 
 1. R.E.V. Vargas, C.J. Munaro, P.M. Ciarelli. A methodology for generating datasets for development of anomaly detectors in oil wells based on Artificial Intelligence techniques. I Congresso Brasileiro em Engenharia de Sistemas em Processos. 2019. https://www.ufrgs.br/psebr/wp-content/uploads/2019/04/Abstract_A019_Vargas.pdf.
 
@@ -67,10 +67,20 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. M.C.K. de Oliveira, R.L.A. Pinto, J.N.E. Carneiro. A digital transformation journey in flow assurance. T&B Petroleum magazine. 2022. https://tbpetroleum.com.br/revistas/2022/41.
 
-1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/main/docs/specialization_monograph_gustavo_momm.pdf.
+1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais. Instituto de Ciências Matemáticas e de Computação, Universidade de São Paulo. Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/master/docs/specialization_monograph_gustavo_momm.pdf.
 
 1. L.H.S. Mello, T.O Santos, F.M.Varejão, M.P. Ribeiro, A.L Rodrigues. Ensemble of metric learners for improving electrical submersible pump fault diagnosis. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110875.
 
 1. Y.F. Yeung, A.P. Ajuwape, F. Tahiry, M. Furokawa,T. Hirano, K.Y. Toumi. RoSA:A Mechatronically Synthesized Dataset for Rotodynamic System Anomaly Detection. IEEE International Conference on Intelligent Robots and Systems. 2022. https://doi.org/10.1109/IROS47612.2022.9982146.
 
+1. Y.F. Yeung, A.P. Ajuwape, F. Tahiry, M. Furokawa, T. Hirano, K.Y. Toumi. RoSA: A Mechatronically Synthesized Dataset for Rotodynamic System Anomaly Detection. IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). 2022. https://doi.org/10.1109/IROS47612.2022.9982146.
+
 1. Y.S.A. ElWahab, M.M. Nasr, F.K.A. Sheref. An intelligent oil accident predicting and classifying system using deep learning techniques. Indonesian Journal of Electrical Engineering and Computer Science. 2023. https://doi.org/10.11591/ijeecs.v29.i1.pp460-471.
+
+1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. Doctoral thesis. 2023.
+
+1. L.V. Magnusson, J.R. Olsson, C. Tran. Recurrent Neural Networks for Oil Well Event Prediction. IEEE Intelligent Systems. 2023. https://doi.org/10.1109/MIS.2023.3252446.
+
+1. A.V.S. Alves. Sensores virtuais baseados em aprendizado de máquina para poços de petróleo. Universidade de Brasília. Final Graduation Project. 2023. https://github.com/petrobras/3W/raw/main/docs/final_graduation_project_arthur_alves.pdf.
+
+1. R. Schena. A methodology for synthetic generation of failure data for data-driven prognostics and health management (PHM) modeling for digital twins. Universidade Federal do Rio Grande do Sul. Master's degree dissertation. 2023.
