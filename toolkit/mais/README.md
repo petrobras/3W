@@ -18,7 +18,7 @@ In this version, MAIS implements a multiclass LGBM classifier, with the followin
 
 ```
 ├── environment.yml
-├── experiments
+├── training
 │   └── multiclass
 │       ├── experiments
 │       │   ├── base_experiment.py
@@ -26,17 +26,15 @@ In this version, MAIS implements a multiclass LGBM classifier, with the followin
 │       │   └── ...
 │       ├── train_lgbm.py
 │       └── tune_lgbm.py
-├── mais
-│   ├── __init__.py
-│   ├── data
-│   │   ├── __init__.py
-│   │   ├── dataset.py
-│   │   ├── feature_mappers.py
-│   │   ├── label_mappers.py
-│   │   └── utils.py
-│   └── visualization
-│       ├── __init__.py
-│       └── generate_report.py
+├── dataset
+│   └── dataset.py
+├── processing
+│   ├── feature_mappers.py
+│   └── label_mappers.py
+├── utils
+│   └── utils.py
+├── visualization
+│   └── generate_report.py
 └── setup.py
 ```
 MAIS uses a class called Experiment, which contains all the necessary steps to create your experiment. So, under the folder "experiments/multiclass/experiments/", you add your custom Experiment class, based on the BaseExperiment defined on "experiments/multiclass/experiments/base_experiment.py". Some examples are already implemented in order to give an idea on how an experiment is created.
@@ -81,6 +79,17 @@ For example, between experiments 4 and 6, the difference is the kind of features
 And for experiment 6, we have:
 
 ![Wavelets Wrapper](images/README/wavelets.jpg "Wavelets features wrapper")
+
+# Using functions outside MAIS package
+
+The functions defined within MAIS package are being exposed to mais package main folder. So, from the 3W folder one can use the RollingLabelStrategy class for example by just doing
+
+`from toolkit.mais import RollingLabelStrategy`.
+
+In a future, it is possible to make it transparent to the user, abstracting the MAIS package path. For that, two steps are necessary:
+
+1. Add the proper import into __init__.py file in 3W package; and
+2. Double check if there is any functions with the same name.
 
 # How to use
 
