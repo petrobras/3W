@@ -95,11 +95,13 @@ To execute examples of how to use the 3W toolkit available in this repository, s
  
 # Proposing contributions
 
+We seek to adopt trunk-based development. [This article](https://www.atlassian.com/continuous-delivery/continuous-integration/trunk-based-development) explains some of the justifications and benefits of this practice.
+
 For each type of expected contribution, there is a subsection below with specific instructions. The last subsection specifies additional requirements for contributions to be incorporated into this project.
 
 ## Citation
 
-As far as we know, the 3W dataset was useful and cited by the works listed [here](CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) **discussion**. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
+As far as we know, the 3W dataset was useful and cited by the works listed [here](LIST_OF_CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) **discussion**. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
 
 ## Bugs
 
@@ -137,7 +139,8 @@ Specific problems will be incorporated into this project gradually. At this poin
 
 Here are additional requirements for contributions to be incorporated into this project:
 
-* Pushes and PRs will only be accepted if they pass the check automatically performed by the GitHub Action specified in [action-black.yml](.github/workflows/action-black.yml). If this check fails, check the generated log, use the latest version of [Black formatter](https://github.com/psf/black) to locally format the files as needed, then generate another push/PR.
+* As the forking workflow is used, every PR needs to be generated in a fork. A tutorial about different Git Workflows is available [here](https://www.atlassian.com/git/tutorials/comparing-workflows#centralized-workflow); 
+* PRs will only be accepted if they pass the check automatically performed by the GitHub Action specified in [action-black.yml](.github/workflows/action-black.yml). If this check fails, check the generated log, use the latest version of [Black formatter](https://github.com/psf/black) to locally format the files as needed, then generate another PR.
 
 # Backlog
 
