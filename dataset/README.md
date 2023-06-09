@@ -12,6 +12,7 @@
 * [Release Notes](#release-notes)
   * [1.0.0](#100)
   * [1.1.0](#110)
+  * [1.1.1](#111)
 
 # Introduction
 
