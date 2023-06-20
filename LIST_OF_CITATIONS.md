@@ -113,7 +113,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. Y.S.A. ElWahab, M.M. Nasr, F.K.A. Sheref. An intelligent oil accident predicting and classifying system using deep learning techniques. Indonesian Journal of Electrical Engineering and Computer Science. 2023. https://doi.org/10.11591/ijeecs.v29.i1.pp460-471.
 
-1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. Doctoral thesis. 2023. No link yet.
+1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. Doctoral thesis. 2023. http://repositoriosenaiba.fieb.org.br/handle/fieb/1730.
 
 1. L.V. Magnusson, J.R. Olsson, C. Tran. Recurrent Neural Networks for Oil Well Event Prediction. IEEE Intelligent Systems. 2023. https://doi.org/10.1109/MIS.2023.3252446.
 
