@@ -95,7 +95,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. M.C.K. de Oliveira, R.L.A. Pinto, J.N.E. Carneiro. A digital transformation journey in flow assurance. T&B Petroleum magazine. 2022. https://tbpetroleum.com.br/revistas/2022/41.
 
-1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais. Universidade de São Paulo. Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/master/docs/specialization_monograph_gustavo_momm.pdf.
+1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais. Universidade de São Paulo. Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/main/docs/specialization_monograph_gustavo_momm.pdf.
 
 1. L.H.S. Mello, T.O Santos, F.M.Varejão, M.P. Ribeiro, A.L Rodrigues. Ensemble of metric learners for improving electrical submersible pump fault diagnosis. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110875.
 
@@ -113,7 +113,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. Y.S.A. ElWahab, M.M. Nasr, F.K.A. Sheref. An intelligent oil accident predicting and classifying system using deep learning techniques. Indonesian Journal of Electrical Engineering and Computer Science. 2023. https://doi.org/10.11591/ijeecs.v29.i1.pp460-471.
 
-1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. Doctoral thesis. 2023. No link yet.
+1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. Doctoral thesis. 2023. http://repositoriosenaiba.fieb.org.br/handle/fieb/1730.
 
 1. L.V. Magnusson, J.R. Olsson, C. Tran. Recurrent Neural Networks for Oil Well Event Prediction. IEEE Intelligent Systems. 2023. https://doi.org/10.1109/MIS.2023.3252446.
 

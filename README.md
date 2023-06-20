@@ -33,7 +33,7 @@
 
 # Introduction
 
-This is the first repository published by Petrobras on GitHub. It supports the 3W project and promotes experimentation of Machine Learning-based approaches and algorithms for specific problems related to undesirable events that occur in offshore oil wells. 
+This is the first repository published by Petrobras on GitHub. It supports the 3W project, which aims to promote experimentation and development of Machine Learning-based approaches and algorithms for specific problems related to detection and classification of undesirable events that occur in offshore oil wells. 
 				
 The 3W project is based on the 3W dataset, a database described in [this](https://doi.org/10.1016/j.petrol.2019.106223) paper, and on the 3W toolkit, a software package that promotes experimentation with the 3W dataset for specific problems. The name **3W** was chosen because this dataset is composed of instances from ***3*** different sources and which contain undesirable events that occur in oil ***W***ells.
 
