@@ -95,7 +95,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. M.C.K. de Oliveira, R.L.A. Pinto, J.N.E. Carneiro. A digital transformation journey in flow assurance. T&B Petroleum magazine. 2022. https://tbpetroleum.com.br/revistas/2022/41.
 
-1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais. Universidade de São Paulo. Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/master/docs/specialization_monograph_gustavo_momm.pdf.
+1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais. Universidade de São Paulo. Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/main/docs/specialization_monograph_gustavo_momm.pdf.
 
 1. L.H.S. Mello, T.O Santos, F.M.Varejão, M.P. Ribeiro, A.L Rodrigues. Ensemble of metric learners for improving electrical submersible pump fault diagnosis. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110875.
 
