@@ -123,10 +123,10 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. R. Salles, J. Lima, R. Coutinho, E. Pacitti, F. Masseglia, R. Akbarinia, C. Chen, J. Garibaldi, F. Porto, E. Ogasawara. SoftED: Metrics for Soft Evaluation of Time Series Event Detection. arXiv. 2023. https://doi.org/10.48550/arXiv.2304.00439.
 
+1. A.J.M. Junior. Integração humano-máquina para o monitoramento de processos industriais baseado em dados. Universidade Federal do Rio de Janeiro. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_afranio_junior.
+
 Preprint articles
 
 1. B. Chen, X. Zeng. Knowledge Sharing-Based Multi-Block Federated Learning for Few-Shot Oil Layer Identification. Social Science Research Network. 2023. https://dx.doi.org/10.2139/ssrn.4400829.
 
 1. R. Schena, J.C. Netto, J.L. Carbonera, M. Abel. A Methodology for Synthetic Failure Data Generation in Digital Twins for Data-Driven Prognostics and Health Management (PHM) Models. Social Science Research Network. 2023. https://dx.doi.org/10.2139/ssrn.4334023.
-
-1. A.J.M. Junior. Integração humano-máquina para o monitoramento de processos industriais baseado em dados. Universidade Federal do Rio de Janeiro. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_afranio_junior.
