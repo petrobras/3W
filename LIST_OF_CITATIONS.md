@@ -125,8 +125,16 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. A.J.M. Junior. Integração humano-máquina para o monitoramento de processos industriais baseado em dados. Universidade Federal do Rio de Janeiro. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_afranio_junior.
 
-Preprint articles
+1. B. Chen, X. Zeng, W. Zhang, L. Fan, S. Cao, J. Zhou. Knowledge sharing-based multi-block federated learning for few-shot oil layer identification. Energy. 2023. https://doi.org/10.1016/j.energy.2023.128406.
 
-1. B. Chen, X. Zeng. Knowledge Sharing-Based Multi-Block Federated Learning for Few-Shot Oil Layer Identification. Social Science Research Network. 2023. https://dx.doi.org/10.2139/ssrn.4400829.
+1. I. Yousef, L.D. Rippon, C. Prévost, S.L. Shah, R.B. Gopaluni. The arc loss challenge: A novel industrial benchmark for process analytics and machine learning. Journal of Process Control. 2023. https://doi.org/10.1016/j.jprocont.2023.103023.
+
+1. A. Harrouz, H. Salem, H. Toubakh, R.M. Kafi, M.S. Mouchaweh. Fault prognosis of subsurface safety valve system with limited real data using self-adaptive neural network. Evolving Systems. 2023. https://doi.org/10.1007/s12530-023-09525-w. 
+
+1. E. Jovicic, D. Primorac, M. Cupic, A. Jovic. Publicly Available Datasets for Predictive Maintenance in the Energy Sector: A Review. IEEE Access. 2023. https://doi.org/10.1109/ACCESS.2023.3295113.
+
+1. R.M.F.U. Foronda, V.M. Fracassio, R.B. Santos, B.F. Santos. Statistical Analysis in Database of Offshore Naturally Flowing Wells with Abnormal Events. Chemical Engineering Transactions. 2023. https://doi.org/10.3303/CET2399101.
+
+Preprint articles
 
 1. R. Schena, J.C. Netto, J.L. Carbonera, M. Abel. A Methodology for Synthetic Failure Data Generation in Digital Twins for Data-Driven Prognostics and Health Management (PHM) Models. Social Science Research Network. 2023. https://dx.doi.org/10.2139/ssrn.4334023.
