@@ -119,7 +119,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. A.V.S. Alves. Sensores virtuais baseados em aprendizado de máquina para poços de petróleo. Universidade de Brasília. Final Graduation Project. 2023. https://github.com/petrobras/3W/raw/main/docs/final_graduation_project_arthur_alves.pdf.
 
-1. R. Schena. A methodology for synthetic generation of failure data for data-driven prognostics and health management (PHM) modeling for digital twins. Universidade Federal do Rio Grande do Sul. Master's degree dissertation. 2023. No link yet.
+1. R. Schena. A methodology for synthetic generation of failure data for data-driven prognostics and health management (PHM) modeling for digital twins. Universidade Federal do Rio Grande do Sul. Master's degree dissertation. 2023. https://lume.ufrgs.br/handle/10183/267589.
 
 1. R. Salles, J. Lima, R. Coutinho, E. Pacitti, F. Masseglia, R. Akbarinia, C. Chen, J. Garibaldi, F. Porto, E. Ogasawara. SoftED: Metrics for Soft Evaluation of Time Series Event Detection. arXiv. 2023. https://doi.org/10.48550/arXiv.2304.00439.
 
@@ -134,6 +134,30 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. E. Jovicic, D. Primorac, M. Cupic, A. Jovic. Publicly Available Datasets for Predictive Maintenance in the Energy Sector: A Review. IEEE Access. 2023. https://doi.org/10.1109/ACCESS.2023.3295113.
 
 1. R.M.F.U. Foronda, V.M. Fracassio, R.B. Santos, B.F. Santos. Statistical Analysis in Database of Offshore Naturally Flowing Wells with Abnormal Events. Chemical Engineering Transactions. 2023. https://doi.org/10.3303/CET2399101.
+
+1. M.A. Sahraoui, C. Rahmoune, M. Zair, F. Gougam, A. Damou. Enhancing fault diagnosis of undesirable events in oil & gas systems: A machine learning approach with new criteria for stability analysis and classification accuracy. Journal of Process Mechanical Engineering. 2023. https://doi.org/10.1177/09544089231213778.
+
+1. W.F. Junior, K.S. Komati, K.A.S. Gazolli. Anomaly detection in oil-producing wells: a comparative study of one-class classifiers in a multivariate time series dataset. Journal of Petroleum Exploration and Production Technology. 2023. https://doi.org/10.1007/s13202-023-01710-6.
+
+1. P.E. Aranha, N.A. Policarpo, M.A. Sampaio. Unsupervised machine learning model for predicting anomalies in subsurface safety valves and application in offshore wells during oil production. Journal of Petroleum Exploration and Production Technology. 2023. https://doi.org/10.1007/s13202-023-01720-4.
+
+1. R.E.V. Vargas, R.L.A. Pinto. The 3W Project and its Strategy to Foster the Development of Data-Driven Solutions for the Offshore Sector. Offshore Technology Conference Brasil. 2023. https://doi.org/10.4043/32875-MS.
+
+1. C. Shyalika, R. Wickramarachchi, A. Sheth. A Comprehensive Survey on Rare Event Prediction. arXiv. 2023. https://doi.org/10.48550/arXiv.2309.11356.
+
+1. M.A. Farahani, M.R. McCormick, R. Harik, T. Wuest. Time-Series Classification in Smart Manufacturing Systems: An Experimental Evaluation of State-of-the-Art Machine Learning Algorithms. arXiv. 2023. https://doi.org/10.48550/arXiv.2310.02812.
+
+1. P.E. Aranha, L.G.O. Lopes, E.S.P. Sobrinho; I.M.N. Oliveira, J.P.N. Araújo, B.B. Santos; E.T.L. Junior, T.B. Silva, T.M.A. Vieira, W.W.M. Lira, N.A. Policarpo, M.A. Sampaio. A System to Detect Oilwell Anomalies Using Deep Learning and Decision Diagram Dual Approach. SPE Journal. 2023. https://doi.org/10.2118/218017-PA.
+
+1. L. Liu, J. Li, Z. Niu, W. Zhang, J.C. Xue, H. Xu. Efficient Time-Series Data Delivery in IoT with Xender. IEEE Transactions on Mobile Computing. 2023. https://doi.org/10.1109/TMC.2023.3296608.
+
+1. X. Deng; H. Yin. Industrial Process Fault Diagnosis in Case of Missing Sensor Data. Symposium on Fault Detection, Supervision and Safety for Technical Processes (SAFEPROCESS). 2023. https://doi.org/10.1109/SAFEPROCESS58597.2023.10295829.
+
+1. Y. Li. Predictive Analysis and Critical Event Monitoring in Large Dynamic Networks. University of Massachusetts Lowell. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_yan_li.pdf.
+
+1. A. Das, A. Aiken. Prolego: Time-Series Analysis for Predicting Failures in Complex Systems. IEEE International Conference on Autonomic Computing and Self-Organizing Systems - ACSOS. 2023. http://theory.stanford.edu/~aiken/publications/papers/ascos23.pdf.
+
+1. Y. Qu, B. Zhou, A. Waaler, D. Cameron. Real-Time Event Detection with Random Forests and Temporal Convolutional Networks for More Sustainable Petroleum Industry. 2024. Lecture Notes in Computer Science.
 
 Preprint articles
 
