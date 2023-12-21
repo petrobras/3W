@@ -155,9 +155,11 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. Y. Li. Predictive Analysis and Critical Event Monitoring in Large Dynamic Networks. University of Massachusetts Lowell. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_yan_li.pdf.
 
-1. A. Das, A. Aiken. Prolego: Time-Series Analysis for Predicting Failures in Complex Systems. IEEE International Conference on Autonomic Computing and Self-Organizing Systems - ACSOS. 2023. http://theory.stanford.edu/~aiken/publications/papers/ascos23.pdf.
+1. A. Das, A. Aiken. Prolego: Time-Series Analysis for Predicting Failures in Complex Systems. IEEE International Conference on Autonomic Computing and Self-Organizing Systems - ACSOS. 2023. https://doi.org/10.1109/ACSOS58161.2023.00025.
 
-1. Y. Qu, B. Zhou, A. Waaler, D. Cameron. Real-Time Event Detection with Random Forests and Temporal Convolutional Networks for More Sustainable Petroleum Industry. 2024. Lecture Notes in Computer Science.
+1. Y. Qu, B. Zhou, A. Waaler, D. Cameron. Real-Time Event Detection with Random Forests and Temporal Convolutional Networks for More Sustainable Petroleum Industry. 2024. Lecture Notes in Computer Science. http://dx.doi.org/10.1007/978-981-99-7025-4_41.
+
+1. A.P.F. Machado, C.J. Munaro, P.M. Ciarelli, R.E.V. Vargas. Time series clustering to improve one-class classifier performance. Expert Systems with Applications. 2024. https://doi.org/10.1016/j.eswa.2023.122895.
 
 Preprint articles
 
