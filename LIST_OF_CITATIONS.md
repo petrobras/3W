@@ -97,7 +97,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais. Universidade de São Paulo. Specialization Monograph. 2022. https://github.com/petrobras/3W/raw/main/docs/specialization_monograph_gustavo_momm.pdf.
 
-1. L.H.S. Mello, T.O Santos, F.M.Varejão, M.P. Ribeiro, A.L Rodrigues. Ensemble of metric learners for improving electrical submersible pump fault diagnosis. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110875.
+1. L.H.S. Mello, T.O. Santos, F.M. Varejão, M.P. Ribeiro, A.L. Rodrigues. Ensemble of metric learners for improving electrical submersible pump fault diagnosis. Journal of Petroleum Science and Engineering. 2022. https://doi.org/10.1016/j.petrol.2022.110875.
 
 1. Y.F. Yeung, A.P. Ajuwape, F. Tahiry, M. Furokawa, T. Hirano, K.Y. Toumi. RoSA: A Mechatronically Synthesized Dataset for Rotodynamic System Anomaly Detection. IEEE International Conference on Intelligent Robots and Systems. 2022. https://doi.org/10.1109/IROS47612.2022.9982146.
 
@@ -160,6 +160,12 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. Y. Qu, B. Zhou, A. Waaler, D. Cameron. Real-Time Event Detection with Random Forests and Temporal Convolutional Networks for More Sustainable Petroleum Industry. 2024. Lecture Notes in Computer Science. http://dx.doi.org/10.1007/978-981-99-7025-4_41.
 
 1. A.P.F. Machado, C.J. Munaro, P.M. Ciarelli, R.E.V. Vargas. Time series clustering to improve one-class classifier performance. Expert Systems with Applications. 2024. https://doi.org/10.1016/j.eswa.2023.122895.
+
+1. O. Khankishiyev, S. Salehi, H. Karami, V. Mammadzada. Identification of Undesirable Events in Geothermal Fluid/Steam Production using Machine Learning. 49th Workshop on Geothermal Reservoir Engineering. 2024. https://pangea.stanford.edu/ERE/db/GeoConf/papers/SGW/2024/Khankishiyev1.pdf.
+
+1. F.M. Varejão, L.H.S. Mello, M.P. Ribeiro, T.O. Santos, A.L. Rodrigues. An open source experimental framework and public dataset for vibration-based fault diagnosis of electrical submersible pumps used on offshore oil exploration. Knowledge-Based Systems. 2024. https://doi.org/10.1016/j.knosys.2024.111452.
+
+1. A. Melo, M.M. Câmara, J.C. Pinto. Data-Driven Process Monitoring and Fault Diagnosis: A Comprehensive Survey. Processes. 2024. https://doi.org/10.3390/pr12020251.
 
 Preprint articles
 
