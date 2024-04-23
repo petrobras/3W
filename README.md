@@ -153,7 +153,7 @@ $ conda env create -f environment.yml
 ```
 * To activate the created virtual environment:
 ```
-$ conda activate 3w
+$ conda activate 3W
 ```
 * To use the 3W toolkit resources interactively:
 ```
