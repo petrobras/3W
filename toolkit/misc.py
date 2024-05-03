@@ -572,9 +572,9 @@ def plot_instance(class_number, instance_index, resample_factor):
         df_instance = pd.read_csv(
             instances_path_list[instance_index], sep=",", header=0
         )
-        
+
         df_instance_resampled = resample(df_instance, resample_factor, class_number)
-        
+
         df_drop_resampled = df_instance_resampled.drop(["timestamp", "class"], axis=1)
         df_drop_resampled.interpolate(
             method="linear", limit_direction="both", axis=0, inplace=True
