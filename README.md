@@ -138,6 +138,7 @@ The list below with examples of how to use the 3W toolkit will be incremented th
 
 * 3W dataset's overviews:
   * [Baseline](overviews/_baseline/main.ipynb)
+  * [André Machado's overview](overviews/AndreMachado/main.ipynb)
 * Binary classifier of Spurious Closure of DHSV:
   * [Baseline](problems/01_binary_classifier_of_spurious_closure_of_dhsv/_baseline/main.ipynb)
 
