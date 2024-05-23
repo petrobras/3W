@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
+import os
 
 from matplotlib.patches import Patch
 from pathlib import Path
@@ -538,7 +539,7 @@ def resample(data, n, class_number):
     # Back with transient label value
     resampleClass.replace(0.5, class_number + 100, inplace=True)
     # Non overlap group and get the average value from the data
-    dfResample = data.groupby(data.index // n).mean()
+    dfResample = data.groupby(data.index // n).mean(numeric_only=True)
     # Drop class column
     dfResample.drop(["class"], axis=1, inplace=True)
     # Insert new class label values group by non overlap
@@ -557,7 +558,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         class_number (integer): integer that represents the event class [0-8]
         instance_index (integer): input the instance file index
     """
-    instances_path = PATH_DATASET + "\\" + str(class_number) + "\\*.csv"
+    instances_path = os.path.join(PATH_DATASET, str(class_number), "*.csv")
     instances_path_list = glob.glob(instances_path)
     if class_number > 8 or class_number < 0:
         print(
@@ -571,7 +572,9 @@ def plot_instance(class_number, instance_index, resample_factor):
         df_instance = pd.read_csv(
             instances_path_list[instance_index], sep=",", header=0
         )
+
         df_instance_resampled = resample(df_instance, resample_factor, class_number)
+
         df_drop_resampled = df_instance_resampled.drop(["timestamp", "class"], axis=1)
         df_drop_resampled.interpolate(
             method="linear", limit_direction="both", axis=0, inplace=True
@@ -708,7 +711,7 @@ def plot_instance(class_number, instance_index, resample_factor):
                 line_color=colors_traces[8],
             )
         ),
-        fileName = instances_path_list[instance_index].split("\\")
+        fileName = instances_path_list[instance_index].split(os.sep)
         fig.update_layout(
             title=EVENT_NAMES[class_number] + " - " + fileName[-1],
             xaxis_title="Time(s)",
