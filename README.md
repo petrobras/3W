@@ -18,6 +18,7 @@
   * [Motivation](#motivation)
   * [Strategy](#strategy)
   * [Ambition](#ambition)
+  * [Governance](#governance)
   * [Contributions](#contributions)
   * [Licenses](#licenses)
   * [Versioning](#versioning)
@@ -35,7 +36,7 @@
 
 This is the first repository published by Petrobras on GitHub. It supports the 3W project, which aims to promote experimentation and development of Machine Learning-based approaches and algorithms for specific problems related to detection and classification of undesirable events that occur in offshore oil wells. 
 				
-The 3W project is based on the 3W dataset, a database described in [this](https://doi.org/10.1016/j.petrol.2019.106223) paper, and on the 3W toolkit, a software package that promotes experimentation with the 3W dataset for specific problems. The name **3W** was chosen because this dataset is composed of instances from ***3*** different sources and which contain undesirable events that occur in oil ***W***ells.
+The 3W project is based on the 3W dataset, a database described in [this paper](https://doi.org/10.1016/j.petrol.2019.106223), and on the 3W toolkit, a software package that promotes experimentation with the 3W dataset for specific problems. The name **3W** was chosen because this dataset is composed of instances from ***3*** different sources and which contain undesirable events that occur in oil ***W***ells.
 
 ## Motivation
 
@@ -43,12 +44,12 @@ Timely detection of undesirable events in oil wells can help prevent production 
 
 Creating a dataset and making it public to be openly experienced can greatly foment the development of tools that can:
 
-* Improve the process of identifying undesirable events in offshore wells production;
+* Improve the process of identifying undesirable events in the drilling, completion and production phases of offshore wells;
 * Increase the efficiency of monitoring the integrity of wells and subsea systems, whose related problems can generate invaluable losses for people, environment, and company's image.
 
 ## Strategy
 
-The 3W is the pilot of a Petrobras' program called [Conexões para Inovação - Módulo Open Lab](https://tecnologia.petrobras.com.br/modulo-open-lab). This pilot is an ***open project*** composed by two major resources:
+The 3W is the first pilot of a Petrobras' program called [Conexões para Inovação - Módulo Open Lab](https://tecnologia.petrobras.com.br/modulo-open-lab). This pilot is an ***open project*** composed by two major resources:
 
 * The [3W dataset](#3w-dataset), which will be evolved and supplemented with more instances from time to time; 
 * The [3W toolkit](#3w-toolkit), which will also be evolved (in many ways) to cover an increasing number of undesirable events during its development.
@@ -61,8 +62,14 @@ With this project, Petrobras intends to develop (fix, improve, supplement, etc.)
 
 * The [3W dataset](#3w-dataset) itself;
 * The [3W toolkit](#3w-toolkit) itself;
-* Approaches and algorithms that can be incorporated into systems dedicated to monitoring undesirable events in offshore oil wells during their respective production phases;
+* Approaches and algorithms that can be incorporated into systems dedicated to monitoring undesirable events in offshore oil wells during their respective drilling, completion and production phases;
 * Tools that can be useful for our ambition.
+
+## Governance
+
+The 3W project was conceived and publicly launched on May 30, 2022 as a strategic action by Petrobras, led by its department responsible for Flow Assurance and its research center ([CENPES](https://www.petrobras.com.br/inovacao-e-tecnologia/centro-de-pesquisa)). Since then, 3W has become increasingly consolidated at Petrobras in several aspects: more professionals specialized in labeling instances, more projects and teams using the resources made available by 3W, more investment in developing the digital tools needed to label and export instances, more interest in including different types of undesirable events that occur in wells during the drilling, completion and production phases, etc. 
+
+Due to this evolution, from May 1st, 2024 the 3W's governance is now done with the participation of the Petrobras' department responsible for Well Integrity.
 
 ## Contributions
 
@@ -115,7 +122,7 @@ A 3W dataset's general presentation with some quantities and statistics is avail
 The 3W toolkit is a software package written in Python 3 that contains resources that make the following easier:
 
 * [3W dataset](#3w-dataset) overview generation;
-* Experimentation and comparative analysis of Machine Learning-based approaches and algorithms for specific problems related to undesirable events that occur in offshore oil wells during their respective production phases;
+* Experimentation and comparative analysis of Machine Learning-based approaches and algorithms for specific problems related to undesirable events that occur in offshore oil wells during their respective drilling, completion and production phases;
 * Standardization of key points of the Machine Learning-based algorithm development pipeline.
 
 It is important to note that there are arbitrary choices in this toolkit, but they have been carefully made to allow adequate comparative analysis without compromising the ability to experiment with different approaches and algorithms.
