@@ -12,6 +12,12 @@
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 
+> [!TIP]
+> There is a great opportunity related to the 3W project. As this opportunity is limited to Brazilian companies and institutions accredited by the Brazilian National Agency for Petroleum, Natural Gas and Biofuels (https://www.gov.br/anp), it is described below in Portuguese.
+
+| A Petrobras lançou em 28/05/24 no seu Ambiente de Competitividade a oportunidade pública 2396 com o título “3W Toolkit: Ambiente para o desenvolvimento de algoritmos de monitoramento de poços de petróleo”. O desafio tecnológico incluído nessa oportunidade de projeto de pesquisa é implementar um ambiente de desenvolvimento flexível e escalável na comunidade de código aberto que estimule a contribuição de soluções para desafios relacionados à detecção, classificação e prognóstico de eventos indesejáveis em poços de petróleo. O ambiente deve permitir experimentar e avaliar novas abordagens com eficiência, comparabilidade e precisão. A arquitetura deve ser modular e extensível, possibilitando a adição incremental de funcionalidades. O objetivo específico desse projeto será evoluir o [3W Toolkit](#3w-toolkit) para maximizar as contribuições da comunidade de inovação aberta e incorporar essas contribuições aos sistemas de monitoramento da Petrobras. A data limite para empresas e instituições credenciadas pela ANP (https://www.gov.br/anp) submeterem pré-propostas é 27/06/24. Para obter mais informações e submeter pré-proposta, acesse https://sigitec-competitividade.petrobras.com.br/v2/public/opportunity/1127.   |
+|----------------------------------------------|
+
 # Table of Content
 
 * [Introduction](#introduction)
