@@ -51,7 +51,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. B.G. Carvalho. Evaluating machine learning techniques for detection of flow instability events in offshore oil wells. Universidade Federal do Espírito Santo. Master's degree dissertation. 2021. https://github.com/petrobras/3W/raw/main/docs/master_degree_dissertation_bruno_carvalho.pdf.
 
-1. E. M. Turan, J. Jäschke. Classification of undesirable events in oil well operation. 23rd International Conference on Process Control. 2021. https://doi.org/10.1109/PC52310.2021.9447527.
+1. E.M. Turan, J. Jäschke. Classification of undesirable events in oil well operation. 23rd International Conference on Process Control. 2021. https://doi.org/10.1109/PC52310.2021.9447527.
 
 1. I.S. Figueirêdo, T.F. Carvalho, W.J.D Silva, L.L.N. Guarieiro, E.G.S. Nascimento. Detecting Interesting and Anomalous Patterns In Multivariate Time-Series Data in an Offshore Platform Using Unsupervised Learning. OTC Offshore Technology Conference. 2021. https://doi.org/10.4043/31297-MS.
 
@@ -113,7 +113,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. Y.S.A. ElWahab, M.M. Nasr, F.K.A. Sheref. An intelligent oil accident predicting and classifying system using deep learning techniques. Indonesian Journal of Electrical Engineering and Computer Science. 2023. https://doi.org/10.11591/ijeecs.v29.i1.pp460-471.
 
-1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. Doctoral thesis. 2023. http://repositoriosenaiba.fieb.org.br/handle/fieb/1730.
+1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_ilan_figueiredo.pdf.
 
 1. L.V. Magnusson, J.R. Olsson, C. Tran. Recurrent Neural Networks for Oil Well Event Prediction. IEEE Intelligent Systems. 2023. https://doi.org/10.1109/MIS.2023.3252446.
 
@@ -123,7 +123,7 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. R. Salles, J. Lima, R. Coutinho, E. Pacitti, F. Masseglia, R. Akbarinia, C. Chen, J. Garibaldi, F. Porto, E. Ogasawara. SoftED: Metrics for Soft Evaluation of Time Series Event Detection. arXiv. 2023. https://doi.org/10.48550/arXiv.2304.00439.
 
-1. A.J.M. Junior. Integração humano-máquina para o monitoramento de processos industriais baseado em dados. Universidade Federal do Rio de Janeiro. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_afranio_junior.
+1. A.J.M. Junior. Integração humano-máquina para o monitoramento de processos industriais baseado em dados. Universidade Federal do Rio de Janeiro. Doctoral thesis. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_afranio_junior.pdf.
 
 1. B. Chen, X. Zeng, W. Zhang, L. Fan, S. Cao, J. Zhou. Knowledge sharing-based multi-block federated learning for few-shot oil layer identification. Energy. 2023. https://doi.org/10.1016/j.energy.2023.128406.
 
@@ -167,6 +167,6 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. A. Melo, M.M. Câmara, J.C. Pinto. Data-Driven Process Monitoring and Fault Diagnosis: A Comprehensive Survey. Processes. 2024. https://doi.org/10.3390/pr12020251.
 
-Preprint articles
+1. A.P.F. Machado. Methodologies to Improve One-Class Classifier Performance Applied to Multivariate Time Series. Universidade Federal do Espírito Santo. Doctoral thesis. 2024. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_andre_machado.pdf.
 
-1. R. Schena, J.C. Netto, J.L. Carbonera, M. Abel. A Methodology for Synthetic Failure Data Generation in Digital Twins for Data-Driven Prognostics and Health Management (PHM) Models. Social Science Research Network. 2023. https://dx.doi.org/10.2139/ssrn.4334023.
+1. E.M. Turan. Advances in Optimisation and Machine Learning for Process Systems Engineering. Norwegian University of Science and Technology. Doctoral thesis. 2024. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_evren_turan.pdf.
