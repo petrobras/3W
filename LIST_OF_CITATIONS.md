@@ -170,3 +170,5 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. A.P.F. Machado. Methodologies to Improve One-Class Classifier Performance Applied to Multivariate Time Series. Universidade Federal do Espírito Santo. Doctoral thesis. 2024. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_andre_machado.pdf.
 
 1. E.M. Turan. Advances in Optimisation and Machine Learning for Process Systems Engineering. Norwegian University of Science and Technology. Doctoral thesis. 2024. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_evren_turan.pdf.
+
+1. T.L.B. Dias, M.A. Marins, C.L. Pagliari, R.M.E. Barbosa, M.L.R. de Campos, E.A.B. Silva, S.L.Netto. Development of Oilwell Fault Classifiers Using a Wavelet-Based Multivariable Approach in a Modular Architecture. Society of Petroleum Engineers Journal. 2024. https://doi.org/10.2118/221463-PA.
