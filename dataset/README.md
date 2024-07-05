@@ -16,11 +16,11 @@
 
 # Introduction
 
-All 3W dataset data files (CSV files in the subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
+All 3W Dataset data files (CSV files in the subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
 
 # Release Notes
 
-Each subsection below contains release notes for a specific 3W dataset version. Differences from the immediately previous version are highlighted.
+Each subsection below contains release notes for a specific 3W Dataset version. Differences from the immediately previous version are highlighted.
 
 ## 1.0.0
 
@@ -43,12 +43,12 @@ Highlights:
 1. Normal periods of certain instances with anomalies have been increased as possible. We tried to have instances with minimum normal periods of 1 hour;
 1. Names of certain files with instances have changed due to increased normal periods;
 1. Periods of certain instances have been relabeled;
-1. Time series of certain variables were added because these variables were contextualized after the previous version of the 3W dataset was created;
-1. Time series of certain variables were removed because these variables were decontextualized after the previous version of the 3W dataset was created;
-1. Time series of certain variables have been completely changed due to these variables having been recontextualized after the creation of the previous version of the 3W dataset;
+1. Time series of certain variables were added because these variables were contextualized after the previous version of the 3W Dataset was created;
+1. Time series of certain variables were removed because these variables were decontextualized after the previous version of the 3W Dataset was created;
+1. Time series of certain variables have been completely changed due to these variables having been recontextualized after the creation of the previous version of the 3W Dataset;
 1. Certain variable values ​​have undergone minimal change due to different rounding;
-1. The 3W dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
-1. The Jupyter Notebook with the [3W dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.
+1. The 3W Dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
+1. The Jupyter Notebook with the [3W Dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.
 
 ## 1.1.1
 
@@ -59,5 +59,5 @@ Highlights:
 1. Issue #60 has been resolved;
 1. Issue #65 has been resolved;
 1. Certain variable values ​​have undergone minimal change due to different rounding;
-1. The 3W dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
-1. The Jupyter Notebook with the [3W dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.
+1. The 3W Dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
+1. The Jupyter Notebook with the [3W Dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.

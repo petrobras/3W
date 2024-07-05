@@ -12,9 +12,9 @@
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 
-# Welcome to the 3W project contributing guide
+# Welcome to the 3W Project contributing guide
 
-:+1::tada::sparkles: Thank you for investing your time in contributing to the 3W project! :sparkles::tada::+1:
+:+1::tada::sparkles: Thank you for investing your time in contributing to the 3W Project! :sparkles::tada::+1:
 
 We expect to receive various types of contributions from individuals, research institutions, startups, companies and partner oil operators. 
 
@@ -26,8 +26,8 @@ In this guide we present how you can propose each type of contributions that we 
 * [Making questions](#making-questions)
 * [Before contributing](#before-contributing)
     * [Levels for contributions](#levels-for-contributions)
-    * [3W dataset's structure](#3w-datasets-structure)
-    * [3W toolkit's structure](#3w-toolkits-structure)
+    * [3W Dataset's structure](#3w-datasets-structure)
+    * [3W Toolkit's structure](#3w-toolkits-structure)
     * [Executing examples](#executing-examples)
 * [Proposing contributions](#proposing-contributions)
     * [Citation](#citation)
@@ -35,14 +35,14 @@ In this guide we present how you can propose each type of contributions that we 
     * [Documentation improvements](#documentation-improvements)
     * [Cosmetic improvements](#cosmetic-improvements)
     * [Other improvements](#other-improvements)
-    * [New 3W dataset's overviews](#new-3w-datasets-overviews)
+    * [New 3W Dataset's overviews](#new-3w-datasets-overviews)
     * [New approaches and algorithms](#new-approaches-and-algorithms)
     * [Additional requirements](#additional-requirements)
 * [Backlog](#backlog)
 
 # Getting started
 
-The recommended first step is to read this [README](README.md) for an overview of the 3W project.
+The recommended first step is to read this [README](README.md) for an overview of the 3W Project.
 
 # Making questions
 
@@ -60,7 +60,7 @@ It is also very important to know, participate and follow the discussions. Click
 
 ## Levels for contributions
 
-We expect to receive contributions at different levels, as shown in the figure below. Objects with background in yellow indicate types of contributions enabled by the 3W project current version. The other objects above the 3W project indicate types of contributions that will be enabled in the next versions. Some examples of contributions at each level are:
+We expect to receive contributions at different levels, as shown in the figure below. Objects with background in yellow indicate types of contributions enabled by the 3W Project current version. The other objects above the 3W Project indicate types of contributions that will be enabled in the next versions. Some examples of contributions at each level are:
 
 * Level 1: 
     * You can identify and report issues with data or annotations;
@@ -81,17 +81,17 @@ We expect to receive contributions at different levels, as shown in the figure b
 
 ![Levels for contributions](images/levels_for_contributions.png)
 
-## 3W dataset's structure
+## 3W Dataset's structure
 
-At level 1, the 3W dataset consists of all CSV files in the subdirectories of the [dataset](dataset) directory and structured as detailed [here](3W_DATASET_STRUCTURE.md).
+At level 1, the 3W Dataset consists of all CSV files in the subdirectories of the [dataset](dataset) directory and structured as detailed [here](3W_DATASET_STRUCTURE.md).
 
-## 3W toolkit's structure
+## 3W Toolkit's structure
 
-At level 2, the 3W toolkit is implemented in sub-modules as discribed [here](3W_TOOLKIT_STRUCTURE.md).
+At level 2, the 3W Toolkit is implemented in sub-modules as discribed [here](3W_TOOLKIT_STRUCTURE.md).
 
 ## Executing examples
 
-To execute examples of how to use the 3W toolkit available in this repository, see the instructions related to [reproducibility](README.md#reproducibility).
+To execute examples of how to use the 3W Toolkit available in this repository, see the instructions related to [reproducibility](README.md#reproducibility).
  
 # Proposing contributions
 
@@ -101,7 +101,7 @@ For each type of expected contribution, there is a subsection below with specifi
 
 ## Citation
 
-As far as we know, the 3W dataset was useful and cited by the works listed [here](LIST_OF_CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) **discussion**. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
+As far as we know, the 3W Dataset was useful and cited by the works listed [here](LIST_OF_CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W Dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) **discussion**. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
 
 ## Bugs
 
@@ -115,21 +115,21 @@ It is important to keep in mind that this toolkit's documentation is generated i
 
 ## Cosmetic improvements
 
-Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the 3W project are also welcome. In this case, please create a **pull requests** on a branch called `cosmetic_improvements` directly.
+Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the 3W Project are also welcome. In this case, please create a **pull requests** on a branch called `cosmetic_improvements` directly.
 
 ## Other improvements
 
-If you intend to work and propose a more significant improvement, please consult our [backlog](BACKLOG.md) first. If you have any questions about the most aligned strategy for the 3W project, please consult or create **discussions**. When your improvement is ready, please create a **pull request** on a branch called `other_improvements`.
+If you intend to work and propose a more significant improvement, please consult our [backlog](BACKLOG.md) first. If you have any questions about the most aligned strategy for the 3W Project, please consult or create **discussions**. When your improvement is ready, please create a **pull request** on a branch called `other_improvements`.
 
 It is important to keep in mind that all source code is implemented according to the style guide established by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with the use of the [Black formatter](https://github.com/psf/black) with default options. Therefore, while codes have lines up to 88 characters (Black formatter's default option), each line with docstring or comment must be up to 72 characters long as established in PEP 8.
 
-## New 3W dataset's overviews
+## New 3W Dataset's overviews
 
-Visualization is one of the most important steps in this type of project. Therefore, you can propose [Jupyter Notebooks](https://jupyter.org/) with different views. For this, submit a **pull request** on a branch called `new_3w_datasets_overviews` with a file named `overviews\[your_name_here]\main.ipynb` that you've developed. If we like your overview, your file could be listed in this repository as a 3W toolkit's example of use.
+Visualization is one of the most important steps in this type of project. Therefore, you can propose [Jupyter Notebooks](https://jupyter.org/) with different views. For this, submit a **pull request** on a branch called `new_3w_datasets_overviews` with a file named `overviews\[your_name_here]\main.ipynb` that you've developed. If we like your overview, your file could be listed in this repository as a 3W Toolkit's example of use.
 
 ## New approaches and algorithms
 
-Would you like to share in this repository as 3W toolkit's examples of use approaches and algorithms for already incorporated problems? The procedure for this is to submit a **pull request** on a branch called `new_approaches_and_algorithms` with [Jupyter Notebooks](https://jupyter.org/) that you've developed in the directory corresponding to the chosen problem. 
+Would you like to share in this repository as 3W Toolkit's examples of use approaches and algorithms for already incorporated problems? The procedure for this is to submit a **pull request** on a branch called `new_approaches_and_algorithms` with [Jupyter Notebooks](https://jupyter.org/) that you've developed in the directory corresponding to the chosen problem. 
 
 Specific problems will be incorporated into this project gradually. At this point, we can work on:
 
@@ -144,4 +144,4 @@ Here are additional requirements for contributions to be incorporated into this 
 
 # Backlog
 
-The list of priority improvements for the 3W project that we intend to develop collaboratively with the community is detailed in the file [BACKLOG.md](BACKLOG.md).
+The list of priority improvements for the 3W Project that we intend to develop collaboratively with the community is detailed in the file [BACKLOG.md](BACKLOG.md).

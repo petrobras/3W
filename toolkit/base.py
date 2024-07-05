@@ -22,7 +22,7 @@ PATH_DATASET_INI = os.path.join(PATH_DATASET, "dataset.ini")
 # Methods
 #
 def load_config_in_dataset_ini():
-    """Loads all configurations present in the 3W dataset's main
+    """Loads all configurations present in the 3W Dataset's main
     configuration file.
 
     Raises:
@@ -30,7 +30,7 @@ def load_config_in_dataset_ini():
         Exception: Error if the configuration file cannot be loaded.
 
     Returns:
-        dict: Dict with all configurations present in the 3W dataset's
+        dict: Dict with all configurations present in the 3W Dataset's
             main configuration file. This dict is formated with the
             basic configuration language used by the configparser
             module.
@@ -38,7 +38,7 @@ def load_config_in_dataset_ini():
     # Check if the configuration file exists in the expected path
     if not exists(PATH_DATASET_INI):
         raise Exception(
-            f"the 3w dataset's main configuration file was not found "
+            f"the 3w Dataset's main configuration file was not found "
             f"in {PATH_DATASET_INI}"
         )
 
@@ -49,14 +49,14 @@ def load_config_in_dataset_ini():
         dataset_ini.read(PATH_DATASET_INI)
     except Exception as e:
         raise Exception(
-            f"the 3w dataset's main configuration file "
+            f"the 3w Dataset's main configuration file "
             f"({PATH_DATASET_INI}) could not be loaded. {e}"
         )
 
     return dict(dataset_ini)
 
 
-# Loads all configurations present in the 3W dataset's main
+# Loads all configurations present in the 3W Dataset's main
 # configuration file and provides specific configurations in different
 # granularity and formats
 #
@@ -101,14 +101,14 @@ for n in EVENT_NAMES:
 #
 class EventType:
     """This class encapsulates properties (constants and default values)
-    for each type of event covered by the 3W project."""
+    for each type of event covered by the 3W Project."""
 
     def __init__(self, event_name):
         """Initializes an event.
 
         Args:
             event_name (srt): Event type name to be initialized. This
-                name must be a section name in the 3W dataset's main
+                name must be a section name in the 3W Dataset's main
                 configuration file.
         """
         event_section = DATASET_INI.get(event_name)
