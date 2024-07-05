@@ -1,4 +1,4 @@
-The 3W toolkit is a software package written in Python 3 structured in the following sub-modules:
+The 3W Toolkit is a software package written in Python 3 structured in the following sub-modules:
 
 * **base**: groups the objects used by the other sub-modules;
 * **dev**: has all the resources related to development of Machine 

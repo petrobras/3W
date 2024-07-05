@@ -1,4 +1,4 @@
-"""This is the 3W toolkit's miscellaneous sub-module.
+"""This is the 3W Toolkit's miscellaneous sub-module.
 
 All resources that do not fit in the other sub-modules are define here.
 """
@@ -40,7 +40,7 @@ def label_and_file_generator(real=True, simulated=False, drawn=False):
     """This is a generating function that returns tuples for all
     indicated instance sources (`real`, `simulated` and/or
     `hand-drawn`). Each tuple refers to a specific instance and contains
-    its label (int) and its full path (Path). All 3W dataset's instances
+    its label (int) and its full path (Path). All 3W Dataset's instances
     are considered.
 
     Args:
@@ -84,7 +84,7 @@ def label_and_file_generator(real=True, simulated=False, drawn=False):
 
 def get_all_labels_and_files():
     """Gets lists with tuples related to all real, simulated, or
-    hand-drawn instances contained in the 3w dataset. Each list
+    hand-drawn instances contained in the 3w Dataset. Each list
     considers instances from a single source. Each tuple refers to a
     specific instance and contains its label (int) and its full path
     (Path).
@@ -108,26 +108,26 @@ def get_all_labels_and_files():
 
 def create_table_of_instances(real_instances, simulated_instances, drawn_instances):
     """Creates a table of instances (pandas.DataFrame) that shows the
-    amount of instances that compose the 3W dataset, by knowledge source
+    amount of instances that compose the 3W Dataset, by knowledge source
     (real, simulated and hand-drawn instances) and by instance label.
 
     Args:
         real_instances (list): List with tuples related to all
-            real instances contained in the 3w dataset. Each tuple
+            real instances contained in the 3w Dataset. Each tuple
             must refer to a specific instance and must contain its label
             (int) and its full path (Path).
         simulated_instances (list): List with tuples related to all
-            simulated instances contained in the 3w dataset. Each tuple
+            simulated instances contained in the 3w Dataset. Each tuple
             must refer to a specific instance and must contain its label
             (int) and its full path (Path).
         drawn_instances (list): List with tuples related to all
-            hand-drawn instances contained in the 3w dataset. Each tuple
+            hand-drawn instances contained in the 3w Dataset. Each tuple
             must refer to a specific instance and must contain its label
             (int) and its full path (Path).
 
     Returns:
         pandas.DataFrame: The created table that shows the amount of
-            instances that compose the 3W dataset, by knowledge source
+            instances that compose the 3W Dataset, by knowledge source
             (real, simulated and hand-drawn instances) and by instance
             label.
     """
@@ -192,7 +192,7 @@ def filter_rare_undesirable_events(toi, threshold, simulated=False, drawn=False)
 
     Args:
         toi (pandas.DataFrame): Table that shows the amount of instances
-            that compose the 3W dataset, by knowledge source (real,
+            that compose the 3W Dataset, by knowledge source (real,
             `simulated` and `hand-drawn` instances) and by instance
             label. This object is not modified in this function.
         threshold (float): Relative limit that establishes rare event
@@ -307,7 +307,7 @@ def create_and_plot_scatter_map(real_instances):
 
     Args:
         real_instances (list): List with tuples related to all
-            real instances contained in the 3w dataset. Each tuple
+            real instances contained in the 3w Dataset. Each tuple
             must refer to a specific instance and must contain its label
             (int) and its full path (Path).
 
@@ -461,7 +461,7 @@ def count_properties_instances(instances):
 
 
 def calc_stats_instances(real_instances, simulated_instances, drawn_instances):
-    """Calculates the 3W dataset's fundamental aspects related to
+    """Calculates the 3W Dataset's fundamental aspects related to
     inherent difficulties of actual data. Three statistics are
     calculated: Missing Variables, Frozen Variables, and Unlabeled
     Observations. All instances, regardless of their source, influence
@@ -469,15 +469,15 @@ def calc_stats_instances(real_instances, simulated_instances, drawn_instances):
 
     Args:
         real_instances (list): List with tuples related to all
-            real instances contained in the 3w dataset. Each tuple
+            real instances contained in the 3w Dataset. Each tuple
             must refer to a specific instance and must contain its label
             (int) and its full path (Path).
         simulated_instances (list): List with tuples related to all
-            simulated instances contained in the 3w dataset. Each tuple
+            simulated instances contained in the 3w Dataset. Each tuple
             must refer to a specific instance and must contain its label
             (int) and its full path (Path).
         drawn_instances (list): List with tuples related to all
-            hand-drawn instances contained in the 3w dataset. Each tuple
+            hand-drawn instances contained in the 3w Dataset. Each tuple
             must refer to a specific instance and must contain its label
             (int) and its full path (Path).
 

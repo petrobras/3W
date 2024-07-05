@@ -3,7 +3,7 @@
 The main aspects of this problem are:
 
 * It is a binary classifier in the sense that labels associated with Spurious Closure of DHSV are considered examples of the positive class and all other labels are considered examples of the negative class;
-* It is an OVA (one versus all) classifier. The negative class has examples extracted from normal and all other event types present in the 3W dataset;
+* It is an OVA (one versus all) classifier. The negative class has examples extracted from normal and all other event types present in the 3W Dataset;
 * Spurious Closure of DHSV transients are treated as different from Spurious Closure of DHSV steady state;
 * Only real instances are used.
 

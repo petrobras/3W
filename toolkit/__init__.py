@@ -1,9 +1,9 @@
-"""This is the 3W toolkit, a software package written in Python 3 that 
-is one of the 3W project's major components.
+"""This is the 3W Toolkit, a software package written in Python 3 that 
+is one of the 3W Project's major components.
 
 This toolkit contains resources that make the following easier:
 
-- 3W dataset overview generation;
+- 3W Dataset overview generation;
 - Experimentation and comparative analysis of Machine Learning-based 
 approaches and algorithms for specific problems related to undesirable 
 events that occur in offshore oil wells during their respective 
@@ -28,7 +28,7 @@ this time, models can be developed for the following problems:
 - Binary Classifier of Spurious Closure of DHSV.
 
 Examples of how to use this toolkit will be incremented throughout its 
-development. Please, check the project's README.md file for more details.
+development. Please, check the 3W Project's README.md file for more details.
 
 It is important to note that there are arbitrary choices in this 
 toolkit, but they have been carefully made to allow adequate comparative 
