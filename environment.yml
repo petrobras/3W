@@ -18,4 +18,4 @@ dependencies:
   - pandas-profiling=3.6.3
   - numba=0.56.4
   - missingno=0.5.2
-
+  - pyarrow=17.0.0
