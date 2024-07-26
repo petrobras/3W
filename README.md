@@ -85,7 +85,7 @@ It is also very important to know, participate and follow the discussions. See t
 
 ## Licenses
 
-All the code of this project is licensed under the [Apache 2.0 License][apache] and all 3W Dataset data files (CSV files in the subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
+All the code of this project is licensed under the [Apache 2.0 License][apache] and all 3W Dataset's data files (Parquet files saved in subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
 
 ## Versioning
 
@@ -111,7 +111,7 @@ To the best of its authors' knowledge, this is the first realistic and public da
 
 ## Structure
 
-The 3W Dataset consists of all CSV files in the subdirectories of the [dataset](dataset) directory and structured as detailed [here](3W_DATASET_STRUCTURE.md). 
+The 3W Dataset consists of multiple Parquet files saved in subdirectories of the [dataset](dataset) directory and structured as detailed [here](3W_DATASET_STRUCTURE.md). 
 
 ## Overview
 

@@ -83,7 +83,7 @@ We expect to receive contributions at different levels, as shown in the figure b
 
 ## 3W Dataset's structure
 
-At level 1, the 3W Dataset consists of all CSV files in the subdirectories of the [dataset](dataset) directory and structured as detailed [here](3W_DATASET_STRUCTURE.md).
+At level 1, the 3W Dataset consists of multiple Parquet files saved in subdirectories of the [dataset](dataset) directory and structured as detailed [here](3W_DATASET_STRUCTURE.md). 
 
 ## 3W Toolkit's structure
 

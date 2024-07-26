@@ -62,14 +62,14 @@ def load_config_in_dataset_ini():
 #
 DATASET_INI = load_config_in_dataset_ini()
 
-DATASET_VERSION = DATASET_INI.get("Versions").get("DATASET")
+DATASET_VERSION = DATASET_INI.get("VERSION").get("DATASET")
 
-COLUMNS_DESCRIPTIONS = dict(DATASET_INI.get("Columns of CSV Data Files"))
+COLUMNS_DESCRIPTIONS = dict(DATASET_INI.get("PARQUET_FILE_PROPERTIES"))
 COLUMNS_DATA_FILES = list(COLUMNS_DESCRIPTIONS.keys())
 VARS = COLUMNS_DATA_FILES[1:-1]
 CLASS = COLUMNS_DATA_FILES[-1]
 
-events_section = DATASET_INI.get("Events")
+events_section = DATASET_INI.get("EVENTS")
 EVENT_NAMES = [n.strip() for n in events_section.get("NAMES").split(",")]
 EXTRA_INSTANCES_TRAINING = events_section.getint("EXTRA_INSTANCES_TRAINING")
 TRANSIENT_OFFSET = events_section.getint("TRANSIENT_OFFSET")
@@ -96,6 +96,10 @@ for n in EVENT_NAMES:
     else:
         EVENT_NAMES_OBSERVATION_LABELS[n] = {NORMAL_LABEL, l}
 
+parquet_settings = DATASET_INI.get("PARQUET_SETTINGS")
+PARQUET_EXTENSION = parquet_settings.get("PARQUET_EXTENSION")
+PARQUET_ENGINE = parquet_settings.get("PARQUET_ENGINE")
+PARQUET_COMPRESSION = parquet_settings.get("PARQUET_COMPRESSION")
 
 # Classes
 #

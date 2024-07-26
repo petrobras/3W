@@ -13,10 +13,11 @@
   * [1.0.0](#100)
   * [1.1.0](#110)
   * [1.1.1](#111)
+  * [2.0.0](#200)
 
 # Introduction
 
-All 3W Dataset data files (CSV files in the subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
+All 3W Dataset data files (files in the subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
 
 # Release Notes
 
@@ -34,21 +35,18 @@ Release: December 30, 2022.
 
 Highlights:
 
-1. New instances have been added as follows:
+1. New instances were added as follows:
     * 1 instance of event type 7.
-1. Instances have been removed due to issues identified as follows:
+1. Instances were removed due to issues identified as follows:
 	* 3 instances of event type 0;
 	* 1 instance of event type 5;
 	* 3 instances of event type 8, when compared to what is described in the paper **A realistic and public dataset with rare undesirable real events in oil wells** published in the **Journal of Petroleum Science and Engineering** (link [here](https://doi.org/10.1016/j.petrol.2019.106223)).
-1. Normal periods of certain instances with anomalies have been increased as possible. We tried to have instances with minimum normal periods of 1 hour;
+1. Normal periods of certain instances with anomalies were increased as possible. We tried to have instances with minimum normal periods of 1 hour;
 1. Names of certain files with instances have changed due to increased normal periods;
-1. Periods of certain instances have been relabeled;
-1. Time series of certain variables were added because these variables were contextualized after the previous version of the 3W Dataset was created;
-1. Time series of certain variables were removed because these variables were decontextualized after the previous version of the 3W Dataset was created;
-1. Time series of certain variables have been completely changed due to these variables having been recontextualized after the creation of the previous version of the 3W Dataset;
+1. Labels in some real instances were adjusted by experts;
+1. All values of some variables in some real instances were corrected due to corrections in historian systems' tag configurations;
 1. Certain variable values ​​have undergone minimal change due to different rounding;
-1. The 3W Dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
-1. The Jupyter Notebook with the [3W Dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.
+1. The 3W Dataset's main configuration file ([dataset.ini](dataset.ini)) was updated.
 
 ## 1.1.1
 
@@ -56,8 +54,30 @@ Release: April 09, 2023.
 
 Highlights:
 
-1. Issue #60 has been resolved;
-1. Issue #65 has been resolved;
+1. Issue #60 was resolved;
+1. Issue #65 was resolved;
 1. Certain variable values ​​have undergone minimal change due to different rounding;
-1. The 3W Dataset's main configuration file ([dataset.ini](dataset.ini)) has been updated;
-1. The Jupyter Notebook with the [3W Dataset's baseline general presentation](../overviews/_baseline/main.ipynb) has been updated.
+1. The 3W Dataset's main configuration file ([dataset.ini](dataset.ini)) was updated.
+
+## 2.0.0
+
+Release: July 25, 2024.
+
+Highlights:
+
+1. All instances are now saved in Parquet files (created with the `pyarrow` engine and `brotli` compression);
+1. Reduction in disk space occupied by the 3W Dataset of 3.15 GB (from 4.89 GB to 1.74 GB);
+1. Real and simulated instances of type 9 were added;
+1. Several instances of types 0, 3, 4, 5, 6 and 8 were added;
+1. Another 24 real wells were covered with new real instances (now 42 real wells are covered);
+1. Some real instances, mainly of type 1, were removed;
+1. 1 variable was removed (`T-JUS-CKGL`);
+1. Another 20 variables were added (there are now 27 variables);
+1. Another label referring to well operational status was added;
+1. Normal periods in several real instances with unwanted events were extended;
+1. All labeling gaps in real instances were eliminated (all observations were labeled);
+1. Conversions between measurement units in several instances were corrected;
+1. Labels in several real instances were adjusted by experts;
+1. All values of some variables in some real instances were corrected due to corrections in historian systems' tag configurations;
+1. Certain variable values ​​have undergone minimal change due to different rounding;
+1. The 3W Dataset's main configuration file ([dataset.ini](dataset.ini)) was updated.
