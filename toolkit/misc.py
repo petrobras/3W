@@ -31,6 +31,8 @@ from .base import (
     PATH_DATASET,
     VARS,
     EVENT_NAMES,
+    PARQUET_EXTENSION,
+    PARQUET_ENGINE,
 )
 
 
@@ -62,8 +64,8 @@ def label_and_file_generator(real=True, simulated=False, drawn=False):
             if i.is_dir():
                 label = int(i.stem)
                 for fp in i.iterdir():
-                    # Considers only csv files
-                    if fp.suffix == ".csv":
+                    # Considers only Parquet files
+                    if fp.suffix == PARQUET_EXTENSION:
                         # Considers only instances from the requested
                         # source
                         if (
@@ -235,13 +237,14 @@ def load_instance(instance):
             and contain its label (int) and its full path (Path).
 
     Raises:
-        Exception: Error if the CSV file passed as arg cannot be read.
+        Exception: Error if the Parquet file passed as arg cannot be 
+        read.
 
     Returns:
         pandas.DataFrame: Its index contains the timestamps loaded from
-            the CSV file. Its columns contain data loaded from the other
-            columns of the CSV file and metadata loaded from the
-            argument `instance` (label, well, and id).
+            the Parquet file. Its columns contain data loaded from the 
+            other columns of the Parquet file and metadata loaded from 
+            the argument `instance` (label, well, and id).
     """
     # Loads label metadata from the argument `instance`
     label, fp = instance
@@ -250,8 +253,8 @@ def load_instance(instance):
         # Loads well and id metadata from the argument `instance`
         well, id = fp.stem.split("_")
 
-        # Loads data from the CSV file
-        df = pd.read_csv(fp, index_col="timestamp", parse_dates=["timestamp"])
+        # Loads data from the Parquet file
+        df = pd.read_parquet(fp, engine=PARQUET_ENGINE)
         assert (
             df.columns == COLUMNS_DATA_FILES[1:]
         ).all(), f"invalid columns in the file {fp}: {df.columns.tolist()}"
@@ -281,9 +284,9 @@ def load_instances(instances):
 
     Returns:
         pandas.DataFrame: Its index contains the timestamps loaded from
-            the CSV files. Its columns contain data loaded from the
-            other columns of the CSV files and the metadata label, well,
-            and id).
+            the Parquet files. Its columns contain data loaded from the
+            other columns of the Parquet files and the metadata label, 
+            well, and id).
     """
     # Prepares for multiple parallel loadings
     pool = ThreadPool()
@@ -328,9 +331,7 @@ def create_and_plot_scatter_map(real_instances):
     well_times = defaultdict(list)
     well_classes = defaultdict(list)
     for (well, id, label), (tmin, tmax) in df_time.iterrows():
-        well_times[well].append(
-            (tmin.toordinal(), (tmax.toordinal() - tmin.toordinal()))
-        )
+        well_times[well].append((tmin, (tmax - tmin)))
         well_classes[well].append(label)
 
     wells = df["well"].unique()
@@ -349,7 +350,7 @@ def create_and_plot_scatter_map(real_instances):
     plt.rcParams["axes.labelsize"] = 9
     plt.rcParams["font.size"] = 9
     plt.rcParams["legend.fontsize"] = 9
-    fig, ax = plt.subplots(figsize=(9, 4))
+    fig, ax = plt.subplots(figsize=(9, 9))
     yticks = []
     yticks_labels = []
     for well in well_times.keys():
@@ -379,8 +380,8 @@ def create_and_plot_scatter_map(real_instances):
         frameon=False,
         handles=legend_colors,
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.22),
-        ncol=3,
+        bbox_to_anchor=(0.5, 1.12),
+        ncol=4,
     )
 
     return first_year, last_year
@@ -394,7 +395,8 @@ def count_properties_instance(instance):
             and contain its label (int) and its full path (Path).
 
     Raises:
-        Exception: Error if the CSV file passed as arg cannot be read.
+        Exception: Error if the Parquet file passed as arg cannot be 
+        read.
 
     Returns:
         dict: Dict containing the counted properties with the following
@@ -408,8 +410,8 @@ def count_properties_instance(instance):
     p = {"n_vars_missing": 0, "n_vars_frozen": 0}
 
     try:
-        # Read the CSV file
-        df = pd.read_csv(fp, index_col="timestamp", parse_dates=["timestamp"])
+        # Read the Parquet file
+        df = pd.read_parquet(fp, engine=PARQUET_ENGINE)
     except Exception as e:
         raise Exception(f"error reading file {fp}: {e}")
 
@@ -551,14 +553,16 @@ def resample(data, n, class_number):
 
 
 def plot_instance(class_number, instance_index, resample_factor):
-    """Plot one especific event class and instance. By default the instance is downsampling (n=100) and Z-score Scaler.
-        In order to help the visualization transient labels was changed to '0.5'.
+    """Plot one especific event class and instance. By default the 
+    instance is downsampling (n=100) and Z-score Scaler. In order to 
+    help the visualization transient labels was changed to '0.5'.
 
     Args:
-        class_number (integer): integer that represents the event class [0-8]
+        class_number (integer): integer that represents the event class 
+        [0-8]
         instance_index (integer): input the instance file index
     """
-    instances_path = os.path.join(PATH_DATASET, str(class_number), "*.csv")
+    instances_path = os.path.join(PATH_DATASET, str(class_number), "*"+PARQUET_EXTENSION)
     instances_path_list = glob.glob(instances_path)
     if class_number > 8 or class_number < 0:
         print(
@@ -569,12 +573,8 @@ def plot_instance(class_number, instance_index, resample_factor):
             f"instance index {instance_index} out of range - Insert a valid index between 0 and {len(instances_path_list)-1}"
         )
     else:
-        df_instance = pd.read_csv(
-            instances_path_list[instance_index], sep=",", header=0
-        )
-
+        df_instance = pd.read_parquet(instances_path_list[instance_index], engine=PARQUET_ENGINE)
         df_instance_resampled = resample(df_instance, resample_factor, class_number)
-
         df_drop_resampled = df_instance_resampled.drop(["timestamp", "class"], axis=1)
         df_drop_resampled.interpolate(
             method="linear", limit_direction="both", axis=0, inplace=True

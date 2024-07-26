@@ -47,9 +47,9 @@ the use of the [Black formatter](https://github.com/psf/black).
 """
 
 __status__ = "Development"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __license__ = "Apache License 2.0"
-__copyright__ = "Copyright 2022, Petróleo Brasileiro S.A."
+__copyright__ = "Copyright 2024, Petróleo Brasileiro S.A."
 __authors__ = [
     "Ricardo Emanuel Vaz Vargas",
     "Bruno Guberfain do Amaral",
@@ -73,6 +73,9 @@ from .base import (
     EventType,
     LABELS_DESCRIPTIONS,
     NORMAL_LABEL,
+    PARQUET_EXTENSION,
+    PARQUET_ENGINE,
+    PARQUET_COMPRESSION,
     PATH_3W_PROJECT,
     PATH_DATASET,
     PATH_DATASET_INI,
