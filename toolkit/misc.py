@@ -237,13 +237,13 @@ def load_instance(instance):
             and contain its label (int) and its full path (Path).
 
     Raises:
-        Exception: Error if the Parquet file passed as arg cannot be 
+        Exception: Error if the Parquet file passed as arg cannot be
         read.
 
     Returns:
         pandas.DataFrame: Its index contains the timestamps loaded from
-            the Parquet file. Its columns contain data loaded from the 
-            other columns of the Parquet file and metadata loaded from 
+            the Parquet file. Its columns contain data loaded from the
+            other columns of the Parquet file and metadata loaded from
             the argument `instance` (label, well, and id).
     """
     # Loads label metadata from the argument `instance`
@@ -285,7 +285,7 @@ def load_instances(instances):
     Returns:
         pandas.DataFrame: Its index contains the timestamps loaded from
             the Parquet files. Its columns contain data loaded from the
-            other columns of the Parquet files and the metadata label, 
+            other columns of the Parquet files and the metadata label,
             well, and id).
     """
     # Prepares for multiple parallel loadings
@@ -395,7 +395,7 @@ def count_properties_instance(instance):
             and contain its label (int) and its full path (Path).
 
     Raises:
-        Exception: Error if the Parquet file passed as arg cannot be 
+        Exception: Error if the Parquet file passed as arg cannot be
         read.
 
     Returns:
@@ -553,16 +553,18 @@ def resample(data, n, class_number):
 
 
 def plot_instance(class_number, instance_index, resample_factor):
-    """Plot one especific event class and instance. By default the 
-    instance is downsampling (n=100) and Z-score Scaler. In order to 
+    """Plot one especific event class and instance. By default the
+    instance is downsampling (n=100) and Z-score Scaler. In order to
     help the visualization transient labels was changed to '0.5'.
 
     Args:
-        class_number (integer): integer that represents the event class 
+        class_number (integer): integer that represents the event class
         [0-8]
         instance_index (integer): input the instance file index
     """
-    instances_path = os.path.join(PATH_DATASET, str(class_number), "*"+PARQUET_EXTENSION)
+    instances_path = os.path.join(
+        PATH_DATASET, str(class_number), "*" + PARQUET_EXTENSION
+    )
     instances_path_list = glob.glob(instances_path)
     if class_number > 8 or class_number < 0:
         print(
@@ -573,7 +575,9 @@ def plot_instance(class_number, instance_index, resample_factor):
             f"instance index {instance_index} out of range - Insert a valid index between 0 and {len(instances_path_list)-1}"
         )
     else:
-        df_instance = pd.read_parquet(instances_path_list[instance_index], engine=PARQUET_ENGINE)
+        df_instance = pd.read_parquet(
+            instances_path_list[instance_index], engine=PARQUET_ENGINE
+        )
         df_instance_resampled = resample(df_instance, resample_factor, class_number)
         df_drop_resampled = df_instance_resampled.drop(["timestamp", "class"], axis=1)
         df_drop_resampled.interpolate(

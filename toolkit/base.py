@@ -101,6 +101,7 @@ PARQUET_EXTENSION = parquet_settings.get("PARQUET_EXTENSION")
 PARQUET_ENGINE = parquet_settings.get("PARQUET_ENGINE")
 PARQUET_COMPRESSION = parquet_settings.get("PARQUET_COMPRESSION")
 
+
 # Classes
 #
 class EventType:
