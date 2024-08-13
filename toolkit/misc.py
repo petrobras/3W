@@ -527,14 +527,17 @@ def resample(data, n, class_number):
     Args:
         data (string): Instance path
         n (integer): Factor to downsampling the instance.
-        class_number (integer):  integer that represents the event class [0-8]
+        class_number (integer): integer that represents the event class
 
     Returns:
         pandas.DataFrame: Downsamplig instance DataFrame
     """
+    # Timestamp is expected to be a column
+    data.reset_index(inplace=True)
     # Group Timestamp and get last value
     resampleTimestamp = data.timestamp.groupby(data.index // n).max()
     # Replace transient label from 100 to 0.5
+    data["class"] = data["class"].astype(float)
     tempClassLabel = data["class"].replace(class_number + 100, 0.5)
     # Get the max value from the group Class column
     resampleClass = tempClassLabel.groupby(tempClassLabel.index // n).max()
@@ -544,10 +547,10 @@ def resample(data, n, class_number):
     dfResample = data.groupby(data.index // n).mean(numeric_only=True)
     # Drop class column
     dfResample.drop(["class"], axis=1, inplace=True)
-    # Insert new class label values group by non overlap
-    dfResample.insert(8, "class", resampleClass)
-    # Insert new timestamp values group by non overlap
-    dfResample.insert(0, "timestamp", resampleTimestamp)
+    # Insert resampled class label values
+    dfResample["class"] = resampleClass
+    # Insert resampled timestamp
+    dfResample.index = resampleTimestamp
 
     return dfResample
 
@@ -559,18 +562,13 @@ def plot_instance(class_number, instance_index, resample_factor):
 
     Args:
         class_number (integer): integer that represents the event class
-        [0-8]
         instance_index (integer): input the instance file index
     """
     instances_path = os.path.join(
         PATH_DATASET, str(class_number), "*" + PARQUET_EXTENSION
     )
     instances_path_list = glob.glob(instances_path)
-    if class_number > 8 or class_number < 0:
-        print(
-            f"invalid class number: {class_number} - Type a valid class number 0 to 8"
-        )
-    elif instance_index >= len(instances_path_list):
+    if instance_index >= len(instances_path_list):
         print(
             f"instance index {instance_index} out of range - Insert a valid index between 0 and {len(instances_path_list)-1}"
         )
@@ -579,7 +577,7 @@ def plot_instance(class_number, instance_index, resample_factor):
             instances_path_list[instance_index], engine=PARQUET_ENGINE
         )
         df_instance_resampled = resample(df_instance, resample_factor, class_number)
-        df_drop_resampled = df_instance_resampled.drop(["timestamp", "class"], axis=1)
+        df_drop_resampled = df_instance_resampled.drop(["state", "class"], axis=1)
         df_drop_resampled.interpolate(
             method="linear", limit_direction="both", axis=0, inplace=True
         )
@@ -617,7 +615,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         fig = go.Figure()
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[0]],
                 mode="lines+markers",
                 marker_symbol="circle",
@@ -629,7 +627,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[1]],
                 mode="lines+markers",
                 marker_symbol="diamond",
@@ -641,7 +639,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[2]],
                 mode="lines+markers",
                 marker_symbol="x",
@@ -653,7 +651,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[3]],
                 mode="lines+markers",
                 marker_symbol="star",
@@ -665,7 +663,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[4]],
                 mode="lines+markers",
                 marker_symbol="triangle-up",
@@ -677,7 +675,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[5]],
                 mode="lines",
                 name=VARS[5],
@@ -687,7 +685,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[6]],
                 mode="lines",
                 name=VARS[6],
@@ -697,7 +695,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_scaler_resampled[VARS[7]],
                 mode="lines",
                 name=VARS[7],
@@ -707,7 +705,7 @@ def plot_instance(class_number, instance_index, resample_factor):
         ),
         fig.add_trace(
             go.Scatter(
-                x=df_instance_resampled["timestamp"],
+                x=df_instance_resampled.index,
                 y=df_instance_resampled["class"],
                 mode="markers",
                 name="Label",
