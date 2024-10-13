@@ -4,7 +4,7 @@ import pandas as pd
 
 diretorio = '../dataset'
 
-# Lista as pastas no diretório
+
 pastas = [nome for nome in os.listdir(diretorio) if os.path.isdir(os.path.join(diretorio, nome))]
 
 app = Flask(__name__)
@@ -16,7 +16,7 @@ def home():
 @app.route('/datasets/<folder_number>/arquivos')
 def datasetsFiles(folder_number):
     diretorio = f'../dataset/{folder_number}'
-    # Lista apenas os arquivos no diretório
+    
     files = [nome for nome in os.listdir(diretorio) if os.path.isfile(os.path.join(diretorio, nome))]
     return render_template("choose_file.html", files=files, folder_number=folder_number)
 
@@ -32,9 +32,9 @@ def dataset(folder_number, filename):
 @app.route('/download/<folder_number>/<filename>')
 def download_file(folder_number, filename):
     file_path = f'../dataset/{folder_number}/{filename}'
-    # Verifica se o arquivo existe
+    
     if not os.path.isfile(file_path):
-        return abort(404)  # Retorna um erro 404 se o arquivo não for encontrado
+        return abort(404)  
     
     return send_file(file_path, as_attachment=True)
 
