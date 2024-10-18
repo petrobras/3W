@@ -7,4 +7,5 @@ Learning models;
 other sub-modules;
 * **rolling_window**: creates a view of array which for every point 
 gives the n-dimensional neighbourhood of size window. New dimensions are 
-added at the end of array or after the corresponding original dimension.
+added at the end of array or after the corresponding original dimension;
+* **charts**: has all the resources related to the creation of interactive charts.
