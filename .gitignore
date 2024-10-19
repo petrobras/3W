@@ -7,9 +7,7 @@ __pycache__/
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# 3W Toolkit documentation
-html/
-*.html
+
 
 # VS Code configuration
 .vscode/

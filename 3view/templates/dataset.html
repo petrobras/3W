@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff; 
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; 
+            height: 100vh; 
+        }
+
+        main {
+            background-color: #fff; 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: auto; 
+            display: flex; 
+            flex-direction: column; 
+            overflow-x: auto; 
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px; 
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse; 
+            margin: 20px 0; 
+            max-width: 100%; 
+            overflow-x: auto; 
+        }
+
+        th, td {
+            padding: 10px; 
+            text-align: left; 
+            border: 1px solid #ddd; 
+        }
+
+        th {
+            background-color: #007BFF; 
+            color: white; 
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2; 
+        }
+
+        tr:hover {
+            background-color: #e9ecef; 
+        }
+
+        
+        .load-more {
+            margin: 20px auto; 
+            padding: 10px 20px; 
+            background-color: #007BFF; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+        }
+
+        .load-more:hover {
+            background-color: #0056b3; 
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Dataset: {{ filename }}</h1>
+        <table>
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                        <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody id="data-body">
+                {% for i in range(10) %}
+                    <tr>
+                        {% for column in columns %}
+                            <td>{{ dados[column][i] }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="{{ url_for('download_file', folder_number=folder_number, filename=filename) }}">Baixar Arquivo</a>
+        <button class="load-more" onclick="loadMoreData()">Carregar mais dados</button>
+    </main>
+
+    <script>
+        const dados = {{ dados | tojson }}; // Passa os dados para o JavaScript
+        let currentRow = 10; // Começa com 10 linhas já exibidas
+        const totalRows = {{ rows_count }}; // Total de linhas do DataFrame
+
+        function loadMoreData() {
+            const dataBody = document.getElementById("data-body");
+
+            // Verifica se ainda há mais dados para carregar
+            if (currentRow >= totalRows) {
+                alert("Não há mais dados para carregar.");
+                return;
+            }
+
+            // Adiciona mais dados sem remover os existentes
+            for (let i = currentRow; i < Math.min(currentRow + 10, totalRows); i++) {
+                const newRow = document.createElement("tr");
+                for (let column of {{ columns | tojson }}) { // Usando tojson para serializar corretamente
+                    const newCell = document.createElement("td");
+                    newCell.textContent = dados[column][i]; // Adiciona os dados reais
+                    newRow.appendChild(newCell);
+                }
+                dataBody.appendChild(newRow);
+            }
+
+            currentRow += 10; // Atualiza o contador de linhas exibidas
+        }
+    </script>
+</body>
+</html>
+
+
