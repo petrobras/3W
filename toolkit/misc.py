@@ -47,7 +47,7 @@ folder_mapping = {
 # Methods
 #
 
-def load_and_combine_data(dataset_dir):
+def load_and_combine_data(dataset_dir, datatype):
     """
     Loads and combines Parquet files from multiple folders, adding additional columns 
     for folder ID, date, and time extracted from the file names.
@@ -56,6 +56,9 @@ def load_and_combine_data(dataset_dir):
     ----------
     dataset_dir : str
         Path to the root directory containing subfolders (0 to 9) with Parquet files.
+
+    datatype : str
+        Type that user need to remove of the dataset for a specific analysis
 
     Returns:
     --------
@@ -79,7 +82,7 @@ def load_and_combine_data(dataset_dir):
         folder_path = os.path.join(dataset_dir, str(folder))
         if os.path.exists(folder_path):
             for file_name in os.listdir(folder_path):
-                if file_name.endswith('.parquet') and not file_name.startswith('SIMULATED'): #removal according to the user's wishes
+                if file_name.endswith('.parquet') and not file_name.startswith(datatype): #removal according to the user's wishes
                     df = dd.read_parquet(os.path.join(folder_path, file_name))
                     file_name_without_ext = os.path.splitext(file_name)[0] 
                     date_str = file_name_without_ext.split.split('_')[1]
