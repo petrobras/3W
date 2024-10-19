@@ -1,20 +1,26 @@
-  services:
-    conda:
-      image: condaforge/miniforge3
-      networks:
-        - network
-      volumes:
-        - .:/app
-        - envs:/opt/conda/envs
-      working_dir: /app
-      command: ["bash", "-c", "./init.sh && tail -f /dev/null && source /opt/conda/etc/profile.d/conda.sh && conda activate 3W && jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root"]
-      ports:
-        - "8888:8888"
+services:
 
-  volumes:
-    envs:
-      driver: local
+  3view:
+    build: .
+    ports:
+      - "5000:5000"
 
-  networks:
-    network:
-      driver: bridge
+  conda:
+    image: condaforge/miniforge3
+    networks:
+      - network
+    volumes:
+      - .:/app
+      - envs:/opt/conda/envs
+    working_dir: /app
+    command: ["bash", "-c", "./init.sh && tail -f /dev/null && source /opt/conda/etc/profile.d/conda.sh && conda activate 3W && jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root"]
+    ports:
+      - "8888:8888"
+
+volumes:
+  envs:
+    driver: local
+
+networks:
+  network:
+    driver: bridge
