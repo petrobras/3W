@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 import os
+import dask.dataframe as dd
 
 from matplotlib.patches import Patch
 from pathlib import Path
@@ -35,9 +36,134 @@ from .base import (
     PARQUET_ENGINE,
 )
 
+folder_mapping = {
+    0: 'Normal Operation', 1: 'Abrupt Increase of BSW', 2: 'Spurious Closure of DHSV',
+    3: 'Severe Slugging', 4: 'Flow Instability', 5: 'Rapid Productivity Loss',
+    6: 'Quick Restriction in PCK', 7: 'Scaling in PCK', 8: 'Hydrate in Production Line',
+    9: 'Hydrate in Service Line'
+}
+
 
 # Methods
 #
+
+def load_and_combine_data(dataset_dir, datatype):
+    """
+    Loads and combines Parquet files from multiple folders, adding additional columns 
+    for folder ID, date, and time extracted from the file names.
+
+    Args:
+    ----------
+    dataset_dir : str
+        Path to the root directory containing subfolders (0 to 9) with Parquet files.
+
+    datatype : str
+        Type that user need to remove of the dataset for a specific analysis
+
+    Returns:
+    --------
+    dask.DataFrame or None
+        A combined Dask DataFrame with all the data from the Parquet files, or None 
+        if no files were found.
+    
+    Functionality:
+    --------------
+    - Iterates through folders (0-9) and loads all valid Parquet files (ignoring those 
+      starting with 'SIMULATED' or other type defined by user).
+    - Extracts date and time from the filename and adds them as new columns ('data', 'hora').
+    - Adds a 'folder_id' column to identify the folder each file originated from.
+    
+    Example:
+    --------
+    df = load_and_combine_data('/path/to/dataset')
+    """
+    dfs = []
+    for folder in range(10):
+        folder_path = os.path.join(dataset_dir, str(folder))
+        if os.path.exists(folder_path):
+            for file_name in os.listdir(folder_path):
+                if file_name.endswith('.parquet') and not file_name.startswith(datatype): #removal according to the user's wishes
+                    df = dd.read_parquet(os.path.join(folder_path, file_name))
+                    file_name_without_ext = os.path.splitext(file_name)[0] 
+                    date_str = file_name_without_ext.split.split('_')[1]
+                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                    formatted_time = f"{date_str[8:10]}:{date_str[10:12]}:{date_str[12:]}"
+                    df = df.assign(folder_id=folder, data=formatted_date, hora=formatted_time)
+                    dfs.append(df)
+    return dd.concat(dfs) if dfs else None
+
+def classify_events(df):
+    """
+    Classifies events in the dataset by folder and event type, and summarizes the 
+    occurrences of different event types.
+
+    Args:
+    ----------
+    df : dask.DataFrame
+        The DataFrame containing the event data, including a 'folder_id' column and a 'class' column.
+
+    Returns:
+    --------
+    dict
+        A dictionary summarizing the count of events by event type ('Normal Operation', 
+        'Transient', 'Permanent Anomaly') for each folder.
+    
+    Functionality:
+    --------------
+    - For each folder (0-9), counts the occurrences of events in three categories:
+      - 'Normal Operation': Events classified as 0.
+      - 'Transient': Events classified between 1 and 9.
+      - 'Permanent Anomaly': Events classified between 101 and 109.
+    
+    Example:
+    --------
+    event_summary = classify_events(df)
+    """
+    data = {folder_mapping[i]: {'Normal Operation': 0, 'Transient': 0, 'Permanent Anomaly': 0} for i in range(10)}
+    for folder in range(10):
+        folder_data = df[df['folder_id'] == folder]
+        if len(folder_data.index) > 0:
+            dtb = folder_data['class'].value_counts().compute()
+            data[folder_mapping[folder]]['Normal Operation'] = dtb.get(0, 0)
+            data[folder_mapping[folder]]['Transient'] = dtb[(dtb.index >= 1) & (dtb.index <= 9)].sum()
+            data[folder_mapping[folder]]['Permanent Anomaly'] = dtb[(dtb.index >= 101) & (dtb.index <= 109)].sum()
+    return data
+
+def visualize_data(data):
+    """
+    Visualizes the event distribution by type using a stacked area chart.
+
+    Parameters:
+    ----------
+    data : dict
+        A dictionary where keys are folder names, and values are dictionaries with 
+        counts of different event types ('Normal Operation', 'Transient', 'Permanent Anomaly').
+
+    Returns:
+    --------
+    None
+        Displays a stacked area chart showing the distribution of event types for each folder.
+    
+    Functionality:
+    --------------
+    - Converts the input dictionary into a DataFrame for plotting.
+    - Generates a stacked area chart with event types represented in different colors.
+    - Adds labels for the x and y axes, and a title.
+    
+    Example:
+    --------
+    visualize_data(event_summary)
+    """
+    df_plot = pd.DataFrame(data).T
+    df_plot.plot(kind='area', stacked=True, color=['blue', 'orange', 'purple'], figsize=(14, 8), alpha=0.6)
+    plt.title('Occurrences by Event Type', fontsize=16)
+    plt.xlabel('Situations', fontsize=14)
+    plt.ylabel('Amount', fontsize=14)
+    plt.xticks(rotation=45, ha='right', fontsize=12)
+    plt.legend(title='Event Type', loc='upper right')
+    plt.tight_layout()
+    plt.show()
+
 def label_and_file_generator(real=True, simulated=False, drawn=False):
     """This is a generating function that returns tuples for all
     indicated instance sources (`real`, `simulated` and/or
