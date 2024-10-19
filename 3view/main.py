@@ -4,7 +4,6 @@ import pandas as pd
 
 diretorio = '../dataset'
 
-
 pastas = [nome for nome in os.listdir(diretorio) if os.path.isdir(os.path.join(diretorio, nome))]
 
 app = Flask(__name__)
@@ -34,7 +33,7 @@ def download_file(folder_number, filename):
     file_path = f'../dataset/{folder_number}/{filename}'
     
     if not os.path.isfile(file_path):
-        return abort(404)  
+        return abort(404) 
     
     return send_file(file_path, as_attachment=True)
 
