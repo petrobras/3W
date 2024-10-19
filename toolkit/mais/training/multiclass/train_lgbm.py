@@ -47,9 +47,9 @@ def eval_lgbm(ctx, **kwargs):
     # grab all cli params
     config = {**ctx.obj, **kwargs}
 
-    # preload events
-    training_events = MAEDataset.load_events(config["train_path"])
-    test_events = MAEDataset.load_events(config["test_path"])
+    # Create MAEDataset objects
+    training_events = MAEDataset(data_type='real', base_path=config["train_path"])  
+    test_events = MAEDataset(data_type='real', base_path=config["test_path"])  
 
     # fake trial sampler with fixed parameters
     with open(config["param_file"]) as f:
@@ -66,7 +66,7 @@ def eval_lgbm(ctx, **kwargs):
         metric_name = experiment.metric_name()
 
         # process events
-        data = prepare_data(experiment, events, config["num_jobs"])
+        data = prepare_data(experiment, training_events.events, test_events.events, config["num_jobs"])
 
         Xt = data["train_X"]
         yt = data["train_y"]
@@ -147,3 +147,4 @@ def cv(ctx, param_file):
 if __name__ == "__main__":
     os.nice(19)
     cli(obj={})
+    

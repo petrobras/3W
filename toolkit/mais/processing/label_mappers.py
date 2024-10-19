@@ -3,9 +3,6 @@ import numpy as np
 import scipy.stats as sp
 import torch
 
-from dataset.dataset import MAEDataset
-
-
 class RollingLabelStrategy:
     """
     Base class that just wraps applications of apply,
@@ -103,7 +100,7 @@ class TorchLabelStrategy:
 
         # not enough samples for windowing, return empty
         if len(labels) < self.offset + self.window_size:
-            out = pd.Series(name=MAEDataset.LABEL_NAME, dtype=np.float64)
+            out = pd.Series(name="class", dtype=np.float64)  # Changed to 'class'
             out.index.name = index.name
             return out
 
@@ -115,7 +112,7 @@ class TorchLabelStrategy:
         index = index[self.offset :][self.window_size - 1 :: self.stride]
 
         out = pd.Series(
-            name=MAEDataset.LABEL_NAME,
+            name="class",  # Changed to 'class'
             data=self.apply(y, event_type),
             index=index,
             dtype=np.float64,
@@ -199,3 +196,4 @@ class TorchMulticlassMRLStrategy(TorchLabelStrategy):
     def apply(self, y, event_type=None):
         last = y[:, -1]
         return torch.where(last.isnan(), self._NAN, (last % 100).float())
+    
