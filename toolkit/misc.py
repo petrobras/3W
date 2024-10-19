@@ -126,6 +126,40 @@ def classify_events(df):
             data[folder_mapping[folder]]['Permanent Anomaly'] = dtb[(dtb.index >= 101) & (dtb.index <= 109)].sum()
     return data
 
+def visualize_data(data):
+    """
+    Visualizes the event distribution by type using a stacked area chart.
+
+    Parameters:
+    ----------
+    data : dict
+        A dictionary where keys are folder names, and values are dictionaries with 
+        counts of different event types ('Normal Operation', 'Transient', 'Permanent Anomaly').
+
+    Returns:
+    --------
+    None
+        Displays a stacked area chart showing the distribution of event types for each folder.
+    
+    Functionality:
+    --------------
+    - Converts the input dictionary into a DataFrame for plotting.
+    - Generates a stacked area chart with event types represented in different colors.
+    - Adds labels for the x and y axes, and a title.
+    
+    Example:
+    --------
+    visualize_data(event_summary)
+    """
+    df_plot = pd.DataFrame(data).T
+    df_plot.plot(kind='area', stacked=True, color=['blue', 'orange', 'purple'], figsize=(14, 8), alpha=0.6)
+    plt.title('Occurrences by Event Type', fontsize=16)
+    plt.xlabel('Situations', fontsize=14)
+    plt.ylabel('Amount', fontsize=14)
+    plt.xticks(rotation=45, ha='right', fontsize=12)
+    plt.legend(title='Event Type', loc='upper right')
+    plt.tight_layout()
+    plt.show()
 
 def label_and_file_generator(real=True, simulated=False, drawn=False):
     """This is a generating function that returns tuples for all
