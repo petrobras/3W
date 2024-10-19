@@ -131,6 +131,19 @@ It is important to note that there are arbitrary choices in this toolkit, but th
 
 The 3W Toolkit is implemented in sub-modules as discribed [here](3W_TOOLKIT_STRUCTURE.md).
 
+### Loading the 3W Dataset 2.0
+
+The `load_3w_dataset()` function loads the 3W Dataset 2.0, which is composed of multiple Parquet files organized in folders.
+
+**Usage:**
+
+```python
+import toolkit as tk
+
+# Load the real data from the 3W Dataset 2.0
+df = tk.load_3w_dataset(data_type='real', base_path='path/to/dataset')
+```
+
 ## Incorporated Problems
 
 Specific problems will be incorporated into this project gradually. At this point, we can work on:
