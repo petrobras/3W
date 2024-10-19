@@ -13,8 +13,9 @@
 
 * [Introduction](#introduction)
 * [Release Notes](#release-notes)
-  * [1.0.0](#100)
-  * [1.1.0](#110)
+  * [1.0.0](#100)
+  * [1.1.0](#110)
+  * [1.2.0](#120)  
 
 # Introduction
 
@@ -37,3 +38,16 @@ Release: July 25, 2024.
 Highlights:
 
 1. Makes resources (functions and constants) compatible with 3W Dataset version 2.0.0, which is based on Parquet files.
+
+## 1.2.0
+
+Release: October 19, 2024  (Data em que estamos hoje)
+
+Highlights:
+
+1. **Adapts `load_dataset()` to 3W Dataset 2.0:** The `load_dataset()` function in `base.py` was adapted to correctly handle the folder structure and different data types of the 3W Dataset 2.0. It was renamed to `load_3w_dataset()`.
+2. **Updates `dev.py` for 3W Dataset 2.0:** The `dev.py` sub-module was updated to ensure compatibility with the new `load_3w_dataset()` function and the 3W Dataset 2.0 structure. The `extrai_arrays()` function was removed, and the `EventFolds` and `Experiment` classes were adjusted.
+3. **Updates `misc.py` for 3W Dataset 2.0:** The `misc.py` sub-module was updated to ensure compatibility with the new `load_3w_dataset()` function and the 3W Dataset 2.0 structure. Redundant functions were removed, and existing functions were adapted to receive the DataFrame as a parameter.
+4. **Updates `__init__.py` for 3W Dataset 2.0:**  The `__init__.py` file was updated to import and expose the new `load_3w_dataset()` function.
+
+These updates ensure that the 3W Toolkit is fully compatible with the 3W Dataset 2.0, providing a more efficient and streamlined workflow for loading and analyzing the data.
