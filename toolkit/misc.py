@@ -52,7 +52,7 @@ def load_and_combine_data(dataset_dir):
     Loads and combines Parquet files from multiple folders, adding additional columns 
     for folder ID, date, and time extracted from the file names.
 
-    Parameters:
+    Args:
     ----------
     dataset_dir : str
         Path to the root directory containing subfolders (0 to 9) with Parquet files.
@@ -66,7 +66,7 @@ def load_and_combine_data(dataset_dir):
     Functionality:
     --------------
     - Iterates through folders (0-9) and loads all valid Parquet files (ignoring those 
-      starting with 'SIMULATED').
+      starting with 'SIMULATED' or other type defined by user).
     - Extracts date and time from the filename and adds them as new columns ('data', 'hora').
     - Adds a 'folder_id' column to identify the folder each file originated from.
     
@@ -88,6 +88,43 @@ def load_and_combine_data(dataset_dir):
                     df = df.assign(folder_id=folder, data=formatted_date, hora=formatted_time)
                     dfs.append(df)
     return dd.concat(dfs) if dfs else None
+
+def classify_events(df):
+    """
+    Classifies events in the dataset by folder and event type, and summarizes the 
+    occurrences of different event types.
+
+    Args:
+    ----------
+    df : dask.DataFrame
+        The DataFrame containing the event data, including a 'folder_id' column and a 'class' column.
+
+    Returns:
+    --------
+    dict
+        A dictionary summarizing the count of events by event type ('Normal Operation', 
+        'Transient', 'Permanent Anomaly') for each folder.
+    
+    Functionality:
+    --------------
+    - For each folder (0-9), counts the occurrences of events in three categories:
+      - 'Normal Operation': Events classified as 0.
+      - 'Transient': Events classified between 1 and 9.
+      - 'Permanent Anomaly': Events classified between 101 and 109.
+    
+    Example:
+    --------
+    event_summary = classify_events(df)
+    """
+    data = {folder_mapping[i]: {'Normal Operation': 0, 'Transient': 0, 'Permanent Anomaly': 0} for i in range(10)}
+    for folder in range(10):
+        folder_data = df[df['folder_id'] == folder]
+        if len(folder_data.index) > 0:
+            dtb = folder_data['class'].value_counts().compute()
+            data[folder_mapping[folder]]['Normal Operation'] = dtb.get(0, 0)
+            data[folder_mapping[folder]]['Transient'] = dtb[(dtb.index >= 1) & (dtb.index <= 9)].sum()
+            data[folder_mapping[folder]]['Permanent Anomaly'] = dtb[(dtb.index >= 101) & (dtb.index <= 109)].sum()
+    return data
 
 
 def label_and_file_generator(real=True, simulated=False, drawn=False):
