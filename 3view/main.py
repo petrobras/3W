@@ -1,6 +1,7 @@
 from flask import Flask, render_template, send_file, abort
 import os
 import pandas as pd
+import re
 
 diretorio = './dataset'
 
@@ -11,6 +12,10 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return render_template("index.html", pastas=pastas)
+
+@app.route('/choose-dataset')
+def choose_dataset():
+    return render_template("choose_dataset.html", pastas=pastas)
 
 @app.route('/datasets/<folder_number>/arquivos')
 def datasetsFiles(folder_number):
@@ -36,6 +41,21 @@ def download_file(folder_number, filename):
         return abort(404) 
     
     return send_file(file_path, as_attachment=True)
+
+@app.route('/citations')
+def exibir_markdown():
+    file_path = os.path.join(os.getcwd(), '3view', 'templates', 'LIST_OF_CITATIONS.md')
+    with open(file_path, 'r', encoding='utf-8') as file:
+        conteudo_md = file.read()
+    citacoes = processar_citações(conteudo_md)
+
+    return render_template('citations.html', citacoes=citacoes)
+
+
+def processar_citações(conteudo_md):
+    padrão_citação = r'(\d+\..*?)\s*(https?://[^\s]+)'
+    citações = re.findall(padrão_citação, conteudo_md)
+    return [(texto.strip(), link.strip()) for texto, link in citações]
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
