@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 import os
+import dask.dataframe as dd
 
 from matplotlib.patches import Patch
 from pathlib import Path
@@ -35,9 +36,60 @@ from .base import (
     PARQUET_ENGINE,
 )
 
+folder_mapping = {
+    0: 'Normal Operation', 1: 'Abrupt Increase of BSW', 2: 'Spurious Closure of DHSV',
+    3: 'Severe Slugging', 4: 'Flow Instability', 5: 'Rapid Productivity Loss',
+    6: 'Quick Restriction in PCK', 7: 'Scaling in PCK', 8: 'Hydrate in Production Line',
+    9: 'Hydrate in Service Line'
+}
+
 
 # Methods
 #
+
+def load_and_combine_data(dataset_dir):
+    """
+    Loads and combines Parquet files from multiple folders, adding additional columns 
+    for folder ID, date, and time extracted from the file names.
+
+    Parameters:
+    ----------
+    dataset_dir : str
+        Path to the root directory containing subfolders (0 to 9) with Parquet files.
+
+    Returns:
+    --------
+    dask.DataFrame or None
+        A combined Dask DataFrame with all the data from the Parquet files, or None 
+        if no files were found.
+    
+    Functionality:
+    --------------
+    - Iterates through folders (0-9) and loads all valid Parquet files (ignoring those 
+      starting with 'SIMULATED').
+    - Extracts date and time from the filename and adds them as new columns ('data', 'hora').
+    - Adds a 'folder_id' column to identify the folder each file originated from.
+    
+    Example:
+    --------
+    df = load_and_combine_data('/path/to/dataset')
+    """
+    dfs = []
+    for folder in range(10):
+        folder_path = os.path.join(dataset_dir, str(folder))
+        if os.path.exists(folder_path):
+            for file_name in os.listdir(folder_path):
+                if file_name.endswith('.parquet') and not file_name.startswith('SIMULATED'): #removal according to the user's wishes
+                    df = dd.read_parquet(os.path.join(folder_path, file_name))
+                    file_name_without_ext = os.path.splitext(file_name)[0] 
+                    date_str = file_name_without_ext.split.split('_')[1]
+                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                    formatted_time = f"{date_str[8:10]}:{date_str[10:12]}:{date_str[12:]}"
+                    df = df.assign(folder_id=folder, data=formatted_date, hora=formatted_time)
+                    dfs.append(df)
+    return dd.concat(dfs) if dfs else None
+
+
 def label_and_file_generator(real=True, simulated=False, drawn=False):
     """This is a generating function that returns tuples for all
     indicated instance sources (`real`, `simulated` and/or
