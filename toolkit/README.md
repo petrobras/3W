@@ -41,7 +41,7 @@ Highlights:
 
 ## 1.2.0
 
-Release: October 19, 2024  (Data em que estamos hoje)
+Release: October 19, 2024 # Lastiest version
 
 Highlights:
 
