@@ -1,19 +1,30 @@
 import numpy as np
 import sklearn.metrics
 
+from .base import (
+    CLASS,
+    COLUMNS_DATA_FILES,
+    EVENT_NAMES,
+    LABELS_DESCRIPTIONS,
+    NORMAL_LABEL,
+    PATH_DATASET,
+    TRANSIENT_OFFSET,
+    VARS,
+    load_3w_dataset,
+)
 
 class BaseExperiment:
     """Basic Experiment interface, with sane defaults"""
 
     def __init__(self):
         # use all tags
-        self.selected_tags = MAEDataset.TAG_NAMES
+        self.selected_tags = VARS  # Updated to use VARS from base.py
 
-        # drop hand-drawn instances
-        self.instance_types = ["real", "simulated"]
+        # use all types of instances
+        self.instance_types = ["real", "simulated", "imputed"]  # Updated to include 'imputed'
 
         # use all classes
-        self.tgt_events = MAEDataset.KNOWN_CLASSES
+        self.tgt_events = list(range(len(EVENT_NAMES)))  # Updated to use EVENT_NAMES from base.py
         self.num_classes = len(self.tgt_events)
 
     def raw_transform(self, event):
@@ -83,3 +94,4 @@ class BaseExperiment:
             return name, _func(y_true, y_pred), _sign
 
         return _f
+    

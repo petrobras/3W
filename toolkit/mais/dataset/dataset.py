@@ -2,12 +2,23 @@
 """ Basic dataset definitions """
 
 from collections import namedtuple
-from pathlib import Path
 
 import numpy as np
 import pandas
 
 from joblib import Parallel, delayed
+
+from .base import (
+    CLASS,
+    COLUMNS_DATA_FILES,
+    EVENT_NAMES,
+    LABELS_DESCRIPTIONS,
+    NORMAL_LABEL,
+    PATH_DATASET,
+    TRANSIENT_OFFSET,
+    VARS,
+    load_3w_dataset,
+)
 
 
 class MAEDataset:
@@ -28,7 +39,7 @@ class MAEDataset:
             one or more of {"real", "simulated", "drawn"}
 
         - **feature_mapper: CALLABLE**
-        (raw_tags: DataFrame,  raw_labels: DataFrame) ->
+        (raw_tags: DataFrame,  raw_labels: DataFrame) ->
         (feature: DataFrame x label: DataFrame) --
         deals with transforming the raw data from a single event,
         to be used during training/evaluation. Outputs from each event concatenated
@@ -97,24 +108,14 @@ class MAEDataset:
     }
 
     # List of known data tags
-    TAG_NAMES = [
-        "P-PDG",
-        "P-TPT",
-        "T-TPT",
-        "P-MON-CKP",
-        "T-JUS-CKP",
-        "P-JUS-CKGL",
-        "T-JUS-CKGL",
-        "QGL",
-    ]
+    TAG_NAMES = VARS
 
     def __init__(
         self,
         transformed_events=None,
         events=None,  # either pass in preloaded events or the root directory
-        root_dir=None,
+        data_type="real",  # Type of data to load: 'real', 'simulated', or 'imputed'
         tgt_events=[],  # which event_types to load
-        instance_types=[],  # simulated and or real and or drawn
         feature_mapper=tuple,  # transformer from event to features
         n_jobs=-1,
     ):
@@ -123,94 +124,62 @@ class MAEDataset:
         """
 
         # save parameters
-        self.root_dir = root_dir
+        self.data_type = data_type
         self.tgt_events = tgt_events
-        self.instance_types = instance_types
         self.n_jobs = n_jobs
         self.feature_mapper = feature_mapper
 
         # Call the heavy load _make_set passing the (maybe Null) events
         self._make_set(events)
 
-    def _instance_type(fname):
+
+    def load_events(self, data_type="real", n_jobs=-1):
         """
-        Detects if instance type is selected.
+        Load events from the 3W Dataset 2.0.
 
         * Parameters:
-            - **fname**: STRING - name of the instance file
+            - **data_type: STRING** - Type of data to load ('real', 'simulated', or 'imputed')
 
         * Returns:
-            - **STRING** - string representing the instance type of the input file name
-
-        """
-        if fname.startswith("OLGA"):
-            return "simulated"
-        elif fname.startswith("DESENHADA"):
-            return "drawn"
-        else:
-            return "real"
-
-    def load_events(data_root, n_jobs=-1):
-        """
-        Scan data_root for raw files and return dict. useful for preloads.
-
-        * Parameters:
-            - **data_root: STRING** - base location of events separated by event type
-
-        * Returns:
-            - **events**: [LIST] - Optional list of preloaded events
+            - **events**: [LIST] - List of loaded events
         """
 
-        def _read(tgt, fname):
+        def _read(df):
             """
             Return a dict with the summary of a target.
 
             * Parameters:
-                - **tgt: STRING** - Target location
+                - **df: pandas.DataFrame** - DataFrame with the 3W Dataset 2.0 data.
 
             * Returns:
-                - **fname**: STRING - Filename
+                - **dict**: Dict with the summary of a target.
             """
-            df = pandas.read_csv(
-                fname,
-                index_col=MAEDataset.INDEX_NAME,
-                header=0,
-                parse_dates=True,
-                memory_map=True,
-            )
+
             tags = df[MAEDataset.TAG_NAMES]
             labels = df[MAEDataset.LABEL_NAME]
 
             return {
-                "file_name": str(fname.relative_to(tgt)),
                 "tags": tags,
                 "labels": labels,
-                "event_type": int(str(tgt.relative_to(data_root))),
+                "event_type": df["label"].iloc[0],
             }
 
-        data_root = Path(data_root)
-        target_dirs = [
-            d for d in data_root.iterdir() if d.match("[0-8]")
-        ]  # filter directories with classes
-        tasks = [(tgt, fname) for tgt in target_dirs for fname in tgt.glob("*.csv")]
-        with Parallel(n_jobs) as p:
-            events = p(delayed(_read)(*t) for t in tasks)
+        # Load the 3W Dataset 2.0
+        df = load_3w_dataset(data_type=data_type)
+
+        # Split the DataFrame by event type
+        events = [_read(df[df["label"] == event_type]) for event_type in df["label"].unique()]
+
         return events
 
     def transform_events(
-        events, raw_mapper, tgt_events=None, instance_types=None, n_jobs=-1
+        self, events, raw_mapper, tgt_events=None, n_jobs=-1
     ):
         """
-        Apply raw_mapper to list of events, filtering by target events and instance types
+        Apply raw_mapper to list of events, filtering by target events
         """
         if tgt_events is not None:
             events = [e for e in events if (e["event_type"] in tgt_events)]
-        if instance_types is not None:
-            events = [
-                e
-                for e in events
-                if (MAEDataset._instance_type(e["file_name"]) in instance_types)
-            ]
 
         with Parallel(n_jobs) as p:
             return p(delayed(raw_mapper)(e) for e in events)
@@ -229,7 +198,7 @@ class MAEDataset:
 
     def _make_set(self, events=None):
         """
-        Loads all instances of target classes from the desired types, transforming the raw data to obtain its
+        Loads all instances of target classes, transforming the raw data to obtain its
         features by calling the *feature_mapper()* method for each instance.
 
         * Parameters:
@@ -238,15 +207,10 @@ class MAEDataset:
 
         # load if not preloaded
         if events is None:
-            events = MAEDataset.load_events(self.root_dir)
+            events = MAEDataset.load_events(self, self.data_type)
 
         # filter events
-        def _should_keep(e):
-            return (
-                MAEDataset._instance_type(e["file_name"]) in self.instance_types
-            ) and (e["event_type"] in self.tgt_events)
-
-        events = [e for e in events if _should_keep(e)]
+        events = [e for e in events if (e["event_type"] in self.tgt_events)]
 
         feature_names = []
         X = []
@@ -283,4 +247,5 @@ class MAEDataset:
         self.g_class = np.array(g_class)
         self.g = np.repeat(np.arange(self.g_len.size), self.g_len)
 
-        self.feature_names = np.array(feature_names[0].to_list())
+        self.feature
+        

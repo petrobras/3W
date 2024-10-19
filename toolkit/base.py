@@ -1,7 +1,7 @@
-"""This 3W toolkits' sub-module groups objects used by the other 
-sub-modules. 
+"""This 3W toolkits' sub-module groups objects used by the other
+sub-modules.
 
-Any resource that is not used by another sub-module must be maintained 
+Any resource that is not used by another sub-module must be maintained
 in the miscellaneous sub-module.
 """
 
@@ -54,6 +54,59 @@ def load_config_in_dataset_ini():
         )
 
     return dict(dataset_ini)
+
+
+def load_3w_dataset(data_type='real', base_path=PATH_DATASET):
+    """
+    Load the 3W Dataset 2.0.
+
+    Parameters
+    ----------
+    data_type : str, optional
+        Type of data to be loaded ('real', 'simulated' or 'imputed').
+        The default is 'real'.
+    base_path : str, optional
+        Path to the root folder of the dataset. The default is PATH_DATASET.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with the 3W Dataset 2.0 data.
+    """
+
+    dataframes = []
+    for i in range(10):  # Loop through folders 0 to 9
+        folder_path = os.path.join(base_path, str(i))
+        if os.path.exists(folder_path):
+            parquet_files = [f for f in os.listdir(folder_path) if f.endswith('.parquet')]
+            for file in parquet_files:
+                file_path = os.path.join(folder_path, file)
+                try:
+                    df = pd.read_parquet(file_path)
+
+                    # Filter data by specified type
+                    if data_type == 'real':
+                        df_filtered = df[df['state'] == 0]  # Real data
+                    elif data_type == 'simulated':
+                        df_filtered = df[df['state'] == 1]  # Simulated data
+                    elif data_type == 'imputed':
+                        df_filtered = df[df['state'] == 2]  # Imputed data
+                    else:
+                        raise ValueError("Invalid data type. Choose between 'real', 'simulated' or 'imputed'.")
+
+                    dataframes.append(df_filtered)
+                except Exception as e:
+                    print(f"Error reading file {file_path}: {e}")
+        else:
+            print(f"Folder {folder_path} not found.")
+
+    # Concatenate all DataFrames into a single DataFrame
+    if dataframes:
+        df = pd.concat(dataframes, ignore_index=True)
+        return df
+    else:
+        print("No data found.")
+        return None
 
 
 # Loads all configurations present in the 3W Dataset's main
@@ -123,3 +176,4 @@ class EventType:
         self.TRANSIENT = event_section.getboolean("TRANSIENT")
         self.window = event_section.getint("WINDOW")
         self.step = event_section.getint("STEP")
+        

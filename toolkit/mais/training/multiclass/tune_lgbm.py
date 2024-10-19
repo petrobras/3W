@@ -23,8 +23,6 @@ import click
 
 import joblib
 
-# import dask.distributed
-
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -167,10 +165,10 @@ def plot_confusion_matrix(cm, std=None, normalize=False):
 
     if std is not None:
         annot = [
-            [rf"${v:.2f}\pm{s:.2f}$" for v, s in zip(vr, sr)] for vr, sr in zip(cm, std)
+            [rf"<span class="math-inline">\{v\:\.2f\}\\pm\{s\:\.2f\}</span>" for v, s in zip(vr, sr)] for vr, sr in zip(cm, std)
         ]
     else:
-        annot = [[f"${v:.2f}$" for v in vr] for vr in cm]
+        annot = [[f"<span class="math-inline">\{v\:\.2f\}</span>" for v in vr] for vr in cm]
 
     fig, ax = plt.subplots(figsize=(10, 10))
     sns.heatmap(cm, cmap="viridis", annot=annot, fmt="", square=True, ax=ax)
@@ -197,7 +195,7 @@ def score_model(train_set, test_set, experiment, model, n_jobs=-1):
     # rebalance train set
     Xt, yt, _ = experiment.balance(Xt, yt, gt, train_set.g_class)
 
-    # preprocess and fit
+   # preprocess and fit
     logger.info("experiment.fit")
     Xt, yt = experiment.fit_transform(Xt, yt)
     Xs, ys = experiment.transform(Xs, ys)
@@ -398,9 +396,13 @@ def nested_cv(ctx, **kwargs):
     # gather configuration
     config = {**ctx.obj, **kwargs}
 
-    with joblib.parallel_backend("loky", n_jobs=config["n_jobs"]):
-        # preload events
-        events = MAEDataset.load_events(config["data_root"], -1)
+    with joblib.parallel_backend("loky", n_jobs=config["n_jobs"]):   
+
+        # Create an instance of the MAEDataset class
+        dataset = MAEDataset(data_type='real', base_path=config["data_root"])  # Assuming data_type is 'real'
+
+        # Access the events through the events attribute
+        events = dataset.events
 
         model_sampler = lightgbm_sampler
         experiment_sampler = importlib.import_module(config["experiment_name"]).sample
@@ -429,7 +431,8 @@ def tune(ctx, **kwargs):
     # _ = dask.distributed.Client(n_workers=config["n_jobs"], processes=True)
     with joblib.parallel_backend("loky", n_jobs=config["n_jobs"]):
         # preload events
-        train_events = MAEDataset.load_events(config["train_root"], config["n_jobs"])
+        train_events = MAEDataset(data_type='real',   
+ base_path=config["train_root"])
 
         # select samplers
         model_sampler = lightgbm_sampler
@@ -443,7 +446,8 @@ def tune(ctx, **kwargs):
 
             # find best hyper-params
             study = hyperparameter_search(
-                train_events, experiment_sampler, model_sampler, config
+                train_events.events,   
+ experiment_sampler, model_sampler, config  # Access events through the events attribute
             )
 
             # train model with best params
@@ -455,7 +459,8 @@ def tune(ctx, **kwargs):
 
             # map and gather tranining set
             transformed_train_events = MAEDataset.transform_events(
-                train_events,
+                train_events.events,   
+  # Access events through the events attribute
                 best_experiment.raw_transform,
                 instance_types=best_experiment.instance_types,
                 tgt_events=best_experiment.tgt_events,
@@ -464,9 +469,10 @@ def tune(ctx, **kwargs):
             train_set = MAEDataset.gather(transformed_train_events)
 
             # map and gather test set
-            test_events = MAEDataset.load_events(config["test_root"], config["n_jobs"])
+            test_events = MAEDataset(data_type='real',   
+ base_path=config["test_root"])
             transformed_test_events = MAEDataset.transform_events(
-                test_events,
+                test_events.events,  # Access events through the events attribute
                 best_experiment.raw_transform,
                 instance_types=best_experiment.instance_types,
                 tgt_events=best_experiment.tgt_events,
@@ -481,4 +487,4 @@ def tune(ctx, **kwargs):
 
 if __name__ == "__main__":
     os.nice(19)
-    cli(obj={})
+    cli(obj={})   
