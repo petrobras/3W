@@ -171,4 +171,18 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. E.M. Turan. Advances in Optimisation and Machine Learning for Process Systems Engineering. Norwegian University of Science and Technology. Doctoral thesis. 2024. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_evren_turan.pdf.
 
-1. T.L.B. Dias, M.A. Marins, C.L. Pagliari, R.M.E. Barbosa, M.L.R. de Campos, E.A.B. Silva, S.L.Netto. Development of Oilwell Fault Classifiers Using a Wavelet-Based Multivariable Approach in a Modular Architecture. Society of Petroleum Engineers Journal. 2024. https://doi.org/10.2118/221463-PA.
+1. T.L.B. Dias, M.A. Marins, C.L. Pagliari, R.M.E. Barbosa, M.L.R. de Campos, E.A.B. Silva, S.L.Netto. Development of Oilwell Fault Classifiers Using a Wavelet-Based Multivariable Approach in a Modular Architecture. SPE Journal. 2024. https://doi.org/10.2118/221463-PA.
+
+1. A. Markaj, M. Mercangöz, A. Fay. Design and implementation of an Autonomous Systems Training Environment framework for control algorithm evaluation in autonomous plant operation. Computers & Chemical Engineering. 2024. https://doi.org/10.1016/j.compchemeng.2024.108798.
+
+1. A. Melo, T.S.M. Lemos, R.M. Soares, D. Spina, N. Clavijo, L.F.O. Campos, M.M. Câmara, T. Feital, T.K. Anzai, P.H. Thompson, F.C. Diehl, J.C.Pinto. BibMon: An open source Python package for process monitoring, soft sensing, and fault diagnosis. Digital Chemical Engineering. 2024. https://doi.org/10.1016/j.dche.2024.100182.
+
+1. R. Villamil, J. May, R. Fallgatter,  R. Vargas, A. Nakashima,  G. Peixer,  J. Lozano,  J. Barbosa. Assessment of deep-learning techniques for anomaly detection in offshore oil wells. Brazilian Congress of Thermal Sciences and Engineering. 2024.
+
+1. A.O. Ifenaike, O.B. Oluwadare. Advancing Drilling Safety: Automated Anomaly Detection in Well Control Using Machine Learning Techniques. SPE Nigeria Annual International Conference and Exhibition. 2024. https://doi.org/10.2118/221626-MS.
+
+1. G. Bayazitova, M. Anastasiadou, V.D. Santos. Oil and gas flow anomaly detection on offshore naturally flowing wells using deep neural networks. Geoenergy Science and Engineering. 2024. https://doi.org/10.1016/j.geoen.2024.213240.
+
+1. M.A. Farahani, M.R. McCormick, R. Harik, T. Wuest. Time-series classification in smart manufacturing systems: An experimental evaluation of state-of-the-art machine learning algorithms. Robotics and Computer-Integrated Manufacturing. 2025. https://doi.org/10.1016/j.rcim.2024.102839.
+
+1. D. Semwogerere, S. Sangesland, J. Vatn, A. Pavlov, D. Colombo. Well integrity and late life extension - A current industry state of practice and literature review. Geoenergy Science and Engineering. 2025. https://doi.org/10.1016/j.geoen.2024.213419.
