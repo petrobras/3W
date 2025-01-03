@@ -177,11 +177,15 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 
 1. A. Melo, T.S.M. Lemos, R.M. Soares, D. Spina, N. Clavijo, L.F.O. Campos, M.M. Câmara, T. Feital, T.K. Anzai, P.H. Thompson, F.C. Diehl, J.C.Pinto. BibMon: An open source Python package for process monitoring, soft sensing, and fault diagnosis. Digital Chemical Engineering. 2024. https://doi.org/10.1016/j.dche.2024.100182.
 
-1. R. Villamil, J. May, R. Fallgatter,  R. Vargas, A. Nakashima,  G. Peixer,  J. Lozano,  J. Barbosa. Assessment of deep-learning techniques for anomaly detection in offshore oil wells. Brazilian Congress of Thermal Sciences and Engineering. 2024.
+1. R. Villamil, J. May, R. Fallgatter,  R. Vargas, A. Nakashima,  G. Peixer,  J. Lozano,  J. Barbosa. Assessment of deep-learning techniques for anomaly detection in offshore oil wells. Brazilian Congress of Thermal Sciences and Engineering. 2024. http://dx.doi.org/10.26678/ABCM.ENCIT2024.CIT24-0603.
 
 1. A.O. Ifenaike, O.B. Oluwadare. Advancing Drilling Safety: Automated Anomaly Detection in Well Control Using Machine Learning Techniques. SPE Nigeria Annual International Conference and Exhibition. 2024. https://doi.org/10.2118/221626-MS.
 
 1. G. Bayazitova, M. Anastasiadou, V.D. Santos. Oil and gas flow anomaly detection on offshore naturally flowing wells using deep neural networks. Geoenergy Science and Engineering. 2024. https://doi.org/10.1016/j.geoen.2024.213240.
+
+1. A.A.M. Azevêdo. Análise exploratória do conjunto de dados 3W para detecção de falhas de operação de poços de petróleo, usando técnicas de aprendizado de máquina. Universidade Federal do Rio de Janeiro. Master's degree dissertation. 2024. https://github.com/petrobras/3W/raw/main/docs/master_degree_dissertation_antonio_azevedo.pdf.
+
+1. H. Zhou, H. Yin, Y. Qin, C. Yuen. Industrial Fault Diagnosis With Incremental Learning Capability Under Varying Sensory Data. IEEE Transactions on Systems, Man, and Cybernetics: Systems. 2024. https://doi.org/10.1109/TSMC.2024.3500019.
 
 1. M.A. Farahani, M.R. McCormick, R. Harik, T. Wuest. Time-series classification in smart manufacturing systems: An experimental evaluation of state-of-the-art machine learning algorithms. Robotics and Computer-Integrated Manufacturing. 2025. https://doi.org/10.1016/j.rcim.2024.102839.
 
