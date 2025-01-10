@@ -12,6 +12,12 @@
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 
+> [!TIP]
+> How about collaborating on a data article about the 3W Dataset 2.0.0?
+
+| Everyone is invited!!!<br><br>Key benefits:<br><br>1) Learn more about the 3W, one of Petrobras' main projects on GitHub: https://github.com/petrobras/3W;<br>2) Interact with other members of the 3W Community throughout this work;<br>3) Become a co-author of a relevant data article with good potential for being highly referenced;<br>4) Enrich your professional portfolio.<br><br>This work has just begun and will be developed openly and collaboratively in this Git repository: https://github.com/ricardoevvargas/data-articles-3w-dataset.<br><br>Are you interested? Excellent!!! Visit [this repository](https://github.com/ricardoevvargas/data-articles-3w-dataset) for more information, including the rules and ways to collaborate.   |
+|----------------------------------------------|
+
 # Table of Content
 
 * [Introduction](#introduction)
