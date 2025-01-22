@@ -30,6 +30,7 @@ As far as we know, the 3W Dataset was useful and cited by the works listed below
 This file (`LIST_OF_CITATIONS.md`) was generated automatically from records maintained in the `citations.xlsx` file.
 """
 
+
 # Methods
 #
 def format_citation(row):
@@ -43,7 +44,8 @@ def format_citation(row):
     """
     columns = ["Author", "Title", "Institution/Event", "Category", "Year", "Link"]
     parts = [str(row[col]) for col in columns if pd.notna(row[col])]
-    return '. '.join(parts) + '.'
+    return ". ".join(parts) + "."
+
 
 def process_excel_to_markdown():
     """Processes the Excel file to generate a Markdown file with formatted citations.
@@ -62,7 +64,14 @@ def process_excel_to_markdown():
     df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
     # Check for required columns
-    required_columns = ["Author", "Title", "Institution/Event", "Category", "Year", "Link"]
+    required_columns = [
+        "Author",
+        "Title",
+        "Institution/Event",
+        "Category",
+        "Year",
+        "Link",
+    ]
     if not all(col in df.columns for col in required_columns):
         raise ValueError(
             f"The file 'citations.xlsx' must contain the following columns: "
@@ -70,11 +79,11 @@ def process_excel_to_markdown():
         )
 
     # Apply formatting to each row
-    df['Formatted'] = df.apply(format_citation, axis=1)
+    df["Formatted"] = df.apply(format_citation, axis=1)
 
     # Create a list of formatted citations
     formatted_citations = "\n\n".join(
-        [f"1. {citation}" for citation in df['Formatted']]
+        [f"1. {citation}" for citation in df["Formatted"]]
     )
 
     # Combine header and citations
@@ -82,10 +91,11 @@ def process_excel_to_markdown():
 
     # Ensure the output directory exists and write the Markdown file
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    with open(MD_PATH, 'w', encoding='utf-8') as file:
+    with open(MD_PATH, "w", encoding="utf-8") as file:
         file.write(final_content)
 
     print(f"Updated Markdown file saved at: {MD_PATH}")
+
 
 # Main execution
 #
