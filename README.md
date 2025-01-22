@@ -36,7 +36,8 @@
   * [Structure](#structure-1)
   * [Incorporated Problems](#incorporated-problems)
   * [Examples of Use](#examples-of-use)
-  * [Reproducibility](#reproducibility)  
+  * [Reproducibility](#reproducibility)
+* [3W Community](#3w-community)
 
 # Introduction
 
@@ -177,3 +178,9 @@ $ python
 ```
 $ jupyter notebook
 ```
+
+# 3W Community
+
+The 3W Community is gradually expanding and is made up of independent professionals and representatives of research institutions, startups, companies and oil operators from different countries.
+
+More information about this community can be found [here](community/README.md).
