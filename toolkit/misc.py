@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
+import matplotlib.cm as cm
 import os
 
 from matplotlib.patches import Patch
@@ -167,7 +168,7 @@ def create_table_of_instances(real_instances, simulated_instances, drawn_instanc
         df_instances.groupby(["INSTANCE LABEL", "SOURCE"])
         .size()
         .reset_index()
-        .pivot("SOURCE", "INSTANCE LABEL", 0)
+        .pivot(index="SOURCE", columns="INSTANCE LABEL", values=0)
         .fillna(0)
         .astype(int)
         .T
@@ -338,11 +339,12 @@ def create_and_plot_scatter_map(real_instances):
     well_code = {w: i for i, w in enumerate(sorted(wells))}
 
     # Configures and plots the scatter map
+    # Create a colormap from the existing "Paired" colormap
     cmap = plt.get_cmap("Paired")
     my_colors = [cmap(i) for i in [3, 0, 5, 8, 11, 2, 1, 4, 9, 7, 6, 10]]
+    # Create a new ListedColormap
     my_cmap = mcolors.ListedColormap(my_colors, name="my_cmap")
-    plt.register_cmap(name="my_cmap", cmap=my_cmap)
-    cmap = plt.get_cmap("my_cmap")
+
     height = 5
     border = 2
     first_year = np.min(df_time["min"]).year
@@ -350,14 +352,20 @@ def create_and_plot_scatter_map(real_instances):
     plt.rcParams["axes.labelsize"] = 9
     plt.rcParams["font.size"] = 9
     plt.rcParams["legend.fontsize"] = 9
+
+    # Create figure and axis
     fig, ax = plt.subplots(figsize=(9, 9))
     yticks = []
     yticks_labels = []
+
+    # Loop through each well to plot its timeline
     for well in well_times.keys():
         times = well_times[well]
         class_names = well_classes[well]
         class_colors = list(map(cmap, class_names))
         well_id = well_code[well]
+
+        # Append to yticks and labels
         yticks.append(well_id * height + height / 2 - border / 2)
         yticks_labels.append(well)
         ax.broken_barh(
@@ -372,8 +380,10 @@ def create_and_plot_scatter_map(real_instances):
     ax.set_yticklabels(yticks_labels)
     ax.xaxis.set_major_locator(mdates.YearLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+
+    # Create a legend
     legend_colors = [
-        Patch(facecolor=cmap(l), label=str(l) + " - " + d)
+        Patch(facecolor=my_cmap(l), label=str(l) + " - " + d)
         for l, d in LABELS_DESCRIPTIONS.items()
     ]
     ax.legend(
