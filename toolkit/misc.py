@@ -26,7 +26,7 @@ import pandas as pd
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 
 import plotly.graph_objects as go
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 from .base import (
     COLUMNS_DATA_FILES,
@@ -807,7 +807,7 @@ class ThreeWChart:
             use_dropdown (bool, optional):  Whether to show a dropdown for selecting the y-axis (default is False). Defaults to False.
             dropdown_position (tuple, optional): Position of the dropdown button on the chart. Defaults to (0.4, 1.4).
         """
-        self.file_path: Optional[str] = file_path
+        self.file_path: str = file_path
         self.title: str = title
         self.y_axis: str = y_axis
         self.use_dropdown: bool = use_dropdown
@@ -840,26 +840,16 @@ class ThreeWChart:
             107: "lightgray", 108: "lightsalmon", 109: "orange",
         }
 
-    def _load_data(self, filename: str) -> pd.DataFrame:
-        """Loads and preprocesses the dataset from a Parquet file.
-
-        Args:
-            filename (str): Path to the Parquet file.
-
-        Raises:
-            FileNotFoundError: If the file is not found.
+    def _load_data(self) -> pd.DataFrame:
+        """Loads and preprocesses the dataset using the load_instance function.
 
         Returns:
             pd.DataFrame: Preprocessed DataFrame with sorted timestamps and no missing values.
         """
-
-        try:
-            df = pd.read_parquet(filename)
-        except FileNotFoundError:
-            raise FileNotFoundError(f"File not found: {filename}")
+        instance = (int(Path(self.file_path).parent.name), Path(self.file_path))
+        df = load_instance(instance)
         df.reset_index(inplace=True)
-        df = df.dropna(subset=["timestamp"]).drop_duplicates(
-            "timestamp").fillna(0)
+        df = df.dropna(subset=["timestamp"]).drop_duplicates("timestamp").fillna(0)
         return df.sort_values(by="timestamp")
 
     def _get_non_zero_columns(self, df: pd.DataFrame) -> List[str]:
@@ -871,8 +861,7 @@ class ThreeWChart:
         Returns:
             List[str]: List of column names that are not all zeros or NaN.
         """
-
-        return [col for col in df.columns if df[col].astype(bool).sum() > 0 and col != "timestamp" and col != "class"]
+        return [col for col in df.columns if df[col].astype(bool).sum() > 0 and col not in ["timestamp", "class"]]
 
     def _get_background_shapes(self, df: pd.DataFrame) -> List[Dict]:
         """Creates background shapes to highlight class transitions in the chart.
@@ -883,7 +872,6 @@ class ThreeWChart:
         Returns:
             List[Dict]: List of shape dictionaries for Plotly.
         """
-
         shapes = []
         prev_class = None
         start_idx = 0
@@ -946,7 +934,7 @@ class ThreeWChart:
         Raises:
             ValueError: If no available columns are found to plot.
         """
-        df = self._load_data(self.file_path)
+        df = self._load_data()
         
         present_classes = df['class'].dropna().unique().tolist()
         
@@ -998,4 +986,3 @@ class ThreeWChart:
         self._add_custom_legend(fig, present_classes)
         fig.update_layout(legend=dict(x=1.05, y=1, title="Class Events"))
         fig.show(config={'displaylogo': False})
-
