@@ -922,21 +922,23 @@ class ThreeWChart:
 
         return shapes
 
-    def _add_custom_legend(self, fig: go.Figure) -> None:
-        """Adds a custom legend to the chart based on the class mappings.
+    def _add_custom_legend(self, fig: go.Figure, present_classes: List[int]) -> None:
+        """Adds a custom legend to the chart for only those classes present in the data.
 
         Args:
             fig (go.Figure): The Plotly figure to which the legend will be added.
+            present_classes (List[int]): The unique class values present in the DataFrame.
         """
-
-        for class_value, event_name in self.class_mapping.items():
-            fig.add_trace(go.Scatter(
-                x=[None], y=[None],
-                mode='markers',
-                marker=dict(size=12, color=self.class_colors[class_value]),
-                name=f"{class_value}: {event_name}",
-                showlegend=True,
-            ))
+        for class_value in present_classes:
+            if class_value in self.class_mapping:
+                event_name = self.class_mapping[class_value]
+                fig.add_trace(go.Scatter(
+                    x=[None], y=[None],
+                    mode='markers',
+                    marker=dict(size=12, color=self.class_colors.get(class_value, "white")),
+                    name=f"{class_value}: {event_name}",
+                    showlegend=True,
+                ))
 
     def plot(self) -> None:
         """Generates and displays the interactive chart using Plotly.
@@ -944,45 +946,28 @@ class ThreeWChart:
         Raises:
             ValueError: If no available columns are found to plot.
         """
-
         df = self._load_data(self.file_path)
-
+        
+        present_classes = df['class'].dropna().unique().tolist()
+        
         if self.use_dropdown:
-
             available_y_axes = self._get_non_zero_columns(df)
-
             if available_y_axes:
-
                 dropdown_buttons = [
                     dict(
                         args=[{"y": [df[col]]}, {"yaxis.title": col}],
                         label=col,
-                        method="restyle"
+                        method="update"
                     ) for col in available_y_axes
                 ]
-
                 fig = go.Figure()
-
-                y_axis = pd.Series()
                 if self.y_axis not in available_y_axes:
-                    print(
-                        f"Warning: Default y-axis '{self.y_axis}' not found in available columns.")
+                    print(f"Warning: Default y-axis '{self.y_axis}' not found in available columns.")
                     print("Using the first available column as the default y-axis.")
-                    y_axis = df[available_y_axes[0]]
                     self.y_axis = available_y_axes[0]
-                else:
-                    y_axis = df[self.y_axis]
-
-                if y_axis.empty:
-                    raise ValueError("No available columns to plot.")
-
                 fig.add_trace(go.Scatter(
-                    x=df["timestamp"], y=y_axis, mode='lines', name=self.y_axis))
-
-                default_y_axis = self.y_axis if self.y_axis in available_y_axes else available_y_axes[
-                    0]
-                active_index = available_y_axes.index(default_y_axis)
-
+                    x=df["timestamp"], y=df[self.y_axis], mode='lines', name="Selected Column"))
+                active_index = available_y_axes.index(self.y_axis)
                 fig.update_layout(
                     updatemenus=[
                         dict(
@@ -995,21 +980,22 @@ class ThreeWChart:
                         )
                     ]
                 )
-
             else:
                 raise ValueError("No available columns to plot.")
         else:
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=df["timestamp"], y=df[self.y_axis], mode='lines', name=self.y_axis))
-
+        
         fig.update_xaxes(rangeslider_visible=True)
         fig.update_layout(
             shapes=self._get_background_shapes(df),
             xaxis_title='Timestamp',
-            yaxis_title=self.y_axis if not self.use_dropdown else available_y_axes[0],
+            yaxis_title=self.y_axis if not self.use_dropdown else df[self.y_axis].name,
             title=self.title,
         )
-        self._add_custom_legend(fig)
+        
+        self._add_custom_legend(fig, present_classes)
         fig.update_layout(legend=dict(x=1.05, y=1, title="Class Events"))
         fig.show(config={'displaylogo': False})
+
