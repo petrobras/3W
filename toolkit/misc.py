@@ -793,11 +793,18 @@ def plot_instance(class_number, instance_index, resample_factor):
         )
         fig.show()
 
-class ThreeWChart:
-    """A class to generate interactive visualizations for 3W dataset files using Plotly.
-    """
 
-    def __init__(self, file_path: str, title: str = "ThreeW Chart", y_axis: str = "P-MON-CKP", use_dropdown: bool = False, dropdown_position: tuple = (0.4, 1.4)):
+class ThreeWChart:
+    """A class to generate interactive visualizations for 3W dataset files using Plotly."""
+
+    def __init__(
+        self,
+        file_path: str,
+        title: str = "ThreeW Chart",
+        y_axis: str = "P-MON-CKP",
+        use_dropdown: bool = False,
+        dropdown_position: tuple = (0.4, 1.4),
+    ):
         """Initializes the ThreeWChart class with the given parameters.
 
         Args:
@@ -834,10 +841,23 @@ class ThreeWChart:
         }
 
         self.class_colors: Dict[int, str] = {
-            0: "white", 1: "blue", 2: "red", 3: "green", 4: "yellow",
-            5: "brown", 6: "pink", 7: "gray", 8: "salmon", 9: "turquoise",
-            101: "cyan", 102: "coral", 105: "beige", 106: "lightpink",
-            107: "lightgray", 108: "lightsalmon", 109: "orange",
+            0: "white",
+            1: "blue",
+            2: "red",
+            3: "green",
+            4: "yellow",
+            5: "brown",
+            6: "pink",
+            7: "gray",
+            8: "salmon",
+            9: "turquoise",
+            101: "cyan",
+            102: "coral",
+            105: "beige",
+            106: "lightpink",
+            107: "lightgray",
+            108: "lightsalmon",
+            109: "orange",
         }
 
     def _load_data(self) -> pd.DataFrame:
@@ -861,7 +881,11 @@ class ThreeWChart:
         Returns:
             List[str]: List of column names that are not all zeros or NaN.
         """
-        return [col for col in df.columns if df[col].astype(bool).sum() > 0 and col not in ["timestamp", "class"]]
+        return [
+            col
+            for col in df.columns
+            if df[col].astype(bool).sum() > 0 and col not in ["timestamp", "class"]
+        ]
 
     def _get_background_shapes(self, df: pd.DataFrame) -> List[Dict]:
         """Creates background shapes to highlight class transitions in the chart.
@@ -877,36 +901,46 @@ class ThreeWChart:
         start_idx = 0
 
         for i in range(len(df)):
-            current_class = df.iloc[i]['class']
+            current_class = df.iloc[i]["class"]
 
             if pd.isna(current_class):
                 print(f"Warning: NaN class value at index {i}")
                 continue
 
             if prev_class is not None and current_class != prev_class:
-                shapes.append(dict(
-                    type="rect",
-                    x0=df.iloc[start_idx]['timestamp'],
-                    x1=df.iloc[i - 1]['timestamp'],
-                    y0=0, y1=1,
-                    xref='x', yref='paper',
-                    fillcolor=self.class_colors.get(prev_class, "white"),
-                    opacity=0.2, line_width=0
-                ))
+                shapes.append(
+                    dict(
+                        type="rect",
+                        x0=df.iloc[start_idx]["timestamp"],
+                        x1=df.iloc[i - 1]["timestamp"],
+                        y0=0,
+                        y1=1,
+                        xref="x",
+                        yref="paper",
+                        fillcolor=self.class_colors.get(prev_class, "white"),
+                        opacity=0.2,
+                        line_width=0,
+                    )
+                )
                 start_idx = i
 
             prev_class = current_class
 
         if prev_class is not None:
-            shapes.append(dict(
-                type="rect",
-                x0=df.iloc[start_idx]['timestamp'],
-                x1=df.iloc[len(df) - 1]['timestamp'],
-                y0=0, y1=1,
-                xref='x', yref='paper',
-                fillcolor=self.class_colors.get(prev_class, "white"),
-                opacity=0.2, line_width=0
-            ))
+            shapes.append(
+                dict(
+                    type="rect",
+                    x0=df.iloc[start_idx]["timestamp"],
+                    x1=df.iloc[len(df) - 1]["timestamp"],
+                    y0=0,
+                    y1=1,
+                    xref="x",
+                    yref="paper",
+                    fillcolor=self.class_colors.get(prev_class, "white"),
+                    opacity=0.2,
+                    line_width=0,
+                )
+            )
 
         return shapes
 
@@ -920,13 +954,18 @@ class ThreeWChart:
         for class_value in present_classes:
             if class_value in self.class_mapping:
                 event_name = self.class_mapping[class_value]
-                fig.add_trace(go.Scatter(
-                    x=[None], y=[None],
-                    mode='markers',
-                    marker=dict(size=12, color=self.class_colors.get(class_value, "white")),
-                    name=f"{class_value}: {event_name}",
-                    showlegend=True,
-                ))
+                fig.add_trace(
+                    go.Scatter(
+                        x=[None],
+                        y=[None],
+                        mode="markers",
+                        marker=dict(
+                            size=12, color=self.class_colors.get(class_value, "white")
+                        ),
+                        name=f"{class_value}: {event_name}",
+                        showlegend=True,
+                    )
+                )
 
     def plot(self) -> None:
         """Generates and displays the interactive chart using Plotly.
@@ -935,9 +974,9 @@ class ThreeWChart:
             ValueError: If no available columns are found to plot.
         """
         df = self._load_data()
-        
-        present_classes = df['class'].dropna().unique().tolist()
-        
+
+        present_classes = df["class"].dropna().unique().tolist()
+
         if self.use_dropdown:
             available_y_axes = self._get_non_zero_columns(df)
             if available_y_axes:
@@ -945,16 +984,25 @@ class ThreeWChart:
                     dict(
                         args=[{"y": [df[col]]}, {"yaxis.title": col}],
                         label=col,
-                        method="update"
-                    ) for col in available_y_axes
+                        method="update",
+                    )
+                    for col in available_y_axes
                 ]
                 fig = go.Figure()
                 if self.y_axis not in available_y_axes:
-                    print(f"Warning: Default y-axis '{self.y_axis}' not found in available columns.")
+                    print(
+                        f"Warning: Default y-axis '{self.y_axis}' not found in available columns."
+                    )
                     print("Using the first available column as the default y-axis.")
                     self.y_axis = available_y_axes[0]
-                fig.add_trace(go.Scatter(
-                    x=df["timestamp"], y=df[self.y_axis], mode='lines', name="Selected Column"))
+                fig.add_trace(
+                    go.Scatter(
+                        x=df["timestamp"],
+                        y=df[self.y_axis],
+                        mode="lines",
+                        name="Selected Column",
+                    )
+                )
                 active_index = available_y_axes.index(self.y_axis)
                 fig.update_layout(
                     updatemenus=[
@@ -964,7 +1012,7 @@ class ThreeWChart:
                             showactive=True,
                             x=self.dropdown_position[0],
                             y=self.dropdown_position[1],
-                            active=active_index
+                            active=active_index,
                         )
                     ]
                 )
@@ -972,17 +1020,20 @@ class ThreeWChart:
                 raise ValueError("No available columns to plot.")
         else:
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=df["timestamp"], y=df[self.y_axis], mode='lines', name=self.y_axis))
-        
+            fig.add_trace(
+                go.Scatter(
+                    x=df["timestamp"], y=df[self.y_axis], mode="lines", name=self.y_axis
+                )
+            )
+
         fig.update_xaxes(rangeslider_visible=True)
         fig.update_layout(
             shapes=self._get_background_shapes(df),
-            xaxis_title='Timestamp',
+            xaxis_title="Timestamp",
             yaxis_title=self.y_axis if not self.use_dropdown else df[self.y_axis].name,
             title=self.title,
         )
-        
+
         self._add_custom_legend(fig, present_classes)
         fig.update_layout(legend=dict(x=1.05, y=1, title="Class Events"))
-        fig.show(config={'displaylogo': False})
+        fig.show(config={"displaylogo": False})
