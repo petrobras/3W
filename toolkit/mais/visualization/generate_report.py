@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Generate report from evaluation results """
+"""Generate report from evaluation results"""
 
 import os
 import pickle

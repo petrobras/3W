@@ -1,8 +1,8 @@
-""" definitions for experiment 3 module
-    Multiclass classification
-    Wavelet features
-    Most-Recent Label strategy
-    Drop windows with NaN label
+"""definitions for experiment 3 module
+Multiclass classification
+Wavelet features
+Most-Recent Label strategy
+Drop windows with NaN label
 """
 
 import numpy as np

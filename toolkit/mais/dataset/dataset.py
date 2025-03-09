@@ -1,5 +1,5 @@
 # coding: utf-8
-""" Basic dataset definitions """
+"""Basic dataset definitions"""
 
 from collections import namedtuple
 from pathlib import Path
