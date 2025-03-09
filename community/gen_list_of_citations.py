@@ -1,14 +1,14 @@
-"""This script processes an Excel file named 'citations.xlsx' containing citations 
+"""This script processes an Excel file named 'citations.xlsx' containing citations
 to the 3W Dataset and generates a Markdown file listing these citations.
 
-The citations include relevant details such as authors, titles, institutions, 
-categories, years, and links, formatted in a consistent way. The resulting 
+The citations include relevant details such as authors, titles, institutions,
+categories, years, and links, formatted in a consistent way. The resulting
 Markdown file is saved in the specified output directory.
 
-Note: 
+Note:
 - The file 'citations.xlsx' must be located in the directory 'C:\\Users\\Public'.
 - The sheet name within the Excel file must be 'citations1'.
-- The file must include the following columns: 'Author', 'Title', 'Institution/Event', 
+- The file must include the following columns: 'Author', 'Title', 'Institution/Event',
   'Category', 'Year', and 'Link'.
 """
 

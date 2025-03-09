@@ -1,48 +1,48 @@
-"""This is the 3W Toolkit, a software package written in Python 3 that 
+"""This is the 3W Toolkit, a software package written in Python 3 that
 is one of the 3W Project's major components.
 
 This toolkit contains resources that make the following easier:
 
 - 3W Dataset overview generation;
-- Experimentation and comparative analysis of Machine Learning-based 
-approaches and algorithms for specific problems related to undesirable 
-events that occur in offshore oil wells during their respective 
+- Experimentation and comparative analysis of Machine Learning-based
+approaches and algorithms for specific problems related to undesirable
+events that occur in offshore oil wells during their respective
 production phases;
-* Standardization of key points of the Machine Learning-based algorithm 
+* Standardization of key points of the Machine Learning-based algorithm
 development pipeline.
 
 All these resources are implemented in the following sub-modules:
 
 - **base**: groups the objects used by the other sub-modules;
-- **dev**: has all the resources related to development of Machine 
+- **dev**: has all the resources related to development of Machine
 Learning models;
-- **misc**: brings together diverse resources that do not fit in the 
+- **misc**: brings together diverse resources that do not fit in the
 other sub-modules;
-- **rolling_window**: creates a view of array which for every point 
-gives the n-dimensional neighbourhood of size window. New dimensions are 
+- **rolling_window**: creates a view of array which for every point
+gives the n-dimensional neighbourhood of size window. New dimensions are
 added at the end of array or after the corresponding original dimension.
 
-Specific problems will be incorporated into this toolkit gradually. At 
+Specific problems will be incorporated into this toolkit gradually. At
 this time, models can be developed for the following problems:
 
 - Binary Classifier of Spurious Closure of DHSV.
 
-Examples of how to use this toolkit will be incremented throughout its 
+Examples of how to use this toolkit will be incremented throughout its
 development. Please, check the 3W Project's README.md file for more details.
 
-It is important to note that there are arbitrary choices in this 
-toolkit, but they have been carefully made to allow adequate comparative 
-analysis without compromising the ability to experiment with different 
+It is important to note that there are arbitrary choices in this
+toolkit, but they have been carefully made to allow adequate comparative
+analysis without compromising the ability to experiment with different
 approaches and algorithms.
 
-This toolkit's documentation is generated in english and in Google format 
+This toolkit's documentation is generated in english and in Google format
 with [autoDocstring - Python Docstring Generator
 ](https://github.com/NilsJPWerner/autoDocstring), which follows [PEP 257
 ](https://peps.python.org/pep-0257/), and [pdoc3
 ](https://pdoc3.github.io/pdoc/).
 
-Its source code is implemented according to the style guide established 
-by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with 
+Its source code is implemented according to the style guide established
+by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with
 the use of the [Black formatter](https://github.com/psf/black).
 """
 

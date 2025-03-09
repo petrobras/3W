@@ -1,4 +1,4 @@
-""" Feature mapping strategies """
+"""Feature mapping strategies"""
 
 import numpy as np
 import pandas as pd

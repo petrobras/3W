@@ -1,7 +1,7 @@
-"""This 3W toolkits' sub-module groups objects used by the other 
-sub-modules. 
+"""This 3W toolkits' sub-module groups objects used by the other
+sub-modules.
 
-Any resource that is not used by another sub-module must be maintained 
+Any resource that is not used by another sub-module must be maintained
 in the miscellaneous sub-module.
 """
 

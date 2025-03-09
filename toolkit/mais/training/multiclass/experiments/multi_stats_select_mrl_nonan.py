@@ -1,9 +1,9 @@
-""" definitions for experiment 3 module
-    Multiclass classification
-    Statistical features
-    Random forest feature selection
-    Most-Recent Label strategy
-    Drop windows with NaN label
+"""definitions for experiment 3 module
+Multiclass classification
+Statistical features
+Random forest feature selection
+Most-Recent Label strategy
+Drop windows with NaN label
 """
 
 import numpy as np

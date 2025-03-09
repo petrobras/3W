@@ -1,4 +1,4 @@
-"""This 3W toolkits' sub-module has resources related to development of 
+"""This 3W toolkits' sub-module has resources related to development of
 Machine Learning models.
 
 The main tasks made possible by these features are:
