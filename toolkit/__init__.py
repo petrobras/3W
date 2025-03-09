@@ -107,4 +107,5 @@ from .misc import (
     load_instances,
     resample,
     plot_instance,
+    ThreeWChart,
 )
