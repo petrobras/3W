@@ -190,3 +190,5 @@ Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/
 1. M.A. Farahani, M.R. McCormick, R. Harik, T. Wuest. Time-series classification in smart manufacturing systems: An experimental evaluation of state-of-the-art machine learning algorithms. Robotics and Computer-Integrated Manufacturing. 2025. https://doi.org/10.1016/j.rcim.2024.102839.
 
 1. D. Semwogerere, S. Sangesland, J. Vatn, A. Pavlov, D. Colombo. Well integrity and late life extension - A current industry state of practice and literature review. Geoenergy Science and Engineering. 2025. https://doi.org/10.1016/j.geoen.2024.213419.
+
+1. V. Benedito. Desenvolvimento de um sistema ensemble para a detecção e classificação de anomalias em poços de petróleo off-shore. Universidade Estadual de Maringá. Final Graduation Project. 2025. https://github.com/petrobras/3W/raw/main/docs/final_graduation_project_victor_benedito.pdf.
