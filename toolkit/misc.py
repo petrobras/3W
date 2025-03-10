@@ -32,6 +32,7 @@ from .base import (
     COLUMNS_DATA_FILES,
     LABELS_DESCRIPTIONS,
     PATH_DATASET,
+    TRANSIENT_OFFSET,
     VARS,
     EVENT_NAMES,
     PARQUET_EXTENSION,
@@ -820,45 +821,48 @@ class ThreeWChart:
         self.use_dropdown: bool = use_dropdown
         self.dropdown_position: tuple = dropdown_position
 
-        self.class_mapping: Dict[int, str] = {
-            0: "Normal Operation",
-            1: "Abrupt Increase of BSW",
-            2: "Spurious Closure of DHSV",
-            3: "Severe Slugging",
-            4: "Flow Instability",
-            5: "Rapid Productivity Loss",
-            6: "Quick Restriction in PCK",
-            7: "Scaling in PCK",
-            8: "Hydrate in Production Line",
-            9: "Hydrate in Service Line",
-            101: "Transient: Abruption Increase of BSW",
-            102: "Transient: Spurious Closure of DHSV",
-            105: "Transient: Rapid Productivity Loss",
-            106: "Transient: Quick Restriction in PCK",
-            107: "Transient: Scaling in PCK",
-            108: "Transient: Hydrate in Production Line",
-            109: "Transient: Hydrate in Service Line",
-        }
+        self.class_mapping: Dict[int, str] = self._generate_class_mapping()
+        self.class_colors: Dict[int, str] = self._generate_class_colors()
 
-        self.class_colors: Dict[int, str] = {
-            0: "white",
-            1: "blue",
-            2: "red",
-            3: "green",
-            4: "yellow",
-            5: "brown",
-            6: "pink",
-            7: "gray",
-            8: "salmon",
-            9: "turquoise",
-            101: "cyan",
-            102: "coral",
-            105: "beige",
-            106: "lightpink",
-            107: "lightgray",
-            108: "lightsalmon",
-            109: "orange",
-        }
+    def _generate_class_mapping(self) -> Dict[int, str]:
+        """Generate a combined mapping of event labels (including transient states) to their descriptions.
+
+        Returns:
+            Dict[int, str]: Mapping of event labels to their descriptions.
+        """
+        mapping = {}
+        for label, description in LABELS_DESCRIPTIONS.items():
+            mapping[label] = description
+            mapping[label + TRANSIENT_OFFSET] = "Transient: " + description
+        return mapping
+
+    def _generate_class_colors(self) -> Dict[int, str]:
+        """Automatically generate a color mapping for event labels using a colormap.
+        For transient states, the color is the event color with lower opacity.
+
+        Returns:
+            Dict[int, str]: Mapping of event labels to their colors.
+        """
+        cmap = plt.get_cmap("tab10")
+        colors = {}
+
+        def apply_transparency(color: str, opacity: float) -> str:
+            rgb = mcolors.to_rgb(color)
+            r, g, b = int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255)
+            return f"rgba({r}, {g}, {b}, {opacity})"
+
+        for idx, (label, _) in enumerate(LABELS_DESCRIPTIONS.items()):
+            if label == 0:
+                base_color = "white"
+            else:
+                base_color = mcolors.rgb2hex(cmap(idx % cmap.N))
+            colors[label] = base_color
+
+            transient_label = label + TRANSIENT_OFFSET
+            colors[transient_label] = (
+                "white" if label == 0 else apply_transparency(base_color, opacity=0.4)
+            )
+        return colors
 
     def _load_data(self) -> pd.DataFrame:
         """Loads and preprocesses the dataset using the load_instance function.
