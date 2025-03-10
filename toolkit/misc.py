@@ -960,7 +960,9 @@ class ThreeWChart:
                         y=[None],
                         mode="markers",
                         marker=dict(
-                            size=12, color=self.class_colors.get(class_value, "white")
+                            size=12,
+                            color=self.class_colors.get(class_value, "white"),
+                            line=dict(width=1, color="black"),
                         ),
                         name=f"{class_value}: {event_name}",
                         showlegend=True,
@@ -1032,8 +1034,10 @@ class ThreeWChart:
             xaxis_title="Timestamp",
             yaxis_title=self.y_axis if not self.use_dropdown else df[self.y_axis].name,
             title=self.title,
+            legend=dict(
+                x=1.05, y=1, title="Legend", itemclick=False, itemdoubleclick=False
+            ),
         )
 
         self._add_custom_legend(fig, present_classes)
-        fig.update_layout(legend=dict(x=1.05, y=1, title="Class Events"))
         fig.show(config={"displaylogo": False})
