@@ -107,4 +107,7 @@ from .misc import (
     load_instances,
     resample,
     plot_instance,
+    load_and_combine_data, 
+    classify_events, 
+    visualize_data
 )
