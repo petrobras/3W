@@ -31,6 +31,7 @@ from typing import List, Dict
 from .base import (
     COLUMNS_DATA_FILES,
     LABELS_DESCRIPTIONS,
+    TRANSIENT_LABELS_DESCRIPTIONS,
     PATH_DATASET,
     TRANSIENT_OFFSET,
     VARS,
@@ -830,11 +831,7 @@ class ThreeWChart:
         Returns:
             Dict[int, str]: Mapping of event labels to their descriptions.
         """
-        mapping = {}
-        for label, description in LABELS_DESCRIPTIONS.items():
-            mapping[label] = description
-            mapping[label + TRANSIENT_OFFSET] = "Transient: " + description
-        return mapping
+        return {**LABELS_DESCRIPTIONS, **TRANSIENT_LABELS_DESCRIPTIONS}
 
     def _generate_class_colors(self) -> Dict[int, str]:
         """Automatically generate a color mapping for event labels using a colormap.
@@ -968,7 +965,7 @@ class ThreeWChart:
                             color=self.class_colors.get(class_value, "white"),
                             line=dict(width=1, color="black"),
                         ),
-                        name=f"{class_value}: {event_name}",
+                        name=f"{class_value} - {event_name}",
                         showlegend=True,
                     )
                 )
@@ -1006,7 +1003,7 @@ class ThreeWChart:
                         x=df["timestamp"],
                         y=df[self.y_axis],
                         mode="lines",
-                        name="Selected Column",
+                        name="Selected Variable",
                     )
                 )
                 active_index = available_y_axes.index(self.y_axis)
