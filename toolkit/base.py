@@ -1,7 +1,7 @@
-"""This 3W toolkits' sub-module groups objects used by the other 
-sub-modules. 
+"""This 3W toolkits' sub-module groups objects used by the other
+sub-modules.
 
-Any resource that is not used by another sub-module must be maintained 
+Any resource that is not used by another sub-module must be maintained
 in the miscellaneous sub-module.
 """
 
@@ -77,6 +77,7 @@ TRANSIENT_OFFSET = events_section.getint("TRANSIENT_OFFSET")
 NORMAL_LABEL = DATASET_INI.get("NORMAL").getint("LABEL")
 
 LABELS_DESCRIPTIONS = {}
+TRANSIENT_LABELS_DESCRIPTIONS = {}
 EVENT_NAMES_LABELS = {}
 EVENT_NAMES_DESCRIPTIONS = {}
 EVENT_NAMES_OBSERVATION_LABELS = {}
@@ -93,6 +94,7 @@ for n in EVENT_NAMES:
             l,
             l + TRANSIENT_OFFSET,
         }
+        TRANSIENT_LABELS_DESCRIPTIONS[l + TRANSIENT_OFFSET] = f"Transient: {d}"
     else:
         EVENT_NAMES_OBSERVATION_LABELS[n] = {NORMAL_LABEL, l}
 
