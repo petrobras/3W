@@ -101,7 +101,7 @@ For each type of expected contribution, there is a subsection below with specifi
 
 ## Citation
 
-As far as we know, the 3W Dataset was useful and cited by the works listed [here](LIST_OF_CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W Dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) **discussion**. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
+As far as we know, the 3W Dataset was useful and cited by the works listed [here](LISTS_OF_CITATIONS.md). If you know any other paper, master's degree dissertation or doctoral thesis that cites the 3W Dataset, we will be grateful if you let us know by commenting [this](https://github.com/Petrobras/3W/discussions/3) **discussion**. If you use any resource published in this repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
 
 ## Bugs
 
