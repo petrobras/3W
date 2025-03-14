@@ -47,47 +47,63 @@ If you use any resource published in this Git repository, we ask that it be prop
 * [Specialization Monograph](#specialization-monograph)
 """
 
+
 def format_citation(row):
     """Formats a citation based on available columns."""
     columns = ["Author", "Title", "Institution/Event", "Year", "Link"]
     parts = [str(row[col]) for col in columns if pd.notna(row[col])]
     return ". ".join(parts) + "."
 
+
 def process_excel_to_markdown():
     """Processes the Excel file and generates the Markdown file."""
     if not os.path.exists(EXCEL_PATH):
-        raise FileNotFoundError(f"The file 'citations.xlsx' was not found at {EXCEL_PATH}.")
+        raise FileNotFoundError(
+            f"The file 'citations.xlsx' was not found at {EXCEL_PATH}."
+        )
 
     df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
-    required_columns = ["Author", "Title", "Institution/Event", "Category", "Year", "Link"]
+    required_columns = [
+        "Author",
+        "Title",
+        "Institution/Event",
+        "Category",
+        "Year",
+        "Link",
+    ]
     if not all(col in df.columns for col in required_columns):
-        raise ValueError(f"The file 'citations.xlsx' must contain the following columns: {', '.join(required_columns)}.")
+        raise ValueError(
+            f"The file 'citations.xlsx' must contain the following columns: {', '.join(required_columns)}."
+        )
 
-    df = df.sort_values(by=["Year"], ascending=False)  # Sort by year in descending order
+    df = df.sort_values(
+        by=["Year"], ascending=False
+    )  # Sort by year in descending order
     df["Formatted"] = df.apply(format_citation, axis=1)
-    
+
     # Dictionary to store citations by category
     citations_by_category = {category: [] for category in CATEGORIES.values()}
-    
+
     for _, row in df.iterrows():
         category = row["Category"]
         if category in CATEGORIES:
             citations_by_category[CATEGORIES[category]].append(f"1. {row['Formatted']}")
-    
+
     # Constructing the final content
     citation_count = len(df)
     final_content = HEADER.replace("{N}", str(citation_count))
-    
+
     for category, citations in citations_by_category.items():
         final_content += f"\n\n## {category}\n\n"
         final_content += "\n".join(citations) if citations else "1."
-    
+
     # Saving the Markdown file
     with open(MD_PATH, "w", encoding="utf-8") as file:
         file.write(final_content)
-    
+
     print(f"Updated Markdown file saved at: {MD_PATH}")
+
 
 if __name__ == "__main__":
     process_excel_to_markdown()
