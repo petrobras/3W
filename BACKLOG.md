@@ -8,7 +8,6 @@ The list of priority improvements for the 3W Project that we intend to develop c
 * Review strategy for virtual environment specification (`environment.yml`);
 * Develop a `setup.py`. Is this module interesting for our project?
 * Develop tool to generate `diff` between versions of the 3W Dataset
-* Improve presentation of the [3W Dataset citation list](LISTS_OF_CITATIONS.md);
 * Develop unit tests for the main methods and functions;
 * Set up action for automatic execution of unit tests after creating PRs;
 * Establish coding guidelines. Which one?
