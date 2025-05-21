@@ -67,7 +67,7 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 
 ## Documentation
 
-<img width="400" src="https://github.com/Mathtzt/3w_toolkit/blob/1fa7246adfabfea07007aeae9e406f8bcd282aa6/figures/3w_top_view.png?raw=1"
+<img width="400" src="https://github.com/Mathtzt/3w_toolkit/blob/1fa7246adfabfea07007aeae9e406f8bcd282aa6/figures/3w_top_view.png?raw=1">
 
 The image above illustrates the high-level architecture of the 3WToolkit+, designed to support the full pipeline of machine learning applications using the 3W dataset—from raw data ingestion to model evaluation and delivery to end users. Each block in the architecture is briefly described below:
 
