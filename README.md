@@ -8,7 +8,16 @@ The evolution of machine learning has been catalyzed by the rapid advancement in
 
 
 In the oil & gas sector, the widespread availability of low-cost sensors has driven a paradigm shift from reactive maintenance to condition-based monitoring (CBM), where faults are detected and classified during ongoing operation. This approach minimizes downtime and improves operational safety. The synergy between AI and big data analysis has thus enabled the development of generalizable classifiers that require minimal domain knowledge and can be effectively adapted to a wide range of operational scenarios.
-In this context, we present MAIS+, a modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation. Building upon the experience with the original MAIS system and leveraging the Petrobras 3W dataset, MAIS+ introduces enhanced functionalities, such as advanced data imputation, deep feature extraction, synthetic data augmentation, and high-performance computing capabilities for model training.
+In this context, we present MAIS+, a modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation. Building upon the experience with the original 3WToolkit system and leveraging the Petrobras 3W dataset, 3WToolkit+ introduces enhanced functionalities, such as advanced data imputation, deep feature extraction, synthetic data augmentation, and high-performance computing capabilities for model training.
+
+
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+    <img width="400" src="https://coppe.ufrj.br/wp-content/uploads/2023/10/COPPE-horiz-completa-cor-300dpi.jpg">
+    <img width="200" src="https://github.com/natmourajr/data/blob/85e02f4e405bdb3c3d8cd9ea413c7329de8f3712/ciaa.png?raw=1">
+</div>
+
 
 
 <!-- PROJECT SHIELDS -->
