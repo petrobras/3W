@@ -18,7 +18,12 @@
 <summary>Table of Contents</summary>
 <ol>
 <li><a href="#about-the-project">About the Repository</a></li>
-<li><a href="#built-with">Para utilizar</a></li>
+<li><a href="#documentation">Documentation</a></li>
+<li>
+    <a href="#data_loader">Data Loader</a>
+    <ul>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+</li>    
 <li><a href="#roadmap">Lista de Tarefas</a></li>
 <li>
     <a href="#getting-started">Getting Started</a>
@@ -65,7 +70,7 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-## Documentation
+## Documentation <a id="documentation"></a>
 
 <img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/1fa7246adfabfea07007aeae9e406f8bcd282aa6/figures/3w_top_view.png?raw=1">
 
@@ -74,8 +79,10 @@ The image above illustrates the high-level architecture of the 3WToolkit+, desig
 ### 3W Dataset Versions
 This block represents different available versions of the 3W dataset, which include real and simulated data from offshore oil wells. These datasets serve as the foundation for all subsequent stages of data processing, modeling, and evaluation.
 
-### Data Loader
+### Data Loader <a id="data_loader"></a>
 The Data Loader module is responsible for importing, validating, and preparing the raw 3W data for use in model training and evaluation. It handles missing data, standardizes variable formats, and performs initial quality checks to ensure compatibility across toolkit components.
+
+
 
 ### Model Development
 This central module provides the infrastructure for designing, training, and optimizing machine learning models for fault detection and classification. It supports both classical and deep learning models and includes tools for hyperparameter tuning, cross-validation, and model versioning.
