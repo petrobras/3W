@@ -15,7 +15,7 @@ In this context, we present MAIS+, a modular and open-source AI toolkit for time
 <br />
 <div align="center">
     <img width="400" src="https://coppe.ufrj.br/wp-content/uploads/2023/10/COPPE-horiz-completa-cor-300dpi.jpg">
-    <img width="200" src="https://github.com/natmourajr/data/blob/85e02f4e405bdb3c3d8cd9ea413c7329de8f3712/ciaa.png?raw=1">
+    <img width="200" src="https://sites.ufpe.br/litpeg/wp-content/uploads/sites/10/2022/06/Petrobras-Logo.png">
 </div>
 
 
