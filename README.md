@@ -19,11 +19,10 @@
 <ol>
 <li><a href="#about-the-project">About the Repository</a></li>
 <li><a href="#documentation">Documentation</a></li>
-<li>
-    <li><a href="#data_loader">Data Loader</a></li>
-    <ul>
-    <li><a href="#prerequisites">Prerequisites</a></li>
-</li>    
+<ul>
+<li><a href="#data_loader">Data Loader</a></li>
+</ul>
+
 <li><a href="#roadmap">Lista de Tarefas</a></li>
 <li>
     <a href="#getting-started">Getting Started</a>
