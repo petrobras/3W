@@ -26,17 +26,20 @@
 <li><a href="#model_assessment">Model Assessment</a></li>
 </ul>
 
-<li><a href="#roadmap">Lista de Tarefas</a></li>
-<li>
-    <a href="#getting-started">Getting Started</a>
-    <ul>
-    <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#installation">Installation</a></li>
-    </ul>
-</li>
-<li><a href="#usage">Usage</a></li>
-<li><a href="#roadmap">Roadmap</a></li>
+<li><a href="#toolkit_examples">Toolkit Examples</a></li>
+<li><a href="#toolkit_demos">Toolkit Demos</a></li>
+<li><a href="#toolkit_challenges">Toolkit Challenges</a></li>
+<li><a href="#toolkit_videos">Toolkit Videos</a></li>
+
+<li><a href="#uml">Toolkit UML</a></li>
+
+<li><a href="#setup">Setup</a></li>
+<li><a href="#requirements">Requiriments</a></li>
+<li><a href="#install">Install</a></li>
 <li><a href="#contributing">Contributing</a></li>
+
+
+
 <li><a href="#license">License</a></li>
 <li><a href="#contact">Contact</a></li>
 <li><a href="#acknowledgments">Acknowledgments</a></li>
@@ -109,7 +112,7 @@ This component provides benchmarking tasks and open challenges using real scenar
 Instructional videos that explain toolkit concepts, walk through complete modeling pipelines, and offer insights from domain experts. These videos aim to broaden accessibility and support training initiatives.
 
 
-## UML - Unified Modeling Language <a id="uml"></a>
+## Toolkit UML <a id="uml"></a>
 
 Building upon the high-level block diagram architecture, a detailed UML (Unified Modeling Language) diagram was developed to support the software engineering and implementation of the 3WToolkit+. The UML model formalizes the relationships between components, data structures, and workflows described in the block-level architecture, enabling a structured and maintainable development process.
 
@@ -120,16 +123,15 @@ The UML diagram serves not only as an internal reference for the development tea
 <img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_toolkit_uml.png?raw=1">
 
 
-## Setup
+## Toolkit Setup  <a id="setup"></a>
 
-### Requirements
+### Requirements  <a id="requirements"></a>
 
-### Installation
+### Installation  <a id="install"></a>
 
+## Contributing  <a id="contributing"></a>
 
-## Contributing
-
-## Licenses
+## Licenses  <a id="license"></a>
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
