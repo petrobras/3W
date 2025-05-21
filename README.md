@@ -1,4 +1,4 @@
-# 3w-toolkit
+# 3w Toolkit
 
 ## Description
 
