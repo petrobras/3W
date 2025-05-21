@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 3W ToolKit
 
 <!-- ref: https://github.com/othneildrew/Best-README-Template/tree/main -->
@@ -29,7 +28,6 @@ In this context, we present MAIS+, a modular and open-source AI toolkit for time
 
 =======
 # 3w Toolkit
->>>>>>> a5a790d82e30dda5e0bfe41410c636f90cc64e48
 
 ## Description
 
