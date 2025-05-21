@@ -3,7 +3,8 @@
 <!-- ref: https://github.com/othneildrew/Best-README-Template/tree/main -->
 
 
-
+<!-- label-->
+<a id="readme-top"></a>
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
@@ -13,8 +14,31 @@
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 
-<!-- label-->
-<a id="readme-top"></a>
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Índice</summary>
+  <ol>
+    <li><a href="#about-the-project">About the Repository</a></li>
+    <li><a href="#built-with">Para utilizar</a></li>
+    <li><a href="#roadmap">Lista de Tarefas</a></li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
+
+<a id="about-the-project"></a>
+
 The evolution of machine learning has been catalyzed by the rapid advancement in data acquisition systems, scalable storage, high-performance processing, and increasingly efficient model training through matrix-centric hardware (e.g., GPUs). These advances have enabled the deployment of highly parameterized AI models in real-world applications such as health care, finance, and industrial operations.
 
 
@@ -42,10 +66,6 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-
-# 3w Toolkit
-
-## Description
 
 ## Setup
 
