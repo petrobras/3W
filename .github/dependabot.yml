@@ -5,7 +5,7 @@
 
 version: 2
 updates:
-  - package-ecosystem: "poetry"
+  - package-ecosystem: "pip"
     directory: "/"  # caminho do seu pyproject.toml
     schedule:
       interval: "weekly"
