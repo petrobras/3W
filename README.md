@@ -20,7 +20,10 @@
 <li><a href="#about-the-project">About the Repository</a></li>
 <li><a href="#documentation">Documentation</a></li>
 <ul>
+<li><a href="#dataset_versions">Dataset Versions</a></li>
 <li><a href="#data_loader">Data Loader</a></li>
+<li><a href="#model_dev">Model Development</a></li>
+<li><a href="#model_assessment">Model Assessment</a></li>
 </ul>
 
 <li><a href="#roadmap">Lista de Tarefas</a></li>
@@ -75,37 +78,47 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 
 The image above illustrates the high-level architecture of the 3WToolkit+, designed to support the full pipeline of machine learning applications using the 3W dataset—from raw data ingestion to model evaluation and delivery to end users. Each block in the architecture is briefly described below:
 
-### 3W Dataset Versions
+### 3W Dataset Versions <a id="dataset_versions"></a>
 This block represents different available versions of the 3W dataset, which include real and simulated data from offshore oil wells. These datasets serve as the foundation for all subsequent stages of data processing, modeling, and evaluation.
 
 ### Data Loader <a id="data_loader"></a>
 The Data Loader module is responsible for importing, validating, and preparing the raw 3W data for use in model training and evaluation. It handles missing data, standardizes variable formats, and performs initial quality checks to ensure compatibility across toolkit components.
 
+<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_data_loader.png?raw=1">
 
-
-### Model Development
+### Model Development <a id="model_dev"></a>
 This central module provides the infrastructure for designing, training, and optimizing machine learning models for fault detection and classification. It supports both classical and deep learning models and includes tools for hyperparameter tuning, cross-validation, and model versioning.
 
-### Assessment
+<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_model_dev.png?raw=1">
+
+### Assessment <a id="model_assessment"></a>
 The Assessment module evaluates model performance using both sample-level and event-level metrics. It includes support for traditional indicators (e.g., accuracy, precision, recall) as well as domain-specific metrics such as detection lag and anticipation time, which are critical for condition-based monitoring.
 
+<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_assessment.png?raw=1">
 
-### 3W Examples
+## 3W Examples <a id="toolkit_examples"></a>
 A curated set of ready-to-use model configurations and scripts that demonstrate how to apply the toolkit to common fault detection tasks using the 3W dataset. These examples accelerate onboarding and reproducibility.
 
-### 3W Tutorials/Demos
+## 3W Tutorials/Demos <a id="toolkit_demos"></a>
 Step-by-step tutorials and demonstration notebooks that guide users through the toolkit’s functionalities, explaining how each module operates and how to configure different experiments.
 
-### 3W Challenges
+## 3W Challenges <a id="toolkit_challenges"></a>
 This component provides benchmarking tasks and open challenges using real scenarios derived from the 3W dataset. It promotes collaborative development and comparative evaluation of machine learning solutions in fault diagnosis.
 
-### 3W Videos
+## 3W Videos <a id="toolkit_videos"></a>
 Instructional videos that explain toolkit concepts, walk through complete modeling pipelines, and offer insights from domain experts. These videos aim to broaden accessibility and support training initiatives.
 
 
+## UML - Unified Modeling Language <a id="uml"></a>
 
+Building upon the high-level block diagram architecture, a detailed UML (Unified Modeling Language) diagram was developed to support the software engineering and implementation of the 3WToolkit+. The UML model formalizes the relationships between components, data structures, and workflows described in the block-level architecture, enabling a structured and maintainable development process.
 
-### UML - Unified Modeling Language
+This transition from conceptual blocks to formal UML design ensures that each module—such as the Data Loader, Model Development, and Assessment—has clearly defined interfaces, class responsibilities, and interaction protocols. It also facilitates modular programming, unit testing, and future extensibility of the toolkit by providing developers with a shared, consistent blueprint for implementation.
+
+The UML diagram serves not only as an internal reference for the development team but also as part of the developer-oriented documentation that accompanies the toolkit and it is shown bellow
+
+<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_toolkit_uml.png?raw=1">
+
 
 ## Setup
 
