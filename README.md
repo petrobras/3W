@@ -15,7 +15,7 @@ In this context, we present 3WToolkit+, a modular and open-source AI toolkit for
 <br />
 <div align="center">
     <img width="400" src="https://coppe.ufrj.br/wp-content/uploads/2023/10/COPPE-horiz-completa-cor-300dpi.jpg">
-    <img width="200" src="https://sites.ufpe.br/litpeg/wp-content/uploads/sites/10/2022/06/Petrobras-Logo.png">
+    <img width="600" src="https://sites.ufpe.br/litpeg/wp-content/uploads/sites/10/2022/06/Petrobras-Logo.png">
 </div>
 
 
