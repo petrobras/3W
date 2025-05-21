@@ -18,7 +18,7 @@
 <summary>Table of Contents</summary>
 <ol>
 <li><a href="#about-the-project">About the Repository</a></li>
-<li><a href="#documentation">Documentation</a></li>
+<li><a href="#documentation">Development Documentation</a></li>
 <ul>
 <li><a href="#dataset_versions">Dataset Versions</a></li>
 <li><a href="#data_loader">Data Loader</a></li>
@@ -26,11 +26,13 @@
 <li><a href="#model_assessment">Model Assessment</a></li>
 </ul>
 
+<li><a href="#documentation2">Usage Documentation</a></li>
+<ul>
 <li><a href="#toolkit_examples">Toolkit Examples</a></li>
 <li><a href="#toolkit_demos">Toolkit Demos</a></li>
 <li><a href="#toolkit_challenges">Toolkit Challenges</a></li>
 <li><a href="#toolkit_videos">Toolkit Videos</a></li>
-
+</ul>
 <li><a href="#uml">Toolkit UML</a></li>
 
 <li><a href="#setup">Setup</a></li>
@@ -99,16 +101,18 @@ The Assessment module evaluates model performance using both sample-level and ev
 
 <img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_assessment.png?raw=1">
 
-## 3W Examples <a id="toolkit_examples"></a>
+## Usage Documentation <a id="documentation2"></a>
+
+### 3W Examples <a id="toolkit_examples"></a>
 A curated set of ready-to-use model configurations and scripts that demonstrate how to apply the toolkit to common fault detection tasks using the 3W dataset. These examples accelerate onboarding and reproducibility.
 
-## 3W Tutorials/Demos <a id="toolkit_demos"></a>
+### 3W Tutorials/Demos <a id="toolkit_demos"></a>
 Step-by-step tutorials and demonstration notebooks that guide users through the toolkit’s functionalities, explaining how each module operates and how to configure different experiments.
 
-## 3W Challenges <a id="toolkit_challenges"></a>
+### 3W Challenges <a id="toolkit_challenges"></a>
 This component provides benchmarking tasks and open challenges using real scenarios derived from the 3W dataset. It promotes collaborative development and comparative evaluation of machine learning solutions in fault diagnosis.
 
-## 3W Videos <a id="toolkit_videos"></a>
+### 3W Videos <a id="toolkit_videos"></a>
 Instructional videos that explain toolkit concepts, walk through complete modeling pipelines, and offer insights from domain experts. These videos aim to broaden accessibility and support training initiatives.
 
 
