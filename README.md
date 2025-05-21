@@ -65,6 +65,11 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
+## Documentation
+
+
+
+### UML - Unified Modeling Language
 
 ## Setup
 
@@ -72,9 +77,6 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 
 ### Installation
 
-## Documentation
-
-### UML - Unified Modeling Language
 
 ## Contributing
 
