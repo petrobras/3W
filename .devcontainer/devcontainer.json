@@ -1,0 +1,17 @@
+{
+  "name": "3w-toolkit-dev",
+  "build": {
+    "dockerfile": "../Dockerfile"
+  },
+  "context": "..",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode.cpptools",
+    "eamodio.gitlens"
+  ],
+  "remoteUser": "root"
+}
