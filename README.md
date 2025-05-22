@@ -6,11 +6,15 @@
 <!-- label-->
 <a id="readme-top"></a>
 
-[![Contributors][contributors-shield]][contributors-url]
+<!-- [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![Unlicense License][license-shield]][license-url]
+[![Issues][issues-shield]][issues-url] -->
+<!-- [![Unlicense License][license-shield]][license-url] -->
+
+[![Code Coverage](https://img.shields.io/codecov/c/github/Mathtzt/3w_toolkit)](https://codecov.io/github/Mathtzt/3w_toolkit)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-green.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![version](https://img.shields.io/badge/version-0.1.0-blue)
 
 
 <!-- TABLE OF CONTENTS -->
@@ -47,8 +51,9 @@
 <li><a href="#acknowledgments">Acknowledgments</a></li>
 </ol>
 
+---
 
-<a id="about-the-project"></a>
+## About <a id="about-the-project"></a>
 
 The evolution of machine learning has been catalyzed by the rapid advancement in data acquisition systems, scalable storage, high-performance processing, and increasingly efficient model training through matrix-centric hardware (e.g., GPUs). These advances have enabled the deployment of highly parameterized AI models in real-world applications such as health care, finance, and industrial operations.
 
@@ -139,20 +144,28 @@ The UML diagram serves not only as an internal reference for the development tea
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
+[product-screenshot]: images/screenshot.png
+
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/Mathtzt/3w_toolkit.svg?style=for-the-badge
 [contributors-url]: https://github.com/Mathtzt/3w_toolkit/graphs/contributors
+
 [forks-shield]: https://img.shields.io/github/forks/Mathtzt/3w_toolkit.svg?style=for-the-badge
 [forks-url]: https://github.com/Mathtzt/3w_toolkit/network/members
+
 [stars-shield]: https://img.shields.io/github/stars/Mathtzt/3w_toolkit.svg?style=for-the-badge
 [stars-url]: https://github.com/Mathtzt/3w_toolkit/stargazers
+
 [issues-shield]: https://img.shields.io/github/issues/Mathtzt/3w_toolkit.svg?style=for-the-badge
 [issues-url]: https://github.com/Mathtzt/3w_toolkit/issues
+
 [license-shield]: https://img.shields.io/github/license/Mathtzt/3w_toolkit.svg?style=for-the-badge
-[license-url]: https://github.com/Mathtzt/3w_toolkit/blob/master/LICENSE.txt
+[license-url]: https://github.com/Mathtzt/3w_toolkit/blob/master/LICENSE
+
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: www.linkedin.com/in/natanael-moura-junior-425a3294
-[product-screenshot]: images/screenshot.png
+
+<!-- 
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
@@ -168,4 +181,4 @@ The UML diagram serves not only as an internal reference for the development tea
 [Bootstrap.com]: https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white
 [Bootstrap-url]: https://getbootstrap.com
 [JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
-[JQuery-url]: https://jquery.com 
+[JQuery-url]: https://jquery.com -->
