@@ -172,3 +172,18 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Apple macOS Finder files
+.DS_Store
+# Apple macOS Spotlight files
+.Spotlight-V100
+# Apple macOS Trash files
+.Trashes
+# Apple macOS Resource Fork files
+.AppleDouble
+# Apple macOS Icon files 
+.Icon?
+# Apple macOS Volume files
+.VolumeIcon.icns
+# Apple macOS Temporary files
+.TemporaryItems
