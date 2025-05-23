@@ -21,7 +21,7 @@
 
 <summary>Table of Contents</summary>
 <ol>
-<li><a href="#about-the-project">About the Repository</a></li>
+<li><a href="#about-the-project">About</a></li>
 <li><a href="#documentation">Development Documentation</a></li>
 <ul>
 <li><a href="#dataset_versions">Dataset Versions</a></li>

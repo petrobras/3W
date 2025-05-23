@@ -1,9 +1,9 @@
 [project]
-name = "3w-toolkit"
+name = "3WToolkit"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Mathtzt", email = "matheus.cn10@gmail.com"}
+    {name = "Mathtzt", email = "matheus.santo@lps.ufrj.br"}
 ]
 readme = "README.md"
 requires-python = "==3.10.11"
@@ -21,9 +21,13 @@ dependencies = [
     "ipykernel==6.29.5",
     "Pillow==11.0.0",
     "scikit-image==0.25.2",
+    "torch==2.7.0",
+    "torchvision==0.22.0",
+    "torchmetrics==1.6.2",
     "timm==1.0.15",
     "tqdm==4.67.1",
-    "pytest==8.3.5"
+    "pytest==8.3.5",
+    "pydantic==2.11"
 ]
 
 [tool.poetry.group.dev.dependencies]
