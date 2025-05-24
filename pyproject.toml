@@ -1,6 +1,6 @@
 [project]
-name = "3WToolkit"
-version = "0.1.0"
+name = "ThreeWToolkit"
+version = "0.0.1"
 description = ""
 authors = [
     {name = "Mathtzt", email = "matheus.santo@lps.ufrj.br"}
@@ -29,6 +29,9 @@ dependencies = [
     "pytest==8.3.5",
     "pydantic==2.11"
 ]
+
+[tool.poetry]
+packages = [{ include = "ThreeWToolkit" }]
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
