@@ -138,9 +138,36 @@ The UML diagram serves not only as an internal reference for the development tea
 
 To ensure a consistent, reproducible, and isolated development environment, this project uses Docker as part of its core development workflow. Docker enables the encapsulation of all dependencies, configurations, and system-level requirements needed to run the application, eliminating the "it works on my machine" problem. By containerizing the development environment, we guarantee that all contributors and automated CI/CD pipelines operate under the same conditions, improving reliability and minimizing unexpected behaviors. Additionally, Docker simplifies environment setup, allowing developers to start contributing quickly without manually installing and configuring complex dependencies. This approach also facilitates testing across multiple versions of Python or system libraries when needed, supporting robust and portable software engineering practices.
 
+<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/08588a22a497885d8c235229aee19e1b7c251c62/figures/docker-logo-blue.png?raw=1">
 
+All dependencies and system requirements for this project have been fully encapsulated within a Docker image to ensure consistency and reproducibility across environments. As such, it is highly recommended that developers use this Docker image during development. You can either build the image locally or pull it directly from Docker Hub, depending on your preference or workflow.
+
+Docker operates by leveraging containerization, which allows applications and their dependencies to run in isolated user-space environments that share the host system's kernel. Unlike traditional virtual machines, which emulate entire hardware stacks and run full guest operating systems, Docker containers are significantly more lightweight and faster to start. This leads to improved resource efficiency, lower overhead, and greater scalability. In development environments where multiple users are working on the same codebase, Docker provides a critical advantage: it ensures that all contributors run the exact same environment, from system libraries to Python packages, without the need for heavy virtual machines or complex configuration. Containers can be spun up instantly, consume fewer resources, and integrate seamlessly with CI/CD pipelines. Moreover, Docker images can be versioned, shared via registries like Docker Hub, and easily rebuilt, enabling collaborative and reproducible workflows across diverse teams and systems.
+
+
+#### Build a docker image locally
+To build the Docker image locally, navigate to the root directory of the project and run:
+```bash
+docker build --tag=<usr name>/3w_tk_img:latest .
+```
+
+#### Push a docker image from DockerHub
+To push the image to <a href="https://hub.docker.com/r/natmourajr/3w_tk_img">Docker Hub</a>, make sure you are logged in and then execute:
+
+```bash
+docker pull natmourajr/3w_tk_img
+```
+
+#### Run a docker image locally
+After building or pulling the image in computer, just run
+
+```bash
+docker run  natmourajr/3w_tk_img
+```
 
 ### Requirements  <a id="requirements"></a>
+This project uses <a href="https://python-poetry.org/">Poetry</a> as its dependency and packaging manager to ensure a consistent, reliable, and modern Python development workflow. Poetry simplifies the management of project dependencies by providing a single pyproject.toml file to declare packages, development tools, and metadata, while automatically resolving compatible versions. Unlike traditional requirements.txt workflows, Poetry creates an isolated and deterministic environment using a lock file (poetry.lock), ensuring that all contributors and deployment environments use exactly the same package versions. It also streamlines publishing to PyPI, virtual environment creation, and script execution, making it a comprehensive tool for managing the entire lifecycle of a Python project. By adopting Poetry, we reduce the risk of dependency conflicts and improve the reproducibility and maintainability of the codebase.
+
 
 ### Installation  <a id="install"></a>
 
