@@ -147,6 +147,7 @@
 
 #### Build a docker image locally
 <p style="text-align: justify;">To build the Docker image locally, navigate to the root directory of the project and run:</p>
+
 ```bash
 docker build --tag=<usr name>/3w_tk_img:latest .
 ```
@@ -192,14 +193,14 @@ It is possible to perform the installation in three different ways.
 
 1. **ThreeWToolkit** is on PyPI, so you can use pip to install it:
 
-```
+```bash
 pip install ThreeWToolkit
 ```
 
 2. **Installing directly from the git repository (private):**
 You can install directly using:
 
-```
+```bash
 pip install git+https://github.com/Mathtzt/3WToolkit.git
 ```
 
@@ -208,7 +209,7 @@ Note: *Authentication is required*.
 3. **Installing via `requirements.txt`:**
 You can install using:
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
