@@ -114,14 +114,22 @@ The Assessment module evaluates model performance using both sample-level and ev
 ### 3W Examples <a id="toolkit_examples"></a>
 A curated set of ready-to-use model configurations and scripts that demonstrate how to apply the toolkit to common fault detection tasks using the 3W dataset. These examples accelerate onboarding and reproducibility.
 
+The 3WToolkit examples can be found <a href="https://github.com/Mathtzt/3WToolkit/tree/aee303e1c6947b0bfd2525442a9fc48f212fb4e4/docs/examples">here</a>
+
 ### 3W Tutorials/Demos <a id="toolkit_demos"></a>
 Step-by-step tutorials and demonstration notebooks that guide users through the toolkit’s functionalities, explaining how each module operates and how to configure different experiments.
+
+The demos can be found <a href="https://github.com/Mathtzt/3WToolkit/tree/aee303e1c6947b0bfd2525442a9fc48f212fb4e4/docs/examples">here</a> (TO BE DONE!!!)
 
 ### 3W Challenges <a id="toolkit_challenges"></a>
 This component provides benchmarking tasks and open challenges using real scenarios derived from the 3W dataset. It promotes collaborative development and comparative evaluation of machine learning solutions in fault diagnosis.
 
+A list of 3WToolkit challenges can be found <a href="https://github.com/Mathtzt/3WToolkit/tree/aee303e1c6947b0bfd2525442a9fc48f212fb4e4/docs/examples">here</a> (TO BE DONE!!!)
+
 ### 3W Videos <a id="toolkit_videos"></a>
 Instructional videos that explain toolkit concepts, walk through complete modeling pipelines, and offer insights from domain experts. These videos aim to broaden accessibility and support training initiatives.
+
+A list of 3WToolkit videos can be found <a href="https://github.com/Mathtzt/3WToolkit/tree/aee303e1c6947b0bfd2525442a9fc48f212fb4e4/docs/examples">here</a> (TO BE DONE!!!)
 
 
 ## Toolkit UML <a id="uml"></a>
