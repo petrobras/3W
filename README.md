@@ -134,6 +134,12 @@ The UML diagram serves not only as an internal reference for the development tea
 
 ## Toolkit Setup  <a id="setup"></a>
 
+### Docker
+
+To ensure a consistent, reproducible, and isolated development environment, this project uses Docker as part of its core development workflow. Docker enables the encapsulation of all dependencies, configurations, and system-level requirements needed to run the application, eliminating the "it works on my machine" problem. By containerizing the development environment, we guarantee that all contributors and automated CI/CD pipelines operate under the same conditions, improving reliability and minimizing unexpected behaviors. Additionally, Docker simplifies environment setup, allowing developers to start contributing quickly without manually installing and configuring complex dependencies. This approach also facilitates testing across multiple versions of Python or system libraries when needed, supporting robust and portable software engineering practices.
+
+
+
 ### Requirements  <a id="requirements"></a>
 
 ### Installation  <a id="install"></a>
