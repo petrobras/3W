@@ -20,32 +20,35 @@
 <!-- TABLE OF CONTENTS -->
 
 <summary>Table of Contents</summary>
+
 <ol>
 <li><a href="#about-the-project">About</a></li>
 <li><a href="#documentation">Development Documentation</a></li>
-<ul>
-<li><a href="#dataset_versions">Dataset Versions</a></li>
-<li><a href="#data_loader">Data Loader</a></li>
-<li><a href="#model_dev">Model Development</a></li>
-<li><a href="#model_assessment">Model Assessment</a></li>
-</ul>
-
+    <ul>
+        <li><a href="#dataset_versions">Dataset Versions</a></li>
+        <li><a href="#data_loader">Data Loader</a></li>
+        <li><a href="#model_dev">Model Development</a></li>
+        <li><a href="#model_assessment">Model Assessment</a></li>
+    </ul>
+    
 <li><a href="#documentation2">Usage Documentation</a></li>
-<ul>
-<li><a href="#toolkit_examples">Toolkit Examples</a></li>
-<li><a href="#toolkit_demos">Toolkit Demos</a></li>
-<li><a href="#toolkit_challenges">Toolkit Challenges</a></li>
-<li><a href="#toolkit_videos">Toolkit Videos</a></li>
-</ul>
+    <ul>
+        <li><a href="#toolkit_examples">Toolkit Examples</a></li>
+        <li><a href="#toolkit_demos">Toolkit Demos</a></li>
+        <li><a href="#toolkit_challenges">Toolkit Challenges</a></li>
+        <li><a href="#toolkit_videos">Toolkit Videos</a></li>
+    </ul>
+
 <li><a href="#uml">Toolkit UML</a></li>
-
 <li><a href="#setup">Setup</a></li>
-<li><a href="#requirements">Requiriments</a></li>
-<li><a href="#install">Install</a></li>
+    <ul>
+        <li><a href="#docker">Docker</a></li>
+        <li><a href="#vscode_docker">Development in VSCode using Docker</a></li>
+        <li><a href="#requirements">Requirements</a></li>
+        <li><a href="#install">Installation</a></li>
+    </ul>
+
 <li><a href="#contributing">Contributing</a></li>
-
-
-
 <li><a href="#license">License</a></li>
 <li><a href="#contact">Contact</a></li>
 <li><a href="#acknowledgments">Acknowledgments</a></li>
@@ -134,7 +137,7 @@ The UML diagram serves not only as an internal reference for the development tea
 
 ## Toolkit Setup  <a id="setup"></a>
 
-### Docker
+### Docker <a id="docker"></a>
 
 To ensure a consistent, reproducible, and isolated development environment, this project uses Docker as part of its core development workflow. Docker enables the encapsulation of all dependencies, configurations, and system-level requirements needed to run the application, eliminating the "it works on my machine" problem. By containerizing the development environment, we guarantee that all contributors and automated CI/CD pipelines operate under the same conditions, improving reliability and minimizing unexpected behaviors. Additionally, Docker simplifies environment setup, allowing developers to start contributing quickly without manually installing and configuring complex dependencies. This approach also facilitates testing across multiple versions of Python or system libraries when needed, supporting robust and portable software engineering practices.
 
@@ -165,7 +168,7 @@ After building or pulling the image in computer, just run
 docker run  natmourajr/3w_tk_img
 ```
 
-### Development in VSCode using Docker
+### Development in VSCode using Docker <a id="vscode_docker"></a>
 
 1. VSCode extension: Dev Containers (ID: `ms-vscode-remote.remote-containers`).
 2. Open your project root folder (`3WToolkit/`) in VSCode.
@@ -182,9 +185,37 @@ Note:
 Install libraries using `pip` will stay isolated from your host system.
 
 ### Requirements  <a id="requirements"></a>
+
 This project uses <a href="https://python-poetry.org/">Poetry</a> as its dependency and packaging manager to ensure a consistent, reliable, and modern Python development workflow. Poetry simplifies the management of project dependencies by providing a single `pyproject.toml` file to declare packages, development tools, and metadata, while automatically resolving compatible versions. Unlike traditional `requirements.txt` workflows, Poetry creates an isolated and deterministic environment using a lock file (`poetry.lock`), ensuring that all contributors and deployment environments use exactly the same package versions. It also streamlines publishing to PyPI, virtual environment creation, and script execution, making it a comprehensive tool for managing the entire lifecycle of a Python project. By adopting Poetry, we reduce the risk of dependency conflicts and improve the reproducibility and maintainability of the codebase.
 
-### Installation  <a id="install"></a>
+### Installation <a id="install"></a>
+
+#### Python
+It is possible to perform the installation in three different ways.
+
+1. **ThreeWToolkit** is on PyPI, so you can use pip to install it:
+
+```
+pip install ThreeWToolkit
+```
+
+2. **Installing directly from the git repository (private):**
+You can install directly using:
+
+```
+pip install git+https://github.com/Mathtzt/3WToolkit.git
+```
+
+    Note: *Authentication is required*.
+
+3. **Installing via `requirements.txt`:**
+You can install using:
+
+```
+pip install -r requirements.txt
+```
+
+    Note: *Authentication is required*.
 
 ## Contributing  <a id="contributing"></a>
 
