@@ -58,12 +58,11 @@
 
 ## About <a id="about-the-project"></a>
 
-The evolution of machine learning has been catalyzed by the rapid advancement in data acquisition systems, scalable storage, high-performance processing, and increasingly efficient model training through matrix-centric hardware (e.g., GPUs). These advances have enabled the deployment of highly parameterized AI models in real-world applications such as health care, finance, and industrial operations.
+<p style="text-align: justify;">The evolution of machine learning has been catalyzed by the rapid advancement in data acquisition systems, scalable storage, high-performance processing, and increasingly efficient model training through matrix-centric hardware (e.g., GPUs). These advances have enabled the deployment of highly parameterized AI models in real-world applications such as health care, finance, and industrial operations.</p>
 
+<p style="text-align: justify;">In the oil & gas sector, the widespread availability of low-cost sensors has driven a paradigm shift from reactive maintenance to condition-based monitoring (CBM), where faults are detected and classified during ongoing operation. This approach minimizes downtime and improves operational safety. The synergy between AI and big data analysis has thus enabled the development of generalizable classifiers that require minimal domain knowledge and can be effectively adapted to a wide range of operational scenarios.</p>
 
-In the oil & gas sector, the widespread availability of low-cost sensors has driven a paradigm shift from reactive maintenance to condition-based monitoring (CBM), where faults are detected and classified during ongoing operation. This approach minimizes downtime and improves operational safety. The synergy between AI and big data analysis has thus enabled the development of generalizable classifiers that require minimal domain knowledge and can be effectively adapted to a wide range of operational scenarios.
-In this context, we present 3WToolkit+, a modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation. Building upon the experience with the original 3WToolkit system and leveraging the Petrobras <a href="https://github.com/petrobras/3W">3W Dataset </a>, 3WToolkit+ introduces enhanced functionalities, such as advanced data imputation, deep feature extraction, synthetic data augmentation, and high-performance computing capabilities for model training.
-
+<p style="text-align: justify;">In this context, we present 3WToolkit+, a modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation. Building upon the experience with the original 3WToolkit system and leveraging the Petrobras <a href="https://github.com/petrobras/3W">3W Dataset</a>, 3WToolkit+ introduces enhanced functionalities, such as advanced data imputation, deep feature extraction, synthetic data augmentation, and high-performance computing capabilities for model training.</p>
 
 <!-- PROJECT LOGO -->
 <br />
@@ -73,7 +72,7 @@ In this context, we present 3WToolkit+, a modular and open-source AI toolkit for
 </div>
 
 
-The development of the 3WToolkit+ is the result of a collaborative partnership between Petrobras, with a focus on the CENPES research center, and the COPPE/Universidade Federal do Rio de Janeiro (UFRJ). This joint effort brings together complementary strengths: COPPE/UFRJ contributes decades of proven expertise in signal processing and machine learning model development, while CENPES offers access to highly specialized technical knowledge and real-world operational challenges in the oil and gas sector. This synergy ensures that 3WToolkit+ is both scientifically rigorous and practically relevant, addressing complex scenarios with robust and scalable AI-based solutions for time-series analysis and fault detection in oil well operations.
+<p style="text-align: justify;">The development of the 3WToolkit+ is the result of a collaborative partnership between Petrobras, with a focus on the CENPES research center, and the COPPE/Universidade Federal do Rio de Janeiro (UFRJ). This joint effort brings together complementary strengths: COPPE/UFRJ contributes decades of proven expertise in signal processing and machine learning model development, while CENPES offers access to highly specialized technical knowledge and real-world operational challenges in the oil and gas sector. This synergy ensures that 3WToolkit+ is both scientifically rigorous and practically relevant, addressing complex scenarios with robust and scalable AI-based solutions for time-series analysis and fault detection in oil well operations.</p>
 
 
 <!-- PROJECT SHIELDS -->
@@ -89,80 +88,78 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 
 <img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_top_view.png">
 
-The image above illustrates the high-level architecture of the 3WToolkit+, designed to support the full pipeline of machine learning applications using the 3W dataset—from raw data ingestion to model evaluation and delivery to end users. Each block in the architecture is briefly described below:
+<p style="text-align: justify;">The image above illustrates the high-level architecture of the 3WToolkit+, designed to support the full pipeline of machine learning applications using the 3W dataset—from raw data ingestion to model evaluation and delivery to end users. Each block in the architecture is briefly described below:</p>
 
 ### 3W Dataset Versions <a id="dataset_versions"></a>
-This block represents different available versions of the 3W dataset, which include real and simulated data from offshore oil wells. These datasets serve as the foundation for all subsequent stages of data processing, modeling, and evaluation.
+<p style="text-align: justify;">This block represents different available versions of the 3W dataset, which include real and simulated data from offshore oil wells. These datasets serve as the foundation for all subsequent stages of data processing, modeling, and evaluation.</p>
 
 ### Data Loader <a id="data_loader"></a>
-The Data Loader module is responsible for importing, validating, and preparing the raw 3W data for use in model training and evaluation. It handles missing data, standardizes variable formats, and performs initial quality checks to ensure compatibility across toolkit components.
+<p style="text-align: justify;">The Data Loader module is responsible for importing, validating, and preparing the raw 3W data for use in model training and evaluation. It handles missing data, standardizes variable formats, and performs initial quality checks to ensure compatibility across toolkit components.</p>
 
 <img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_data_loader.png">
 
 ### Model Development <a id="model_dev"></a>
-This central module provides the infrastructure for designing, training, and optimizing machine learning models for fault detection and classification. It supports both classical and deep learning models and includes tools for hyperparameter tuning, cross-validation, and model versioning.
+<p style="text-align: justify;">This central module provides the infrastructure for designing, training, and optimizing machine learning models for fault detection and classification. It supports both classical and deep learning models and includes tools for hyperparameter tuning, cross-validation, and model versioning.</p>
 
 <img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_model_dev.png">
 
 ### Assessment <a id="model_assessment"></a>
-The Assessment module evaluates model performance using both sample-level and event-level metrics. It includes support for traditional indicators (e.g., accuracy, precision, recall) as well as domain-specific metrics such as detection lag and anticipation time, which are critical for condition-based monitoring.
+<p style="text-align: justify;">The Assessment module evaluates model performance using both sample-level and event-level metrics. It includes support for traditional indicators (e.g., accuracy, precision, recall) as well as domain-specific metrics such as detection lag and anticipation time, which are critical for condition-based monitoring.</p>
 
 <img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_assessment.png">
 
 ## Usage Documentation <a id="documentation2"></a>
 
 ### 3W Examples <a id="toolkit_examples"></a>
-A curated set of ready-to-use model configurations and scripts that demonstrate how to apply the toolkit to common fault detection tasks using the 3W dataset. These examples accelerate onboarding and reproducibility.
+<p style="text-align: justify;">A curated set of ready-to-use model configurations and scripts that demonstrate how to apply the toolkit to common fault detection tasks using the 3W dataset. These examples accelerate onboarding and reproducibility.</p>
 
 ### 3W Tutorials/Demos <a id="toolkit_demos"></a>
-Step-by-step tutorials and demonstration notebooks that guide users through the toolkit’s functionalities, explaining how each module operates and how to configure different experiments.
+<p style="text-align: justify;">Step-by-step tutorials and demonstration notebooks that guide users through the toolkit’s functionalities, explaining how each module operates and how to configure different experiments.</p>
 
 ### 3W Challenges <a id="toolkit_challenges"></a>
-This component provides benchmarking tasks and open challenges using real scenarios derived from the 3W dataset. It promotes collaborative development and comparative evaluation of machine learning solutions in fault diagnosis.
+<p style="text-align: justify;">This component provides benchmarking tasks and open challenges using real scenarios derived from the 3W dataset. It promotes collaborative development and comparative evaluation of machine learning solutions in fault diagnosis.</p>
 
 ### 3W Videos <a id="toolkit_videos"></a>
-Instructional videos that explain toolkit concepts, walk through complete modeling pipelines, and offer insights from domain experts. These videos aim to broaden accessibility and support training initiatives.
-
+<p style="text-align: justify;">Instructional videos that explain toolkit concepts, walk through complete modeling pipelines, and offer insights from domain experts. These videos aim to broaden accessibility and support training initiatives.</p>
 
 ## Toolkit UML <a id="uml"></a>
 
-Building upon the high-level block diagram architecture, a detailed UML (Unified Modeling Language) diagram was developed to support the software engineering and implementation of the 3WToolkit+. The UML model formalizes the relationships between components, data structures, and workflows described in the block-level architecture, enabling a structured and maintainable development process.
+<p style="text-align: justify;">Building upon the high-level block diagram architecture, a detailed UML (Unified Modeling Language) diagram was developed to support the software engineering and implementation of the 3WToolkit+. The UML model formalizes the relationships between components, data structures, and workflows described in the block-level architecture, enabling a structured and maintainable development process.</p>
 
-This transition from conceptual blocks to formal UML design ensures that each module—such as the Data Loader, Model Development, and Assessment—has clearly defined interfaces, class responsibilities, and interaction protocols. It also facilitates modular programming, unit testing, and future extensibility of the toolkit by providing developers with a shared, consistent blueprint for implementation.
+<p style="text-align: justify;">This transition from conceptual blocks to formal UML design ensures that each module—such as the Data Loader, Model Development, and Assessment—has clearly defined interfaces, class responsibilities, and interaction protocols. It also facilitates modular programming, unit testing, and future extensibility of the toolkit by providing developers with a shared, consistent blueprint for implementation.</p>
 
-The UML diagram serves not only as an internal reference for the development team but also as part of the developer-oriented documentation that accompanies the toolkit and it is shown bellow
+<p style="text-align: justify;">The UML diagram serves not only as an internal reference for the development team but also as part of the developer-oriented documentation that accompanies the toolkit and it is shown bellow</p>
 
 <img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_toolkit_uml.png">
-
 
 ## Toolkit Setup  <a id="setup"></a>
 
 ### Docker <a id="docker"></a>
 
-To ensure a consistent, reproducible, and isolated development environment, this project uses Docker as part of its core development workflow. Docker enables the encapsulation of all dependencies, configurations, and system-level requirements needed to run the application, eliminating the "it works on my machine" problem. By containerizing the development environment, we guarantee that all contributors and automated CI/CD pipelines operate under the same conditions, improving reliability and minimizing unexpected behaviors. Additionally, Docker simplifies environment setup, allowing developers to start contributing quickly without manually installing and configuring complex dependencies. This approach also facilitates testing across multiple versions of Python or system libraries when needed, supporting robust and portable software engineering practices.
+<p style="text-align: justify;">To ensure a consistent, reproducible, and isolated development environment, this project uses Docker as part of its core development workflow. Docker enables the encapsulation of all dependencies, configurations, and system-level requirements needed to run the application, eliminating the "it works on my machine" problem. By containerizing the development environment, we guarantee that all contributors and automated CI/CD pipelines operate under the same conditions, improving reliability and minimizing unexpected behaviors. Additionally, Docker simplifies environment setup, allowing developers to start contributing quickly without manually installing and configuring complex dependencies. This approach also facilitates testing across multiple versions of Python or system libraries when needed, supporting robust and portable software engineering practices.</p>
 
 <img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/docker-logo-blue.png">
 
-All dependencies and system requirements for this project have been fully encapsulated within a Docker image to ensure consistency and reproducibility across environments. As such, it is highly recommended that developers use this Docker image during development. You can either build the image locally or pull it directly from Docker Hub, depending on your preference or workflow.
+<p style="text-align: justify;">All dependencies and system requirements for this project have been fully encapsulated within a Docker image to ensure consistency and reproducibility across environments. As such, it is highly recommended that developers use this Docker image during development. You can either build the image locally or pull it directly from Docker Hub, depending on your preference or workflow.</p>
 
-Docker operates by leveraging containerization, which allows applications and their dependencies to run in isolated user-space environments that share the host system's kernel. Unlike traditional virtual machines, which emulate entire hardware stacks and run full guest operating systems, Docker containers are significantly more lightweight and faster to start. This leads to improved resource efficiency, lower overhead, and greater scalability. In development environments where multiple users are working on the same codebase, Docker provides a critical advantage: it ensures that all contributors run the exact same environment, from system libraries to Python packages, without the need for heavy virtual machines or complex configuration. Containers can be spun up instantly, consume fewer resources, and integrate seamlessly with CI/CD pipelines. Moreover, Docker images can be versioned, shared via registries like Docker Hub, and easily rebuilt, enabling collaborative and reproducible workflows across diverse teams and systems.
+<p style="text-align: justify;">Docker operates by leveraging containerization, which allows applications and their dependencies to run in isolated user-space environments that share the host system's kernel. Unlike traditional virtual machines, which emulate entire hardware stacks and run full guest operating systems, Docker containers are significantly more lightweight and faster to start. This leads to improved resource efficiency, lower overhead, and greater scalability. In development environments where multiple users are working on the same codebase, Docker provides a critical advantage: it ensures that all contributors run the exact same environment, from system libraries to Python packages, without the need for heavy virtual machines or complex configuration. Containers can be spun up instantly, consume fewer resources, and integrate seamlessly with CI/CD pipelines. Moreover, Docker images can be versioned, shared via registries like Docker Hub, and easily rebuilt, enabling collaborative and reproducible workflows across diverse teams and systems.</p>
 
 
 #### Build a docker image locally
-To build the Docker image locally, navigate to the root directory of the project and run:
+<p style="text-align: justify;">To build the Docker image locally, navigate to the root directory of the project and run:</p>
 ```bash
 docker build --tag=<usr name>/3w_tk_img:latest .
 ```
 
 #### Push a docker image from DockerHub
-To push the image to <a href="https://hub.docker.com/r/natmourajr/3w_tk_img">Docker Hub</a>, make sure you are logged in and then execute:
+<p style="text-align: justify;">To push the image to <a href="https://hub.docker.com/r/natmourajr/3w_tk_img">Docker Hub</a>, make sure you are logged in and then execute:</p>
 
 ```bash
 docker pull natmourajr/3w_tk_img
 ```
 
 #### Run a docker image locally
-After building or pulling the image in computer, just run
+After building or pulling the image in computer, just run:
 
 ```bash
 docker run  natmourajr/3w_tk_img
@@ -186,7 +183,7 @@ Install libraries using `pip` will stay isolated from your host system.
 
 ### Requirements  <a id="requirements"></a>
 
-This project uses <a href="https://python-poetry.org/">Poetry</a> as its dependency and packaging manager to ensure a consistent, reliable, and modern Python development workflow. Poetry simplifies the management of project dependencies by providing a single `pyproject.toml` file to declare packages, development tools, and metadata, while automatically resolving compatible versions. Unlike traditional `requirements.txt` workflows, Poetry creates an isolated and deterministic environment using a lock file (`poetry.lock`), ensuring that all contributors and deployment environments use exactly the same package versions. It also streamlines publishing to PyPI, virtual environment creation, and script execution, making it a comprehensive tool for managing the entire lifecycle of a Python project. By adopting Poetry, we reduce the risk of dependency conflicts and improve the reproducibility and maintainability of the codebase.
+<p style="text-align: justify;">This project uses <a href="https://python-poetry.org/">Poetry</a> as its dependency and packaging manager to ensure a consistent, reliable, and modern Python development workflow. Poetry simplifies the management of project dependencies by providing a single `pyproject.toml` file to declare packages, development tools, and metadata, while automatically resolving compatible versions. Unlike traditional `requirements.txt` workflows, Poetry creates an isolated and deterministic environment using a lock file (`poetry.lock`), ensuring that all contributors and deployment environments use exactly the same package versions. It also streamlines publishing to PyPI, virtual environment creation, and script execution, making it a comprehensive tool for managing the entire lifecycle of a Python project. By adopting Poetry, we reduce the risk of dependency conflicts and improve the reproducibility and maintainability of the codebase.</p>
 
 ### Installation <a id="install"></a>
 
@@ -206,7 +203,7 @@ You can install directly using:
 pip install git+https://github.com/Mathtzt/3WToolkit.git
 ```
 
-    Note: *Authentication is required*.
+Note: *Authentication is required*.
 
 3. **Installing via `requirements.txt`:**
 You can install using:
@@ -215,7 +212,7 @@ You can install using:
 pip install -r requirements.txt
 ```
 
-    Note: *Authentication is required*.
+Note: *Authentication is required*.
 
 ## Contributing  <a id="contributing"></a>
 
