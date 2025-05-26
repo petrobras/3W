@@ -118,11 +118,17 @@ The 3WToolkit examples can be found <a href="https://github.com/Mathtzt/3WToolki
 ### 3W Tutorials/Demos <a id="toolkit_demos"></a>
 Step-by-step tutorials and demonstration notebooks that guide users through the toolkit’s functionalities, explaining how each module operates and how to configure different experiments.
 
+The 3WToolkit demos can be found <a href="https://github.com/Mathtzt/3WToolkit/tree/5b976a0820a06c55939d151e990aee176adb4b20/docs/examples">here</a> (TO BE DONE!)
+
 ### 3W Challenges <a id="toolkit_challenges"></a>
 This component provides benchmarking tasks and open challenges using real scenarios derived from the 3W dataset. It promotes collaborative development and comparative evaluation of machine learning solutions in fault diagnosis.
 
+The 3WToolkit challenges can be found <a href="https://github.com/Mathtzt/3WToolkit/tree/5b976a0820a06c55939d151e990aee176adb4b20/docs/examples">here</a> (TO BE DONE!)
+
 ### 3W Videos <a id="toolkit_videos"></a>
 Instructional videos that explain toolkit concepts, walk through complete modeling pipelines, and offer insights from domain experts. These videos aim to broaden accessibility and support training initiatives.
+
+The 3WToolkit videos can be found <a href="https://github.com/Mathtzt/3WToolkit/tree/5b976a0820a06c55939d151e990aee176adb4b20/docs/examples">here</a> (TO BE DONE!)
 
 
 ## Toolkit UML <a id="uml"></a>
