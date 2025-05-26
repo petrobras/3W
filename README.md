@@ -168,6 +168,20 @@ docker run  natmourajr/3w_tk_img
 ### Requirements  <a id="requirements"></a>
 This project uses <a href="https://python-poetry.org/">Poetry</a> as its dependency and packaging manager to ensure a consistent, reliable, and modern Python development workflow. Poetry simplifies the management of project dependencies by providing a single pyproject.toml file to declare packages, development tools, and metadata, while automatically resolving compatible versions. Unlike traditional requirements.txt workflows, Poetry creates an isolated and deterministic environment using a lock file (poetry.lock), ensuring that all contributors and deployment environments use exactly the same package versions. It also streamlines publishing to PyPI, virtual environment creation, and script execution, making it a comprehensive tool for managing the entire lifecycle of a Python project. By adopting Poetry, we reduce the risk of dependency conflicts and improve the reproducibility and maintainability of the codebase.
 
+### Development in VSCode using Docker
+
+1. VSCode extension: Dev Containers (ID: `ms-vscode-remote.remote-containers`).
+2. Open your project root folder (`3WToolkit/`) in VSCode.
+3. Press `F1` or `Ctrl+Shift+P` and select:
+   ```
+   Dev Containers: Open Folder in Container
+   ```
+4. VSCode will build the image and open your project *inside the container*.
+5. Working Inside the Container:
+    - Once the container is running, it is possible to use the **VSCode terminal**, which now runs inside the container.
+
+Note:
+Install libraries using `pip` will stay isolated from your host system.
 
 ### Installation  <a id="install"></a>
 
