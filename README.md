@@ -84,7 +84,7 @@ The development of the 3WToolkit+ is the result of a collaborative partnership b
 
 ## Documentation <a id="documentation"></a>
 
-<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/1fa7246adfabfea07007aeae9e406f8bcd282aa6/figures/3w_top_view.png?raw=1">
+<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_top_view.png">
 
 The image above illustrates the high-level architecture of the 3WToolkit+, designed to support the full pipeline of machine learning applications using the 3W dataset—from raw data ingestion to model evaluation and delivery to end users. Each block in the architecture is briefly described below:
 
@@ -94,17 +94,17 @@ This block represents different available versions of the 3W dataset, which incl
 ### Data Loader <a id="data_loader"></a>
 The Data Loader module is responsible for importing, validating, and preparing the raw 3W data for use in model training and evaluation. It handles missing data, standardizes variable formats, and performs initial quality checks to ensure compatibility across toolkit components.
 
-<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_data_loader.png?raw=1">
+<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_data_loader.png">
 
 ### Model Development <a id="model_dev"></a>
 This central module provides the infrastructure for designing, training, and optimizing machine learning models for fault detection and classification. It supports both classical and deep learning models and includes tools for hyperparameter tuning, cross-validation, and model versioning.
 
-<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_model_dev.png?raw=1">
+<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_model_dev.png">
 
 ### Assessment <a id="model_assessment"></a>
 The Assessment module evaluates model performance using both sample-level and event-level metrics. It includes support for traditional indicators (e.g., accuracy, precision, recall) as well as domain-specific metrics such as detection lag and anticipation time, which are critical for condition-based monitoring.
 
-<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_assessment.png?raw=1">
+<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_assessment.png">
 
 ## Usage Documentation <a id="documentation2"></a>
 
@@ -129,7 +129,7 @@ This transition from conceptual blocks to formal UML design ensures that each mo
 
 The UML diagram serves not only as an internal reference for the development team but also as part of the developer-oriented documentation that accompanies the toolkit and it is shown bellow
 
-<img width="1200" src="https://github.com/Mathtzt/3w_toolkit/blob/a5673d622924d5b7e2e6ca0d52a1a9719be62683/figures/3w_toolkit_uml.png?raw=1">
+<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/3w_toolkit_uml.png">
 
 
 ## Toolkit Setup  <a id="setup"></a>
@@ -138,7 +138,7 @@ The UML diagram serves not only as an internal reference for the development tea
 
 To ensure a consistent, reproducible, and isolated development environment, this project uses Docker as part of its core development workflow. Docker enables the encapsulation of all dependencies, configurations, and system-level requirements needed to run the application, eliminating the "it works on my machine" problem. By containerizing the development environment, we guarantee that all contributors and automated CI/CD pipelines operate under the same conditions, improving reliability and minimizing unexpected behaviors. Additionally, Docker simplifies environment setup, allowing developers to start contributing quickly without manually installing and configuring complex dependencies. This approach also facilitates testing across multiple versions of Python or system libraries when needed, supporting robust and portable software engineering practices.
 
-<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/08588a22a497885d8c235229aee19e1b7c251c62/figures/docker-logo-blue.png?raw=1">
+<img width="1200" src="https://github.com/Mathtzt/3WToolkit/blob/main/docs/figures/docker-logo-blue.png">
 
 All dependencies and system requirements for this project have been fully encapsulated within a Docker image to ensure consistency and reproducibility across environments. As such, it is highly recommended that developers use this Docker image during development. You can either build the image locally or pull it directly from Docker Hub, depending on your preference or workflow.
 
