@@ -184,8 +184,8 @@ docker run  natmourajr/3w_tk_img
    ```
    Dev Containers: Open Folder in Container
    ```
-4. VSCode will build the image and open your project *inside the container*.
-5. Working Inside the Container:
+4. VSCode will build the image and open your project *inside the Container*.
+5. Working inside the Container:
     - Once the container is running, it is possible to use the **VSCode terminal**, which now runs inside the container.
 
 Note:
