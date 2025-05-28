@@ -1,0 +1,35 @@
+name: Tests and Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10.11'
+
+    - name: Instalar dependências
+      run: |
+        pip install poetry
+        poetry install
+
+    - name: Rodar testes com cobertura
+      run: |
+        poetry run coverage run -m pytest tests
+        poetry run coverage xml
+
+    - name: Enviar cobertura para Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}  # opcional para projetos públicos
+        files: coverage.xml
