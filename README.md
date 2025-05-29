@@ -226,6 +226,71 @@ Note: *Authentication is required*.
 
 ## Contributing  <a id="contributing"></a>
 
+### Guidelines
+
+Thank you for your interest in contributing to this project! We welcome contributions that help improve and expand the functionality of this repository. To ensure a smooth collaboration process, please follow the guidelines below.
+
+#### 🚀 How to Contribute
+
+#### 1. Fork the Repository
+
+Start by forking this repository to your own GitHub account.
+
+#### 2. Create a Feature Branch
+
+Create a new branch from `main` for your feature or fix:
+
+```bash
+git checkout -b feature/my-new-feature
+```
+
+#### 3. Write Clear, Modular Code
+
+Ensure your code is readable, modular, and follows [PEP 8](https://peps.python.org/pep-0008/) standards.
+
+#### 4. Add Unit Tests
+
+Every new feature or functionality **must be accompanied by unit tests** relevant to the code you are contributing. Tests should be placed under the `tests/` directory and must cover both typical and edge cases.
+
+#### 5. Ensure All Tests Pass
+
+Before submitting a pull request:
+
+* **Run all existing and new tests**, and ensure they pass with no errors.
+* **Use `coverage` to check test coverage**, ensuring that the new functionality is properly covered.
+
+To run tests and check coverage:
+
+```bash
+pytest --cov=your_package_name
+```
+
+> 💡 Replace `your_package_name` with the appropriate module or package path.
+
+#### 6. Provide a Usage Demonstration
+
+Along with your code, **you must include a Python Jupyter Notebook** that clearly demonstrates how to use the new functionality. The notebook should:
+
+* Be placed under the `docks/notebooks` folder.
+* Provide a step-by-step explanation.
+* Include code cells, outputs, and descriptive markdowns for clarity.
+
+#### 7. Submit a Pull Request
+
+Open a pull request to the `main` branch with a clear title and detailed description of what your contribution does. Link any relevant issues if applicable.
+
+---
+
+#### ✅ Contribution Checklist
+
+* [ ] Code is PEP 8 compliant
+* [ ] Unit tests are included and passing
+* [ ] All existing tests pass without errors
+* [ ] Test coverage checked using `coverage`
+* [ ] Usage notebook is provided with step-by-step explanation
+* [ ] Changes are well-documented
+* [ ] Pull request includes a meaningful description
+
 ## Licenses  <a id="license"></a>
 
 
