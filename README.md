@@ -17,7 +17,6 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-green.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![version](https://img.shields.io/badge/version-0.1.0-blue)
 
-
 <!-- TABLE OF CONTENTS -->
 
 <summary>Table of Contents</summary>
@@ -163,17 +162,17 @@ docker build --tag=<usr name>/3w_tk_img:latest .
 ```
 
 #### Push a docker image from DockerHub
-<p style="text-align: justify;">To push the image to <a href="https://hub.docker.com/r/natmourajr/3w_tk_img">Docker Hub</a>, make sure you are logged in and then execute:</p>
+<p style="text-align: justify;">To push the image to <a href="https://hub.docker.com/">Docker Hub</a>, make sure you are logged in and then execute:</p>
 
 ```bash
-docker pull natmourajr/3w_tk_img
+docker pull mathtzt/3w_tk_img
 ```
 
 #### Run a docker image locally
 After building or pulling the image in computer, just run:
 
 ```bash
-docker run  natmourajr/3w_tk_img
+docker run mathtzt/3w_tk_img
 ```
 
 ### Development in VSCode using Docker <a id="vscode_docker"></a>
