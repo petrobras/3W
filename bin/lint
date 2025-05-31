@@ -1,0 +1,20 @@
+#!/bin/bash
+set -exu
+
+# If CI is unset or empty, use true as the default value
+CI="${CI:-true}"
+
+cd "$(dirname "$0")"/..
+
+LINT=$(find . -type f -name '*.py')
+
+# Run mypy for type checking
+mypy ${LINT}
+
+if [ "${CI}" = true ]; then
+    # In CI, only check code formatting and linting with Ruff
+    ruff check ${LINT}
+else
+    # Locally, automatically fix formatting issues with Ruff
+    ruff check --fix ${LINT}
+fi
