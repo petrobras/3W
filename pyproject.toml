@@ -55,3 +55,17 @@ omit = ["*/__init__.py"]
 
 [tool.coverage.report]
 show_missing = true
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "uv",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
