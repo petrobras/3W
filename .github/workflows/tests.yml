@@ -14,9 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install poetry
-        run: pipx install poetry
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -24,8 +21,7 @@ jobs:
           cache: 'poetry'
 
       - name: Install dependencies
-        run: |
-          poetry install
+        run: poetry install
 
       - name: Give execute permission to scripts
         run: chmod +x bin/lint bin/test
