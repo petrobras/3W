@@ -1,1 +1,0 @@
-git+https://github.com/Mathtzt/3WToolkit.git

@@ -3786,10 +3786,9 @@ files = [
 name = "ruff"
 version = "0.11.12"
 description = "An extremely fast Python linter and code formatter, written in Rust."
-optional = true
+optional = false
 python-versions = ">=3.7"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "ruff-0.11.12-py3-none-linux_armv6l.whl", hash = "sha256:c7680aa2f0d4c4f43353d1e72123955c7a2159b8646cd43402de6d4a3a25d7cc"},
     {file = "ruff-0.11.12-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:2cad64843da9f134565c20bcc430642de897b8ea02e2e79e6e02a76b8dcad7c3"},
@@ -4764,10 +4763,9 @@ zstd = ["zstandard (>=0.18.0)"]
 name = "uv"
 version = "0.7.9"
 description = "An extremely fast Python package and project manager, written in Rust."
-optional = true
+optional = false
 python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "uv-0.7.9-py3-none-linux_armv6l.whl", hash = "sha256:0f8c53d411f95cec2fa19471c23b41ec456fc0d5f2efca96480d94e0c34026c2"},
     {file = "uv-0.7.9-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:85c1a63669e49b825923fc876b7467cc3c20d4aa010f522c0ac8b0f30ce2b18e"},
@@ -4897,10 +4895,7 @@ files = [
     {file = "widgetsnbextension-4.0.14.tar.gz", hash = "sha256:a3629b04e3edb893212df862038c7232f62973373869db5084aed739b437b5af"},
 ]
 
-[extras]
-dev = ["pytest", "ruff", "uv"]
-
 [metadata]
 lock-version = "2.1"
 python-versions = "==3.10.11"
-content-hash = "7810a1f33ab066be1d109d9a4d12fff41ffda2c4eb75927c9ed5a106cd29ef86"
+content-hash = "9e665802cbf3c727e5ad7835b23d19d58eb516725d08ad8f5c283d095936e1ea"
