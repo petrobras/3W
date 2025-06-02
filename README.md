@@ -198,7 +198,7 @@ Install libraries using `pip` will stay isolated from your host system.
 ### Installation <a id="install"></a>
 
 #### Python
-It is possible to perform the installation in three different ways.
+It is possible to perform the installation in two different ways.
 
 1. **ThreeWToolkit** is on PyPI, so you can use pip to install it:
 
@@ -211,15 +211,6 @@ You can install directly using:
 
 ```bash
 pip install git+https://github.com/Mathtzt/3WToolkit.git
-```
-
-Note: *Authentication is required*.
-
-3. **Installing via `requirements.txt`:**
-You can install using:
-
-```bash
-pip install -r requirements.txt
 ```
 
 Note: *Authentication is required*.
