@@ -12,11 +12,17 @@ class ModelsConfig(BaseModel):
     @classmethod
     def check_model_type(cls, v, info):
         if info.data.get("model_type") not in {
-            ModelTypeEnum.MLP, ModelTypeEnum.LGBM,
-            ModelTypeEnum.LOGISTIC_REGRESSION, ModelTypeEnum.RANDOM_FOREST,
-            ModelTypeEnum.DECISION_TREE, ModelTypeEnum.GRADIENT_BOOSTING,
-            ModelTypeEnum.KNN, ModelTypeEnum.NAIVE_BAYES, ModelTypeEnum.SVM
-        }: raise NotImplementedError("model_type not implemented yet.")
+            ModelTypeEnum.MLP, 
+            ModelTypeEnum.LGBM,
+            ModelTypeEnum.LOGISTIC_REGRESSION, 
+            ModelTypeEnum.RANDOM_FOREST,
+            ModelTypeEnum.DECISION_TREE, 
+            ModelTypeEnum.GRADIENT_BOOSTING,
+            ModelTypeEnum.KNN, 
+            ModelTypeEnum.NAIVE_BAYES, 
+            ModelTypeEnum.SVM
+        }: 
+            raise NotImplementedError("model_type not implemented yet.")
         elif v is None:
             raise ValueError("model_type is required.")
         
