@@ -1,0 +1,18 @@
+# Ignorar pasta de documentação
+docs/
+
+# Ignorar cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar ambientes virtuais
+venv/
+env/
+.env/
+
+# Ignorar arquivos temporários
+*.swp
+*.swo
+.DS_Store
