@@ -1,8 +1,8 @@
-from pydantic import BaseModel as PYBM, Field
+from pydantic import Field
 
-from ..core.base_models import BaseModels
+from ..core.base_models import BaseModels, ModelsConfig
 
-class LSTMConfig(PYBM):
+class LSTMConfig(ModelsConfig):
     learning_rate: float = Field(..., gt = 0.0, description="Learning rate must be > 0.")
 
 class LSTM(BaseModels):

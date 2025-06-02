@@ -68,6 +68,6 @@ line-length = 88
 quote-style = "double"
 
 [tool.mypy]
-python_version = "3.10.11"
+python_version = "3.10"
 mypy_path = "ThreeWToolkit"
 ignore_missing_imports = true
