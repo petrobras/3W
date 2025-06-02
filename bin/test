@@ -5,6 +5,6 @@ cd $(dirname $0)/..
 
 export RUN_SLOW_TESTS=1
 
-coverage run -m pytest
+coverage run -m pytest ThreeWToolkit
 coverage report
 coverage xml -o docs/coverage/coverage.xml
