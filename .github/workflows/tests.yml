@@ -31,12 +31,12 @@ jobs:
         run: chmod +x bin/lint bin/test
 
       - name: Run linting checks
-        run: ./bin/lint
+        run: poetry run ./bin/lint
         env:
           CI: "true"
 
       - name: Run tests
-        run: ./bin/test
+        run: poetry run ./bin/test
         env:
           CI: "true"
 
