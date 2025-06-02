@@ -7,3 +7,4 @@ export RUN_SLOW_TESTS=1
 
 coverage run -m pytest
 coverage report
+coverage xml -o docs/coverage/coverage.xml
