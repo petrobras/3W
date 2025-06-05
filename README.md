@@ -1,5 +1,7 @@
-# 3W ToolKit
-
+<h1>
+  <img src="docs/figures/3w_logo.png" width="45" style="vertical-align: middle; margin-right: 10px;" />
+  3W ToolKit
+</h1>
 <!-- ref: https://github.com/othneildrew/Best-README-Template/tree/main -->
 
 
