@@ -35,6 +35,7 @@ tqdm = "4.67.1"
 pytest = "8.3.5"
 pydantic = "2.11"
 mypy = "1.16.0"
+PyWavelets = "1.8.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
