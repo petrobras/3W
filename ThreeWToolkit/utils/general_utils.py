@@ -7,7 +7,7 @@ class GeneralUtils(ABC):
 
     @staticmethod
     def validate_func_args_with_pydantic(schema: type[BaseModel]):
-        """Decorador para validar os argumentos da função usando Pydantic.
+        """Decorator to validate function arguments using Pydantic.
 
         Args:
             schema (type[BaseModel]): Class derived from `pydantic.BaseModel`
