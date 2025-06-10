@@ -78,7 +78,6 @@ class TestBalancedAccuracyScore:
         assert isinstance(score, float)
         assert 0.0 <= score <= 1.0
 
-
     def test_balanced_accuracy_with_sample_weight(self):
         """
         Test the balanced_accuracy_score with sample weights provided.
@@ -90,7 +89,6 @@ class TestBalancedAccuracyScore:
         score = balanced_accuracy_score(y_true, y_pred, sample_weight = sample_weight)
         assert isinstance(score, float)
 
-
     def test_balanced_accuracy_adjusted(self):
         """
         Test the balanced_accuracy_score with the `adjusted` parameter set to True.
@@ -101,14 +99,12 @@ class TestBalancedAccuracyScore:
         adjusted_score = balanced_accuracy_score(y_true, y_pred, adjusted = True)
         assert isinstance(adjusted_score, float)
 
-
     def test_balanced_accuracy_invalid_type_y_true(self):
         """
         Test passing an invalid data type for y_true (string instead of list/array).
         """
         with pytest.raises(TypeError):
             balanced_accuracy_score("invalid", [1, 0, 1])
-
 
     def test_balanced_accuracy_mismatched_lengths(self):
         """
@@ -117,7 +113,6 @@ class TestBalancedAccuracyScore:
         with pytest.raises(ValueError):
             balanced_accuracy_score([1, 0], [0, 1, 0])
 
-
     def test_balanced_accuracy_invalid_sample_weight_type(self):
         """
         Test passing an invalid type for sample_weight (string instead of list/array).
@@ -125,14 +120,12 @@ class TestBalancedAccuracyScore:
         with pytest.raises(TypeError):
             balanced_accuracy_score([0, 1], [0, 1], sample_weight = "invalid")
 
-
     def test_balanced_accuracy_invalid_sample_weight_shape(self):
         """
         Test sample_weight with a different length than y_true/y_pred.
         """
         with pytest.raises(ValueError):
             balanced_accuracy_score([0, 1, 1], [0, 1, 1], sample_weight = [1.0, 2.0])
-
 
     def test_balanced_accuracy_invalid_adjusted_type(self):
         """
