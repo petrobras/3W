@@ -13,12 +13,13 @@ class TestAccuracyScore:
         """
         y_true = [1, 0, 1, 1]
         y_pred = [1, 0, 0, 1]
+        expected_result = 0.75
 
         result = accuracy_score(y_true = y_true, y_pred = y_pred, sample_weight = None, normalize = True)
         
         assert isinstance(result, float)
         assert 0 <= result <= 1
-        assert abs(result - 0.75) < 1e-6  # 3 of 4 
+        assert np.isclose(result, expected_result, atol = 1e-6)  # 3 of 4 
 
     def test_accuracy_score_with_sample_weight(self):
         """
@@ -66,17 +67,19 @@ class TestAccuracyScore:
             )
 
 class TestBalancedAccuracyScore:
-    def test_balanced_accuracy_valid(self):
+    def test_balanced_accuracy_score_basic(self):
         """
         Test the balanced_accuracy_score with valid binary classification inputs.
         """
         y_true = [1, 0, 1, 1]
         y_pred = [1, 0, 0, 1]
+        except_result = 0.8333333333333333
 
-        score = balanced_accuracy_score(y_true, y_pred)
+        result = balanced_accuracy_score(y_true, y_pred)
         
-        assert isinstance(score, float)
-        assert 0.0 <= score <= 1.0
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, except_result, atol = 1e-6)
 
     def test_balanced_accuracy_with_sample_weight(self):
         """
