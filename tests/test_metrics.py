@@ -74,13 +74,13 @@ class TestBalancedAccuracyScore:
         """
         y_true = [1, 0, 1, 1]
         y_pred = [1, 0, 0, 1]
-        except_result = 0.8333333333333333
+        expected_result = 0.8333333333333333
 
         result = balanced_accuracy_score(y_true, y_pred)
         
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, except_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol = 1e-6)
 
     def test_balanced_accuracy_with_sample_weight(self):
         """
