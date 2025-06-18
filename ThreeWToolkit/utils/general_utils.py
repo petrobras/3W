@@ -1,4 +1,5 @@
 import functools
+import inspect
 
 from pydantic import BaseModel
 from abc import ABC
@@ -21,9 +22,14 @@ class GeneralUtils(ABC):
             Pydantic exception and includes the function name in the error message.
         """
         def decorator(func):
+            sig = inspect.signature(func)
+            
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
-                validated = schema(*args, **kwargs)
+                bound_args = sig.bind(*args, **kwargs)
+                bound_args.apply_defaults()
+
+                validated = schema(**bound_args.arguments)
                 
                 return func(**validated.model_dump())
             return wrapper
