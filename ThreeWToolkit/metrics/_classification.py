@@ -5,14 +5,16 @@ from typing import Optional, Union
 from sklearn.metrics import (
         accuracy_score as sk_acc,
         balanced_accuracy_score as sk_balanced_acc,
-        average_precision_score as sk_avg_precision
+        average_precision_score as sk_avg_precision,
+        precision_score as sk_precision
 )
 
 from ..utils.general_utils import GeneralUtils
 from ._metrics_validators import (
         AccuracyScoreArgsValidator, 
         BalancedAccuracyScoreArgsValidator,
-        AveragePrecisionScoreArgsValidator 
+        AveragePrecisionScoreArgsValidator,
+        PrecisionScoreArgsValidator 
 )
 
 
@@ -112,3 +114,39 @@ def average_precision_score(y_true: Union[np.ndarray, pd.Series, list],
         sample_weight = sample_weight
     )
 
+@GeneralUtils.validate_func_args_with_pydantic(PrecisionScoreArgsValidator)
+def precision_score(y_true: Union[np.ndarray, pd.Series, list],
+                    y_pred: Union[np.ndarray, pd.Series, list],
+                    labels: Optional[list] = None,
+                    pos_label: Optional[int] = 1,
+                    average: Optional[str] = "binary",
+                    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+                    zero_division: Union[str, int] = "warn") -> float:
+    """
+    Compute the precision score.
+
+    Args:
+        y_true (np.ndarray | pd.Series | list): Ground truth (correct) labels.
+        y_pred (np.ndarray | pd.Series | list): Predicted labels.
+        labels (list | None, optional): The set of labels to include when average != 'binary'.
+        pos_label (int | None, optional): Label to report as positive class in binary classification.
+        average (str | None, optional): {'binary', 'micro', 'macro', 'samples', 'weighted'} or None.
+        sample_weight (np.ndarray | pd.Series | list | None, optional): Sample weights.
+        zero_division (str | int, optional): 'warn', 0 or 1. Sets the value to return when there is a zero division.
+
+    Returns:
+        float: Precision score.
+
+    Raises:
+        TypeError: If input types are invalid.
+        ValueError: If input values are invalid.
+    """
+    return sk_precision(
+        y_true = y_true,
+        y_pred = y_pred,
+        labels = labels,
+        pos_label = pos_label,
+        average = average,
+        sample_weight = sample_weight,
+        zero_division = zero_division
+    )
