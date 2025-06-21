@@ -62,10 +62,10 @@ class AveragePrecisionScoreArgsValidator(BaseScoreArgsValidator):
     @field_validator('average', mode='before')
     @classmethod
     def check_average(cls, v):
-        if v not in {"binary", "micro", "macro", "samples", "weighted", None}:
+        if v not in {"micro", "macro", "samples", "weighted", None}:
             raise ValueError(
                 f"'average' must be one of "
-                f"['binary', 'micro', 'macro', 'samples', 'weighted', None], got '{v}'"
+                f"['micro', 'macro', 'samples', 'weighted', None], got '{v}'"
             )
         return v
 

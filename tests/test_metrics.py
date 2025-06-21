@@ -145,13 +145,13 @@ class TestAveragePrecisionScore:
         """
         y_true = [0, 0, 1, 1]
         y_pred = [0.1, 0.4, 0.35, 0.8]
-        except_result = 0.8333333333333333
+        expected_result = 0.8333333333333333
         
         result = average_precision_score(y_true = y_true, y_pred = y_pred, average = 'macro')
         
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, except_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol = 1e-6)
 
     def test_ap_with_sample_weight(self):
         """
@@ -160,7 +160,7 @@ class TestAveragePrecisionScore:
         y_true = [1, 0, 1]
         y_pred = [0.9, 0.8, 0.8]
         sample_weight = [1, 2, 1]
-        except_result = 0.75
+        expected_result = 0.75
 
         result = average_precision_score(
             y_true = y_true,
@@ -171,7 +171,7 @@ class TestAveragePrecisionScore:
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, except_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol = 1e-6)
 
     def test_ap_micro_average(self):
         """
@@ -179,7 +179,7 @@ class TestAveragePrecisionScore:
         """
         y_true = [0, 0, 1, 1]
         y_pred = [0.1, 0.4, 0.35, 0.8]
-        except_result = 0.8333333333333333
+        expected_result = 0.8333333333333333
 
         result = average_precision_score(
             y_true = y_true,
@@ -189,7 +189,7 @@ class TestAveragePrecisionScore:
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, except_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol = 1e-6)
 
     def test_ap_pos_label_argument(self):
         """
@@ -197,7 +197,7 @@ class TestAveragePrecisionScore:
         """
         y_true = [0, 0, 1, 1]
         y_pred = [0.1, 0.4, 0.35, 0.8]
-        except_result = 0.8333333333333333
+        expected_result = 0.8333333333333333
 
         result = average_precision_score(
             y_true = y_true,
@@ -207,7 +207,7 @@ class TestAveragePrecisionScore:
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, except_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol = 1e-6)
 
 
     def test_ap_invalid_type(self):
