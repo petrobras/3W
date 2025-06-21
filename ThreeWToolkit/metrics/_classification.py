@@ -94,7 +94,7 @@ def average_precision_score(y_true: Union[np.ndarray, pd.Series, list],
         y_pred (np.ndarray | pd.Series | list): Estimated probabilities or decision function.
         average (str, optional): Averaging method - {'weighted', 'micro', 'macro', 'samples', None}.
                                  Default is 'macro'.
-        pos_label (int or float, optional): The class to report if average='binary'. Default is 1.
+        pos_label (int or float, optional): The label of the positive class. Only applied to binary y_true. For multilabel-indicator y_true, pos_label is fixed to 1.
         sample_weight (np.ndarray | pd.Series | list | None, optional): Optional sample weights.
 
     Returns:
