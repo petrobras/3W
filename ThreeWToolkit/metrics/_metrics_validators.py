@@ -54,3 +54,24 @@ class BalancedAccuracyScoreArgsValidator(BaseScoreArgsValidator):
         if not isinstance(v, bool):
             raise TypeError(f"'adjusted' must be a boolean, got {type(v)} with value '{v}'")
         return v
+    
+class AveragePrecisionScoreArgsValidator(BaseScoreArgsValidator):
+    average: Optional[str] = "binary"
+    pos_label: Optional[int] = 1
+
+    @field_validator('average', mode='before')
+    @classmethod
+    def check_average(cls, v):
+        if v not in {"micro", "macro", "samples", "weighted", None}:
+            raise ValueError(
+                f"'average' must be one of "
+                f"['micro', 'macro', 'samples', 'weighted', None], got '{v}'"
+            )
+        return v
+
+    @field_validator('pos_label', mode='before')
+    @classmethod
+    def check_pos_label(cls, v):
+        if not isinstance(v, (int, float)) and v is not None:
+            raise TypeError(f"'pos_label' must be a number or None, got {type(v)}")
+        return v

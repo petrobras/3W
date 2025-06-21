@@ -3,7 +3,8 @@ import numpy as np
 
 from ThreeWToolkit.metrics import (
     accuracy_score,
-    balanced_accuracy_score
+    balanced_accuracy_score,
+    average_precision_score
 )
 
 class TestAccuracyScore:
@@ -136,3 +137,123 @@ class TestBalancedAccuracyScore:
         """
         with pytest.raises(TypeError):
             balanced_accuracy_score([1, 0], [1, 0], adjusted = "yes")
+
+class TestAveragePrecisionScore:
+    def test_ap_average_score_basic(self):
+        """
+        Test average_precision_score with binary data using average='macro'.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        expected_result = 0.8333333333333333
+        
+        result = average_precision_score(y_true = y_true, y_pred = y_pred, average = 'macro')
+        
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_ap_with_sample_weight(self):
+        """
+        Test average_precision_score with sample weights applied.
+        """
+        y_true = [1, 0, 1]
+        y_pred = [0.9, 0.8, 0.8]
+        sample_weight = [1, 2, 1]
+        expected_result = 0.75
+
+        result = average_precision_score(
+            y_true = y_true,
+            y_pred = y_pred,
+            average = 'macro',
+            sample_weight = sample_weight
+        )
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_ap_micro_average(self):
+        """
+        Test average_precision_score with average='micro'.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        expected_result = 0.8333333333333333
+
+        result = average_precision_score(
+            y_true = y_true,
+            y_pred = y_pred,
+            average = 'micro'
+        )
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_ap_pos_label_argument(self):
+        """
+        Test average_precision_score with explicitly set pos_label.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        expected_result = 0.8333333333333333
+
+        result = average_precision_score(
+            y_true = y_true,
+            y_pred = y_pred,
+            pos_label = 1
+        )
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+
+    def test_ap_invalid_type(self):
+        """
+        Test average_precision_score with invalid y_true type and invalid pos_label type.
+        """
+        y_true_invalid = "not_array"
+        y_pred = [0.8, 0.6, 0.7]
+        pos_label = "1"
+
+        with pytest.raises(TypeError):
+            average_precision_score(y_true = y_true_invalid, y_pred = y_pred)
+        
+        with pytest.raises(TypeError):
+            average_precision_score(y_true = [1, 0, 1], y_pred = y_pred, pos_label = pos_label)
+
+    def test_ap_shape_mismatch(self):
+        """
+        Test average_precision_score with mismatched lengths of y_true and y_pred.
+        """
+        y_true, y_pred = [1, 0, 1], [0.8, 0.5]
+
+        with pytest.raises(ValueError):
+            average_precision_score(y_true = y_true, y_pred = y_pred)
+
+    def test_ap_invalid_average_type(self):
+        """
+        Test average_precision_score with invalid type for average.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+
+        with pytest.raises(ValueError):
+            average_precision_score(y_true = y_true, y_pred = y_pred, average = 123)
+
+    def test_ap_invalid_sample_weight_shape(self):
+        """
+        Test average_precision_score with sample_weight of incorrect shape.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        sample_weight = [0.5, 0.5]
+
+        with pytest.raises(ValueError):
+            average_precision_score(
+                y_true = y_true,
+                y_pred = y_pred,
+                sample_weight = sample_weight
+            )
