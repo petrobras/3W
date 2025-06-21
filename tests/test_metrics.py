@@ -4,7 +4,8 @@ import numpy as np
 from ThreeWToolkit.metrics import (
     accuracy_score,
     balanced_accuracy_score,
-    average_precision_score
+    average_precision_score,
+    precision_score
 )
 
 class TestAccuracyScore:
@@ -256,4 +257,125 @@ class TestAveragePrecisionScore:
                 y_true = y_true,
                 y_pred = y_pred,
                 sample_weight = sample_weight
+            )
+
+class TestPrecisionScore:
+    def test_precision_score_basic(self):
+        """
+        Test precision_score with binary classification and average='binary'.
+        """
+        y_true = [0, 1, 0, 1, 0]
+        y_pred = [0, 0, 1, 1, 0]
+        expected_result = 0.5
+
+        result = precision_score(y_true = y_true, y_pred = y_pred)
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_precision_macro_average(self):
+        """
+        Test precision_score with multiclass and average='macro'.
+        """
+        y_true = [0, 1, 2, 0, 1, 2]
+        y_pred = [0, 2, 1, 0, 0, 1]
+        expected_result = 0.2222222222222222
+
+        result = precision_score(y_true = y_true, y_pred = y_pred, average = 'macro')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_precision_with_labels_argument(self):
+        """
+        Test precision_score using a subset of labels.
+        """
+        y_true = [0, 1, 2, 0, 1, 2]
+        y_pred = [0, 2, 1, 0, 0, 1]
+        labels = [0, 2]
+        expected_result = 0.3333333333333333
+
+        result = precision_score(y_true = y_true, y_pred = y_pred, labels = labels, average = 'macro')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_precision_with_sample_weight(self):
+        """
+        Test precision_score with sample weights.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0, 1, 0, 1]
+        weights = [1, 1, 5, 1]
+        expected_result = 0.5
+
+        result = precision_score(y_true = y_true, y_pred = y_pred, sample_weight = weights)
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_precision_zero_division(self):
+        """
+        Test precision_score when zero division occurs.
+        """
+        y_true = [1, 1, 1, 1]
+        y_pred = [0, 0, 0, 0]
+
+        result = precision_score(y_true = y_true, y_pred = y_pred, zero_division = 0)
+
+        assert isinstance(result, float)
+        assert result == 0.0
+        
+        result = precision_score(y_true = y_true, y_pred = y_pred, zero_division = 1)
+        
+        assert isinstance(result, float)
+        assert result == 1.0
+
+    def test_precision_invalid_types(self):
+        """
+        Test precision_score with invalid input types.
+        """
+        with pytest.raises(TypeError):
+            precision_score(y_true = "not_array", y_pred = [0, 1])
+
+        with pytest.raises(TypeError):
+            precision_score(y_true = [0, 1], y_pred = [0, 1], pos_label = "positive")
+
+        with pytest.raises(TypeError):
+            precision_score(y_true = [0, 1], y_pred = [0, 1], labels = "not list")
+
+    def test_precision_shape_mismatch(self):
+        """
+        Test precision_score when y_true and y_pred have different lengths.
+        """
+        with pytest.raises(ValueError):
+            precision_score(y_true = [0, 1, 1], y_pred = [1, 0])
+
+        with pytest.raises(ValueError):
+            precision_score(
+                y_true = [1, 0, 1], 
+                y_pred = [1, 1, 1], 
+                sample_weight = [1, 1]
+            )
+
+    def test_precision_invalid_average_type(self):
+        """
+        Test precision_score with invalid average type.
+        """
+        with pytest.raises(ValueError):
+            precision_score(
+                y_true = [0, 1], 
+                y_pred = [0, 1], 
+                average = "invalid"
+            )
+
+    def test_precision_invalid_zero_division(self):
+        """
+        Test precision_score with invalid zero_division value.
+        """
+        with pytest.raises(ValueError):
+            precision_score(
+                y_true = [1, 0], 
+                y_pred = [0, 1], 
+                zero_division = "bad_value"
             )
