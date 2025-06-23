@@ -75,3 +75,39 @@ class AveragePrecisionScoreArgsValidator(BaseScoreArgsValidator):
         if not isinstance(v, (int, float)) and v is not None:
             raise TypeError(f"'pos_label' must be a number or None, got {type(v)}")
         return v
+    
+class PrecisionScoreArgsValidator(BaseScoreArgsValidator):
+    labels: Optional[list] = None
+    pos_label: Optional[int] = 1
+    average: Optional[str] = "binary"
+    zero_division: Union[str, int] = "warn"
+
+    @field_validator('labels', mode='before')
+    @classmethod
+    def check_labels(cls, v):
+        if v is not None and not isinstance(v, list):
+            raise TypeError(f"'labels' must be a list or None, got {type(v)}")
+        return v
+
+    @field_validator('pos_label', mode='before')
+    @classmethod
+    def check_pos_label(cls, v):
+        if not isinstance(v, (int, float)) and v is not None:
+            raise TypeError(f"'pos_label' must be a number or None, got {type(v)}")
+        return v
+
+    @field_validator('average', mode='before')
+    @classmethod
+    def check_average(cls, v):
+        if v not in {"micro", "macro", "samples", "weighted", "binary", None}:
+            raise ValueError(
+                f"'average' must be one of ['micro', 'macro', 'samples', 'weighted', 'binary', None], got '{v}'"
+            )
+        return v
+
+    @field_validator('zero_division', mode='before')
+    @classmethod
+    def check_zero_division(cls, v):
+        if v not in {"warn", 0, 1}:
+            raise ValueError(f"'zero_division' must be one of ['warn', 0, 1], got '{v}'")
+        return v
