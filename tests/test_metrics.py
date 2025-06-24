@@ -6,7 +6,8 @@ from ThreeWToolkit.metrics import (
     balanced_accuracy_score,
     average_precision_score,
     precision_score,
-    recall_score
+    recall_score,
+    f1_score
 )
 
 class TestAccuracyScore:
@@ -485,3 +486,108 @@ class TestRecallScore:
         """
         with pytest.raises(ValueError):
             recall_score(y_true = [1, 0], y_pred = [0, 1], zero_division = "bad_value")
+
+class TestF1Score:
+    def test_f1_score_basic(self):
+        """
+        Test f1_score with binary classification and average='binary'.
+        """
+        y_true = [0, 1, 1, 1]
+        y_pred = [0, 1, 0, 1]
+        expected_result = 0.8
+
+        result = f1_score(y_true = y_true, y_pred = y_pred, average = 'binary')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_f1_macro_average(self):
+        """
+        Test f1_score with multiclass and average='macro'.
+        """
+        y_true = [0, 1, 2, 0, 1, 2]
+        y_pred = [0, 2, 1, 0, 0, 1]
+        expected_result = 0.26666666666666666
+
+        result = f1_score(y_true = y_true, y_pred = y_pred, average = 'macro')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_f1_with_labels_argument(self):
+        """
+        Test f1_score using a subset of labels.
+        """
+        y_true = [0, 1, 2, 0, 1, 2]
+        y_pred = [0, 2, 1, 0, 0, 1]
+        labels = [0, 2]
+        expected_result = 0.4  
+
+        result = f1_score(y_true = y_true, y_pred = y_pred, labels = labels, average = 'macro')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_f1_with_sample_weight(self):
+        """
+        Test f1_score with sample weights.
+        """
+        y_true = [0, 1, 1, 1]
+        y_pred = [0, 1, 0, 1]
+        weights = [1, 1, 5, 1]
+        expected_result = 0.4444444444444444
+
+        result = f1_score(y_true = y_true, y_pred = y_pred, sample_weight = weights)
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_f1_zero_division(self):
+        """
+        Test f1_score when zero division occurs.
+        """
+        y_true = [0, 0, 0, 0]
+        y_pred = [0, 0, 0, 0]
+
+        result = f1_score(y_true = y_true, y_pred = y_pred, zero_division = 0)
+        assert result == 0.0
+
+        result = f1_score(y_true = y_true, y_pred = y_pred, zero_division = 1)
+        assert result == 1.0
+
+    def test_f1_invalid_types(self):
+        """
+        Test f1_score with invalid input types.
+        """
+        with pytest.raises(TypeError):
+            f1_score(y_true = "invalid", y_pred = [0, 1])
+
+        with pytest.raises(TypeError):
+            f1_score(y_true = [1, 0], y_pred = [1, 0], pos_label = "wrong")
+        
+        with pytest.raises(TypeError):
+            f1_score(y_true = [0, 1], y_pred = [0, 1], labels = "not list")
+
+    def test_f1_shape_mismatch(self):
+        """
+        Test f1_score when y_true and y_pred have different lengths.
+        """
+        with pytest.raises(ValueError):
+            f1_score(y_true = [1, 0], y_pred = [1])
+
+        with pytest.raises(ValueError):
+            f1_score(y_true = [1, 0, 1], y_pred = [1, 0, 1], sample_weight = [1, 1])
+
+    def test_f1_invalid_average_type(self):
+        """
+        Test f1_score with invalid average type.
+        """
+        with pytest.raises(ValueError):
+            f1_score(y_true = [0, 1], y_pred = [0, 1], average = "invalid")
+
+    def test_f1_invalid_zero_division(self):
+        """
+        Test f1_score with invalid zero_division value.
+        """
+        with pytest.raises(ValueError):
+            f1_score(y_true = [1, 0], y_pred = [0, 1], zero_division = "bad_value")
