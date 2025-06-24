@@ -5,7 +5,8 @@ from ThreeWToolkit.metrics import (
     accuracy_score,
     balanced_accuracy_score,
     average_precision_score,
-    precision_score
+    precision_score,
+    recall_score
 )
 
 class TestAccuracyScore:
@@ -379,3 +380,108 @@ class TestPrecisionScore:
                 y_pred = [0, 1], 
                 zero_division = "bad_value"
             )
+
+class TestRecallScore:
+    def test_recall_score_basic(self):
+        """
+        Test recall_score with binary classification and average='binary'.
+        """
+        y_true = [0, 1, 1, 1]
+        y_pred = [0, 1, 0, 1]
+        expected_result = 2 / 3
+
+        result = recall_score(y_true = y_true, y_pred = y_pred, average = 'binary')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_recall_macro_average(self):
+        """
+        Test recall_score with multiclass and average='macro'.
+        """
+        y_true = [0, 1, 2, 0, 1, 2]
+        y_pred = [0, 2, 1, 0, 0, 1]
+        expected_result = 0.3333333333333333
+
+        result = recall_score(y_true = y_true, y_pred = y_pred, average = 'macro')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_recall_with_labels_argument(self):
+        """
+        Test recall_score using a subset of labels.
+        """
+        y_true = [0, 1, 2, 0, 1, 2]
+        y_pred = [0, 2, 1, 0, 0, 1]
+        labels = [0, 2]
+        expected_result = 0.5 
+
+        result = recall_score(y_true = y_true, y_pred = y_pred, labels = labels, average = 'macro')
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_recall_with_sample_weight(self):
+        """
+        Test recall_score with sample weights.
+        """
+        y_true = [0, 1, 1, 1]
+        y_pred = [0, 1, 0, 1]
+        weights = [1, 1, 4, 1]
+        expected_result = 0.3333333333333333
+
+        result = recall_score(y_true = y_true, y_pred = y_pred, sample_weight = weights)
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_recall_zero_division(self):
+        """
+        Test recall_score when zero division occurs.
+        """
+        y_true = [0, 0, 0, 0]
+        y_pred = [1, 1, 1, 1]
+
+        result = recall_score(y_true = y_true, y_pred = y_pred, zero_division = 0)
+        assert result == 0.0
+
+        result = recall_score(y_true = y_true, y_pred = y_pred, zero_division = 1)
+        assert result == 1.0
+
+    def test_recall_invalid_types(self):
+        """
+        Test recall_score with invalid input types.
+        """
+        with pytest.raises(TypeError):
+            recall_score(y_true = "invalid", y_pred = [0, 1])
+
+        with pytest.raises(TypeError):
+            recall_score(y_true = [1, 0], y_pred = [1, 0], pos_label = "wrong")
+
+        with pytest.raises(TypeError):
+            recall_score(y_true = [0, 1], y_pred = [0, 1], labels = "not list")
+
+    def test_recall_shape_mismatch(self):
+        """
+        Test recall_score when y_true and y_pred have different lengths.
+        """
+        with pytest.raises(ValueError):
+            recall_score(y_true = [1, 0], y_pred = [1])
+
+        with pytest.raises(ValueError):
+            recall_score(y_true = [1, 0, 1], y_pred = [1, 0, 1], sample_weight = [1, 1])
+
+    def test_recall_invalid_average_type(self):
+        """
+        Test recall_score with invalid average type.
+        """
+        with pytest.raises(ValueError):
+            recall_score(y_true = [0, 1], y_pred = [0, 1], average = "invalid")
+
+    def test_recall_invalid_zero_division(self):
+        """
+        Test recall_score with invalid zero_division value.
+        """
+        with pytest.raises(ValueError):
+            recall_score(y_true = [1, 0], y_pred = [0, 1], zero_division = "bad_value")
