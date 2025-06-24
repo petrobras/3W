@@ -122,3 +122,11 @@ class RecallScoreArgsValidator(BaseScoreArgsValidator,
                                ZeroDivisionValidator):
     
     pass
+
+class F1ScoreArgsValidator(BaseScoreArgsValidator,
+                           LabelsValidator,
+                           PosLabelValidator,
+                           AverageValidator,
+                           ZeroDivisionValidator):
+    
+    pass

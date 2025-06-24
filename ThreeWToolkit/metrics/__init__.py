@@ -3,7 +3,8 @@ from ._classification import (
     balanced_accuracy_score,
     average_precision_score,
     precision_score,
-    recall_score
+    recall_score,
+    f1_score
 )
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "balanced_accuracy_score",
     "average_precision_score",
     "precision_score",
-    "recall_score"
+    "recall_score",
+    "f1_score"
 ]
