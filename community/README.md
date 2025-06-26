@@ -15,7 +15,8 @@ The following sections provide more information about this community.
 
 # Citations
 
-The 3W Dataset was useful and is cited by the works listed [here](../LIST_OF_CITATIONS.md). These are basically papers, final graduation projects, master's degree dissertations, and doctoral theses. In general, these works are carried out by representatives of institutions.
+The 3W Dataset was useful and is cited by the works listed [here](../LISTS_OF_CITATIONS.md). These are basically papers, final graduation projects, master's degree dissertations, and doctoral theses. In general, these works are carried out by representatives of institutions.
+
 
 ## Main Institutions by Country
 
