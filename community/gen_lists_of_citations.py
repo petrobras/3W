@@ -17,7 +17,7 @@ CATEGORIES = {
     "Master's Degree Dissertations": "Master's Degree Dissertations",
     "Other Articles": "Other Articles",
     "Repository Articles": "Repository Articles",
-    "Specialization Monograph": "Specialization Monograph",
+    "Specialization Monographs": "Specialization Monographs",
 }
 
 # Fixed header
@@ -44,7 +44,7 @@ If you use any resource published in this Git repository, we ask that it be prop
 * [Master's Degree Dissertations](#masters-degree-dissertations)
 * [Other Articles](#other-articles)
 * [Repository Articles](#repository-articles)
-* [Specialization Monograph](#specialization-monograph)
+* [Specialization Monographs](#specialization-monographs)
 """
 
 

@@ -21,7 +21,7 @@ If you use any resource published in this Git repository, we ask that it be prop
 * [Master's Degree Dissertations](#masters-degree-dissertations)
 * [Other Articles](#other-articles)
 * [Repository Articles](#repository-articles)
-* [Specialization Monograph](#specialization-monograph)
+* [Specialization Monographs](#specialization-monographs)
 
 
 ## Books
@@ -147,6 +147,6 @@ If you use any resource published in this Git repository, we ask that it be prop
 1. M.A. Farahani, M.R. McCormick, R. Harik, T. Wuest. Time-Series Classification in Smart Manufacturing Systems: An Experimental Evaluation of State-of-the-Art Machine Learning Algorithms. arXiv. 2021. https://doi.org/10.48550/arXiv.2310.02812.
 1. B. Chen, X. Zeng, W. Zhang, Z. Hou, S. Xu, C. Sun, D. Han. Federated Learning for Cross-block Oil-water Layer Identification. arXiv. 2021. https://doi.org/10.48550/arXiv.2112.14359.
 
-## Specialization Monograph
+## Specialization Monographs
 
 1. G.G. Momm. Detecção de anomalias em sensores de poços submarinos com uso de redes neurais artificiais. Universidade de São Paulo. 2021. https://github.com/petrobras/3W/raw/main/docs/specialization_monograph_gustavo_momm.pdf.
