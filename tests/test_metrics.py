@@ -7,7 +7,9 @@ from ThreeWToolkit.metrics import (
     average_precision_score,
     precision_score,
     recall_score,
-    f1_score
+    f1_score,
+    roc_auc_score,
+    explained_variance_score
 )
 
 class TestAccuracyScore:
@@ -591,3 +593,180 @@ class TestF1Score:
         """
         with pytest.raises(ValueError):
             f1_score(y_true = [1, 0], y_pred = [0, 1], zero_division = "bad_value")
+
+class TestRocAucScore:
+    def test_roc_auc_score_basic(self):
+        """
+        Test roc_auc_score for binary classification.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        expected = 0.75
+
+        result = roc_auc_score(y_true = y_true, y_pred = y_pred)
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected, atol = 1e-6)
+
+    def test_weighted_roc_auc(self):
+        """
+        Test roc_auc_score with sample weights.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        weights = [0.5, 0.5, 1, 1]
+        expected_result = 0.75
+
+        result = roc_auc_score(
+            y_true = y_true,
+            y_pred = y_pred,
+            sample_weight = weights
+        )
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_multiclass_roc_auc_ovr(self):
+        """
+        Test roc_auc_score for multiclass with multi_class='ovr'.
+        """
+        y_true = [0, 1, 2, 2]
+        y_pred = [
+            [0.8, 0.1, 0.1],
+            [0.1, 0.7, 0.2],
+            [0.2, 0.2, 0.6],
+            [0.2, 0.6, 0.2]
+        ]
+        expected_result = 0.9583333333333334
+
+        result = roc_auc_score(
+            y_true = y_true,
+            y_pred = y_pred,
+            multi_class = 'ovr'
+        )
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_invalid_y_pred_type(self):
+        """
+        Test roc_auc_score with invalid type for y_pred.
+        """
+        with pytest.raises(TypeError):
+            roc_auc_score(y_true = [0, 1], y_pred = "invalid")
+
+    def test_invalid_average_type(self):
+        """
+        Test roc_auc_score with invalid type for average.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = y_true, y_pred = y_pred, average = 123)
+
+    def test_mismatched_lengths(self):
+        """
+        Test roc_auc_score with different lengths for y_true and y_pred.
+        """
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = [0, 1], y_pred = [0.9])
+
+    def test_invalid_max_fpr(self):
+        """
+        Test roc_auc_score with invalid max_fpr value.
+        """
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = [0, 1], y_pred = [0.8, 0.9], max_fpr = 1.5)
+
+    def test_invalid_multi_class(self):
+        """
+        Test roc_auc_score with invalid multi_class value.
+        """
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = [0, 1], y_pred = [0.8, 0.9], multi_class = 'invalid')
+
+class TestExplainedVarianceScore:
+    def test_basic_explained_variance(self):
+        """
+        Test explained_variance_score basic output.
+        """
+        y_true = [3, -0.5, 2, 7]
+        y_pred = [2.5, 0.0, 2, 8]
+        expected_result = 0.9571734475374732
+
+        result = explained_variance_score(y_true = y_true, y_pred = y_pred)
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_explained_variance_with_sample_weight(self):
+        """
+        Test explained_variance_score with sample weights.
+        """
+        y_true = [3, -0.5, 2, 7]
+        y_pred = [2.5, 0.0, 2, 8]
+        weights = [1, 2, 3, 4]
+        expected_result = 0.9689988623435722
+
+        result = explained_variance_score(
+            y_true = y_true, y_pred = y_pred, sample_weight = weights
+        )
+
+        assert isinstance(result, float)
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_multioutput_raw_values(self):
+        """
+        Test explained_variance_score with multioutput='raw_values'.
+        """
+        y_true = [[0.5, 1], [-1, 1], [7, -6]]
+        y_pred = [[0, 2], [-1, 2], [8, -5]]
+        expected_result = np.array([0.96774194, 1.])
+
+        result = explained_variance_score(
+            y_true = y_true, y_pred = y_pred, multioutput = "raw_values"
+        )
+
+        assert isinstance(result, np.ndarray)
+        assert np.allclose(result, expected_result, atol = 1e-6)
+
+    def test_invalid_force_finite(self):
+        """
+        Test explained_variance_score with invalid force_finite type.
+        """
+        with pytest.raises(TypeError):
+            explained_variance_score(
+                y_true = [1, 2], y_pred = [1, 2], force_finite = "yes"
+            )
+
+    def test_invalid_multioutput_value(self):
+        """
+        Test explained_variance_score with invalid multioutput.
+        """
+        with pytest.raises(ValueError):
+            explained_variance_score(
+                y_true = [1, 2], y_pred = [1, 2], multioutput = "invalid"
+            )
+
+    def test_shape_mismatch(self):
+        """
+        Test explained_variance_score with mismatched y_true and y_pred lengths.
+        """
+        with pytest.raises(ValueError):
+            explained_variance_score(
+                y_true = [1, 2, 3], y_pred = [1, 2]
+            )
+
+    def test_sample_weight_mismatch(self):
+        """
+        Test explained_variance_score with invalid sample_weight shape.
+        """
+        with pytest.raises(ValueError):
+            explained_variance_score(
+                y_true = [1, 2, 3], y_pred = [1, 2, 3], sample_weight = [1, 2]
+            )

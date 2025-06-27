@@ -4,7 +4,12 @@ from ._classification import (
     average_precision_score,
     precision_score,
     recall_score,
-    f1_score
+    f1_score,
+    roc_auc_score
+)
+
+from ._regression import (
+    explained_variance_score
 )
 
 __all__ = [
@@ -13,5 +18,7 @@ __all__ = [
     "average_precision_score",
     "precision_score",
     "recall_score",
-    "f1_score"
+    "f1_score",
+    "roc_auc_score",
+    "explained_variance_score"
 ]
