@@ -7,7 +7,8 @@ from ThreeWToolkit.metrics import (
     average_precision_score,
     precision_score,
     recall_score,
-    f1_score
+    f1_score,
+    roc_auc_score
 )
 
 class TestAccuracyScore:
@@ -591,3 +592,98 @@ class TestF1Score:
         """
         with pytest.raises(ValueError):
             f1_score(y_true = [1, 0], y_pred = [0, 1], zero_division = "bad_value")
+
+class TestRocAucScore:
+    def test_roc_auc_score_basic(self):
+        """
+        Test roc_auc_score for binary classification.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        expected = 0.75
+
+        result = roc_auc_score(y_true = y_true, y_pred = y_pred)
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected, atol = 1e-6)
+
+    def test_weighted_roc_auc(self):
+        """
+        Test roc_auc_score with sample weights.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+        weights = [0.5, 0.5, 1, 1]
+        expected_result = 0.75
+
+        result = roc_auc_score(
+            y_true = y_true,
+            y_pred = y_pred,
+            sample_weight = weights
+        )
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_multiclass_roc_auc_ovr(self):
+        """
+        Test roc_auc_score for multiclass with multi_class='ovr'.
+        """
+        y_true = [0, 1, 2, 2]
+        y_pred = [
+            [0.8, 0.1, 0.1],
+            [0.1, 0.7, 0.2],
+            [0.2, 0.2, 0.6],
+            [0.2, 0.6, 0.2]
+        ]
+        expected_result = 0.9583333333333334
+
+        result = roc_auc_score(
+            y_true = y_true,
+            y_pred = y_pred,
+            multi_class = 'ovr'
+        )
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+        assert np.isclose(result, expected_result, atol = 1e-6)
+
+    def test_invalid_y_pred_type(self):
+        """
+        Test roc_auc_score with invalid type for y_pred.
+        """
+        with pytest.raises(TypeError):
+            roc_auc_score(y_true = [0, 1], y_pred = "invalid")
+
+    def test_invalid_average_type(self):
+        """
+        Test roc_auc_score with invalid type for average.
+        """
+        y_true = [0, 0, 1, 1]
+        y_pred = [0.1, 0.4, 0.35, 0.8]
+
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = y_true, y_pred = y_pred, average = 123)
+
+    def test_mismatched_lengths(self):
+        """
+        Test roc_auc_score with different lengths for y_true and y_pred.
+        """
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = [0, 1], y_pred = [0.9])
+
+    def test_invalid_max_fpr(self):
+        """
+        Test roc_auc_score with invalid max_fpr value.
+        """
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = [0, 1], y_pred = [0.8, 0.9], max_fpr = 1.5)
+
+    def test_invalid_multi_class(self):
+        """
+        Test roc_auc_score with invalid multi_class value.
+        """
+        with pytest.raises(ValueError):
+            roc_auc_score(y_true = [0, 1], y_pred = [0.8, 0.9], multi_class = 'invalid')
