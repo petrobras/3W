@@ -8,7 +8,8 @@ from sklearn.metrics import (
         average_precision_score as sk_avg_precision,
         precision_score as sk_precision,
         recall_score as sk_recall,
-        f1_score as sk_f1
+        f1_score as sk_f1,
+        roc_auc_score as sk_roc_auc
 )
 
 from ..utils.general_utils import GeneralUtils
@@ -18,7 +19,8 @@ from ._metrics_validators import (
         AveragePrecisionScoreArgsValidator,
         PrecisionScoreArgsValidator,
         RecallScoreArgsValidator,
-        F1ScoreArgsValidator
+        F1ScoreArgsValidator,
+        RocAucScoreArgsValidator
 )
 
 
@@ -227,4 +229,40 @@ def f1_score(y_true: Union[np.ndarray, pd.Series, list],
         average = average,
         sample_weight = sample_weight,
         zero_division = zero_division
+    )
+
+@GeneralUtils.validate_func_args_with_pydantic(RocAucScoreArgsValidator)
+def roc_auc_score(y_true: Union[np.ndarray, pd.Series, list],
+                  y_pred: Union[np.ndarray, pd.Series, list],
+                  average: Optional[str] = "macro",
+                  sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+                  max_fpr: Optional[float] = None,
+                  multi_class: str = "raise",
+                  labels: Optional[list] = None) -> float:
+    """
+    Compute the Area Under the Receiver Operating Characteristic Curve (ROC AUC).
+
+    Args:
+        y_true (np.ndarray | pd.Series | list): True binary or multiclass labels.
+        y_pred (np.ndarray | pd.Series | list): Target scores, can either be probability estimates or confidence values.
+        average (str | None): One of ['micro', 'macro', 'samples', 'weighted', None]. Default is 'macro'.
+        sample_weight (np.ndarray | pd.Series | list | None): Sample weights.
+        max_fpr (float | None): If not None, the standardized partial AUC over the range [0, max_fpr].
+        multi_class (str): {'raise', 'ovr', 'ovo'}. Only used for multiclass targets.
+        labels (list | None): List of labels to index the classes in y_true and y_pred.
+
+    Returns:
+        float: ROC AUC score.
+
+    Raises:
+        ValueError, TypeError: For invalid inputs or arguments.
+    """
+    return sk_roc_auc(
+        y_true = y_true,
+        y_score = y_pred,
+        average = average,
+        sample_weight = sample_weight,
+        max_fpr = max_fpr,
+        multi_class = multi_class,
+        labels = labels
     )

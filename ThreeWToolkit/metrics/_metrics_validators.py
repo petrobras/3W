@@ -107,6 +107,27 @@ class AveragePrecisionScoreArgsValidator(BaseScoreArgsValidator,
             raise ValueError(f"'average' must be one of {allowed}, got '{v}'")
         return v
     
+class MultiClassValidator(BaseModel):
+    multi_class: str = "raise"
+
+    @field_validator("multi_class", mode="before")
+    @classmethod
+    def check_multi_class(cls, v):
+        allowed = {"raise", "ovr", "ovo"}
+        if v not in allowed:
+            raise ValueError(f"'multi_class' must be one of {allowed}, got '{v}'")
+        return v
+    
+class MaxFprValidator(BaseModel):
+    max_fpr: Optional[float] = None
+
+    @field_validator("max_fpr", mode="before")
+    @classmethod
+    def check_max_fpr(cls, v):
+        if v is not None and (not isinstance(v, (int, float)) or v <= 0 or v > 1):
+            raise ValueError(f"'max_fpr' must be a float in the range (0, 1], got {v}")
+        return v
+    
 class PrecisionScoreArgsValidator(BaseScoreArgsValidator,
                                   LabelsValidator,
                                   PosLabelValidator,
@@ -130,3 +151,18 @@ class F1ScoreArgsValidator(BaseScoreArgsValidator,
                            ZeroDivisionValidator):
     
     pass
+
+class RocAucScoreArgsValidator(BaseScoreArgsValidator,
+                               AverageValidator,
+                               MaxFprValidator,
+                               MultiClassValidator,
+                               LabelsValidator
+):
+        
+    @field_validator("average", mode="before")
+    @classmethod
+    def override_average_options(cls, v):
+        allowed = {"micro", "macro", "samples", "weighted", None}
+        if v not in allowed:
+            raise ValueError(f"'average' must be one of {allowed}, got '{v}'")
+        return v
