@@ -166,3 +166,33 @@ class RocAucScoreArgsValidator(BaseScoreArgsValidator,
         if v not in allowed:
             raise ValueError(f"'average' must be one of {allowed}, got '{v}'")
         return v
+    
+class MultiOutputValidator(BaseModel):
+    multioutput: str = "uniform_average"
+
+    @field_validator("multioutput", mode="before")
+    @classmethod
+    def check_multioutput(cls, v):
+        allowed = {"raw_values", "uniform_average", "variance_weighted"}
+        if v not in allowed:
+            raise ValueError(
+                f"'multioutput' must be one of {allowed}, got '{v}'"
+            )
+        return v
+
+class ForceFiniteValidator(BaseModel):
+    force_finite: bool = True
+
+    @field_validator("force_finite", mode="before")
+    @classmethod
+    def check_force_finite(cls, v):
+        if not isinstance(v, bool):
+            raise TypeError(f"'force_finite' must be a boolean, got {type(v)}")
+        return v
+    
+class ExplainedVarianceScoreArgsValidator(BaseScoreArgsValidator,
+                                          MultiOutputValidator,
+                                          ForceFiniteValidator
+):
+    
+    pass

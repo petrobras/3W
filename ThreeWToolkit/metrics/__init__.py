@@ -8,6 +8,10 @@ from ._classification import (
     roc_auc_score
 )
 
+from ._regression import (
+    explained_variance_score
+)
+
 __all__ = [
     "accuracy_score",
     "balanced_accuracy_score",
@@ -15,5 +19,6 @@ __all__ = [
     "precision_score",
     "recall_score",
     "f1_score",
-    "roc_auc_score"
+    "roc_auc_score",
+    "explained_variance_score"
 ]
