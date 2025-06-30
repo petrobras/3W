@@ -3,7 +3,7 @@ import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Literal, Optional, Union, List
 
-class ImputeTargetArgsValidator(BaseModel):
+class ImputeMissingArgsValidator(BaseModel):
     data: Union[pd.DataFrame, pd.Series]
     strategy: Literal["mean", "median", "constant"]
     fill_value: Optional[Union[int, float]] = None

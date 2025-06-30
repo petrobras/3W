@@ -5,16 +5,16 @@ import numpy as np
 from pandas.testing import assert_series_equal, assert_frame_equal
 
 from ThreeWToolkit.preprocessing import (
-    impute_target_data
+    impute_missing_data
 )
 
-class TestImputeTarget:
+class TestImputeMissingData:
     def test_impute_mean_dataframe(self):
         """
         Test that imputing with strategy 'mean' replaces NaNs in all DataFrame columns with the column mean.
         """
         df = pd.DataFrame({"a": [1.0, np.nan, 3.0], "b": [4.0, 5.0, 6.0]})
-        result = impute_target_data(data = df, strategy = "mean")
+        result = impute_missing_data(data = df, strategy = "mean")
         expected_result = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
         
         assert_frame_equal(result, expected_result)
@@ -25,7 +25,7 @@ class TestImputeTarget:
         Other columns remain unchanged.
         """
         df = pd.DataFrame({"a": [1.0, np.nan, 3.0], "b": [np.nan, 5.0, 6.0]})
-        result = impute_target_data(data = df, strategy = "median", columns = ["a"])
+        result = impute_missing_data(data = df, strategy = "median", columns = ["a"])
         expected_result = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [np.nan, 5.0, 6.0]})
 
         assert_frame_equal(result, expected_result)
@@ -35,7 +35,7 @@ class TestImputeTarget:
         Test that imputing a Series with strategy 'constant' replaces NaNs with the provided fill value.
         """
         series = pd.Series([1.0, np.nan, 3.0])
-        result = impute_target_data(data = series, strategy = "constant", fill_value = 99.0)
+        result = impute_missing_data(data = series, strategy = "constant", fill_value = 99.0)
         expected_result = pd.Series([1.0, 99.0, 3.0], name = "__temp__")
 
         assert_series_equal(result, expected_result) 
@@ -50,7 +50,7 @@ class TestImputeTarget:
             "c": [9.0, 10.0, 11.0]
         })
 
-        result = impute_target_data(data = df, strategy = "mean")
+        result = impute_missing_data(data = df, strategy = "mean")
 
         expected_result = pd.DataFrame({
             "a": [2.0, 2.0, 2.0], 
@@ -70,7 +70,7 @@ class TestImputeTarget:
             "z": [1, 1, 1]
         })
 
-        result = impute_target_data(data = df, strategy = "constant", fill_value = -1)
+        result = impute_missing_data(data = df, strategy = "constant", fill_value = -1)
 
         expected_result = pd.DataFrame({
             "x": [-1, 2, 3],
@@ -87,7 +87,7 @@ class TestImputeTarget:
         df = pd.DataFrame({"a": [1.0, np.nan]})
         
         with pytest.raises(ValueError, match = "Columns not found"):
-            impute_target_data(data = df, strategy = "mean", columns = ["missing_column"])
+            impute_missing_data(data = df, strategy = "mean", columns = ["missing_column"])
 
     def test_raises_error_on_non_numeric_column(self):
         """
@@ -96,7 +96,7 @@ class TestImputeTarget:
         df = pd.DataFrame({"a": [1.0, np.nan], "b": ["x", "y"]})
         
         with pytest.raises(TypeError, match = "Only numeric columns can be imputed"):
-            impute_target_data(data = df, strategy = "mean", columns = ["b"])
+            impute_missing_data(data = df, strategy = "mean", columns = ["b"])
 
     def test_raises_error_if_fill_value_not_provided(self):
         """
@@ -105,4 +105,4 @@ class TestImputeTarget:
         df = pd.DataFrame({"a": [1.0, np.nan]})
         
         with pytest.raises(ValueError, match = "You must provide `fill_value`"):
-            impute_target_data(data = df, strategy = "constant")
+            impute_missing_data(data = df, strategy = "constant")

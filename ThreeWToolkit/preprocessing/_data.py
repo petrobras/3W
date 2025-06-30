@@ -3,13 +3,13 @@ import pandas as pd
 from typing import Literal, Optional, Union
 
 from ..utils.general_utils import GeneralUtils
-from ._preprocessing_validators import ImputeTargetArgsValidator
+from ._preprocessing_validators import ImputeMissingArgsValidator
 
-@GeneralUtils.validate_func_args_with_pydantic(ImputeTargetArgsValidator)
-def impute_target_data(data: Union[pd.DataFrame, pd.Series],
-                       strategy: Literal["mean", "median", "constant"],
-                       fill_value: Optional[Union[int, float]] = None,
-                       columns: Optional[list[str]] = None) -> Union[pd.DataFrame, pd.Series]:
+@GeneralUtils.validate_func_args_with_pydantic(ImputeMissingArgsValidator)
+def impute_missing_data(data: Union[pd.DataFrame, pd.Series],
+                        strategy: Literal["mean", "median", "constant"],
+                        fill_value: Optional[Union[int, float]] = None,
+                        columns: Optional[list[str]] = None) -> Union[pd.DataFrame, pd.Series]:
     """
     Imputes missing values (NaNs) in specified columns of a DataFrame or Series
     using the given strategy.
