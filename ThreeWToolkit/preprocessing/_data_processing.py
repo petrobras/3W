@@ -75,12 +75,12 @@ def normalize(X: Union[pd.DataFrame, pd.Series],
         X (pd.DataFrame | pd.Series): Input data to normalize.
         norm (str): Norm to use ('l1', 'l2', or 'max').
         axis (int): Axis along which to normalize (0 = columns, 1 = rows).
-        copy_values (bool): If True, perform normalization on a copy_values.
+        copy_values (bool): If True, perform normalization on a copy of the input data `X`.
         return_norm_values (bool): If True, also return the computed norm values.
 
     Returns:
         pd.DataFrame | pd.Series | tuple: Normalized data. If `return_norm_values=True`,
-        returns a tuple (normalized_data, norms).
+        returns a tuple with normalized data and norms.
     """
 
     is_series = isinstance(X, pd.Series)
