@@ -11,6 +11,7 @@ MD_PATH = os.path.join(OUTPUT_DIR, "LISTS_OF_CITATIONS.md")
 CATEGORIES = {
     "Books": "Books",
     "Conference Papers": "Conference Papers",
+    "Data Articles": "Data Articles",
     "Doctoral Theses": "Doctoral Theses",
     "Final Graduation Projects": "Final Graduation Projects",
     "Journal Articles": "Journal Articles",
@@ -38,6 +39,7 @@ If you use any resource published in this Git repository, we ask that it be prop
 
 * [Books](#books)
 * [Conference Papers](#conference-papers)
+* [Data Articles](#data-articles)
 * [Doctoral Theses](#doctoral-theses)
 * [Final Graduation Projects](#final-graduation-projects)
 * [Journal Articles](#journal-articles)
@@ -77,9 +79,8 @@ def process_excel_to_markdown():
             f"The file 'citations.xlsx' must contain the following columns: {', '.join(required_columns)}."
         )
 
-    df = df.sort_values(
-        by=["Year"], ascending=False
-    )  # Sort by year in descending order
+    # Sort by year in descending order
+    df = df.sort_values(by=["Year"], ascending=False)
     df["Formatted"] = df.apply(format_citation, axis=1)
 
     # Dictionary to store citations by category
