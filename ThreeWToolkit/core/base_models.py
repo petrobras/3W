@@ -4,29 +4,33 @@ from pydantic import BaseModel, Field, field_validator
 
 from ..core.enums import ModelTypeEnum
 
+
 class ModelsConfig(BaseModel):
     model_type: ModelTypeEnum = Field(..., description="Type of model to use.")
-    random_seed: Optional[int] = Field(42, description="Random seed for reproducibility.")
+    random_seed: Optional[int] = Field(
+        42, description="Random seed for reproducibility."
+    )
 
     @field_validator("model_type")
     @classmethod
     def check_model_type(cls, v, info):
         if info.data.get("model_type") not in {
-            ModelTypeEnum.MLP, 
+            ModelTypeEnum.MLP,
             ModelTypeEnum.LGBM,
-            ModelTypeEnum.LOGISTIC_REGRESSION, 
+            ModelTypeEnum.LOGISTIC_REGRESSION,
             ModelTypeEnum.RANDOM_FOREST,
-            ModelTypeEnum.DECISION_TREE, 
+            ModelTypeEnum.DECISION_TREE,
             ModelTypeEnum.GRADIENT_BOOSTING,
-            ModelTypeEnum.KNN, 
-            ModelTypeEnum.NAIVE_BAYES, 
-            ModelTypeEnum.SVM
-        }: 
+            ModelTypeEnum.KNN,
+            ModelTypeEnum.NAIVE_BAYES,
+            ModelTypeEnum.SVM,
+        }:
             raise NotImplementedError("model_type not implemented yet.")
         elif v is None:
             raise ValueError("model_type is required.")
-        
+
         return v
+
 
 class BaseModels(ABC):
     def __init__(self, config: ModelsConfig):
@@ -47,7 +51,7 @@ class BaseModels(ABC):
             X (Any): Input features.
             y (Any, optional): Target values (if supervised).
         """
-         
+
         pass
 
     @abstractmethod

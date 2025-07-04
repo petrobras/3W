@@ -15,6 +15,7 @@ class TimeSeriesHoldoutConfig(BaseModel):
         shuffle (bool): Whether to shuffle data before splitting. Defaults to False.
         stratify (Optional[Union[pd.Series, pd.DataFrame]]): Labels for stratification. Must be set only if shuffle is True.
     """
+
     test_size: Optional[float] = None
     train_size: Optional[float] = None
     random_state: Optional[int] = None

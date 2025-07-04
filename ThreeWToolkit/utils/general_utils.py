@@ -4,8 +4,8 @@ import inspect
 from pydantic import BaseModel
 from abc import ABC
 
-class GeneralUtils(ABC):
 
+class GeneralUtils(ABC):
     @staticmethod
     def validate_func_args_with_pydantic(schema: type[BaseModel]):
         """Decorator to validate function arguments using Pydantic.
@@ -21,16 +21,19 @@ class GeneralUtils(ABC):
             ValueError: If argument validation fails, wraps the original
             Pydantic exception and includes the function name in the error message.
         """
+
         def decorator(func):
             sig = inspect.signature(func)
-            
+
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 bound_args = sig.bind(*args, **kwargs)
                 bound_args.apply_defaults()
 
                 validated = schema(**bound_args.arguments)
-                
+
                 return func(**validated.model_dump())
+
             return wrapper
+
         return decorator
