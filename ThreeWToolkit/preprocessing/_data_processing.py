@@ -7,9 +7,11 @@ from ..utils.general_utils import GeneralUtils
 from ._preprocessing_validators import (
     ImputeMissingArgsValidator,
     NormalizeArgsValidator,
+    WindowingArgsValidator,
 )
 
 from sklearn.preprocessing import normalize as sk_normalize
+from scipy.signal import get_window
 
 
 @GeneralUtils.validate_func_args_with_pydantic(ImputeMissingArgsValidator)
@@ -110,3 +112,82 @@ def normalize(
     if return_norm_values:
         return normalized, norms
     return normalized
+
+
+@GeneralUtils.validate_func_args_with_pydantic(WindowingArgsValidator)
+def windowing(
+    X: pd.Series,
+    window: str = "hann",
+    window_size: int = 4,
+    overlap: float = 0.0,
+    normalize: bool = False,
+    fftbins: bool = True,
+    pad_last_window: bool = False,
+    pad_value: float = 0.0,
+) -> pd.DataFrame:
+    """
+    Segment a 1D time-series into overlapping windows and apply a specified windowing function.
+
+    This function divides a 1D signal into segments (windows) of a fixed size,
+    applies a window function (e.g., Hann, Hamming), optionally normalizes it,
+    and returns the windowed segments in a structured DataFrame format.
+
+    Args:
+        X (pd.Series): Input 1D signal to be segmented.
+        window (str): Name of the window function to apply (e.g., 'hann', 'hamming', 'boxcar').
+        window_size (int): Number of samples in each window.
+        overlap (float): Overlap ratio between consecutive windows. Must be in [0, 1).
+        normalize (bool): Whether to normalize the window function to have unit area.
+        fftbins (bool): Whether to generate the window in FFT-compatible form (True by default).
+        pad_last_window (bool): If True, pads the last window to include all remaining samples.
+        pad_value (float): Value used to pad the final window if `pad_last_window` is True.
+
+    Returns:
+        pd.DataFrame: A DataFrame where each row is a windowed segment of the original signal,
+                      columns are named as 'val_1', ..., 'val_N', and an additional column 'win'
+                      indicates the window index.
+    """
+    # Convert Series to NumPy array
+    values = X.to_numpy()
+    n_samples = len(values)
+
+    # Calculate step size between windows
+    step = int(window_size * (1 - overlap))
+
+    # Create the desired window function using scipy.signal.get_window
+    win = get_window(window, window_size, fftbins=fftbins)
+    # Optionally normalize the window to sum to 1
+    if normalize:
+        win = win / win.sum()
+
+    windows = []  # List to store each windowed segment
+    win_id = 1  # Counter to label window index
+
+    # Slide through the signal with step size, extract window-sized chunks
+    for start in range(0, n_samples, step):
+        end = start + window_size
+        window_vals = values[start:end]
+
+        # If the segment is smaller than window size (last part)
+        if len(window_vals) < window_size:
+            if pad_last_window:
+                # Pad with constant value if requested
+                pad = np.full(window_size - len(window_vals), pad_value)
+                window_vals = np.concatenate([window_vals, pad])
+            else:
+                break  # Discard incomplete window if no padding allowe
+
+        # Apply the window function (element-wise multiplication)
+        windowed = window_vals * win
+        # Append the result along with the window index
+        windows.append(np.append(windowed, win_id))
+        win_id += 1
+
+    # Define column names: val_1, val_2, ..., val_N, and 'win'
+    col_names = [f"val_{i + 1}" for i in range(window_size)] + ["win"]
+    # Create DataFrame from all windows
+    _temp = pd.DataFrame(windows, columns=col_names)
+    # Ensure window index is of integer type
+    _temp["win"] = _temp["win"].astype(int)
+
+    return _temp
