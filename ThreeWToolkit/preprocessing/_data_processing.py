@@ -134,13 +134,13 @@ def windowing(
 
     Args:
         X (pd.Series): Input 1D signal to be segmented.
-        window (str): Name of the window function to apply (e.g., 'hann', 'hamming', 'boxcar').
-        window_size (int): Number of samples in each window.
-        overlap (float): Overlap ratio between consecutive windows. Must be in [0, 1).
-        normalize (bool): Whether to normalize the window function to have unit area.
-        fftbins (bool): Whether to generate the window in FFT-compatible form (True by default).
-        pad_last_window (bool): If True, pads the last window to include all remaining samples.
-        pad_value (float): Value used to pad the final window if `pad_last_window` is True.
+        window (str): Name of the window function to apply (e.g., 'hann', 'hamming', 'boxcar'). Defaults to `hann`.
+        window_size (int): Number of samples in each window. Defaults to 4.
+        overlap (float): Overlap ratio between consecutive windows. Must be in [0, 1). Defaults to 0.0.
+        normalize (bool): Whether to normalize the window function to have unit area. Defaults to `False`.
+        fftbins (bool): Whether to generate the window in FFT-compatible form. Defaults to `True`.
+        pad_last_window (bool): If True, pads the last window to include all remaining samples. Defaults to `False`.
+        pad_value (float): Value used to pad the final window if `pad_last_window` is True. Defaults to `0.0`.
 
     Returns:
         pd.DataFrame: A DataFrame where each row is a windowed segment of the original signal,
