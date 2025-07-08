@@ -49,25 +49,7 @@ class NormalizeArgsValidator(BaseModel):
 
 class WindowingArgsValidator(BaseModel):
     X: Union[pd.Series, pd.DataFrame]
-    window: Literal[
-        "boxcar",
-        "triang",
-        "blackman",
-        "hamming",
-        "hann",
-        "bartlett",
-        "flattop",
-        "parzen",
-        "bohman",
-        "blackmanharris",
-        "nuttall",
-        "barthann",
-        "cosine",
-        "exponential",
-        "tukey",
-        "taylor",
-        "lanczos",
-    ] = "hann"
+    window: Union[str, tuple] = "hann"
     window_size: int = Field(..., gt=1)
     overlap: float = Field(0.0, ge=0.0, lt=1.0)
     normalize: bool = False
@@ -81,6 +63,69 @@ class WindowingArgsValidator(BaseModel):
     def validate_numeric(cls, v):
         if not pd.api.types.is_numeric_dtype(v):
             raise TypeError("Series must be numeric.")
+        return v
+
+    @field_validator("window")
+    def validate_window(cls, v):
+        WINDOWS_WITH_REQUIRED_PARAMS = {
+            "kaiser": 1,
+            "kaiser_bessel_derived": 1,
+            "gaussian": 1,
+            "general_cosine": 1,
+            "general_gaussian": 2,
+            "general_hamming": 1,
+            "dpss": 1,
+            "chebwin": 1,
+        }
+
+        WINDOWS_WITH_OPTIONAL_OR_NO_PARAMS = {
+            "boxcar",
+            "triang",
+            "blackman",
+            "hamming",
+            "hann",
+            "bartlett",
+            "flattop",
+            "parzen",
+            "bohman",
+            "blackmanharris",
+            "nuttall",
+            "barthann",
+            "cosine",
+            "lanczos",
+            "exponential",
+            "tukey",
+            "taylor",
+        }
+
+        ALL_WINDOW_NAMES = (
+            set(WINDOWS_WITH_REQUIRED_PARAMS) | WINDOWS_WITH_OPTIONAL_OR_NO_PARAMS
+        )
+
+        if isinstance(v, str):
+            if v not in ALL_WINDOW_NAMES:
+                raise ValueError(f"Invalid window name '{v}'.")
+            if v in WINDOWS_WITH_REQUIRED_PARAMS:
+                raise ValueError(
+                    f"Window '{v}' requires parameter(s); use a tuple like ('{v}', param)."
+                )
+
+        else:
+            if len(v) == 0 or not isinstance(v[0], str):
+                raise ValueError("Tuple window must start with a string window name.")
+
+            name = v[0]
+            params = v[1:]
+
+            if name not in ALL_WINDOW_NAMES:
+                raise ValueError(f"Unknown window name '{name}'.")
+
+            if name in WINDOWS_WITH_REQUIRED_PARAMS:
+                expected = WINDOWS_WITH_REQUIRED_PARAMS[name]
+                if len(params) < expected:
+                    raise ValueError(
+                        f"Window '{name}' requires {expected} parameter(s), got {len(params)}."
+                    )
 
         return v
 
@@ -92,3 +137,38 @@ class WindowingArgsValidator(BaseModel):
                 "`window_size` must be smaller than or equal to the length of X."
             )
         return self
+
+        # return validate_window_arg(v)
+        # valid_str_windows = {
+        #     "boxcar",
+        #     "triang",
+        #     "blackman",
+        #     "hamming",
+        #     "hann",
+        #     "bartlett",
+        #     "flattop",
+        #     "parzen",
+        #     "bohman",
+        #     "blackmanharris",
+        #     "nuttall",
+        #     "barthann",
+        #     "cosine",
+        #     "exponential",
+        #     "tukey",
+        #     "taylor",
+        #     "lanczos",
+        # }
+
+        # if isinstance(v, str):
+        #     if v not in valid_str_windows:
+        #         raise ValueError(f"Invalid window name '{v}'.")
+        # elif isinstance(v, float):
+        #     pass
+        # elif isinstance(v, tuple):
+        #     if len(v) < 1 or not isinstance(v[0], str):
+        #         raise ValueError("Tuple window must start with a string name.")
+        #     if v[0] not in valid_str_windows:
+        #         raise ValueError(f"Invalid window name in tuple: '{v[0]}'.")
+        # else:
+        #     raise TypeError("Window must be a str, float or tuple.")
+        # return v

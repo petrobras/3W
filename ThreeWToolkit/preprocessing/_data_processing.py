@@ -117,7 +117,7 @@ def normalize(
 @GeneralUtils.validate_func_args_with_pydantic(WindowingArgsValidator)
 def windowing(
     X: pd.Series,
-    window: str = "hann",
+    window: Union[str, tuple] = "hann",
     window_size: int = 4,
     overlap: float = 0.0,
     normalize: bool = False,
@@ -134,7 +134,7 @@ def windowing(
 
     Args:
         X (pd.Series): Input 1D signal to be segmented.
-        window (str): Name of the window function to apply (e.g., 'hann', 'hamming', 'boxcar'). Defaults to `hann`.
+        window (str | tuple): A string for standard window names (e.g., "hann", "hamming") or a tuple like ("kaiser", beta) for parametrized windows. Defaults to `hann`.
         window_size (int): Number of samples in each window. Defaults to 4.
         overlap (float): Overlap ratio between consecutive windows. Must be in [0, 1). Defaults to 0.0.
         normalize (bool): Whether to normalize the window function to have unit area. Defaults to `False`.

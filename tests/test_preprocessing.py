@@ -163,6 +163,13 @@ class TestNormalize:
 
 
 class TestWindowingPercentOverlap:
+    def test_validate_window_with_correct_tuple_params(self):
+        """Test that windowing works correctly with valid tuple window parameters."""
+        series = pd.Series(np.arange(50))
+        result = windowing(X=series, window=("kaiser", 0.5), window_size=5)
+
+        assert result.shape[0] == 10
+
     def test_basic_windowing_series_no_overlap(self):
         """Test windowing with no overlap on a Series. The number of rows should be total_len // window_size."""
         series = pd.Series(np.arange(40))
@@ -267,6 +274,11 @@ class TestWindowingPercentOverlap:
 
         assert res.shape[0] == 3
 
+    def test_invalid_window_name_string(self):
+        """Should raise ValueError if string window name is unknown."""
+        with pytest.raises(ValueError, match="Invalid window name 'unknownwin'"):
+            windowing(X=pd.Series(np.arange(10)), window="unknownwin", window_size=4)
+
     def test_window_size_larger_than_signal_raises(self):
         """Test that an error is raised if the window size is larger than the series length."""
         series = pd.Series(np.arange(5))
@@ -280,3 +292,40 @@ class TestWindowingPercentOverlap:
 
         with pytest.raises(TypeError, match="Series must be numeric."):
             windowing(X=df["b"], window_size=2, overlap=0.0)
+
+    def test_tuple_with_missing_param_raises(self):
+        """Tuple with missing required parameters should raise ValueError."""
+
+        with pytest.raises(ValueError, match="requires 1 parameter.*got 0"):
+            windowing(X=pd.Series(np.arange(100)), window=("kaiser",), window_size=10)
+
+    def test_tuple_with_unknown_window_raises(self):
+        """Unknown window name in tuple should raise ValueError."""
+        with pytest.raises(ValueError, match="Unknown window name"):
+            windowing(
+                X=pd.Series(np.arange(100)), window=("unknownwin", 1.0), window_size=10
+            )
+
+    def test_string_with_required_param_raises(self):
+        """Using a param-required window as string should raise ValueError."""
+        with pytest.raises(ValueError, match="requires parameter.*tuple like"):
+            windowing(X=pd.Series(np.arange(100)), window="kaiser", window_size=10)
+
+    def test_empty_tuple_raises(self):
+        """An empty tuple should raise ValueError."""
+        with pytest.raises(ValueError, match="Tuple window must start with"):
+            windowing(X=pd.Series(np.arange(100)), window=(), window_size=10)
+
+    def test_valid_optional_param_window_as_str(self):
+        """Windows that can be used as string only should work."""
+        series = pd.Series(np.arange(50))
+        result = windowing(X=series, window="hann", window_size=5)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_valid_optional_param_window_as_tuple(self):
+        """Windows that accept optional parameters should also work in tuple form."""
+        series = pd.Series(np.arange(50))
+        result = windowing(X=series, window=("hann",), window_size=5)
+
+        assert isinstance(result, pd.DataFrame)
