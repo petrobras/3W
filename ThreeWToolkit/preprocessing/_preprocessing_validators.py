@@ -137,38 +137,3 @@ class WindowingArgsValidator(BaseModel):
                 "`window_size` must be smaller than or equal to the length of X."
             )
         return self
-
-        # return validate_window_arg(v)
-        # valid_str_windows = {
-        #     "boxcar",
-        #     "triang",
-        #     "blackman",
-        #     "hamming",
-        #     "hann",
-        #     "bartlett",
-        #     "flattop",
-        #     "parzen",
-        #     "bohman",
-        #     "blackmanharris",
-        #     "nuttall",
-        #     "barthann",
-        #     "cosine",
-        #     "exponential",
-        #     "tukey",
-        #     "taylor",
-        #     "lanczos",
-        # }
-
-        # if isinstance(v, str):
-        #     if v not in valid_str_windows:
-        #         raise ValueError(f"Invalid window name '{v}'.")
-        # elif isinstance(v, float):
-        #     pass
-        # elif isinstance(v, tuple):
-        #     if len(v) < 1 or not isinstance(v[0], str):
-        #         raise ValueError("Tuple window must start with a string name.")
-        #     if v[0] not in valid_str_windows:
-        #         raise ValueError(f"Invalid window name in tuple: '{v[0]}'.")
-        # else:
-        #     raise TypeError("Window must be a str, float or tuple.")
-        # return v
