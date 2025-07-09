@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from enum import Enum
-
+from tqdm import tqdm
 from pydantic import Field
 from typing import Tuple, Optional
 from torch.utils.data import DataLoader, Dataset, Subset, TensorDataset
@@ -28,7 +28,7 @@ class MLPConfig(ModelsConfig):
     activation_function: ActivationFunction
 
 
-class MLP(nn.Module, BaseModels):
+class MLP(nn.Module, BaseModels): # type: ignore
     def __init__(self, config: MLPConfig):
         if not isinstance(config, MLPConfig):
             raise TypeError("Expected MLPConfig.")
@@ -73,7 +73,7 @@ class MLPTrainer:
         self.models: list = []
         self.fold_val_accuracies: list = []
         # Dicionário para armazenar o histórico de médias
-        self.history = {
+        self.history : dict = {
             'train_loss': [],
             'val_loss': [],
             'val_acc': []
@@ -115,14 +115,14 @@ class MLPTrainer:
 
     def train(self, epochs: int = 10):
         skf = StratifiedKFold(n_splits=self.nfolds, shuffle=True, random_state=self.seed)
-        y_train_values = np.array([self.train_dataset[i][1] for i in range(len(self.train_dataset))])
+        y_train_values = np.array([self.train_dataset[i][1] for i in range(len(self.train_dataset))])  # type: ignore
 
         # Listas para armazenar o histórico de cada fold
         all_folds_train_loss = []
         all_folds_val_loss = []
         all_folds_val_acc = []
 
-        for idx_fold, (train_idx, val_idx) in enumerate(skf.split(range(len(self.train_dataset)), y_train_values), 1):
+        for idx_fold, (train_idx, val_idx) in enumerate(skf.split(range(len(self.train_dataset)), y_train_values), 1): # type: ignore
             print(f"\n### Fold {idx_fold}/{self.nfolds} ###")
             
             train_subset = Subset(self.train_dataset, train_idx)
@@ -174,7 +174,8 @@ class MLPTrainer:
             self.models.append(model)
         
         # Calcular a média das curvas de loss/acc entre os folds
-        self.history['train_loss'] = np.mean(all_folds_train_loss, axis=0)
+        self.history['train_loss'] = np.mean(all_folds_train_loss, 
+                                             axis=0)
         self.history['val_loss'] = np.mean(all_folds_val_loss, axis=0)
         self.history['val_acc'] = np.mean(all_folds_val_acc, axis=0)
         

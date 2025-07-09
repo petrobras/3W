@@ -16,7 +16,7 @@ def trainer_setup():
     input_size = 10
     features_data = pd.DataFrame(
         np.random.rand(num_samples, input_size),
-        columns=[f'feature_{i}' for i in range(input_size)]
+        columns=[f"feature_{i}" for i in range(input_size)]
     )
     target_data = pd.Series(np.random.randint(0, 2, num_samples), name='target')
 
