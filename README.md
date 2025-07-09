@@ -15,7 +15,7 @@
 <!-- [![Unlicense License][license-shield]][license-url] -->
 
 
-[![codecov](https://codecov.io/gh/Mathtzt/3WToolkit/graph/badge.svg?token=UPF8P1SIBW)](https://codecov.io/gh/Mathtzt/3WToolkit)
+[![codecov](https://codecov.io/gh/Mathtzt/3WToolkit/branch/development/graph/badge.svg?token=UPF8P1SIBW)](https://codecov.io/gh/Mathtzt/3WToolkit)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-green.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![version](https://img.shields.io/badge/version-0.1.0-blue)
 

@@ -1,5 +1,6 @@
 from abc import ABC
 
+
 class ModelRecorder(ABC):
     pass
 

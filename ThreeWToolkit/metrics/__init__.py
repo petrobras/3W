@@ -5,12 +5,10 @@ from ._classification import (
     precision_score,
     recall_score,
     f1_score,
-    roc_auc_score
+    roc_auc_score,
 )
 
-from ._regression import (
-    explained_variance_score
-)
+from ._regression import explained_variance_score
 
 __all__ = [
     "accuracy_score",
@@ -20,5 +18,5 @@ __all__ = [
     "recall_score",
     "f1_score",
     "roc_auc_score",
-    "explained_variance_score"
+    "explained_variance_score",
 ]

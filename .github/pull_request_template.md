@@ -30,4 +30,10 @@ Mark all that apply:
 
 ---
 
+## Jupyter Notebook Reminder
+
+📌 If you are adding a Jupyter Notebook, please include a screenshot of useful plots or outputs in the PR description to make the review easier. 
+
+---
+
 Thank you for contributing! 🙏

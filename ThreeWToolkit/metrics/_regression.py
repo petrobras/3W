@@ -2,21 +2,20 @@ import numpy as np
 import pandas as pd
 
 from typing import Optional, Union
-from sklearn.metrics import (
-        explained_variance_score as sk_explained_variance
-)
+from sklearn.metrics import explained_variance_score as sk_explained_variance
 
 from ..utils.general_utils import GeneralUtils
-from ._metrics_validators import (
-    ExplainedVarianceScoreArgsValidator
-)
+from ._metrics_validators import ExplainedVarianceScoreArgsValidator
+
 
 @GeneralUtils.validate_func_args_with_pydantic(ExplainedVarianceScoreArgsValidator)
-def explained_variance_score(y_true: Union[np.ndarray, pd.Series, list],
-                             y_pred: Union[np.ndarray, pd.Series, list],
-                             sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
-                             multioutput: str = "uniform_average",
-                             force_finite: bool = True) -> float:
+def explained_variance_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+    multioutput: str = "uniform_average",
+    force_finite: bool = True,
+) -> float:
     """
     Compute the explained variance regression score.
 
@@ -34,9 +33,9 @@ def explained_variance_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError, TypeError: For invalid inputs or arguments.
     """
     return sk_explained_variance(
-        y_true = y_true,
-        y_pred = y_pred,
-        sample_weight = sample_weight,
-        multioutput = multioutput,
-        force_finite = force_finite
+        y_true=y_true,
+        y_pred=y_pred,
+        sample_weight=sample_weight,
+        multioutput=multioutput,
+        force_finite=force_finite,
     )
