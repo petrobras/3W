@@ -43,24 +43,24 @@ class BaseModels(ABC):
         self.config = config
 
     @abstractmethod
-    def train(self, X: Any, y: Any = None) -> None:
+    def train(self, x: Any, y: Any = None, **kwargs) -> None:
         """
         Train the model on the given data.
 
         Args:
-            X (Any): Input features.
+            x (Any): Input features.
             y (Any, optional): Target values (if supervised).
         """
 
         pass
 
     @abstractmethod
-    def predict(self, X: Any) -> Any:
+    def predict(self, x: Any) -> Any:
         """
         Make predictions using the trained model.
 
         Args:
-            X (Any): Input features to predict.
+            x (Any): Input features to predict.
 
         Returns:
             Any: Predicted outputs.
@@ -68,12 +68,12 @@ class BaseModels(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, X: Any, y: Any) -> Dict[str, float]:
+    def evaluate(self, x: Any, y: Any) -> Dict[str, float]:
         """
         Evaluate the model performance.
 
         Args:
-            X (Any): Input features.
+            x (Any): Input features.
             y (Any): Ground truth target values.
 
         Returns:

@@ -11,6 +11,8 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 
+from ThreeWToolkit.core.enums import ModelTypeEnum
+
 from ..core.base_models import BaseModels, ModelsConfig
 
 
@@ -23,20 +25,22 @@ class ActivationFunction(Enum):
 
 class MLPConfig(ModelsConfig):
     # learning_rate: float = Field(..., lt = 0.0, description="Learning rate must be < 0.")
+    model_type: ModelTypeEnum = ModelTypeEnum.MLP
+    random_seed: int = 42
     input_size: int
     hidden_sizes: Tuple[int, ...]
     output_size: int
     activation_function: ActivationFunction
 
 
-class MLP(nn.Module, BaseModels):
+class MLP(nn.Module):
     def __init__(self, config: MLPConfig):
-        super(MLP, self).__init__(config)
+        super(MLP, self).__init__()
         layers = []
         in_size = config.input_size
         for h in config.hidden_sizes:
             layers.append(nn.Linear(in_size, h))
-            layers.append(config.activation_function.value())
+            layers.append(config.activation_function.value)
             in_size = h
         layers.append(nn.Linear(in_size, config.output_size))
         self.model = nn.Sequential(*layers)
@@ -45,11 +49,11 @@ class MLP(nn.Module, BaseModels):
         return self.model(x.view(x.size(0), -1))
 
 
-class MLPTrainer:
+class MLPTrainer(BaseModels):
     def __init__(
         self,
-        train_dataset: Dataset[Any],
-        test_dataset: Dataset[Any],
+        # train_dataset: Dataset[Any],
+        # test_dataset: Dataset[Any],
         config: MLPConfig,
         batch_size: int = 32,
         lr: float = 1e-4,
@@ -57,17 +61,11 @@ class MLPTrainer:
         seed: int = 42,
         class_weights: Optional[torch.Tensor] = None,
     ):
-        # Required by linting to guarantee that the datasets are Sized and we can use len()
-        if not isinstance(train_dataset, Sized):
-            raise TypeError("Expected Sized Dataset.")
-        if not isinstance(test_dataset, Sized):
-            raise TypeError("Expected Sized Dataset.")
-
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Usando dispositivo: {self.device}")
 
-        self.train_dataset = train_dataset
-        self.test_dataset = test_dataset
+        # self.train_dataset = train_dataset
+        # self.test_dataset = test_dataset
         self.batch_size = batch_size
         self.config = config
         self.lr = lr
@@ -79,7 +77,7 @@ class MLPTrainer:
 
         self.models: list = []
         self.fold_val_accuracies: list = []
-        # Dicionário para armazenar o histórico de médias
+        # Dictionary to store the average history
         self.history: dict = {"train_loss": [], "val_loss": [], "val_acc": []}
 
     def _get_model(self):
@@ -90,6 +88,12 @@ class MLPTrainer:
 
     def _get_fn_cost(self):
         return nn.CrossEntropyLoss(weight=self.class_weights)
+
+    def get_params(self):
+        pass
+
+    def set_params(self, **params):
+        pass
 
     def create_dataloader(self, dataset, shuffle: bool):
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
@@ -119,13 +123,17 @@ class MLPTrainer:
         accuracy = correct / total
         return avg_loss, accuracy
 
-    def train(self, epochs: int = 10):
+    def train(self, x: Dataset[Any], y: Any = None, epochs: int = 10, **kwargs) -> None:
+        # Required by linting to guarantee that the datasets are Sized and we can use len()
+        if not isinstance(x, Sized):
+            raise TypeError("Expected Sized Dataset.")
+
         skf = StratifiedKFold(
             n_splits=self.nfolds, shuffle=True, random_state=self.seed
         )
-        y_train_values = np.array(
-            [self.train_dataset[i][1] for i in range(len(self.train_dataset))]
-        )
+
+        total_samples = len(x)
+        y_train_values = np.array([x[i][1] for i in range(total_samples)])
 
         # Listas para armazenar o histórico de cada fold
         all_folds_train_loss = []
@@ -133,12 +141,12 @@ class MLPTrainer:
         all_folds_val_acc = []
 
         for idx_fold, (train_idx, val_idx) in enumerate(
-            skf.split(range(len(self.train_dataset)), y_train_values), 1
+            skf.split(range(total_samples), y_train_values), 1
         ):  # type: ignore
             print(f"\n### Fold {idx_fold}/{self.nfolds} ###")
 
-            train_subset = Subset(self.train_dataset, train_idx)
-            val_subset = Subset(self.train_dataset, val_idx)
+            train_subset = Subset(x, train_idx)
+            val_subset = Subset(x, val_idx)
 
             train_loader = self.create_dataloader(train_subset, True)
             val_loader = self.create_dataloader(val_subset, False)
