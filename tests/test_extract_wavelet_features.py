@@ -43,7 +43,7 @@ class TestExtractWaveletFeatures:
         """
         Tests if the 'stride' parameter correctly reduces the number of output windows.
         """
-        data = pd.DataFrame({'signal': np.arange(1.0, 9.0)})
+        data = pd.DataFrame({"signal": np.arange(1.0, 9.0)})
         
         config = WaveletConfig(level=2, stride=4, offset=0)
         extractor = ExtractWaveletFeatures(config)
