@@ -3,32 +3,34 @@ import pandas as pd
 
 from typing import Optional, Union
 from sklearn.metrics import (
-        accuracy_score as sk_acc,
-        balanced_accuracy_score as sk_balanced_acc,
-        average_precision_score as sk_avg_precision,
-        precision_score as sk_precision,
-        recall_score as sk_recall,
-        f1_score as sk_f1,
-        roc_auc_score as sk_roc_auc
+    accuracy_score as sk_acc,
+    balanced_accuracy_score as sk_balanced_acc,
+    average_precision_score as sk_avg_precision,
+    precision_score as sk_precision,
+    recall_score as sk_recall,
+    f1_score as sk_f1,
+    roc_auc_score as sk_roc_auc,
 )
 
 from ..utils.general_utils import GeneralUtils
 from ._metrics_validators import (
-        AccuracyScoreArgsValidator, 
-        BalancedAccuracyScoreArgsValidator,
-        AveragePrecisionScoreArgsValidator,
-        PrecisionScoreArgsValidator,
-        RecallScoreArgsValidator,
-        F1ScoreArgsValidator,
-        RocAucScoreArgsValidator
+    AccuracyScoreArgsValidator,
+    BalancedAccuracyScoreArgsValidator,
+    AveragePrecisionScoreArgsValidator,
+    PrecisionScoreArgsValidator,
+    RecallScoreArgsValidator,
+    F1ScoreArgsValidator,
+    RocAucScoreArgsValidator,
 )
 
 
 @GeneralUtils.validate_func_args_with_pydantic(AccuracyScoreArgsValidator)
-def accuracy_score(y_true: Union[np.ndarray, pd.Series, list], 
-                   y_pred: Union[np.ndarray, pd.Series, list], 
-                   normalize: bool = True, 
-                   sample_weight: Optional[Union[np.ndarray, pd.Series, list]] =  None) -> float:
+def accuracy_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    normalize: bool = True,
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+) -> float:
     """
     Calculates the accuracy between true and predicted values.
 
@@ -52,16 +54,18 @@ def accuracy_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError: If array dimensions are incompatible.
     """
 
-    return sk_acc(y_true = y_true,
-                  y_pred = y_pred,
-                  normalize = normalize,
-                  sample_weight = sample_weight)
+    return sk_acc(
+        y_true=y_true, y_pred=y_pred, normalize=normalize, sample_weight=sample_weight
+    )
+
 
 @GeneralUtils.validate_func_args_with_pydantic(BalancedAccuracyScoreArgsValidator)
-def balanced_accuracy_score(y_true: Union[np.ndarray, pd.Series, list],
-                            y_pred: Union[np.ndarray, pd.Series, list],
-                            sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
-                            adjusted: bool = False) -> float:
+def balanced_accuracy_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+    adjusted: bool = False,
+) -> float:
     """
     Computes the balanced accuracy between true and predicted values.
 
@@ -82,18 +86,18 @@ def balanced_accuracy_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError: If lengths of inputs are inconsistent.
     """
     return sk_balanced_acc(
-        y_true = y_true,
-        y_pred = y_pred,
-        sample_weight = sample_weight,
-        adjusted = adjusted
+        y_true=y_true, y_pred=y_pred, sample_weight=sample_weight, adjusted=adjusted
     )
 
+
 @GeneralUtils.validate_func_args_with_pydantic(AveragePrecisionScoreArgsValidator)
-def average_precision_score(y_true: Union[np.ndarray, pd.Series, list],
-                            y_pred: Union[np.ndarray, pd.Series, list],
-                            average: Optional[str] = "macro",
-                            pos_label: Optional[int] = 1,
-                            sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None) -> float:
+def average_precision_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    average: Optional[str] = "macro",
+    pos_label: Optional[int] = 1,
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+) -> float:
     """
     Compute average precision (AP) from prediction scores.
 
@@ -113,21 +117,24 @@ def average_precision_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError: If inputs are inconsistent or average value is invalid.
     """
     return sk_avg_precision(
-        y_true = y_true,
-        y_score = y_pred,
-        average = average,
-        pos_label = pos_label,
-        sample_weight = sample_weight
+        y_true=y_true,
+        y_score=y_pred,
+        average=average,
+        pos_label=pos_label,
+        sample_weight=sample_weight,
     )
 
+
 @GeneralUtils.validate_func_args_with_pydantic(PrecisionScoreArgsValidator)
-def precision_score(y_true: Union[np.ndarray, pd.Series, list],
-                    y_pred: Union[np.ndarray, pd.Series, list],
-                    labels: Optional[list] = None,
-                    pos_label: Optional[int] = 1,
-                    average: Optional[str] = "binary",
-                    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
-                    zero_division: Union[str, int] = "warn") -> float:
+def precision_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    labels: Optional[list] = None,
+    pos_label: Optional[int] = 1,
+    average: Optional[str] = "binary",
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+    zero_division: Union[str, int] = "warn",
+) -> float:
     """
     Compute the precision score.
 
@@ -148,23 +155,26 @@ def precision_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError: If input values are invalid.
     """
     return sk_precision(
-        y_true = y_true,
-        y_pred = y_pred,
-        labels = labels,
-        pos_label = pos_label,
-        average = average,
-        sample_weight = sample_weight,
-        zero_division = zero_division
+        y_true=y_true,
+        y_pred=y_pred,
+        labels=labels,
+        pos_label=pos_label,
+        average=average,
+        sample_weight=sample_weight,
+        zero_division=zero_division,
     )
 
+
 @GeneralUtils.validate_func_args_with_pydantic(RecallScoreArgsValidator)
-def recall_score(y_true: Union[np.ndarray, pd.Series, list],
-                 y_pred: Union[np.ndarray, pd.Series, list],
-                 labels: Optional[list] = None,
-                 pos_label: Optional[int] = 1,
-                 average: Optional[str] = "binary",
-                 sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
-                 zero_division: Union[str, int] = "warn") -> float:
+def recall_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    labels: Optional[list] = None,
+    pos_label: Optional[int] = 1,
+    average: Optional[str] = "binary",
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+    zero_division: Union[str, int] = "warn",
+) -> float:
     """
     Compute the recall score.
 
@@ -185,23 +195,26 @@ def recall_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError: If input values are invalid.
     """
     return sk_recall(
-        y_true = y_true,
-        y_pred = y_pred,
-        labels = labels,
-        pos_label = pos_label,
-        average = average,
-        sample_weight = sample_weight,
-        zero_division = zero_division
+        y_true=y_true,
+        y_pred=y_pred,
+        labels=labels,
+        pos_label=pos_label,
+        average=average,
+        sample_weight=sample_weight,
+        zero_division=zero_division,
     )
 
+
 @GeneralUtils.validate_func_args_with_pydantic(F1ScoreArgsValidator)
-def f1_score(y_true: Union[np.ndarray, pd.Series, list],
-             y_pred: Union[np.ndarray, pd.Series, list],
-             labels: Optional[list] = None,
-             pos_label: Optional[int] = 1,
-             average: Optional[str] = "binary",
-             sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
-             zero_division: Union[str, int] = "warn") -> float:
+def f1_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    labels: Optional[list] = None,
+    pos_label: Optional[int] = 1,
+    average: Optional[str] = "binary",
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+    zero_division: Union[str, int] = "warn",
+) -> float:
     """
     Compute the F1 score.
 
@@ -222,23 +235,26 @@ def f1_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError: If input values are invalid.
     """
     return sk_f1(
-        y_true = y_true,
-        y_pred = y_pred,
-        labels = labels,
-        pos_label = pos_label,
-        average = average,
-        sample_weight = sample_weight,
-        zero_division = zero_division
+        y_true=y_true,
+        y_pred=y_pred,
+        labels=labels,
+        pos_label=pos_label,
+        average=average,
+        sample_weight=sample_weight,
+        zero_division=zero_division,
     )
 
+
 @GeneralUtils.validate_func_args_with_pydantic(RocAucScoreArgsValidator)
-def roc_auc_score(y_true: Union[np.ndarray, pd.Series, list],
-                  y_pred: Union[np.ndarray, pd.Series, list],
-                  average: Optional[str] = "macro",
-                  sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
-                  max_fpr: Optional[float] = None,
-                  multi_class: str = "raise",
-                  labels: Optional[list] = None) -> float:
+def roc_auc_score(
+    y_true: Union[np.ndarray, pd.Series, list],
+    y_pred: Union[np.ndarray, pd.Series, list],
+    average: Optional[str] = "macro",
+    sample_weight: Optional[Union[np.ndarray, pd.Series, list]] = None,
+    max_fpr: Optional[float] = None,
+    multi_class: str = "raise",
+    labels: Optional[list] = None,
+) -> float:
     """
     Compute the Area Under the Receiver Operating Characteristic Curve (ROC AUC).
 
@@ -258,11 +274,11 @@ def roc_auc_score(y_true: Union[np.ndarray, pd.Series, list],
         ValueError, TypeError: For invalid inputs or arguments.
     """
     return sk_roc_auc(
-        y_true = y_true,
-        y_score = y_pred,
-        average = average,
-        sample_weight = sample_weight,
-        max_fpr = max_fpr,
-        multi_class = multi_class,
-        labels = labels
+        y_true=y_true,
+        y_score=y_pred,
+        average=average,
+        sample_weight=sample_weight,
+        max_fpr=max_fpr,
+        multi_class=multi_class,
+        labels=labels,
     )

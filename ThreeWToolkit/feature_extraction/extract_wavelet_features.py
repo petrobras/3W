@@ -11,6 +11,7 @@ class WaveletConfig(FeatureExtractorConfig):
     stride: int
     offset: int = 0
 
+
 class ExtractWaveletFeatures(BaseFeatureExtractor):
   """PyTorch implementation of the wavelet feature mapper"""
 
