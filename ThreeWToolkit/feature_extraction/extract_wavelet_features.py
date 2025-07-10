@@ -7,8 +7,8 @@ from ..core.base_feature_extractor import BaseFeatureExtractor, FeatureExtractor
 
 
 class WaveletConfig(FeatureExtractorConfig):
-    level: int
-    stride: int
+    level: int = 1
+    stride: int = 1
     offset: int = 0
 
 
@@ -30,8 +30,8 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
     self.feat_names = [
         f"{type_}{level}"
         for level in range(self.level, 0, -1)
-        for type_ in ["A", "D"]
-    ] + ["A0"]
+        for type_ in ["A", "D"] # A -> approximation coefficients; D -> detail coefficients
+    ] + ["A0"] # A0 -> approx coeff on first level of wavelet filtering
     self.H = torch.tensor(H).double()
 
   def __call__(self, tags: pd.DataFrame, event_type: Optional[str] = None):
