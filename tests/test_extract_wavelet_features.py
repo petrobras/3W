@@ -115,7 +115,7 @@ class TestExtractWaveletFeatures:
         """
         Tests the case where the data size is exactly equal to one window size.
         """
-        data = pd.DataFrame({'signal': [1.0, 2.0, 3.0, 4.0]})
+        data = pd.DataFrame({"signal": [1.0, 2.0, 3.0, 4.0]})
         
         config = WaveletConfig(level=2, stride=1, offset=0)
         extractor = ExtractWaveletFeatures(config)
