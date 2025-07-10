@@ -7,7 +7,7 @@ import pandas as pd
 from ThreeWToolkit.models.mlp import MLP, ActivationFunction, MLPTrainer, MLPConfig
 
 
-# @pytest.fixture
+@pytest.fixture
 def trainer_setup():
     num_samples = 100
     input_size = 10
@@ -80,21 +80,25 @@ class TestMLPTrainer:
 
     def test_train_loop(self, trainer_setup):
         trainer = trainer_setup["trainer"]
-        trainer.train(epochs=2)
-        assert len(trainer.models) == trainer.nfolds
-        assert len(trainer.history["train_loss"]) == 2
+        x = trainer_setup["x_tensor"]
+        y = trainer_setup["y_tensor"]
+        epochs = 3
+        trainer.train(x, y, epochs=epochs)
+        # Check if the trainer saved the history
+        for metrics_all_epochs in trainer.history.values():
+            assert len(metrics_all_epochs) == epochs
 
     def test_evaluate(self, trainer_setup):
         trainer = trainer_setup["trainer"]
-        trainer.train(epochs=1)
-        model_to_eval = trainer.models[0]
-        test_loader = trainer.create_dataloader(trainer.test_dataset, shuffle=False)
-        preds, accuracy = trainer.evaluate(model_to_eval, test_loader)
-        assert isinstance(preds, np.ndarray)
-        assert 0.0 <= accuracy <= 1.0
+        # Train the model with x, y
+        x = trainer_setup["x_tensor"]
+        y = trainer_setup["y_tensor"]
+        trainer.train(x, y, epochs=1)
 
-
-params = trainer_setup()
-a = TestMLPTrainer()
-a.test_train_loop(params)
-x = 123
+        # Simulate a test dataset to evaluate the best model with the training samples
+        model_to_eval = trainer.best_model
+        test_loader = trainer.create_dataloader(x, y, shuffle=False)
+        # Evaluate the test dataset with accuracy metric
+        avg_loss, metrics = trainer.run_evaluation_epoch(model_to_eval, test_loader)
+        assert 0.0 <= avg_loss
+        assert 0.0 <= metrics["accuracy_score"] <= 1.0

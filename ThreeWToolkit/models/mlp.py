@@ -1,5 +1,5 @@
 from collections.abc import Sized
-from typing import Any
+from typing import Any, Callable
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,12 +7,9 @@ import torch.optim as optim
 from enum import Enum
 from tqdm import tqdm
 from typing import Tuple, Optional
-from torch.utils.data import DataLoader, Dataset, Subset
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import accuracy_score
-
+from torch.utils.data import DataLoader, Dataset
 from ThreeWToolkit.core.enums import ModelTypeEnum
-
+from ThreeWToolkit.metrics import accuracy_score
 from ..core.base_models import BaseModels, ModelsConfig
 
 
@@ -31,6 +28,27 @@ class MLPConfig(ModelsConfig):
     hidden_sizes: Tuple[int, ...]
     output_size: int
     activation_function: ActivationFunction
+
+
+class LabeledSubset(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        samples: np.ndarray | torch.Tensor,
+        labels: np.ndarray | torch.Tensor,
+    ):
+        if len(samples) != len(labels):
+            raise ValueError("Samples and labels must have the same length.")
+
+        self.samples = samples
+        self.labels = labels
+
+    def __getitem__(self, idx):
+        x_i = self.samples[idx]
+        y_i = self.labels[idx]
+        return x_i, y_i
+
+    def __len__(self):
+        return len(self.samples)  # equal to len(self.labels)
 
 
 class MLP(nn.Module):
@@ -52,8 +70,6 @@ class MLP(nn.Module):
 class MLPTrainer(BaseModels):
     def __init__(
         self,
-        # train_dataset: Dataset[Any],
-        # test_dataset: Dataset[Any],
         config: MLPConfig,
         batch_size: int = 32,
         lr: float = 1e-4,
@@ -64,8 +80,6 @@ class MLPTrainer(BaseModels):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Usando dispositivo: {self.device}")
 
-        # self.train_dataset = train_dataset
-        # self.test_dataset = test_dataset
         self.batch_size = batch_size
         self.config = config
         self.lr = lr
@@ -75,10 +89,11 @@ class MLPTrainer(BaseModels):
             class_weights.to(self.device) if class_weights is not None else None
         )
 
-        self.models: list = []
         self.fold_val_accuracies: list = []
-        # Dictionary to store the average history
-        self.history: dict = {"train_loss": [], "val_loss": [], "val_acc": []}
+        self.best_model: MLP | None = None
+
+        # Dictionary to store the losses along training
+        self.history: dict = {}
 
     def _get_model(self):
         return MLP(self.config).to(self.device)
@@ -95,136 +110,160 @@ class MLPTrainer(BaseModels):
     def set_params(self, **params):
         pass
 
-    def create_dataloader(self, dataset, shuffle: bool):
+    def create_dataloader(self, x, y, shuffle: bool):
+        dataset = LabeledSubset(x, y)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
 
-    # Método para validar a cada época, retornando loss e acurácia
-    def validate_epoch(self, model, loader, criterion):
+    def evaluate(self, x: list, y: list, metrics: list[Callable]):
+        return {metric.__name__: metric(y, x) for metric in metrics}
+
+    def run_evaluation_epoch(self, model, loader, criterion=None):
+        if criterion is None:
+            criterion = self._get_fn_cost()
+
         model.eval()
         running_loss = 0.0
-        correct = 0
-        total = 0
+        all_preds = []
+        all_labels = []
+        total_eval_samples = 0
         with torch.no_grad():
-            for xvalues, yvalues in loader:
-                xvalues, yvalues = (
-                    xvalues.to(self.device).float(),
-                    yvalues.to(self.device).long(),
+            for x_values, y_values in loader:
+                x_values, y_values = (
+                    x_values.to(self.device).float(),
+                    y_values.to(self.device).long(),
                 )
 
-                out = model(xvalues)
-                loss = criterion(out, yvalues)
-                running_loss += loss.item() * xvalues.size(0)
+                out = model(x_values)
+                loss = criterion(out, y_values)
+                running_loss += loss.item() * x_values.size(0)
 
                 preds = out.argmax(dim=1)
-                correct += (preds == yvalues).sum().item()
-                total += yvalues.size(0)
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(y_values.cpu().numpy())
+                total_eval_samples += x_values.size(0)
 
-        avg_loss = running_loss / total
-        accuracy = correct / total
-        return avg_loss, accuracy
+        avg_loss = running_loss / total_eval_samples
+        metrics = self.evaluate(all_preds, all_labels, [accuracy_score])
+        return avg_loss, metrics
 
-    def train(self, x: Dataset[Any], y: Any = None, epochs: int = 10, **kwargs) -> None:
+    def train_epoch(self, model, train_loader, criterion, optimizer):
+        model.train()
+        epoch_train_loss = 0.0
+        total_train_samples = 0
+        for x_values, y_values in train_loader:
+            x_values, y_values = (
+                x_values.to(self.device).float(),
+                y_values.to(self.device).long(),
+            )
+            # Forward pass
+            optimizer.zero_grad()
+            outputs = model(x_values)
+            # Compute the loss
+            loss = criterion(outputs, y_values)
+            # Backward pass
+            loss.backward()
+            # Update the weights
+            optimizer.step()
+            # Compute the loss for the batch
+            samples_in_batch = x_values.size(0)
+            epoch_train_loss += loss.item() * samples_in_batch
+            total_train_samples += samples_in_batch
+        # Compute the average loss for the epoch
+        avg_epoch_train_loss = epoch_train_loss / total_train_samples
+        return avg_epoch_train_loss
+
+    def train(
+        self,
+        x: Dataset[Any],
+        y: Any = None,
+        epochs: int = 10,
+        split_train: float = 0.8,
+        **kwargs,
+    ) -> None:
+        # TODO: This training does not consider nfolds! Create another training method that considers nfolds.
+
         # Required by linting to guarantee that the datasets are Sized and we can use len()
         if not isinstance(x, Sized):
             raise TypeError("Expected Sized Dataset.")
 
-        skf = StratifiedKFold(
-            n_splits=self.nfolds, shuffle=True, random_state=self.seed
+        # Clean history dictionary
+        self.history = {"train_loss": [], "val_loss": [], "val_acc": []}
+
+        # Shuffle the dataset
+        idx = np.arange(len(x))
+        np.random.shuffle(idx)
+        train_idx = idx[: int(len(idx) * split_train)]
+        val_idx = idx[len(train_idx) :]
+
+        # TODO: Change this part to use our data loader
+        # Create the train dataset
+        x_train_samples = x[train_idx]
+        y_train_labels = y[train_idx]
+        # Create the validation dataset
+        x_val_samples = x[val_idx]
+        y_val_labels = y[val_idx]
+        # Create dataloaders
+        train_loader = self.create_dataloader(
+            x_train_samples, y_train_labels, shuffle=True
         )
+        val_loader = self.create_dataloader(x_val_samples, y_val_labels, shuffle=False)
 
-        total_samples = len(x)
-        y_train_values = np.array([x[i][1] for i in range(total_samples)])
+        print(f"\t Training samples: {len(train_idx)}")
+        print(f"\t Validation samples: {len(val_idx)}")
 
-        # Listas para armazenar o histórico de cada fold
-        all_folds_train_loss = []
-        all_folds_val_loss = []
-        all_folds_val_acc = []
+        model = self._get_model()
+        criterion = self._get_fn_cost()
+        optimizer = self._get_optimizer(model)
 
-        for idx_fold, (train_idx, val_idx) in enumerate(
-            skf.split(range(total_samples), y_train_values), 1
-        ):  # type: ignore
-            print(f"\n### Fold {idx_fold}/{self.nfolds} ###")
+        # Store the best model
+        best_model = {
+            "epoch": -1,
+            "model": None,
+            "val_loss": float("inf"),
+            "val_acc": -1,
+        }
 
-            train_subset = Subset(x, train_idx)
-            val_subset = Subset(x, val_idx)
+        # Train for epochs
+        progress_bar = tqdm(range(epochs))
+        for epoch_idx in progress_bar:
+            progress_bar.set_description(f"Training Epoch [{epoch_idx + 1}/{epochs}]")
 
-            train_loader = self.create_dataloader(train_subset, True)
-            val_loader = self.create_dataloader(val_subset, False)
-
-            model = self._get_model()
-            criterion = self._get_fn_cost()
-            optimizer = self._get_optimizer(model)
-
-            # Histórico para o fold atual
-            fold_train_loss_hist = []
-            fold_val_loss_hist = []
-            fold_val_acc_hist = []
-
-            for epoch in tqdm(range(epochs), desc=f"Fold {idx_fold} Training"):
-                model.train()
-                epoch_train_loss = 0.0
-                for xvalues, yvalues in train_loader:
-                    xvalues, yvalues = (
-                        xvalues.to(self.device).float(),
-                        yvalues.to(self.device).long(),
-                    )
-
-                    optimizer.zero_grad()
-                    outputs = model(xvalues)
-                    loss = criterion(outputs, yvalues)
-                    loss.backward()
-                    optimizer.step()
-                    epoch_train_loss += loss.item() * xvalues.size(0)
-
-                # Calcular e armazenar as perdas da época
-                avg_epoch_train_loss = epoch_train_loss / len(train_loader.dataset)
-                val_loss, val_acc = self.validate_epoch(model, val_loader, criterion)
-
-                fold_train_loss_hist.append(avg_epoch_train_loss)
-                fold_val_loss_hist.append(val_loss)
-                fold_val_acc_hist.append(val_acc)
-
-            # Armazena o histórico do fold
-            all_folds_train_loss.append(fold_train_loss_hist)
-            all_folds_val_loss.append(fold_val_loss_hist)
-            all_folds_val_acc.append(fold_val_acc_hist)
-
-            # A acurácia final do fold é a da última época
-            final_fold_acc = fold_val_acc_hist[-1]
-            self.fold_val_accuracies.append(final_fold_acc)
-            print(
-                f"Fold {idx_fold} - Acurácia de Validação Final: {final_fold_acc:.4f}"
+            # Train for this epoch
+            avg_epoch_train_loss = self.train_epoch(
+                model, train_loader, criterion, optimizer
             )
+            # Run a single evaluation epoch with the validation set
+            avg_val_loss, metrics = self.run_evaluation_epoch(
+                model, val_loader, criterion
+            )
+            val_acc = metrics["accuracy_score"]
 
-            self.models.append(model)
+            # Print the results for this epoch
+            print(f"Epoch {epoch_idx + 1}/{epochs}")
+            print(f"\tTrain loss: {avg_epoch_train_loss:.4f}")
+            print(f"\tVal loss: {avg_val_loss:.4f}")
+            print(f"\tVal acc: {val_acc:.4f}")
 
-        # Calcular a média das curvas de loss/acc entre os folds
-        self.history["train_loss"] = np.mean(all_folds_train_loss, axis=0)
-        self.history["val_loss"] = np.mean(all_folds_val_loss, axis=0)
-        self.history["val_acc"] = np.mean(all_folds_val_acc, axis=0)
+            # After training epochs, store the results
+            self.history["train_loss"].append(avg_epoch_train_loss)
+            self.history["val_loss"].append(avg_val_loss)
+            self.history["val_acc"].append(val_acc)
 
-        mean_val_acc = np.mean(self.fold_val_accuracies)
-        print("\nTreinamento concluído.")
-        print(
-            f"Média da Acurácia de Validação nos {self.nfolds} folds: {mean_val_acc:.4f}"
-        )
+            # Update the best model if the current epoch has the best validation loss
+            if avg_val_loss < best_model["val_loss"]:
+                best_model["epoch"] = epoch_idx
+                best_model["model"] = model.eval()
+                best_model["val_loss"] = avg_val_loss
+                best_model["val_acc"] = val_acc
+                print(f"New best model at epoch {epoch_idx + 1}")
 
-    def evaluate(self, model, loader):
-        model.eval()
-        all_preds = []
-        all_labels = []
-        with torch.no_grad():
-            for xvalues, yvalues in loader:
-                xvalues, yvalues = (
-                    xvalues.to(self.device).float(),
-                    yvalues.to(self.device).long(),
-                )
-                out = model(xvalues)
-                preds = out.argmax(dim=1)
-                all_preds.extend(preds.cpu().numpy())
-                all_labels.extend(yvalues.cpu().numpy())
-        accuracy = accuracy_score(all_labels, all_preds)
-        return np.array(all_preds), accuracy
+        # Store the best model
+        if isinstance(best_model["model"], (MLP, type(None))):
+            self.best_model = best_model["model"]
+        else:
+            raise TypeError(
+                f"best_model['model'] is not an MLP or None, got {type(best_model['model'])}"
+            )
 
     def predict(self, model, loader):
         model.eval()

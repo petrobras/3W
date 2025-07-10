@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 from ..core.enums import ModelTypeEnum
@@ -68,13 +68,14 @@ class BaseModels(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, x: Any, y: Any) -> Dict[str, float]:
+    def evaluate(self, x: Any, y: Any, metrics: List[Callable]) -> Dict[str, float]:
         """
         Evaluate the model performance.
 
         Args:
             x (Any): Input features.
             y (Any): Ground truth target values.
+            metrics (List[Callable]): List of metric functions to evaluate the model.
 
         Returns:
             Dict[str, float]: Dictionary containing evaluation metrics.
