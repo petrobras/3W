@@ -58,7 +58,7 @@ class TestExtractWaveletFeatures:
         """
         Tests if the 'offset' parameter correctly ignores the initial data points.
         """
-        data = pd.DataFrame({'signal': [10, 20, 1, 2, 3, 4]})
+        data = pd.DataFrame({"signal": [10, 20, 1, 2, 3, 4]})
         data.index.name = "idx"
 
         config = WaveletConfig(level=1, stride=1, offset=2)
