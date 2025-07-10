@@ -75,8 +75,8 @@ class TestExtractWaveletFeatures:
         Tests if the extractor works correctly for a DataFrame with multiple columns.
         """
         data = pd.DataFrame({
-            's1': [1.0, 2.0, 3.0, 4.0],
-            's2': [5.0, 6.0, 7.0, 8.0]
+            "s1": [1.0, 2.0, 3.0, 4.0],
+            "s2": [5.0, 6.0, 7.0, 8.0]
         })
         
         config = WaveletConfig(level=1, stride=1, offset=0)
