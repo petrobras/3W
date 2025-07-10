@@ -97,7 +97,7 @@ class TestExtractWaveletFeatures:
         Tests if the function returns an empty DataFrame if the data is not sufficient
         for a single window.
         """
-        data = pd.DataFrame({'signal': [1.0, 2.0, 3.0]})
+        data = pd.DataFrame({"signal": [1.0, 2.0, 3.0]})
         data.index.name = "id"
         
         config = WaveletConfig(level=2, stride=1, offset=0)
