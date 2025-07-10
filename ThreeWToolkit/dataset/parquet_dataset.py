@@ -24,12 +24,12 @@ class ParquetDataset(BaseDataset):
         if config.split not in [None, "list"]:
             raise ValueError("Dataset splitting not implemented.")
 
-        if config.file_list is None: # TODO: train/val/test splitting
+        if config.file_list is None:  # TODO: train/val/test splitting
             self.events = found_events
         else:
             not_found = set(Path(p) for p in config.file_list) - set(found_events)
             if len(not_found) > 0:
-                raise RuntimeError("\"file_list\" contains files not found in root path.")
+                raise RuntimeError('"file_list" contains files not found in root path.')
             self.events = [Path(p) for p in config.file_list]
 
     def __len__(self) -> int:
@@ -44,8 +44,12 @@ class ParquetDataset(BaseDataset):
         """
         path = Path(self.config.path) / self.events[idx]
         ret = {}
-        ret["signal"] = read_parquet(path, columns=self.config.columns, engine="pyarrow")
+        ret["signal"] = read_parquet(
+            path, columns=self.config.columns, engine="pyarrow"
+        )
         if self.config.target_column is not None:
             ret["signal"].drop(columns=[self.config.target_column], inplace=True)
-            ret["label"] = read_parquet(path, columns=[self.config.target_column], engine="pyarrow")
+            ret["label"] = read_parquet(
+                path, columns=[self.config.target_column], engine="pyarrow"
+            )
         return ret
