@@ -66,7 +66,7 @@ class TestExtractWaveletFeatures:
 
         result = extractor(data)
  
-        assert result['signal_A0'].iloc[0] == 2.0
+        assert result["signal_A0"].iloc[0] == 2.0
         assert result.index[0] == 3
         assert len(result) == 3
         
