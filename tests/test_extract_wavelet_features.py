@@ -85,12 +85,12 @@ class TestExtractWaveletFeatures:
         result = extractor(data)
 
         assert len(result.columns) == 6
-        assert 's1_A1' in result.columns
-        assert 's2_A1' in result.columns
-        assert 's1_A0' in result.columns
-        assert 's2_D1' in result.columns
+        assert "s1_A1" in result.columns
+        assert "s2_A1" in result.columns
+        assert "s1_A0" in result.columns
+        assert "s2_D1" in result.columns
 
-        assert result['s2_A0'].iloc[0] == 6.0
+        assert result["s2_A0"].iloc[0] == 6.0
 
     def test_insufficient_data(self):
         """
