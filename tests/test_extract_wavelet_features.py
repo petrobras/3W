@@ -108,8 +108,8 @@ class TestExtractWaveletFeatures:
         assert isinstance(result, pd.DataFrame)
         assert result.empty
         assert result.index.name == "id"
-        assert 'signal_A2' in result.columns
-        assert 'signal_A0' in result.columns
+        assert "signal_A2" in result.columns
+        assert "signal_A0" in result.columns
         
     def test_exact_window_size_data(self):
         """
