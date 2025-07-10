@@ -17,8 +17,8 @@ class TestExtractWaveletFeatures:
         level=1, and stride=1.
         """
         data = pd.DataFrame(
-            {'signal': [1.0, 2.0, 3.0, 4.0]},
-            index=pd.to_datetime(['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04'])
+            {"signal": [1.0, 2.0, 3.0, 4.0]},
+            index=pd.to_datetime(["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04"])
         )
         data.index.name = "time"
         
