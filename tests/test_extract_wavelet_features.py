@@ -29,9 +29,9 @@ class TestExtractWaveletFeatures:
 
         expected_index = data.index[1:]
         expected_data = {
-            'signal_A1': [2.12132034, 3.53553391, 4.94974747],
-            'signal_D1': [0.70710678, 0.70710678, 0.70710678],
-            'signal_A0': [2.0, 3.0, 4.0]
+            "signal_A1": [2.12132034, 3.53553391, 4.94974747],
+            "signal_D1": [0.70710678, 0.70710678, 0.70710678],
+            "signal_A0": [2.0, 3.0, 4.0]
         }
         expected_result = pd.DataFrame(expected_data, index=expected_index)
         expected_result.index.name = "time"
