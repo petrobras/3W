@@ -5,7 +5,7 @@ from ..core.base_feature_extractor import BaseFeatureExtractor, FeatureExtractor
 
 
 class StatisticalConfig(FeatureExtractorConfig):
-    window_size: int
+    window_size: int = 10
     stride: int = 10
     offset: int = 0
     eps: float = 1e-6
