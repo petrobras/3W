@@ -33,9 +33,9 @@ class TestExtractStatisticalFeatures:
 
         result = extractor(data)
 
-        # --- Expected values calculated with numpy/scipy ---
-        # Note: torch.std(unbiased=False) is equivalent to np.std()
-        # Note: torch's moment calculation matches scipy's with bias=True
+        # Note: Expected values were calculated with `numpy` and `scipy`
+        # Note: `torch.std(unbiased=False)` is equivalent to `np.std()`
+        # Note: torch's moment calculation matches scipy's with `bias=True`
         expected_mean = np.mean(data_array)
         expected_std = np.std(data_array)
         expected_skew = skew(data_array, bias=True) # bias=True matches moment calculation
