@@ -55,7 +55,7 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
         skew = cstags.pow(3).mean(dim=-1)
         kurt = cstags.pow(4).mean(dim=-1)
 
-        # quantiles
+        # Quantiles
         quantiles = torch.tensor([0.00, 0.25, 0.50, 0.75, 1.00]).double()
         q0, q1, q2, q3, q4 = tags.quantile(quantiles, dim=-1)
 
