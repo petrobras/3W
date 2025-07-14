@@ -71,7 +71,7 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
             records[f"{t}_3qrt"] = q3[:, i]
             records[f"{t}_max"] = q4[:, i]
 
-        # fill dataframe in correct order
+        # Fill dataframe in correct order
         out = pd.DataFrame.from_records(records, index=index, columns=out_columns)
         out.index.name = index.name  # also preserve index
         return out
