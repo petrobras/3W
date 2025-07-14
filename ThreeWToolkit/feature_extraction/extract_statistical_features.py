@@ -26,7 +26,7 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
         self.eps = config.eps
 
     def __call__(self, tags, event_type=None):
-        # preserve names and index
+        # Preserve names and index
         columns = tags.columns
         index = tags.index
 
