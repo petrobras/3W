@@ -47,7 +47,7 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
         tags = tags[self.offset :].unfold(0, self.window_size, self.stride)
         index = index[self.offset :][self.window_size - 1 :: self.stride]
 
-        # central moment
+        # Central moment
         std, mean = torch.std_mean(tags, dim=-1, unbiased=False)
         # centralized - standardized values
         cstags = (tags - mean.unsqueeze(-1)) / (std.unsqueeze(-1) + self.eps)
