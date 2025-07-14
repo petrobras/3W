@@ -12,7 +12,6 @@ from ThreeWToolkit.feature_extraction.extract_statistical_features import (
     ExtractStatisticalFeatures,
     StatisticalConfig)
 
-# --- Test Suite ---
 
 class TestExtractStatisticalFeatures:
     """
