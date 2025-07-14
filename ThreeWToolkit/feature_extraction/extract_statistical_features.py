@@ -49,7 +49,7 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
 
         # Central moment
         std, mean = torch.std_mean(tags, dim=-1, unbiased=False)
-        # centralized - standardized values
+        # Centralized - standardized values
         cstags = (tags - mean.unsqueeze(-1)) / (std.unsqueeze(-1) + self.eps)
         # normalized moments
         skew = cstags.pow(3).mean(dim=-1)
