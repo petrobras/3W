@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, Union, Any, List, Dict
 
@@ -16,9 +17,7 @@ class DatasetConfig(BaseModel):
     )
 
     file_type: Literal["csv", "parquet", "json"] = Field(..., description="File type.")
-    event_type: Optional[List[str]] = Field(
-        default=None, description="Event types to load."
-    )
+    event_type: Optional[List[Enum]] = Field(default=None, description="Event types to load.")
 
     columns: Optional[List[str]] = Field(
         default=None, description="Data columns to be loaded. Loads all if None."
@@ -42,17 +41,16 @@ class DatasetConfig(BaseModel):
     def validate_event_type(cls, v):
         if v is not None:
             for t in v:
-                if t not in BaseDataset.EVENT_PREFIX:
+                if t not in list(BaseDataset.EventPrefix):
                     raise ValueError(f"Unknown event_type: {t}")
         return v
 
 
 class BaseDataset(ABC):
-    EVENT_PREFIX = {
-        "real": "WELL",
-        "simulated": "SIMULATED",
-        "drawn": "DRAWN",
-    }
+    class EventPrefix(Enum):
+        REAL      = "WELL"
+        SIMULATED = "SIMULATED"
+        DRAWN     = "DRAWN"
 
     def __init__(self, config: DatasetConfig):
         self.config = config
@@ -64,10 +62,7 @@ class BaseDataset(ABC):
 
     def check_event_type(self, event: Path) -> bool:
         if isinstance(self.config.event_type, list):
-            return any(
-                event.name.startswith(self.EVENT_PREFIX[t])
-                for t in self.config.event_type
-            )
+            return any(event.name.startswith(t.value) for t in self.config.event_type)
         else:
             return True
 
