@@ -67,7 +67,7 @@ If you use any resource published in this Git repository, we ask that it be prop
 
 ## Doctoral Theses
 
-1. L. Omena. Open-World Learning Applied to Oil Wells Using Autoencoder-Based Clustering. Universidade Federal de Alagoas. 2025. No link yet.
+1. L.G.O. Lopes. Open-World Learning Applied to Oil Wells Using Autoencoder-Based Clustering. Universidade Federal de Alagoas. 2025. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_lucas_lopes.pdf.
 1. Y. Li. Predictive Analysis and Critical Event Monitoring in Large Dynamic Networks. University of Massachusetts Lowell. 2021. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_yan_li.pdf.
 1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. 2021. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_ilan_figueiredo.pdf.
 1. A.J.M. Junior. Integração humano-máquina para o monitoramento de processos industriais baseado em dados. Universidade Federal do Rio de Janeiro. 2021. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_afranio_junior.pdf.
@@ -89,7 +89,7 @@ If you use any resource published in this Git repository, we ask that it be prop
 1. A.P.F. Machado, C.J. Munaro, P.M. Ciarelli. Enhancing one-Class classifiers performance in multivariate time series through dynamic clustering: A case study on hydraulic system fault detection. Expert Systems with Applications. 2025. https://doi.org/10.1016/j.eswa.2025.128088.
 1. R. Karl, N. Koirala, T. Januszewicz, J. Takeshita, T. Jung. Cryptonite: A Framework for Flexible Time‑Series Secure Aggregation with Non‑interactive Fault Recovery. SN Computer Science. 2025. https://doi.org/10.1007/s42979-025-03804-w.
 1. M.A. Farahani, M.R. McCormick, R. Harik, T. Wuest. Time-Series Classification in Smart Manufacturing Systems: An Experimental Evaluation of State-of-the-Art Machine Learning Algorithms. Robotics and Computer-Integrated Manufacturing. 2025. https://doi.org/10.1016/j.rcim.2024.102839.
-1. L. Omena, T.M.A. Vieira, P.E. Aranha, E.T.L. Junior, W.W.M. Lira. Detection and classification of anomalies in oil well production using Open-World Learning. Engineering Applications of Artificial Intelligence. 2025. https://doi.org/10.1016/j.engappai.2025.111514.
+1. L.G.O. Lopes, T.M.A. Vieira, P.E. Aranha, E.T.L. Junior, W.W.M. Lira. Detection and classification of anomalies in oil well production using Open-World Learning. Engineering Applications of Artificial Intelligence. 2025. https://doi.org/10.1016/j.engappai.2025.111514.
 1. L.M. Oliveira, M.B. Kattel, D.S. Oliveira, J.C. Vasquez, J.M. Guerrero, F.L.M. Antunes. Enhanced Adaptive Autoencoder Framework for Continuous Monitoring and Fault Management in Industrial Sensors. IEEE Sensors Journal. 2025. https://doi.org/10.1109/JSEN.2025.3565982.
 1. C. Shyalika, R. Wickramarachchi, A. P. Sheth. A Comprehensive Survey on Rare Event Prediction. Association for Computing Machinery. 2024. https://doi.org/10.1145/3699955.
 1. H. Zhou, H. Yin, Y. Qin, C. Yuen. Industrial Fault Diagnosis With Incremental Learning Capability Under Varying Sensory Data. IEEE Transactions on Systems, Man, and Cybernetics: Systems. 2024. https://doi.org/10.1109/TSMC.2024.3500019.
