@@ -14,14 +14,13 @@ from ..core.base_models import BaseModels, ModelsConfig
 
 
 class ActivationFunction(Enum):
-    # LINEAR = nn.Linear()
+    LINEAR = nn.Identity()
     RELU = nn.ReLU()
     SIGMOID = nn.Sigmoid()
     TANH = nn.Tanh()
 
 
 class MLPConfig(ModelsConfig):
-    # learning_rate: float = Field(..., lt = 0.0, description="Learning rate must be < 0.")
     model_type: ModelTypeEnum = ModelTypeEnum.MLP
     random_seed: int = 42
     input_size: int
@@ -78,7 +77,7 @@ class MLPTrainer(BaseModels):
         class_weights: Optional[torch.Tensor] = None,
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"Usando dispositivo: {self.device}")
+        print(f"Using device: {self.device}")
 
         self.batch_size = batch_size
         self.config = config
@@ -180,7 +179,7 @@ class MLPTrainer(BaseModels):
         split_train: float = 0.8,
         **kwargs,
     ) -> None:
-        # TODO: This training does not consider nfolds! Create another training method that considers nfolds.
+        # TODO: This training does not consider nfolds!
 
         # Required by linting to guarantee that the datasets are Sized and we can use len()
         if not isinstance(x, Sized):
