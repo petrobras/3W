@@ -67,7 +67,7 @@ If you use any resource published in this Git repository, we ask that it be prop
 
 ## Doctoral Theses
 
-1. L.G.O. Lopes. Open-World Learning Applied to Oil Wells Using Autoencoder-Based Clustering. Universidade Federal de Alagoas. 2025. No link yet.
+1. L.G.O. Lopes. Open-World Learning Applied to Oil Wells Using Autoencoder-Based Clustering. Universidade Federal de Alagoas. 2025. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_lucas_lopes.pdf.
 1. Y. Li. Predictive Analysis and Critical Event Monitoring in Large Dynamic Networks. University of Massachusetts Lowell. 2021. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_yan_li.pdf.
 1. I.S. Figueirêdo. Uma nova abordagem de inteligência artificial baseada em autoaprendizagem profunda para manutenção preditiva em um ambiente de produção de petróleo e gás offshore. Centro Universitário Senai Cimatec. 2021. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_ilan_figueiredo.pdf.
 1. A.J.M. Junior. Integração humano-máquina para o monitoramento de processos industriais baseado em dados. Universidade Federal do Rio de Janeiro. 2021. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_afranio_junior.pdf.
