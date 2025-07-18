@@ -1,11 +1,13 @@
 import os
 import pandas as pd
+from pathlib import Path
 
 # Important paths
-EXCEL_PATH = r"C:\Users\Public\citations.xlsx"
+BASE_DIR = Path(__file__).parent.resolve()
+EXCEL_PATH = BASE_DIR / "citations.xlsx"
 SHEET_NAME = "citations1"
-OUTPUT_DIR = r"C:\Users\Public"
-MD_PATH = os.path.join(OUTPUT_DIR, "LISTS_OF_CITATIONS.md")
+OUTPUT_DIR = BASE_DIR
+MD_PATH = OUTPUT_DIR / "LISTS_OF_CITATIONS.md"
 
 # Categories mapped to Markdown sections
 CATEGORIES = {
@@ -56,13 +58,10 @@ def format_citation(row):
     parts = [str(row[col]) for col in columns if pd.notna(row[col])]
     return ". ".join(parts) + "."
 
-
 def process_excel_to_markdown():
     """Processes the Excel file and generates the Markdown file."""
-    if not os.path.exists(EXCEL_PATH):
-        raise FileNotFoundError(
-            f"The file 'citations.xlsx' was not found at {EXCEL_PATH}."
-        )
+    if not EXCEL_PATH.exists():
+        raise FileNotFoundError(f"The file 'citations.xlsx' was not found at {EXCEL_PATH}.")
 
     df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
@@ -78,7 +77,7 @@ def process_excel_to_markdown():
         raise ValueError(
             f"The file 'citations.xlsx' must contain the following columns: {', '.join(required_columns)}."
         )
-
+        
     # Sort by year in descending order
     df = df.sort_values(by=["Year"], ascending=False)
     df["Formatted"] = df.apply(format_citation, axis=1)
@@ -104,7 +103,6 @@ def process_excel_to_markdown():
         file.write(final_content)
 
     print(f"Updated Markdown file saved at: {MD_PATH}")
-
 
 if __name__ == "__main__":
     process_excel_to_markdown()
