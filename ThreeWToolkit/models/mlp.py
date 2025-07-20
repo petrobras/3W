@@ -14,10 +14,10 @@ from ..core.base_models import BaseModels, ModelsConfig
 
 
 class ActivationFunction(Enum):
-    LINEAR = nn.Identity()
-    RELU = nn.ReLU()
-    SIGMOID = nn.Sigmoid()
-    TANH = nn.Tanh()
+    LINEAR = nn.Linear
+    RELU = nn.ReLU
+    SIGMOID = nn.Sigmoid
+    TANH = nn.Tanh
 
 
 class MLPConfig(ModelsConfig):

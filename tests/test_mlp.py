@@ -49,8 +49,7 @@ class TestMLP:
             (ActivationFunction.TANH, nn.Tanh),
         ],
     )
-    def test_mlp_activation_function(
-        self,
+    def test_mlp_activation_function(self, activation_function_pair,
         activation_enum,
         expected_type,
     ):
@@ -63,9 +62,9 @@ class TestMLP:
         )
         model = MLP(config)
         assert isinstance(model.model[1], expected_type)
-        assert isinstance(model.model[3], expected_type)
+        assert isinstance(model.model[3], expected_type)      
 
-    def test_init_type_error(self):
+def test_init_type_error(self):
         with pytest.raises(
             AttributeError, match="'dict' object has no attribute 'input_size'"
         ):
@@ -75,7 +74,7 @@ class TestMLP:
 class TestMLPTrainer:
     def test_trainer_initialization(self, trainer_setup):
         trainer = trainer_setup["trainer"]
-        assert trainer.batch_size == 16
+        assert trainer.batch_size == 16    
         assert isinstance(trainer.config, MLPConfig)
 
     def test_train_loop(self, trainer_setup):
@@ -85,8 +84,8 @@ class TestMLPTrainer:
         epochs = 3
         trainer.train(x, y, epochs=epochs)
         # Check if the trainer saved the history
-        for metrics_all_epochs in trainer.history.values():
-            assert len(metrics_all_epochs) == epochs
+    for metrics_all_epochs in trainer.history.values():
+        assert len(metrics_all_epochs) == epochs
 
     def test_evaluate(self, trainer_setup):
         trainer = trainer_setup["trainer"]
