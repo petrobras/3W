@@ -104,10 +104,21 @@ class MLPTrainer(BaseModels):
         return nn.CrossEntropyLoss(weight=self.class_weights)
 
     def get_params(self):
-        pass
+        """
+        Retrieve the current configuration parameters.
+        """
+        return self.config.__dict__
 
     def set_params(self, **params):
-        pass
+        """
+        Update the configuration parameters.
+        Only valid parameters present in the config are updated.
+        """
+        for key, value in params.items():
+            if hasattr(self.config, key):
+                setattr(self.config, key, value)
+            else:
+                raise ValueError(f"Invalid parameter: {key}")
 
     def create_dataloader(self, x, y, shuffle: bool):
         dataset = LabeledSubset(x, y)
