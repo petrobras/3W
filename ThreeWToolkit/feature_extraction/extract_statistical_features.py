@@ -49,6 +49,7 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
         all_column_features = []
 
         for col_name in tags.columns:
+            # Skipping column with insufficient data
             if len(tags[col_name]) < self.window_size:
                 continue
 
