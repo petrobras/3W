@@ -1,20 +1,28 @@
+import zipfile
 from pathlib import Path
 from typing import Any, Dict
 
 from pandas import read_parquet
+from ..utils.downloader import get_figshare_data
 
 from ..core.base_dataset import BaseDataset, DatasetConfig
 
 
 class ParquetDataset(BaseDataset):
-    def __init__(self, config: DatasetConfig):
+    def __init__(self, config: DatasetConfig, download: bool = False):
         """
         Lazy loading of event files. Checks split consistency.
+        Download from figshare if needed. Compatible with version 2.0.0.
         """
         super().__init__(config)
-
         if config.file_type != "parquet":
             raise ValueError("Incompatible file_type.")
+
+        if download:
+            dl_path = Path(config.path) / "download"
+            downloaded = get_figshare_data(dl_path, version="2.0.0")
+            with zipfile.ZipFile(downloaded[0], "r") as zip_file:
+                zip_file.extractall(config.path)
 
         # search all events
         root = Path(config.path)

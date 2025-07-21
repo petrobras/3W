@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 
 from ThreeWToolkit.dataset import DatasetConfig, ParquetDataset
+from ThreeWToolkit.core.base_dataset import BaseDataset
+
 
 _NUM_SIGNALS = 11
 _NUM_ROWS = 100
@@ -115,7 +117,7 @@ class TestParquetDataset:
         """
         Load only event_type files.
         """
-        event_type = ["real"]
+        event_type = [BaseDataset.EventPrefix.REAL]
         config = DatasetConfig(
             path=parquet_dataset_path,
             file_type="parquet",
@@ -127,7 +129,7 @@ class TestParquetDataset:
 
         assert len(dataset) == _NUM_CLASSES * len(event_type)
 
-        event_type = ["real", "simulated"]
+        event_type = [BaseDataset.EventPrefix.REAL, BaseDataset.EventPrefix.SIMULATED]
         config = DatasetConfig(
             path=parquet_dataset_path,
             file_type="parquet",
@@ -138,3 +140,29 @@ class TestParquetDataset:
         dataset = ParquetDataset(config)
 
         assert len(dataset) == _NUM_CLASSES * len(event_type)
+
+    def test_target_filtering(self, parquet_dataset_path):
+        """
+        Load only target classes.
+        """
+        target_class = [0,]
+        config = DatasetConfig(
+            path=parquet_dataset_path,
+            file_type="parquet",
+            target_column=_LABEL_NAME,
+            split=None,
+            target_class=target_class,
+        )
+        dataset = ParquetDataset(config)
+        assert len(dataset) == len(target_class) * 3
+
+        target_class = [0, 2]
+        config = DatasetConfig(
+            path=parquet_dataset_path,
+            file_type="parquet",
+            target_column=_LABEL_NAME,
+            split=None,
+            target_class=target_class,
+        )
+        dataset = ParquetDataset(config)
+        assert len(dataset) == len(target_class) * 3

@@ -16,8 +16,16 @@ class DatasetConfig(BaseModel):
         default=None, description='List of files to load if split=="list".'
     )
 
-    file_type: Literal["csv", "parquet", "json"] = Field(..., description="File type.")
-    event_type: Optional[List[Enum]] = Field(default=None, description="Event types to load.")
+    file_type: Literal["csv", "parquet", "json"] = Field(
+        ..., description="File type. (e.g. csv, parquet, ...)"
+    )
+
+    event_type: Optional[List[Enum]] = Field(
+        default=None, description="Event types to load. (e.g. simulated, real, ...)"
+    )
+    target_class: Optional[List[int]] = Field(
+        default=None, description="Event classes to load. (e.g. 0, 1, 2, ...)"
+    )
 
     columns: Optional[List[str]] = Field(
         default=None, description="Data columns to be loaded. Loads all if None."
@@ -48,9 +56,9 @@ class DatasetConfig(BaseModel):
 
 class BaseDataset(ABC):
     class EventPrefix(Enum):
-        REAL      = "WELL"
+        REAL = "WELL"
         SIMULATED = "SIMULATED"
-        DRAWN     = "DRAWN"
+        DRAWN = "DRAWN"
 
     def __init__(self, config: DatasetConfig):
         self.config = config
@@ -61,13 +69,30 @@ class BaseDataset(ABC):
             print(f"{k}: {v}")
 
     def check_event_type(self, event: Path) -> bool:
+        """
+        Check if event prefix matches requested types.
+        """
         if isinstance(self.config.event_type, list):
             return any(event.name.startswith(t.value) for t in self.config.event_type)
-        else:
+        else:  # default
+            return True
+
+    def check_event_class(self, event: Path) -> bool:
+        """
+        Check if event class matches requested targets.
+        """
+        if isinstance(self.config.target_class, list):
+            return int(event.parent.name) in self.config.target_class
+        else:  # default
             return True
 
     def filter_events(self, events: List[Path]) -> List[Path]:
-        return [e for e in events if self.check_event_type(e)]
+        """
+        Filter events matching type and target classes.
+        """
+        return [
+            e for e in events if self.check_event_type(e) and self.check_event_class(e)
+        ]
 
     @abstractmethod
     def __len__(self) -> int:
