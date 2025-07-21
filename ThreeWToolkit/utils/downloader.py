@@ -22,6 +22,7 @@ class GetFigshareDataValidator(BaseModel):
     chunk_size: int
 
     @field_validator("path")
+    @classmethod
     def validate_path(cls, v: Path) -> Path:
         if not v.exists():
             raise RuntimeError("Provided path must exist.")
@@ -30,12 +31,14 @@ class GetFigshareDataValidator(BaseModel):
         return v
 
     @field_validator("version")
+    @classmethod
     def validate_version(cls, v: str) -> str:
         if v not in FIGSHARE_VERSION_IDS:
             raise ValueError("Unknown dataset version, {v}.")
         return v
 
     @field_validator("chunk_size")
+    @classmethod
     def validate_chunk_size(cls, v: int) -> int:
         if v <= 0:
             raise ValueError("Chunk size must be greater than zero.")
