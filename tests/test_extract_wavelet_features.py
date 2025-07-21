@@ -84,6 +84,7 @@ class TestExtractWaveletFeatures:
             else:
                 return pd.DataFrame()
         
+        # Replacing the windowing function using monkeypatch.setattr
         monkeypatch.setattr("ThreeWToolkit.feature_extraction.extract_wavelet_features.windowing",
                             mock_windowing_mixed)
         
