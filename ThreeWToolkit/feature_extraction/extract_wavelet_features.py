@@ -39,8 +39,13 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
 
         impulse = np.zeros(self.window_size)
         impulse[-1] = 1
-        hs = pywt.swt(impulse, "haar", level=self.level)
-        H = np.stack([h[i] for h in hs for i in range(2)] + [impulse], axis=-1)
+
+        # SWT: Stationary Wavelet Transform
+        swt_coefficients = pywt.swt(impulse, "haar", level=self.level)
+        wt_filter_matrix = np.stack(
+            [coeff[i] for coeff in swt_coefficients for i in range(2)] + [impulse],
+            axis=-1,
+        )
 
         self.feat_names = [
             f"{type_}{level}"
@@ -50,7 +55,7 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
                 "D",
             ]  # A -> approximation coefficients; D -> detail coefficients
         ] + ["A0"]  # A0 -> approx coeff on first level of wavelet filtering
-        self.H = torch.tensor(H).double()
+        self.wt_filter_matrix = torch.tensor(wt_filter_matrix).double()
 
     def __call__(
         self, tags: pd.DataFrame, event_type: Optional[str] = None
@@ -91,7 +96,9 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
             windows_tensor = torch.tensor(windows_df.values).double()
 
             # Apply the wavelet filter matrix to the windowed data
-            coeffs = torch.tensordot(windows_tensor, self.H, dims=([-1], [0]))
+            coeffs = torch.tensordot(
+                windows_tensor, self.wt_filter_matrix, dims=([-1], [0])
+            )
 
             records = {
                 f"{col_name}_{f}": coeffs[:, j] for j, f in enumerate(self.feat_names)

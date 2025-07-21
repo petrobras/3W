@@ -15,7 +15,7 @@ class TestExtractEWStatisticalFeatures:
     """Unit tests for the ExtractEWStatisticalFeatures class."""
 
     def test_basic_extraction(self):
-        """Tests that all EWMA statistical features are calculated correctly."""
+        """Tests that all EW statistical features are calculated correctly."""
         window_size = 10
         decay = 0.9
         data_array = np.arange(window_size, dtype=np.float64)
@@ -25,9 +25,9 @@ class TestExtractEWStatisticalFeatures:
         extractor = ExtractEWStatisticalFeatures(config)
         result = extractor(data)
 
-        # Replicate EWMA calculations for validation
-        h = decay ** np.arange(window_size, 0, -1)
-        weights = h / np.sum(np.abs(h))
+        # Replicate EW calculations for validation
+        ew_weights = decay ** np.arange(window_size, 0, -1)
+        weights = ew_weights / np.sum(np.abs(ew_weights))
         
         expected_mean = np.dot(data_array, weights)
         expected_std = np.sqrt(np.dot((data_array - expected_mean)**2, weights))
@@ -54,8 +54,8 @@ class TestExtractEWStatisticalFeatures:
         result = extractor(data)
 
         raw_window_data = np.arange(5, 15)
-        h = 0.9 ** np.arange(10, 0, -1)
-        weights = h / np.sum(np.abs(h))
+        ew_weights = 0.9 ** np.arange(10, 0, -1)
+        weights = ew_weights / np.sum(np.abs(ew_weights))
         expected_first_mean = np.dot(raw_window_data, weights)
         
         assert np.isclose(result["signal_ew_mean"].iloc[0], expected_first_mean)
@@ -84,9 +84,31 @@ class TestExtractEWStatisticalFeatures:
         assert result.index.name == "idx"
 
     def test_invalid_config_raises_error(self):
-        """Tests that the Pydantic validator raises an error for invalid overlap."""
+        """
+        Tests that the Pydantic validators raise a ValueError for invalid
+        overlap and eps values, and also covers the valid eps path.
+        """
+        
+        # Test cases for invalid overlap
         with pytest.raises(ValueError, match="Overlap must be in the range"):
             EWStatisticalConfig(window_size=10, decay=0.9, overlap=1.0)
+        
+        with pytest.raises(ValueError, match="Overlap must be in the range"):
+            EWStatisticalConfig(window_size=10, decay=0.9, overlap=-0.1)
+            
+        # Test cases for invalid eps
+        with pytest.raises(ValueError, match="Epsilon .* must be positive"):
+            EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5, eps=0)
+
+        with pytest.raises(ValueError, match="Epsilon .* must be positive"):
+            EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5, eps=-1e-9)
+        
+        # Test case for the valid eps path
+        try:
+            # Create a config with a valid, positive epsilon
+            EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5, eps=0.1)
+        except ValueError:
+            pytest.fail("A ValueError was raised for a valid positive epsilon.")
 
     def test_output_column_names(self):
         """Tests that the output DataFrame has correctly formatted column names."""

@@ -8,7 +8,10 @@ from ..preprocessing._data_processing import windowing
 
 
 class EWStatisticalConfig(FeatureExtractorConfig):
-    """Configuration for the EWMA Statistical feature extractor, using overlap."""
+    """
+    Configuration for the Exponetially Weighted
+    Statistical feature extractor.
+    """
 
     window_size: int = 100
     decay: float
@@ -23,11 +26,17 @@ class EWStatisticalConfig(FeatureExtractorConfig):
             raise ValueError("Overlap must be in the range [0, 1)")
         return v
 
+    @field_validator("eps")
+    def check_eps_value(cls, v):
+        """Validates that epsilon is a small, positive number."""
+        if v <= 0:
+            raise ValueError("Epsilon (eps) must be positive.")
+        return v
+
 
 class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
     """
-    PyTorch implementation of an exponentially weighted statistical feature mapper,
-    refactored to use the toolkit's `windowing` function.
+    PyTorch implementation of an exponentially weighted statistical feature mapper.
     """
 
     FEATURES = [
@@ -49,14 +58,14 @@ class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
         self.offset = config.offset
         self.eps = config.eps
 
-        h = config.decay ** torch.arange(
+        ew_weights = config.decay ** torch.arange(
             self.window_size, 0, step=-1, dtype=torch.double
         )
-        self.h = h / (h.abs().sum() + self.eps)
+        self.ew_weights = ew_weights / (ew_weights.abs().sum() + self.eps)
 
-    def _E(self, X, dim=-1):
+    def _apply_weights(self, X, dim=-1):
         """Take the exponentially weighted average through a dot product in the specified dimension."""
-        return torch.tensordot(X, self.h, dims=[[dim], [0]])
+        return torch.tensordot(X, self.ew_weights, dims=[[dim], [0]])
 
     def __call__(self, tags: pd.DataFrame, event_type=None) -> pd.DataFrame:
         original_index_name = tags.index.name
@@ -75,7 +84,6 @@ class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
             if len(series) < self.window_size:
                 continue
 
-            # Using "boxcar" because the exponential weighting is handled separately by `_E`.
             windows_df = windowing(
                 X=series,
                 window="boxcar",
@@ -95,13 +103,15 @@ class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
 
             windows_tensor = torch.tensor(windows_df.values).double()
 
-            mean = self._E(windows_tensor, dim=-1)
-            std = self._E(torch.pow(windows_tensor - mean.unsqueeze(-1), 2)).sqrt()
+            mean = self._apply_weights(windows_tensor, dim=-1)
+            std = self._apply_weights(
+                torch.pow(windows_tensor - mean.unsqueeze(-1), 2)
+            ).sqrt()
             cstags = (windows_tensor - mean.unsqueeze(-1)) / (
                 std.unsqueeze(-1) + self.eps
             )
-            skew = self._E(cstags.pow(3), dim=-1)
-            kurt = self._E(cstags.pow(4), dim=-1)
+            skew = self._apply_weights(cstags.pow(3), dim=-1)
+            kurt = self._apply_weights(cstags.pow(4), dim=-1)
             quantiles = torch.tensor([0.00, 0.25, 0.50, 0.75, 1.00]).double()
             q = cstags.quantile(quantiles, dim=-1)
 
