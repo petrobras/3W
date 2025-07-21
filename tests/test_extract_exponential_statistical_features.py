@@ -122,6 +122,7 @@ class TestExtractEWStatisticalFeatures:
             else:
                 return pd.DataFrame()
         
+        # Replacing the windowing function using monkeypatch.setattr
         monkeypatch.setattr("ThreeWToolkit.feature_extraction.extract_exponential_statistics_features.windowing",
                             mock_windowing_mixed)
         
