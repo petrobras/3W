@@ -16,6 +16,7 @@ class ModelTypeEnum(str, Enum):
     DECISION_TREE = "DecisionTree"
     NAIVE_BAYES = "NaiveBayes"
 
+
 class EventPrefixEnum(str, Enum):
     REAL = "WELL"
     SIMULATED = "SIMULATED"

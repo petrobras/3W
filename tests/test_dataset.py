@@ -144,7 +144,9 @@ class TestParquetDataset:
         """
         Load only target classes.
         """
-        target_class = [0,]
+        target_class = [
+            0,
+        ]
         config = DatasetConfig(
             path=parquet_dataset_path,
             file_type="parquet",
