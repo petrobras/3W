@@ -1,16 +1,20 @@
-import numpy as np
 import pandas as pd
 import torch
+import numpy as np
 from pydantic import field_validator
 
 from ..core.base_feature_extractor import BaseFeatureExtractor, FeatureExtractorConfig
 from ..preprocessing._data_processing import windowing
 
 
-class StatisticalConfig(FeatureExtractorConfig):
-    """Configuration now uses overlap to match the windowing function."""
+class EWStatisticalConfig(FeatureExtractorConfig):
+    """
+    Configuration for the Exponetially Weighted
+    Statistical feature extractor.
+    """
 
     window_size: int = 100
+    decay: float
     overlap: float = 0.0
     offset: int = 0
     eps: float = 1e-6
@@ -37,20 +41,38 @@ class StatisticalConfig(FeatureExtractorConfig):
         return v
 
 
-class ExtractStatisticalFeatures(BaseFeatureExtractor):
+class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
     """
-    Final, definitively corrected version. This implementation correctly handles
-    scenarios where some columns produce features and others do not.
+    PyTorch implementation of an exponentially weighted statistical feature mapper.
     """
 
-    FEATURES = ["mean", "std", "skew", "kurt", "min", "1qrt", "med", "3qrt", "max"]
+    FEATURES = [
+        "ew_mean",
+        "ew_std",
+        "ew_skew",
+        "ew_kurt",
+        "ew_min",
+        "ew_1qrt",
+        "ew_med",
+        "ew_3qrt",
+        "ew_max",
+    ]
 
-    def __init__(self, config: StatisticalConfig):
+    def __init__(self, config: EWStatisticalConfig):
         super().__init__(config)
         self.window_size = config.window_size
         self.overlap = config.overlap
         self.offset = config.offset
         self.eps = config.eps
+
+        ew_weights = config.decay ** torch.arange(
+            self.window_size, 0, step=-1, dtype=torch.double
+        )
+        self.ew_weights = ew_weights / (ew_weights.abs().sum() + self.eps)
+
+    def _apply_weights(self, X, dim=-1):
+        """Take the exponentially weighted average through a dot product in the specified dimension."""
+        return torch.tensordot(X, self.ew_weights, dims=[[dim], [0]])
 
     def __call__(self, tags: pd.DataFrame, event_type=None) -> pd.DataFrame:
         original_index_name = tags.index.name
@@ -58,17 +80,19 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
         if self.offset > 0:
             tags = tags.iloc[self.offset :]
 
-        # This list will track columns that actually produce features.
+        # This list will track columns that actually produced features.
         processed_columns = []
         all_column_features = []
 
         for col_name in tags.columns:
+            series = tags[col_name]
+
             # Skipping column with insufficient data
-            if len(tags[col_name]) < self.window_size:
+            if len(series) < self.window_size:
                 continue
 
             windows_df = windowing(
-                X=tags[col_name],
+                X=series,
                 window="boxcar",
                 window_size=self.window_size,
                 overlap=self.overlap,
@@ -77,46 +101,48 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
             if windows_df.empty:
                 continue
 
-            # This column was successfully processed, so it is added to the list.
+            # If we get here, the column was successfully processed.
             processed_columns.append(col_name)
 
+            # Handle the extra column returned by the windowing function.
             if windows_df.shape[1] > self.window_size:
                 windows_df = windows_df.iloc[:, : self.window_size]
 
-            windows_tensor = torch.Tensor(windows_df.values).double()
+            windows_tensor = torch.tensor(windows_df.values).double()
 
-            std, mean = torch.std_mean(windows_tensor, dim=-1, unbiased=False)
+            mean = self._apply_weights(windows_tensor, dim=-1)
+            std = self._apply_weights(
+                torch.pow(windows_tensor - mean.unsqueeze(-1), 2)
+            ).sqrt()
             cstags = (windows_tensor - mean.unsqueeze(-1)) / (
                 std.unsqueeze(-1) + self.eps
             )
-            skew = cstags.pow(3).mean(dim=-1)
-            kurt = cstags.pow(4).mean(dim=-1)
-            quantiles_tensor = torch.tensor([0.00, 0.25, 0.50, 0.75, 1.00]).double()
-            q = windows_tensor.quantile(quantiles_tensor, dim=-1)
+            skew = self._apply_weights(cstags.pow(3), dim=-1)
+            kurt = self._apply_weights(cstags.pow(4), dim=-1)
+            quantiles = torch.tensor([0.00, 0.25, 0.50, 0.75, 1.00]).double()
+            q = cstags.quantile(quantiles, dim=-1)
 
             records = {
-                f"{col_name}_mean": mean,
-                f"{col_name}_std": std,
-                f"{col_name}_skew": skew,
-                f"{col_name}_kurt": kurt,
-                f"{col_name}_min": q[0],
-                f"{col_name}_1qrt": q[1],
-                f"{col_name}_med": q[2],
-                f"{col_name}_3qrt": q[3],
-                f"{col_name}_max": q[4],
+                f"{col_name}_ew_mean": mean,
+                f"{col_name}_ew_std": std,
+                f"{col_name}_ew_skew": skew,
+                f"{col_name}_ew_kurt": kurt,
+                f"{col_name}_ew_min": q[0],
+                f"{col_name}_ew_1qrt": q[1],
+                f"{col_name}_ew_med": q[2],
+                f"{col_name}_ew_3qrt": q[3],
+                f"{col_name}_ew_max": q[4],
             }
             all_column_features.append(pd.DataFrame(records))
 
-        # If no columns were successfully processed, return an empty DataFrame.
         if not all_column_features:
-            # Defining out_columns here for the empty case, using the original columns
             out_columns = [f"{t}_{f}" for f in self.FEATURES for t in tags.columns]
             empty_index = pd.Index([], name=original_index_name)
             return pd.DataFrame(
                 columns=out_columns, dtype=np.float64, index=empty_index
             )
 
-        # Build the final column list ONLY from processed columns.
+        # Build the final column list ONLY from the processed columns.
         out_columns_final = [
             f"{t}_{f}" for f in self.FEATURES for t in processed_columns
         ]
@@ -131,5 +157,5 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
         final_df.index = output_index
         final_df.index.name = original_index_name
 
-        # Now, reindex will only use columns that should actually exist.
+        # Now, reindex will only organize the columns that should actually exist.
         return final_df.reindex(columns=out_columns_final)
