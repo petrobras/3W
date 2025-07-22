@@ -46,6 +46,7 @@ flake8 = "*"
 jupyter = "*"
 ruff = "*"
 uv = "*"
+types-requests = "2.32.4.20250611"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "*"
