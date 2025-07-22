@@ -22,6 +22,20 @@ class StatisticalConfig(FeatureExtractorConfig):
             raise ValueError("Overlap must be in the range [0, 1)")
         return v
 
+    @field_validator("offset")
+    def check_offset_value(cls, v):
+        """Validates that offset is not negative."""
+        if v < 0:
+            raise ValueError("Offset must be a non-negative integer.")
+        return v
+
+    @field_validator("eps")
+    def check_eps_value(cls, v):
+        """Validates that epsilon is a small, positive number."""
+        if v <= 0:
+            raise ValueError("Epsilon (eps) must be positive.")
+        return v
+
 
 class ExtractStatisticalFeatures(BaseFeatureExtractor):
     """

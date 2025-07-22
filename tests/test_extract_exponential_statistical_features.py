@@ -96,6 +96,17 @@ class TestExtractEWStatisticalFeatures:
         with pytest.raises(ValueError, match="Overlap must be in the range"):
             EWStatisticalConfig(window_size=10, decay=0.9, overlap=-0.1)
             
+        # Test case for invalid offset
+        with pytest.raises(ValueError, match="Offset must be a non-negative integer"):
+            EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5, offset=-1)
+
+        # Test case for the valid offset path
+        try:
+            EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5, offset=0)
+            EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5, offset=10)
+        except ValueError:
+            pytest.fail("A ValueError was raised for a valid non-negative offset.")
+            
         # Test cases for invalid eps
         with pytest.raises(ValueError, match="Epsilon .* must be positive"):
             EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5, eps=0)

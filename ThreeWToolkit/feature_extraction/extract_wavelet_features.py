@@ -12,15 +12,29 @@ from ..preprocessing._data_processing import windowing
 class WaveletConfig(FeatureExtractorConfig):
     """Configuration for the Wavelet feature extractor, using overlap."""
 
-    level: int
+    level: int = 1
     overlap: float = 0.0
     offset: int = 0
+
+    @field_validator("level")
+    def check_level_is_positive(cls, v):
+        """Validates that the wavelet level is a positive integer."""
+        if v < 1:
+            raise ValueError("Wavelet level must be a positive integer (>= 1).")
+        return v
 
     @field_validator("overlap")
     def check_overlap_range(cls, v):
         """Validates that overlap is in the [0, 1) range."""
         if not 0 <= v < 1:
             raise ValueError("Overlap must be in the range [0, 1)")
+        return v
+
+    @field_validator("offset")
+    def check_offset_value(cls, v):
+        """Validates that offset is not negative."""
+        if v < 0:
+            raise ValueError("Offset must be a non-negative integer.")
         return v
 
 

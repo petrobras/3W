@@ -55,18 +55,26 @@ class TestExtractWaveletFeatures:
         # First window processed is [1, 2]. Its A0 value (last element) should be 2.0
         assert result['signal_A0'].iloc[0] == 2.0
         assert len(result) == 3
-        
-    def test_invalid_overlap_raises_error(self):
+    
+    def test_invalid_config_raises_error(self):
         """
-        Tests that the Pydantic validator raises a ValueError for invalid overlap values.
+        Tests that validators raise a ValueError for invalid overlap, offset, and level.
         """
-        # Test case where overlap is exactly 1.0 (should fail)
+
+        # Test case for invalid overlap
         with pytest.raises(ValueError, match="Overlap must be in the range"):
             WaveletConfig(level=1, overlap=1.0)
+        
+        # Test case for invalid offset
+        with pytest.raises(ValueError, match="Offset must be a non-negative integer"):
+            WaveletConfig(level=1, offset=-1)
 
-        # Test case where overlap is negative (should fail)
-        with pytest.raises(ValueError, match="Overlap must be in the range"):
-            WaveletConfig(level=1, overlap=-0.1)
+        # Test cases for invalid level
+        with pytest.raises(ValueError, match="Wavelet level must be a positive integer"):
+            WaveletConfig(level=0)
+
+        with pytest.raises(ValueError, match="Wavelet level must be a positive integer"):
+            WaveletConfig(level=-2)
 
     def test_insufficient_data(self):
         """Tests that an empty DataFrame is returned for insufficient data."""

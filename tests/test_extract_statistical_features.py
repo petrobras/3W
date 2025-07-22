@@ -68,14 +68,44 @@ class TestExtractStatisticalFeatures:
         result = extractor(data)
         assert result.empty
         assert result.index.name == "idx"
+
+    def test_invalid_config_raises_error(self):
+        """
+        Tests that the Pydantic validators raise a ValueError for invalid
+        overlap and eps values, and also covers the valid eps path.
+        """
         
-    def test_invalid_overlap_raises_error(self):
-        """Tests that the validator raises an error for invalid overlap values."""
+        # Test cases for invalid overlap
         with pytest.raises(ValueError, match="Overlap must be in the range"):
             StatisticalConfig(window_size=10, overlap=1.0)
         
         with pytest.raises(ValueError, match="Overlap must be in the range"):
             StatisticalConfig(window_size=10, overlap=-0.1)
+            
+        # Test case for invalid offset
+        with pytest.raises(ValueError, match="Offset must be a non-negative integer"):
+            StatisticalConfig(window_size=10, overlap=0.5, offset=-1)
+
+        # Test case for the valid offset path
+        try:
+            StatisticalConfig(window_size=10, overlap=0.5, offset=0)
+            StatisticalConfig(window_size=10, overlap=0.5, offset=10)
+        except ValueError:
+            pytest.fail("A ValueError was raised for a valid non-negative offset.")
+            
+        # Test cases for invalid eps
+        with pytest.raises(ValueError, match="Epsilon .* must be positive"):
+            StatisticalConfig(window_size=10, overlap=0.5, eps=0)
+
+        with pytest.raises(ValueError, match="Epsilon .* must be positive"):
+            StatisticalConfig(window_size=10, overlap=0.5, eps=-1e-9)
+        
+        # Test case for the valid eps path
+        try:
+            # Create a config with a valid, positive epsilon
+            StatisticalConfig(window_size=10, overlap=0.5, eps=0.1)
+        except ValueError:
+            pytest.fail("A ValueError was raised for a valid positive epsilon.")
 
     def test_output_column_names(self):
         """Tests that the output DataFrame has correctly formatted column names."""
