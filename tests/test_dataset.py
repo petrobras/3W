@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from ThreeWToolkit.dataset import DatasetConfig, ParquetDataset
-from ThreeWToolkit.core.base_dataset import BaseDataset
+from ThreeWToolkit.core.base_dataset import EventPrefixEnum
 
 
 _NUM_SIGNALS = 11
@@ -28,9 +28,8 @@ def parquet_dataset_path(tmp_path_factory):
     for c in range(_NUM_CLASSES):
         dir_c = base_path / str(c)
         dir_c.mkdir()
-        make_parquet_event(dir_c / "WELL_test.parquet")
-        make_parquet_event(dir_c / "DRAWN_test.parquet")
-        make_parquet_event(dir_c / "SIMULATED_test.parquet")
+        for prefix in EventPrefixEnum:
+            make_parquet_event(dir_c / f"{prefix.value}_test.parquet")
     return base_path
 
 
@@ -53,7 +52,7 @@ class TestParquetDataset:
         dataset = ParquetDataset(config)
 
         # check all files were loaded
-        assert len(dataset) == _NUM_CLASSES * 3
+        assert len(dataset) == _NUM_CLASSES * len(EventPrefixEnum)
 
         for e in dataset:
             assert list(e["signal"].columns) == _SIGNAL_NAMES + [
@@ -71,7 +70,7 @@ class TestParquetDataset:
         )
         dataset = ParquetDataset(config)
 
-        assert len(dataset) == _NUM_CLASSES * 3
+        assert len(dataset) == _NUM_CLASSES * len(EventPrefixEnum)
 
         for e in dataset:
             assert list(e["signal"].columns) == _SIGNAL_NAMES
@@ -117,7 +116,7 @@ class TestParquetDataset:
         """
         Load only event_type files.
         """
-        event_type = [BaseDataset.EventPrefix.REAL]
+        event_type = [EventPrefixEnum.REAL]
         config = DatasetConfig(
             path=parquet_dataset_path,
             file_type="parquet",
@@ -129,7 +128,7 @@ class TestParquetDataset:
 
         assert len(dataset) == _NUM_CLASSES * len(event_type)
 
-        event_type = [BaseDataset.EventPrefix.REAL, BaseDataset.EventPrefix.SIMULATED]
+        event_type = [EventPrefixEnum.REAL, EventPrefixEnum.SIMULATED]
         config = DatasetConfig(
             path=parquet_dataset_path,
             file_type="parquet",
@@ -154,7 +153,7 @@ class TestParquetDataset:
             target_class=target_class,
         )
         dataset = ParquetDataset(config)
-        assert len(dataset) == len(target_class) * 3
+        assert len(dataset) == len(target_class) * len(EventPrefixEnum)
 
         target_class = [0, 2]
         config = DatasetConfig(
@@ -165,4 +164,4 @@ class TestParquetDataset:
             target_class=target_class,
         )
         dataset = ParquetDataset(config)
-        assert len(dataset) == len(target_class) * 3
+        assert len(dataset) == len(target_class) * len(EventPrefixEnum)

@@ -36,7 +36,7 @@ class GetFigshareDataValidator(BaseModel):
     @classmethod
     def validate_version(cls, v: str) -> str:
         if v not in FIGSHARE_VERSION_IDS:
-            raise ValueError("Unknown dataset version, {v}.")
+            raise ValueError(f"Unknown dataset version, {v}.")
         return v
 
     @field_validator("chunk_size")
@@ -71,6 +71,8 @@ def get_figshare_data(
         with tqdm(
             total=stream_size, unit="B", unit_scale=True, desc=meta["name"]
         ) as pbar:
+            if file_path.exists():
+                raise RuntimeError(f"{str(file_path)} already exists.")
             with open(file_path, "wb") as f:
                 for chunk in stream.iter_content(
                     chunk_size=chunk_size

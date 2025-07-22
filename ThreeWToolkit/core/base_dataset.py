@@ -1,18 +1,17 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal, Union, Any, List, Dict
+from typing import Optional, Literal, Any, Dict
 
 from pathlib import Path
+from .enums import EventPrefixEnum
 
 
 class DatasetConfig(BaseModel):
-    # Fixed properties
-    path: Union[str, Path] = Field(..., description="Path to the dataset.")
+    path: str | Path = Field(..., description="Path to the dataset.")
     split: Literal[None, "train", "val", "test", "list"] = Field(
         default=None, description="Split to load. Load all files if None."
     )
-    file_list: Optional[List[str] | List[Path]] = Field(
+    file_list: Optional[list[str] | list[Path]] = Field(
         default=None, description='List of files to load if split=="list".'
     )
 
@@ -20,14 +19,14 @@ class DatasetConfig(BaseModel):
         ..., description="File type. (e.g. csv, parquet, ...)"
     )
 
-    event_type: Optional[List[Enum]] = Field(
+    event_type: Optional[list[EventPrefixEnum]] = Field(
         default=None, description="Event types to load. (e.g. simulated, real, ...)"
     )
-    target_class: Optional[List[int]] = Field(
+    target_class: Optional[list[int]] = Field(
         default=None, description="Event classes to load. (e.g. 0, 1, 2, ...)"
     )
 
-    columns: Optional[List[str]] = Field(
+    columns: Optional[list[str]] = Field(
         default=None, description="Data columns to be loaded. Loads all if None."
     )
     target_column: Optional[str] = Field(
@@ -49,17 +48,12 @@ class DatasetConfig(BaseModel):
     def validate_event_type(cls, v):
         if v is not None:
             for t in v:
-                if t not in list(BaseDataset.EventPrefix):
+                if t not in list(EventPrefixEnum):
                     raise ValueError(f"Unknown event_type: {t}")
         return v
 
 
 class BaseDataset(ABC):
-    class EventPrefix(Enum):
-        REAL = "WELL"
-        SIMULATED = "SIMULATED"
-        DRAWN = "DRAWN"
-
     def __init__(self, config: DatasetConfig):
         self.config = config
 
@@ -86,7 +80,7 @@ class BaseDataset(ABC):
         else:  # default
             return True
 
-    def filter_events(self, events: List[Path]) -> List[Path]:
+    def filter_events(self, events: list[Path]) -> list[Path]:
         """
         Filter events matching type and target classes.
         """

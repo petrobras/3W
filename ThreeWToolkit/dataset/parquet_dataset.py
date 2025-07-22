@@ -20,6 +20,7 @@ class ParquetDataset(BaseDataset):
 
         if download:
             dl_path = Path(config.path) / "download"
+            dl_path.mkdir(exist_ok=True, parents=True)
             downloaded = get_figshare_data(dl_path, version="2.0.0")
             with zipfile.ZipFile(downloaded[0], "r") as zip_file:
                 zip_file.extractall(config.path)
