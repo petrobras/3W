@@ -57,7 +57,7 @@ class MLP(nn.Module):
         in_size = config.input_size
         for h in config.hidden_sizes:
             layers.append(nn.Linear(in_size, h))
-            layers.append(config.activation_function.value)
+            layers.append(config.activation_function.value())
             in_size = h
         layers.append(nn.Linear(in_size, config.output_size))
         self.model = nn.Sequential(*layers)
