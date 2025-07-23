@@ -1,10 +1,12 @@
 from abc import ABC
 from pydantic import BaseModel, Field, field_validator
 
+
 class BaseAssessmentVisualizationConfig(BaseModel):
-    class_names: list[str] | None = Field(default=None, 
-                                          description="List containing class names")
-    
+    class_names: list[str] | None = Field(
+        default=None, description="List containing class names"
+    )
+
     @field_validator("class_names")
     @classmethod
     def validate_class_names(cls, v):
@@ -13,7 +15,9 @@ class BaseAssessmentVisualizationConfig(BaseModel):
                 raise ValueError("class_names must be a non-empty list if provided.")
             for name in v:
                 if not isinstance(name, str) or not name.strip():
-                    raise ValueError("All elements in class_names must be non-empty strings.")
+                    raise ValueError(
+                        "All elements in class_names must be non-empty strings."
+                    )
         return v
 
 
