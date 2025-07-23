@@ -1,0 +1,99 @@
+import pytest
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # Use non-interactive backend for tests
+from matplotlib.figure import Figure
+import pydantic
+
+from ThreeWToolkit.assessment.assessment_visualizations import (
+    AssessmentVisualization,
+    ConfigAssessmentVisualization,
+)
+
+from ThreeWToolkit.core.base_assessment_visualization import (
+    BaseAssessmentVisualization,
+    BaseAssessmentVisualizationConfig
+)
+
+class TestAssessmentVisualization:
+    @pytest.fixture
+    def default_config(self):
+        return ConfigAssessmentVisualization(class_names=["A", "B", "C"])
+
+    @pytest.fixture
+    def viz(self, default_config):
+        return AssessmentVisualization(default_config)
+
+    def test_plot_confusion_matrix_list(self, viz):
+        y_true = [0, 1, 2, 2, 1]
+        y_pred = [0, 2, 2, 2, 1]
+        fig = viz.plot_confusion_matrix(y_true, y_pred)
+        assert isinstance(fig, Figure)
+
+    def test_plot_confusion_matrix_with_pandas(self, viz):
+        y_true = pd.Series([0, 1, 1, 2])
+        y_pred = pd.Series([0, 1, 2, 2])
+        fig = viz.plot_confusion_matrix(y_true, y_pred, normalize=False)
+        assert isinstance(fig, Figure)
+
+    def test_plot_confusion_matrix_with_numpy(self, viz):
+        y_true = np.array([0, 1, 1, 2])
+        y_pred = np.array([0, 1, 2, 2])
+        fig = viz.plot_confusion_matrix(y_true, y_pred, normalize=True)
+        assert isinstance(fig, Figure)
+
+    def test_plot_confusion_matrix_length_mismatch(self, viz):
+        y_true = [0, 1]
+        y_pred = [0]
+        with pytest.raises(ValueError, match="length of y_true and y_pred must be the same"):
+            viz.plot_confusion_matrix(y_true, y_pred)
+
+    def test_plot_confusion_matrix_type_error(self, viz):
+        y_true = "not a valid type"
+        y_pred = [0]
+        with pytest.raises(TypeError, match="y_true must be a pandas Series, numpy array, or list"):
+            viz.plot_confusion_matrix(y_true, y_pred)
+
+    def test_plot_confusion_matrix_class_names_mismatch(self):
+        config = ConfigAssessmentVisualization(class_names=["A", "B", "C"])
+        viz = AssessmentVisualization(config)
+        y_true = [0, 1, 1, 1]
+        y_pred = [0, 1, 1, 1]
+        with pytest.raises(ValueError, match="Number of class names"):
+            viz.plot_confusion_matrix(y_true, y_pred)
+
+    def test_plot_confusion_matrix_no_class_names(self):
+        config = ConfigAssessmentVisualization(class_names=None)
+        viz = AssessmentVisualization(config)
+        y_true = [0, 1, 1, 1]
+        y_pred = [0, 1, 1, 1]
+        fig = viz.plot_confusion_matrix(y_true, y_pred)
+        assert isinstance(fig, Figure)
+
+class TestBaseAssessmentVisualizationConfig:
+    def test_accepts_none(self):
+        cfg = BaseAssessmentVisualizationConfig(class_names=None)
+        assert cfg.class_names is None
+
+    def test_accepts_valid_list(self):
+        cfg = BaseAssessmentVisualizationConfig(class_names=["A", "B", "C"])
+        assert cfg.class_names == ["A", "B", "C"]
+
+    def test_rejects_empty_list(self):
+        with pytest.raises(ValueError, match="non-empty list"):
+            BaseAssessmentVisualizationConfig(class_names=[])
+
+    def test_rejects_empty_string(self):
+        with pytest.raises(ValueError, match="non-empty strings"):
+            BaseAssessmentVisualizationConfig(class_names=["A", ""])
+
+    def test_rejects_non_string_element(self):
+        with pytest.raises(pydantic.ValidationError, match="Input should be a valid string"):
+            BaseAssessmentVisualizationConfig(class_names=["A", 123])
+
+class TestBaseAssessmentVisualization:
+    def test_config_is_set(self):
+        config = BaseAssessmentVisualizationConfig(class_names=["A", "B"])
+        obj = BaseAssessmentVisualization(config)
+        assert obj.config == config
