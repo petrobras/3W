@@ -1,9 +1,11 @@
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import seaborn as sns
-from sklearn.metrics import confusion_matrix
+from typing import cast
 from ..core.base_assessment_visualization import (
     BaseAssessmentVisualization,
     BaseAssessmentVisualizationConfig,
@@ -26,6 +28,7 @@ class AssessmentVisualization(BaseAssessmentVisualization):
         y_true: np.ndarray | pd.Series | list,
         y_pred: np.ndarray | pd.Series | list,
         title: str = "Confusion Matrix",
+        ax: Axes | None = None,
         normalize: bool = True,
         figsize: tuple[int, int] = (12, 8),
         fontsize: int = 10,
@@ -37,6 +40,7 @@ class AssessmentVisualization(BaseAssessmentVisualization):
             y_true (np.ndarray | pd.Series | list): Array-like of true labels
             y_pred (np.ndarray | pd.Series | list): Array-like of predicted labels
             title (str): Title for the plot
+            ax (Axes): Matplotlib Axes to plot into. Creates new if None.
             normalize (bool): Whether to normalize the confusion matrix
             figsize (tuple[int, int]): Size of the figure
             fontsize (int): Base font size for labels
@@ -54,6 +58,11 @@ class AssessmentVisualization(BaseAssessmentVisualization):
         if len(y_true) != len(y_pred):
             raise ValueError("length of y_true and y_pred must be the same.")
 
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
+        else:
+            fig = cast(Figure, ax.figure)
+
         # Convert inputs to numpy arrays
         y_true = np.asarray(y_true)
         y_pred = np.asarray(y_pred)
@@ -63,7 +72,6 @@ class AssessmentVisualization(BaseAssessmentVisualization):
         if normalize:
             cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
-        fig, ax = plt.subplots(figsize=figsize)
         sns.heatmap(
             data=cm,
             annot=True,

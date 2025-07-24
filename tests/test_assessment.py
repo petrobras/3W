@@ -2,6 +2,8 @@ import pytest
 import numpy as np
 import pandas as pd
 import matplotlib
+import matplotlib.pyplot as plt
+
 matplotlib.use("Agg")  # Use non-interactive backend for tests
 from matplotlib.figure import Figure
 import pydantic
@@ -13,8 +15,9 @@ from ThreeWToolkit.assessment.assessment_visualizations import (
 
 from ThreeWToolkit.core.base_assessment_visualization import (
     BaseAssessmentVisualization,
-    BaseAssessmentVisualizationConfig
+    BaseAssessmentVisualizationConfig,
 )
+
 
 class TestAssessmentVisualization:
     @pytest.fixture
@@ -46,13 +49,17 @@ class TestAssessmentVisualization:
     def test_plot_confusion_matrix_length_mismatch(self, viz):
         y_true = [0, 1]
         y_pred = [0]
-        with pytest.raises(ValueError, match="length of y_true and y_pred must be the same"):
+        with pytest.raises(
+            ValueError, match="length of y_true and y_pred must be the same"
+        ):
             viz.plot_confusion_matrix(y_true, y_pred)
 
     def test_plot_confusion_matrix_type_error(self, viz):
         y_true = "not a valid type"
         y_pred = [0]
-        with pytest.raises(TypeError, match="y_true must be a pandas Series, numpy array, or list"):
+        with pytest.raises(
+            TypeError, match="y_true must be a pandas Series, numpy array, or list"
+        ):
             viz.plot_confusion_matrix(y_true, y_pred)
 
     def test_plot_confusion_matrix_class_names_mismatch(self):
@@ -70,6 +77,25 @@ class TestAssessmentVisualization:
         y_pred = [0, 1, 1, 1]
         fig = viz.plot_confusion_matrix(y_true, y_pred)
         assert isinstance(fig, Figure)
+
+    def test_plot_confusion_matrix_with_ax(self, viz):
+        fig, ax = plt.subplots()
+        y_true = [0, 1, 2, 2, 1]
+        y_pred = [0, 2, 2, 2, 1]
+        returned_fig = viz.plot_confusion_matrix(y_true, y_pred, ax=ax)
+        # Should return the same figure as the one from ax
+        assert returned_fig is fig
+
+    def test_plot_confusion_matrix_with_ax_and_custom_figsize(self, viz):
+        fig, ax = plt.subplots(figsize=(8, 4))
+        y_true = [0, 1, 2, 2, 1]
+        y_pred = [0, 2, 2, 2, 1]
+        returned_fig = viz.plot_confusion_matrix(y_true, y_pred, ax=ax, figsize=(8, 4))
+        assert returned_fig is fig
+        # The figure size should remain as specified
+        assert fig.get_size_inches()[0] == 8
+        assert fig.get_size_inches()[1] == 4
+
 
 class TestBaseAssessmentVisualizationConfig:
     def test_accepts_none(self):
@@ -89,8 +115,11 @@ class TestBaseAssessmentVisualizationConfig:
             BaseAssessmentVisualizationConfig(class_names=["A", ""])
 
     def test_rejects_non_string_element(self):
-        with pytest.raises(pydantic.ValidationError, match="Input should be a valid string"):
+        with pytest.raises(
+            pydantic.ValidationError, match="Input should be a valid string"
+        ):
             BaseAssessmentVisualizationConfig(class_names=["A", 123])
+
 
 class TestBaseAssessmentVisualization:
     def test_config_is_set(self):
