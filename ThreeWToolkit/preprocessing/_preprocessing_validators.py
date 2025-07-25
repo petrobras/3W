@@ -1,7 +1,7 @@
 import pandas as pd
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from typing import Literal, Optional, Union, List
+from typing import Literal, Optional, Union, List, Dict
 
 
 class ImputeMissingArgsValidator(BaseModel):
@@ -137,3 +137,53 @@ class WindowingArgsValidator(BaseModel):
                 "`window_size` must be smaller than or equal to the length of X."
             )
         return self
+
+
+class RenameColumnsArgsValidator(BaseModel):
+    data: pd.DataFrame
+    columns_map: Dict[str, str]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @field_validator("columns_map")
+    def validate_columns_exist(cls, columns_map, info):
+        """
+        Validate that all columns to be renamed exist in the DataFrame.
+
+        Args:
+            cls: The class reference.
+            columns_map (Dict[str, str]): Mapping of columns to rename.
+            info: Validation info, containing the data attribute.
+
+        Raises:
+            ValueError: If any column in columns_map does not exist in the DataFrame.
+
+        Returns:
+            Dict[str, str]: The validated columns_map.
+        """
+        df: pd.DataFrame = info.data.get("data")
+        if df is not None:
+            missing = [col for col in columns_map if col not in df.columns]
+            if missing:
+                raise ValueError(f"Columns not found in DataFrame: {missing}")
+        return columns_map
+
+    @field_validator("columns_map")
+    def validate_unique_new_column_names(cls, columns_map):
+        """
+        Validate that new column names are unique.
+
+        Args:
+            cls: The class reference.
+            columns_map (Dict[str, str]): Mapping of columns to rename.
+
+        Raises:
+            ValueError: If there are duplicate new column names.
+
+        Returns:
+            Dict[str, str]: The validated columns_map.
+        """
+        new_names = list(columns_map.values())
+        if len(new_names) != len(set(new_names)):
+            raise ValueError("Duplicate new column names are not allowed.")
+        return columns_map
