@@ -8,6 +8,7 @@ from ._preprocessing_validators import (
     ImputeMissingArgsValidator,
     NormalizeArgsValidator,
     WindowingArgsValidator,
+    RenameColumnsArgsValidator,
 )
 
 from sklearn.preprocessing import normalize as sk_normalize
@@ -191,3 +192,23 @@ def windowing(
     _temp["win"] = _temp["win"].astype(int)
 
     return _temp
+
+
+@GeneralUtils.validate_func_args_with_pydantic(RenameColumnsArgsValidator)
+def rename_columns(data: pd.DataFrame, columns_map: dict[str, str]) -> pd.DataFrame:
+    """
+    Rename columns of a DataFrame using a mapping dictionary.
+
+    This function receives a DataFrame and a dictionary that maps
+    existing column names to new names. Only the specified columns
+    will be renamed; others will remain unchanged.
+
+    Args:
+        data (pd.DataFrame): The DataFrame whose columns are to be renamed.
+        columns_map (dict[str, str]): A dictionary where keys are current
+            column names and values are the desired new column names.
+
+    Returns:
+        pd.DataFrame: A new DataFrame with updated column names.
+    """
+    return data.rename(columns=columns_map)
