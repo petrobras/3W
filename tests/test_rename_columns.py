@@ -80,3 +80,17 @@ class TestRenameColumns:
         columns_map = {"A": "A"}
         result = rename_columns(self.df_partial, columns_map)
         pd.testing.assert_frame_equal(result, self.df_partial)
+
+    def test_duplicated_columns_in_dataframe_raise_error(self):
+        """
+        Test that a ValueError is raised when the DataFrame has duplicate column names.
+        """
+        df_with_duplicates = pd.DataFrame([[1, 2]], columns=["A", "A"])
+        columns_map = {"A": "X"}
+
+        with pytest.raises(
+            ValueError,
+            match="Duplicate column names found in DataFrame: \\['A'\\]"
+        ):
+            rename_columns(df_with_duplicates, columns_map)
+

@@ -187,3 +187,23 @@ class RenameColumnsArgsValidator(BaseModel):
         if len(new_names) != len(set(new_names)):
             raise ValueError("Duplicate new column names are not allowed.")
         return columns_map
+
+    @field_validator("data")
+    def validate_no_duplicate_columns(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Validate that the DataFrame does not contain duplicate column names.
+
+        Args:
+            cls: The class reference.
+            df (pd.DataFrame): The input DataFrame.
+
+        Raises:
+            ValueError: If the DataFrame has duplicate column names.
+
+        Returns:
+            pd.DataFrame: The validated DataFrame.
+        """
+        duplicated = df.columns[df.columns.duplicated()].unique().tolist()
+        if duplicated:
+            raise ValueError(f"Duplicate column names found in DataFrame: {duplicated}")
+        return df
