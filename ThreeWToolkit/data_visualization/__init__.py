@@ -2,4 +2,6 @@ from .plot_series import DataVisualization
 
 from .plot_multiple_series import PlotMultipleSeries
 
-__all__ = ["DataVisualization", "PlotMultipleSeries"]
+from .plot_correlation_heatmap import PlotCorrelationHeatmap
+
+__all__ = ["DataVisualization", "PlotMultipleSeries", "PlotCorrelationHeatmap"]
