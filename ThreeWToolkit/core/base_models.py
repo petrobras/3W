@@ -14,7 +14,9 @@ class ModelsConfig(BaseModel):
     @field_validator("model_type")
     @classmethod
     def check_model_type(cls, v, info):
-        if info.data.get("model_type") not in {
+        # --- THIS IS THE FIX ---
+        # We check the direct value `v` instead of accessing it through `info`.
+        if v not in {
             ModelTypeEnum.MLP,
             ModelTypeEnum.LGBM,
             ModelTypeEnum.LOGISTIC_REGRESSION,
