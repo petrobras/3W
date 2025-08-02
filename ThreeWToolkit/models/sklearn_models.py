@@ -1,5 +1,5 @@
 import joblib
-from typing import Dict, Any
+from typing import Dict, Any, List, Callable
 from pydantic import Field
 import numpy as np
 
@@ -13,7 +13,6 @@ from sklearn.ensemble import GradientBoostingClassifier
 
 from ..core.base_models import BaseModels, ModelsConfig
 from ..core.enums import ModelTypeEnum
-from ..metrics import _classification
 
 
 # Dictionary to map the enum to the scikit-learn classes
@@ -42,68 +41,58 @@ class SklearnModels(BaseModels):
     def __init__(self, config: SklearnModelsConfig):
         """Initializes the wrapper and the underlying scikit-learn model."""
         super().__init__(config)
-
         model_class = SKLEARN_MODELS[config.model_type]
-
-        # Prepare model parameters, including the random_seed as random_state
         params = config.model_params.copy()
-
-        # Checks if the chosen sklearn model has the random_state parameter.
         if "random_state" in model_class().get_params():
             params["random_state"] = config.random_seed
-
         self.model = model_class(**params)
 
-    def train(self, X: Any, y: Any = None) -> None:
+    def train(self, x: Any, y: Any = None, **kwargs) -> None:
         """Trains the model on the given data."""
-        self.model.fit(X, y)
+        self.model.fit(x, y, **kwargs)
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, x: Any) -> Any:
         """Makes predictions using the chosen sklearn model."""
-        return self.model.predict(X)
+        return self.model.predict(x)
 
-    def evaluate(self, X: np.ndarray, y: np.ndarray) -> Dict[str, float]:
+    def evaluate(self, x: Any, y: Any, metrics: List[Callable]) -> Dict[str, float]:
         """
-        Evaluates the model using the toolkit's standardized metric functions
-        and returns a dictionary of metrics.
+        Evaluates the model using a provided list of metric functions.
         """
-        predictions = self.predict(X)
+        results = {}
+        # Get standard class predictions first
+        predictions = self.predict(x)
+        # Lazily get probability scores only if needed
+        y_scores = None
 
-        metrics = {
-            "accuracy": _classification.accuracy_score(y_true=y, y_pred=predictions),
-            "balanced_accuracy": _classification.balanced_accuracy_score(
-                y_true=y, y_pred=predictions
-            ),
-            "precision_weighted": _classification.precision_score(
-                y_true=y, y_pred=predictions, average="weighted"
-            ),
-            "recall_weighted": _classification.recall_score(
-                y_true=y, y_pred=predictions, average="weighted"
-            ),
-            "f1_weighted": _classification.f1_score(
-                y_true=y, y_pred=predictions, average="weighted"
-            ),
-        }
+        for metric_func in metrics:
+            metric_name = metric_func.__name__
 
-        # Conditionally calculate ROC AUC based on the problem type (binary vs multiclass)
-        if hasattr(self.model, "predict_proba"):
-            y_scores = self.predict_proba(X)
+            # Special handling for metrics that need probabilities
+            if (
+                "roc_auc_score" in metric_name
+                or "average_precision_score" in metric_name
+            ):
+                if not hasattr(self.model, "predict_proba"):
+                    continue  # Skip this metric if the model can't provide probabilities
 
-            # Check the number of classes from the probability matrix shape
-            if y_scores.shape[1] == 2:
-                # Binary Case
-                # Pass only the probabilities of the positive class (class 1)
-                metrics["roc_auc_score"] = _classification.roc_auc_score(
-                    y_true=y, y_pred=y_scores[:, 1]
-                )
+                if y_scores is None:
+                    y_scores = self.predict_proba(x)
+
+                # Handle binary vs multiclass cases automatically
+                if y_scores.shape[1] == 2:
+                    # Pass 1D array of positive class scores for binary
+                    results[metric_name] = metric_func(y_true=y, y_pred=y_scores[:, 1])
+                else:
+                    # Pass full probability matrix for multiclass
+                    results[metric_name] = metric_func(
+                        y_true=y, y_pred=y_scores, multi_class="ovr"
+                    )
             else:
-                # Multiclass Case
-                # Pass the full probability matrix and specify the strategy
-                metrics["roc_auc_score"] = _classification.roc_auc_score(
-                    y_true=y, y_pred=y_scores, multi_class="ovr"
-                )
+                # For all other metrics, pass the standard class predictions
+                results[metric_name] = metric_func(y_true=y, y_pred=predictions)
 
-        return metrics
+        return results
 
     def get_params(self) -> Dict[str, Any]:
         """Gets the model's parameters."""

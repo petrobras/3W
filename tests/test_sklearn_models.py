@@ -6,6 +6,7 @@ from sklearn.datasets import make_classification
 
 from ThreeWToolkit.core.enums import ModelTypeEnum
 from ThreeWToolkit.models.sklearn_models import SklearnModels, SklearnModelsConfig
+from ThreeWToolkit.metrics import _classification
 
 
 class TestSklearnModels:
@@ -59,46 +60,75 @@ class TestSklearnModels:
         
         assert isinstance(predictions, np.ndarray)
         assert predictions.shape == (len(y),)
-    
-    def test_evaluate_with_binary_data(self, binary_data):
-        """Tests that evaluate() returns all expected metrics for binary classification."""
+
+    def test_evaluate_with_binary_classification(self, binary_data):
+        """
+        Tests that evaluate() correctly processes a list of metric functions
+        with binary classification data as input.
+        """
         X, y = binary_data
         config = SklearnModelsConfig(model_type=ModelTypeEnum.LOGISTIC_REGRESSION)
         model = SklearnModels(config)
-        model.train(X, y)
+        model.train(x=X, y=y)
         
-        metrics = model.evaluate(X, y)
-        
-        expected_keys = [
-            "accuracy", "balanced_accuracy", "precision_weighted", 
-            "recall_weighted", "f1_weighted", "roc_auc_score"
+        # Define the list of metrics to calculate
+        metrics_to_run = [
+            _classification.accuracy_score,
+            _classification.roc_auc_score,
+            _classification.average_precision_score
         ]
-        assert all(key in metrics for key in expected_keys)
-        assert 0.0 <= metrics["accuracy"] <= 1.0
-
-    def test_evaluate_with_multiclass_data(self, multiclass_data):
-        """Tests that evaluate() correctly handles multiclass data for ROC AUC."""
+        
+        results = model.evaluate(x=X, y=y, metrics=metrics_to_run)
+        
+        # Assert that the output dictionary has the correct keys and values
+        assert isinstance(results, dict)
+        assert "accuracy_score" in results
+        assert "roc_auc_score" in results
+        assert "average_precision_score" in results
+        assert 0.0 <= results["accuracy_score"] <= 1.0
+        
+    def test_evaluate_with_multiclass_classification(self, multiclass_data):
+        """
+        Tests that evaluate() correctly handles multiclass classification.
+        """
         X, y = multiclass_data
+        # Use a model that supports predict_proba for multiclass evaluation
         config = SklearnModelsConfig(model_type=ModelTypeEnum.RANDOM_FOREST)
         model = SklearnModels(config)
-        model.train(X, y)
-        
-        metrics = model.evaluate(X, y)
+        model.train(x=X, y=y)
 
-        assert "roc_auc_score" in metrics
-        assert 0.0 <= metrics["roc_auc_score"] <= 1.0
+        metrics_to_run = [
+            _classification.accuracy_score,
+            _classification.roc_auc_score
+        ]
 
-    def test_evaluate_handles_model_without_predict_proba(self, binary_data):
-        """Tests that evaluate() skips roc_auc_score for an incompatible model."""
+        results = model.evaluate(x=X, y=y, metrics=metrics_to_run)
+
+        assert "roc_auc_score" in results
+        assert 0.0 <= results["roc_auc_score"] <= 1.0
+
+    def test_evaluate_skips_metrics_that_need_proba(self, binary_data):
+        """
+        Tests that evaluate() correctly skips metrics like roc_auc_score
+        when the model does not support predict_proba.
+        """
         X, y = binary_data
+        # A standard SVC does not have .predict_proba()
         config = SklearnModelsConfig(model_type=ModelTypeEnum.SVM)
         model = SklearnModels(config)
-        model.train(X, y)
+        model.train(x=X, y=y)
         
-        metrics = model.evaluate(X, y)
+        metrics_to_run = [
+            _classification.accuracy_score,
+            _classification.roc_auc_score # This one should be skipped
+        ]
         
-        assert "roc_auc_score" not in metrics
-        assert "accuracy" in metrics
+        results = model.evaluate(x=X, y=y, metrics=metrics_to_run)
+        
+        # Assert that roc_auc_score was correctly skipped
+        assert "roc_auc_score" not in results
+        # Assert that the other metric was still calculated
+        assert "accuracy_score" in results
 
     def test_get_and_set_params(self):
         """Tests the .get_params() and .set_params() methods."""

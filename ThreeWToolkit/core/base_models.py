@@ -14,8 +14,6 @@ class ModelsConfig(BaseModel):
     @field_validator("model_type")
     @classmethod
     def check_model_type(cls, v, info):
-        # --- THIS IS THE FIX ---
-        # We check the direct value `v` instead of accessing it through `info`.
         if v not in {
             ModelTypeEnum.MLP,
             ModelTypeEnum.LGBM,
