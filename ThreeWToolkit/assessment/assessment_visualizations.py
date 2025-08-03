@@ -102,3 +102,69 @@ class AssessmentVisualization(BaseAssessmentVisualization):
             ax.set_yticklabels(self.class_names, rotation=0)
 
         return fig
+
+    def feature_visualization(
+        self,
+        feature_importances: np.ndarray | list,
+        feature_names: np.ndarray | list,
+        title: str = "Feature Importances",
+        ax: Axes | None = None,
+        figsize: tuple[int, int] = (12, 8),
+        top_n: int | None = None,
+        color: str = "skyblue",
+    ) -> Figure:
+        """
+        Plots feature importances from a tree-based model.
+
+        Args:
+            feature_importances (np.ndarray | list): Array-like of feature importance values
+            feature_names (np.ndarray | list): Array-like of feature names
+            title (str): Title for the plot
+            ax (Axes): Matplotlib Axes to plot into. Creates new if None.
+            figsize (tuple[int, int]): Size of the figure
+            top_n (int | None): Number of top features to display. If None, shows all.
+            color (str): Color for the bars
+
+        Returns:
+            fig (plt.Figure): feature importance plot as a matplotlib Figure
+
+        Usage:
+            feature_importance_plot = plotter.feature_visualization(
+                feature_importances=model.feature_importances_,
+                feature_names=feature_names,
+                top_n=20
+            )
+        """
+        if len(feature_importances) != len(feature_names):
+            raise ValueError(
+                "Length of feature_importances and feature_names must match."
+            )
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
+        else:
+            fig = cast(Figure, ax.figure)
+
+        feature_importances = np.asarray(feature_importances)
+        feature_names = np.asarray(feature_names)
+
+        # Sort features by importance
+        indices = np.argsort(feature_importances)
+        if top_n is not None:
+            indices = indices[-top_n:]
+
+        ax.barh(
+            range(len(indices)),
+            feature_importances[indices],
+            color=color,
+            align="center",
+        )
+
+        ax.set_yticks(range(len(indices)))
+        ax.set_yticklabels(feature_names[indices])
+        ax.set_xlabel("Feature Importance", fontsize=12)
+        ax.set_title(title, fontsize=14)
+        ax.grid(True, axis="x", linestyle="--", alpha=0.6)
+        plt.tight_layout()
+
+        return fig
