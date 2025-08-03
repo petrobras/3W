@@ -96,6 +96,42 @@ class TestAssessmentVisualization:
         assert fig.get_size_inches()[0] == 8
         assert fig.get_size_inches()[1] == 4
 
+    def test_feature_visualization_basic(self, viz):
+        feature_importances = [0.1, 0.4, 0.2, 0.3]
+        feature_names = ["f1", "f2", "f3", "f4"]
+        fig = viz.feature_visualization(feature_importances, feature_names)
+        assert isinstance(fig, Figure)
+
+    def test_feature_visualization_top_n(self, viz):
+        feature_importances = [0.1, 0.4, 0.2, 0.3]
+        feature_names = ["f1", "f2", "f3", "f4"]
+        fig = viz.feature_visualization(feature_importances, feature_names, top_n=2)
+        assert isinstance(fig, Figure)
+
+    def test_feature_visualization_with_numpy(self, viz):
+        feature_importances = np.array([0.1, 0.4, 0.2, 0.3])
+        feature_names = np.array(["f1", "f2", "f3", "f4"])
+        fig = viz.feature_visualization(feature_importances, feature_names, color="red")
+        assert isinstance(fig, Figure)
+
+    def test_feature_visualization_with_ax(self, viz):
+        fig, ax = plt.subplots()
+        feature_importances = [0.1, 0.4, 0.2, 0.3]
+        feature_names = ["f1", "f2", "f3", "f4"]
+        returned_fig = viz.feature_visualization(
+            feature_importances, feature_names, ax=ax
+        )
+        assert returned_fig is fig
+
+    def test_feature_visualization_length_mismatch(self, viz):
+        feature_importances = [0.1, 0.4, 0.2]
+        feature_names = ["f1", "f2", "f3", "f4"]
+        with pytest.raises(
+            ValueError,
+            match="Length of feature_importances and feature_names must match.",
+        ):
+            viz.feature_visualization(feature_importances, feature_names)
+
 
 class TestBaseAssessmentVisualizationConfig:
     def test_accepts_none(self):
