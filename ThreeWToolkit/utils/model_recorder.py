@@ -1,13 +1,51 @@
-from abc import ABC
+import os
+from pathlib import Path
+from typing import Union, IO, Any
 
 
-class ModelRecorder(ABC):
-    pass
-
+class ModelRecorder:
     @staticmethod
-    def save_best_model():
-        pass
+    def save_best_model(
+        model: Any, filename: Union[str, os.PathLike, IO[bytes]]
+    ) -> None:
+        """
+        Save a model to disk depending on its type and file extension.
+        Supports PyTorch and scikit-learn (Pickle).
 
-    @staticmethod
-    def load_model():
-        pass
+        Parameters:
+            model: Trained model object.
+            filename: File name or file-like object where the model will be saved.
+        """
+        if isinstance(filename, (str, os.PathLike)):
+            path = Path(filename)
+            ext = path.suffix.lower()
+        elif hasattr(filename, "write"):
+            raise ValueError(
+                f"Saving to file-like object '{filename}' is not supported. Please provide a valid file path."
+            )
+        else:
+            raise TypeError(
+                f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object."
+            )
+
+        # PyTorch
+        if ext in [".pt", ".pth"]:
+            try:
+                import torch
+
+                torch.save(model.state_dict(), filename)
+            except Exception as e:
+                raise RuntimeError(f"Error saving PyTorch model: {e}")
+
+        # scikit-learn or generic Python object
+        elif ext in [".pkl", ".pickle"]:
+            try:
+                import pickle
+
+                with open(filename, "wb") as f:
+                    pickle.dump(model, f)
+            except Exception as e:
+                raise RuntimeError(f"Error saving Pickle model: {e}")
+
+        else:
+            raise ValueError(f"Unsupported file extension: {ext}")

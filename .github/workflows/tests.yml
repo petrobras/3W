@@ -29,6 +29,9 @@ jobs:
           python-version: '3.10.11'
           cache: 'poetry'
 
+      - name: Recreate poetry.lock
+        run: poetry lock
+
       - name: Install dependencies
         run: poetry install
 
