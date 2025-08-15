@@ -1,5 +1,5 @@
 import joblib
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, List, Callable, Optional
 from pydantic import Field
 import numpy as np
 
@@ -13,6 +13,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 
 from ..core.base_models import BaseModels, ModelsConfig
 from ..core.enums import ModelTypeEnum
+from ..utils.model_recorder import ModelRecorder 
+from ..metrics import _classification
 
 
 # Dictionary to map the enum to the scikit-learn classes
@@ -37,6 +39,16 @@ class SklearnModelsConfig(ModelsConfig):
 
 class SklearnModels(BaseModels):
     """A wrapper for scikit-learn models."""
+    
+    SUPPORTED_METRICS = {
+        _classification.accuracy_score,
+        _classification.balanced_accuracy_score,
+        _classification.precision_score,
+        _classification.recall_score,
+        _classification.f1_score,
+        _classification.roc_auc_score,
+        _classification.average_precision_score
+    }
 
     def __init__(self, config: SklearnModelsConfig):
         """Initializes the wrapper and the underlying scikit-learn model."""
@@ -55,17 +67,23 @@ class SklearnModels(BaseModels):
         """Makes predictions using the chosen sklearn model."""
         return self.model.predict(x)
 
-    def evaluate(self, x: Any, y: Any, metrics: List[Callable]) -> Dict[str, float]:
+    def evaluate(self, x: Any, y: Any, metrics: List[Callable]):
         """
         Evaluates the model using a provided list of metric functions.
         """
-        results = {}
+        results: Dict[str, Optional[float]] = {}
         # Get standard class predictions first
         predictions = self.predict(x)
         # Lazily get probability scores only if needed
         y_scores = None
 
         for metric_func in metrics:
+            # Check if metric is supported
+            if metric_func not in self.SUPPORTED_METRICS:
+                raise ValueError(
+                    f"Metric '{metric_func.__name__}' is not a supported metric."
+                )
+            
             metric_name = metric_func.__name__
 
             # Special handling for metrics that need probabilities
@@ -74,6 +92,7 @@ class SklearnModels(BaseModels):
                 or "average_precision_score" in metric_name
             ):
                 if not hasattr(self.model, "predict_proba"):
+                    results[metric_name] = None
                     continue  # Skip this metric if the model can't provide probabilities
 
                 if y_scores is None:
@@ -111,13 +130,36 @@ class SklearnModels(BaseModels):
         return self.model.predict_proba(X)
 
     def save(self, filepath: str):
-        """Saves the trained model to a file using joblib."""
-        joblib.dump(self.model, filepath)
+        """
+        Saves the trained model to a file using the toolkit's ModelRecorder.
+        """
+        # The filename must end with .pkl or .pickle for the recorder to work correctly.
+        if not (filepath.endswith(".pkl") or filepath.endswith(".pickle")):
+            raise ValueError("Filename for scikit-learn models must end with .pkl or .pickle")
+        
+        ModelRecorder.save_best_model(model=self.model, filename=filepath)
 
     @classmethod
     def load(cls, filepath: str, config: SklearnModelsConfig):
-        """Loads a trained model from a file."""
-        loaded_model = joblib.load(filepath)
+        """
+        Loads a trained model from a file using the toolkit's ModelRecorder.
+        """
+        # The recorder will load the raw scikit-learn model object
+        loaded_model = ModelRecorder.load_model(filename=filepath)
+        
+        # Create a new wrapper instance and inject the loaded model
         model_wrapper = cls(config)
         model_wrapper.model = loaded_model
         return model_wrapper
+
+    # def save(self, filepath: str):
+    #     """Saves the trained model to a file using joblib."""
+    #     joblib.dump(self.model, filepath)
+
+    # @classmethod
+    # def load(cls, filepath: str, config: SklearnModelsConfig):
+    #     """Loads a trained model from a file."""
+    #     loaded_model = joblib.load(filepath)
+    #     model_wrapper = cls(config)
+    #     model_wrapper.model = loaded_model
+    #     return model_wrapper

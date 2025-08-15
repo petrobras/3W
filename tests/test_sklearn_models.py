@@ -106,10 +106,10 @@ class TestSklearnModels:
 
         assert "roc_auc_score" in results
         assert 0.0 <= results["roc_auc_score"] <= 1.0
-
+    
     def test_evaluate_skips_metrics_that_need_proba(self, binary_data):
         """
-        Tests that evaluate() correctly skips metrics like roc_auc_score
+        Tests that evaluate() correctly returns None for metrics like roc_auc_score
         when the model does not support predict_proba.
         """
         X, y = binary_data
@@ -120,15 +120,18 @@ class TestSklearnModels:
         
         metrics_to_run = [
             _classification.accuracy_score,
-            _classification.roc_auc_score # This one should be skipped
+            _classification.roc_auc_score # This one should result in None
         ]
         
         results = model.evaluate(x=X, y=y, metrics=metrics_to_run)
         
-        # Assert that roc_auc_score was correctly skipped
-        assert "roc_auc_score" not in results
-        # Assert that the other metric was still calculated
+        # Assert that the key exists and its value is None.
+        assert "roc_auc_score" in results
+        assert results["roc_auc_score"] is None
+        
+        # Assert that the other metric was still calculated correctly.
         assert "accuracy_score" in results
+        assert results["accuracy_score"] is not None
 
     def test_get_and_set_params(self):
         """Tests the .get_params() and .set_params() methods."""
@@ -138,20 +141,22 @@ class TestSklearnModels:
         assert model.get_params()["max_depth"] == 3
         model.set_params(max_depth=10)
         assert model.get_params()["max_depth"] == 10
-        
+    
     def test_save_and_load(self, binary_data, tmp_path):
         """Tests that a model can be saved and loaded correctly."""
         X, y = binary_data
         config = SklearnModelsConfig(model_type=ModelTypeEnum.RANDOM_FOREST)
         
+        # Train and save
         original_model = SklearnModels(config)
-        original_model.train(X, y)
-        model_path = tmp_path / "model.joblib"
+        original_model.train(x=X, y=y)
+        model_path = tmp_path / "model.pkl"
         original_model.save(str(model_path))
 
+        # Load and verify
         loaded_model = SklearnModels.load(str(model_path), config)
-        original_preds = original_model.predict(X)
-        loaded_preds = loaded_model.predict(X)
+        original_preds = original_model.predict(x=X)
+        loaded_preds = loaded_model.predict(x=X)
         
         np.testing.assert_array_equal(original_preds, loaded_preds)
 
