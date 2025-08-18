@@ -1,4 +1,3 @@
-import joblib
 from typing import Dict, Any, List, Callable, Optional
 from pydantic import Field
 import numpy as np
@@ -66,7 +65,7 @@ class SklearnModels(BaseModels):
     def predict(self, x: Any) -> Any:
         """Makes predictions using the chosen sklearn model."""
         return self.model.predict(x)
-
+    
     def evaluate(self, x: Any, y: Any, metrics: List[Callable]):
         """
         Evaluates the model using a provided list of metric functions.
@@ -74,43 +73,28 @@ class SklearnModels(BaseModels):
         results: Dict[str, Optional[float]] = {}
         # Get standard class predictions first
         predictions = self.predict(x)
-        # Lazily get probability scores only if needed
+        
         y_scores = None
+        if hasattr(self.model, "predict_proba"):
+            y_scores = self.predict_proba(x)
 
         for metric_func in metrics:
-            # Check if metric is supported
-            if metric_func not in self.SUPPORTED_METRICS:
-                raise ValueError(
-                    f"Metric '{metric_func.__name__}' is not a supported metric."
-                )
-            
             metric_name = metric_func.__name__
-
-            # Special handling for metrics that need probabilities
-            if (
-                "roc_auc_score" in metric_name
-                or "average_precision_score" in metric_name
-            ):
-                if not hasattr(self.model, "predict_proba"):
-                    results[metric_name] = None
-                    continue  # Skip this metric if the model can't provide probabilities
-
-                if y_scores is None:
-                    y_scores = self.predict_proba(x)
-
-                # Handle binary vs multiclass cases automatically
-                if y_scores.shape[1] == 2:
-                    # Pass 1D array of positive class scores for binary
-                    results[metric_name] = metric_func(y_true=y, y_pred=y_scores[:, 1])
+            
+            if "roc_auc_score" in metric_name or "average_precision_score" in metric_name:
+                # Check if scores were successfully calculated beforehand
+                if y_scores is not None:
+                    if y_scores.shape[1] == 2: # Binary case
+                        results[metric_name] = metric_func(y_true=y, y_pred=y_scores[:, 1])
+                    else: # Multiclass case
+                        results[metric_name] = metric_func(y_true=y, y_pred=y_scores, multi_class="ovr")
                 else:
-                    # Pass full probability matrix for multiclass
-                    results[metric_name] = metric_func(
-                        y_true=y, y_pred=y_scores, multi_class="ovr"
-                    )
+                    # Model does not support predict_proba, so result is None
+                    results[metric_name] = None
             else:
                 # For all other metrics, pass the standard class predictions
                 results[metric_name] = metric_func(y_true=y, y_pred=predictions)
-
+        
         return results
 
     def get_params(self) -> Dict[str, Any]:
@@ -133,7 +117,6 @@ class SklearnModels(BaseModels):
         """
         Saves the trained model to a file using the toolkit's ModelRecorder.
         """
-        # The filename must end with .pkl or .pickle for the recorder to work correctly.
         if not (filepath.endswith(".pkl") or filepath.endswith(".pickle")):
             raise ValueError("Filename for scikit-learn models must end with .pkl or .pickle")
         
@@ -151,15 +134,3 @@ class SklearnModels(BaseModels):
         model_wrapper = cls(config)
         model_wrapper.model = loaded_model
         return model_wrapper
-
-    # def save(self, filepath: str):
-    #     """Saves the trained model to a file using joblib."""
-    #     joblib.dump(self.model, filepath)
-
-    # @classmethod
-    # def load(cls, filepath: str, config: SklearnModelsConfig):
-    #     """Loads a trained model from a file."""
-    #     loaded_model = joblib.load(filepath)
-    #     model_wrapper = cls(config)
-    #     model_wrapper.model = loaded_model
-    #     return model_wrapper
