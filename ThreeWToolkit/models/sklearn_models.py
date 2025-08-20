@@ -79,6 +79,11 @@ class SklearnModels(BaseModels):
             y_scores = self.predict_proba(x)
 
         for metric_func in metrics:
+            if metric_func not in self.SUPPORTED_METRICS:
+                raise ValueError(
+                    f"Metric '{metric_func.__name__}' is not a supported metric."
+                )
+
             metric_name = metric_func.__name__
 
             if (
