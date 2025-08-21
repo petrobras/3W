@@ -1,5 +1,5 @@
 import json
-import requests
+import requests  # type: ignore
 import hashlib
 
 from tqdm import tqdm
