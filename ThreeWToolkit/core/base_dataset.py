@@ -89,7 +89,7 @@ class BaseDataset(ABC):
         ]
 
     def transform(self, transforms: Dict[str, Callable]):
-        """ Returns a wrapper applying transforms to this dataset """
+        """Returns a wrapper applying transforms to this dataset"""
         return TransformedDataset(self, transforms)
 
     @abstractmethod
@@ -114,26 +114,18 @@ class BaseDataset(ABC):
         return self.load_data(idx)
 
 
-class TransformedDatasetConfig(BaseModel):
-    base_config: BaseModel
-    transforms: Dict[str, Callable]
-
-
 class TransformedDataset(BaseDataset):
-    """ Apply transformations to an inner dataset.
+    """Apply transformations to an inner dataset.
 
-        Given a dict of callables, transforms = {"k1": f1, "k2": f2, ...},
-        will return 
-            transformed[idx] == {"k1": f1(**inner[idx]), "k2": f2(**inner), ...}.
-        Functions will default to identity if not provided.
-        Will raise if "kn" not in inner[idx].
+    Given a dict of callables, transforms = {"k1": f1, "k2": f2, ...},
+    will return
+        transformed[idx] == {"k1": f1(**inner[idx]), "k2": f2(**inner), ...}.
+    Functions will default to identity if not provided.
+    Will raise if "kn" not in inner[idx].
     """
 
     def __init__(self, dataset: BaseDataset, transforms: Dict[str, Callable]):
-
-        # inherit config from base set
-        self.config = TransformedDatasetConfig(base_config=dataset.config, transforms=transforms)
-
+        self.config = self.dataset.config
         self.dataset = dataset
         self.transforms = transforms
 
@@ -147,11 +139,13 @@ class TransformedDataset(BaseDataset):
         # check that keys match
         missing_keys = set(self.transforms.keys()).difference(item.keys())
         if len(missing_keys) > 0:
-            raise RuntimeError(f"Error: {', '.join(missing_keys)} not present in base item.")
+            raise RuntimeError(
+                f"Error: {', '.join(missing_keys)} not present in base item."
+            )
 
         transformed = {}
         for key in item.keys():
-            if key in self.transforms: # apply only to keys which are in transforms
+            if key in self.transforms:  # apply only to keys which are in transforms
                 transformed[key] = self.transforms[key](**item)
             else:
                 transformed[key] = item[key]

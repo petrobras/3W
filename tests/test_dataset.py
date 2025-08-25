@@ -167,3 +167,34 @@ class TestParquetDataset:
         )
         dataset = ParquetDataset(config)
         assert len(dataset) == len(target_class) * len(EventPrefixEnum)
+
+    def test_transforms(self, parquet_dataset_path):
+        """
+        Dataset transforms work as expected
+        """
+        
+        # load raw dataset
+        config = DatasetConfig(
+            path=parquet_dataset_path, file_type="parquet", target_column=_LABEL_NAME
+        )
+        dataset = ParquetDataset(config)
+
+        default = dataset.transform({}) # default should not change anything
+        for idx in range(len(dataset)):
+            assert (dataset[idx]["signal"] == default[idx]["signal"]).all().all()
+            assert (dataset[idx]["label"]  == default[idx]["label"]).all().all()
+
+        def double_it(signal, *args, **kwargs):
+            return 2*signal
+        doubled = dataset.transform({"signal": double_it})
+        
+        for idx in range(len(dataset)):
+            assert (2*dataset[idx]["signal"] == doubled[idx]["signal"]).all().all()
+            assert (dataset[idx]["label"]    == doubled[idx]["label"]).all().all()
+
+        def broken_fn(broken, *args, **kwargs):
+            return broken
+        broken = dataset.transform({"unknown": broken_fn})
+
+        with pytest.raises(RuntimeError):
+            _ = broken[0]
