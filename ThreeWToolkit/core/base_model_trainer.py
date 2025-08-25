@@ -1,10 +1,7 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-from typing import Callable
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
 from pathlib import Path
+from typing import Any
 
 
 class ModelTrainerConfig(BaseModel):
@@ -18,24 +15,26 @@ class BaseModelTrainer(ABC):
         self.criterion = None
 
     @abstractmethod
-    def train(
-        self,
-        x_train,
-        y_train,
-        x_val=None,
-        y_val=None,
-        **kwargs,
-    ):
+    def train(self, *args, **kwargs):
+        """
+        Train the model.
+
+        For PyTorch models:
+            train(train_loader: DataLoader, val_loader: DataLoader, ...)
+
+        For Sklearn models:
+            train(x_train: np.ndarray, y_train: np.ndarray, ...)
+        """
         pass
 
     @abstractmethod
-    def evaluate(self, x, y, metrics) -> dict:
+    def test(self, *args, **kwargs) -> dict:
         pass
 
     @abstractmethod
-    def save_checkpoint(self, filepath: Path):
+    def save(self, filepath: Path):
         pass
 
     @abstractmethod
-    def load_checkpoint(self, filepath: Path):
+    def load(self, filepath: Path) -> Any:
         pass
