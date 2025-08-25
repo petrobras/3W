@@ -125,8 +125,8 @@ class TransformedDataset(BaseDataset):
     """
 
     def __init__(self, dataset: BaseDataset, transforms: Dict[str, Callable]):
-        self.config = self.dataset.config
         self.dataset = dataset
+        self.config = dataset.config
         self.transforms = transforms
 
     def __len__(self) -> int:

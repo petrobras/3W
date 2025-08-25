@@ -143,8 +143,8 @@ def default_data_normalization(signal: pd.DataFrame, *args, **kwargs) -> pd.Data
     """
 
     # filter loaded signals
-    avg = pd.Series({k: GLOBAL_AVERAGES[k] for k in signal.columns})
-    std = pd.Series({k: GLOBAL_STDS[k] for k in signal.columns})
+    avg = pd.Series({tag: GLOBAL_AVERAGES[tag] for tag in signal.columns})
+    std = pd.Series({tag: GLOBAL_STDS[tag] for tag in signal.columns})
     return (signal - avg) / std
 
 
