@@ -1,14 +1,37 @@
 import numpy as np
 import torch.nn as nn
 import torch
-from ..core.base_models import ModelsConfig
+from torch.utils.data import DataLoader
+from ..metrics import explained_variance_score
+from ..core.base_models import ModelsConfig, BaseModels
 from ..core.enums import (
     ModelTypeEnum,
     ActivationFunctionEnum,
 )
+from typing import Iterable, Any, TypeAlias, Union, Callable
+from tqdm import tqdm
+
+ParamsT: TypeAlias = Union[
+    Iterable[torch.Tensor], Iterable[dict[str, Any]], Iterable[tuple[str, torch.Tensor]]
+]
 
 
 class MLPConfig(ModelsConfig):
+    """
+    Configuration class for the MLP model.
+
+    Args:
+        model_type (ModelTypeEnum): The type of model (default: MLP).
+        input_size (int): Number of input features.
+        hidden_sizes (tuple[int, ...]): Sizes of hidden layers.
+        output_size (int): Number of output features.
+        activation_function (ActivationFunctionEnum): Activation function to use.
+        regularization (float | None): Regularization parameter.
+
+    Example:
+        >>> config = MLPConfig(input_size=10, hidden_sizes=(64, 32), output_size=1, activation_function=ActivationFunctionEnum.RELU, regularization=None)
+    """
+
     model_type: ModelTypeEnum = ModelTypeEnum.MLP
     input_size: int
     hidden_sizes: tuple[int, ...]
@@ -18,11 +41,30 @@ class MLPConfig(ModelsConfig):
 
 
 class LabeledSubset(torch.utils.data.Dataset):
+    """
+    Custom dataset for labeled data, compatible with PyTorch DataLoader.
+
+    Args:
+        samples (np.ndarray | torch.Tensor): Input samples.
+        labels (np.ndarray | torch.Tensor): Corresponding labels.
+
+    Example:
+        >>> dataset = LabeledSubset(np.random.rand(100, 10), np.random.rand(100, 1))
+        >>> loader = DataLoader(dataset, batch_size=32)
+    """
+
     def __init__(
         self,
         samples: np.ndarray | torch.Tensor,
         labels: np.ndarray | torch.Tensor,
     ):
+        """
+        Initialize the LabeledSubset dataset.
+
+        Args:
+            samples (np.ndarray | torch.Tensor): Input samples.
+            labels (np.ndarray | torch.Tensor): Corresponding labels.
+        """
         if len(samples) != len(labels):
             raise ValueError("Samples and labels must have the same length.")
 
@@ -30,17 +72,50 @@ class LabeledSubset(torch.utils.data.Dataset):
         self.labels = labels
 
     def __getitem__(self, idx):
+        """
+        Get a sample and its label by index.
+
+        Args:
+            idx (int): Index of the sample.
+
+        Returns:
+            tuple: (sample, label)
+        """
         x_i = self.samples[idx]
         y_i = self.labels[idx]
         return x_i, y_i
 
     def __len__(self):
+        """
+        Get the number of samples in the dataset.
+
+        Returns:
+            int: Number of samples.
+        """
         return len(self.samples)
 
 
-class MLP(nn.Module):
+class MLP(BaseModels, nn.Module):
+    """
+    Multi-Layer Perceptron (MLP) model for regression or classification tasks.
+
+    Args:
+        config (MLPConfig): Configuration for the MLP model.
+
+    Example:
+        >>> config = MLPConfig(input_size=10, hidden_sizes=(64, 32), output_size=1, activation_function=ActivationFunctionEnum.RELU, regularization=None)
+        >>> model = MLP(config)
+    """
+
     def __init__(self, config: MLPConfig):
-        super(MLP, self).__init__()
+        """
+        Initialize the MLP model.
+
+        Args:
+            config (MLPConfig): Configuration for the MLP model.
+        """
+        nn.Module.__init__(self)
+        BaseModels.__init__(self, config)
         layers = []
         self.activation_func = self._get_activation_function(config.activation_function)
         in_size = config.input_size
@@ -51,7 +126,31 @@ class MLP(nn.Module):
         layers.append(nn.Linear(in_size, config.output_size))
         self.model = nn.Sequential(*layers)
 
+    def forward(self, x):
+        """
+        Forward pass of the MLP.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_size).
+
+        Returns:
+            torch.Tensor: Output tensor.
+
+        Example:
+            >>> output = model(torch.randn(32, 10))
+        """
+        return self.model(x)
+
     def _get_activation_function(self, activation: ActivationFunctionEnum):
+        """
+        Get the activation function based on the enum.
+
+        Args:
+            activation (ActivationFunctionEnum): Activation function enum.
+
+        Returns:
+            nn.Module: Activation function module.
+        """
         if activation == ActivationFunctionEnum.RELU:
             return nn.ReLU()
         elif activation == ActivationFunctionEnum.SIGMOID:
@@ -61,10 +160,31 @@ class MLP(nn.Module):
         else:
             raise ValueError(f"Unknown activation function: {activation}")
 
-    def forward(self, x):
-        return self.model(x.view(x.size(0), -1))
+    def get_params(self) -> ParamsT:
+        """
+        Get the model's parameters for optimization.
 
-    def _run_evaluation_epoch(self, loader: DataLoader) -> tuple[float, dict]:
+        Returns:
+            Iterator over model parameters.
+
+        Example:
+            >>> params = model.get_params()
+        """
+        return self.model.parameters()
+
+    def _run_evaluation_epoch(
+        self, loader: DataLoader, criterion: Callable, device: str
+    ) -> tuple[float, dict]:
+        """
+        Run a full evaluation epoch over a DataLoader.
+
+        Args:
+            loader (DataLoader): DataLoader for evaluation.
+            criterion (Callable): Loss function.
+
+        Returns:
+            tuple: (average loss, metrics dictionary)
+        """
         self.model.eval()
         running_loss = 0.0
         all_preds = []
@@ -73,12 +193,12 @@ class MLP(nn.Module):
         with torch.no_grad():
             for x_values, y_values in loader:
                 x_values, y_values = (
-                    x_values.to(self.device).float(),
-                    y_values.to(self.device).float(),
+                    x_values.to(device).float(),
+                    y_values.to(device).float(),
                 )
 
                 out = self.model(x_values)
-                loss = self.criterion(out, y_values)
+                loss = criterion(out, y_values)
                 running_loss += loss.item() * x_values.size(0)
 
                 preds = out.argmax(dim=1)
@@ -96,14 +216,15 @@ class MLP(nn.Module):
         train_loader: DataLoader,
         criterion: Callable,
         optimizer: torch.optim.Optimizer,
+        device: str,
     ) -> float:
         model.train()
         epoch_train_loss = 0.0
         total_train_samples = 0
         for x_values, y_values in train_loader:
             x_values, y_values = (
-                x_values.to(self.device).float(),
-                y_values.to(self.device).float(),
+                x_values.to(device).float(),
+                y_values.to(device).float(),
             )
             # Forward pass
             optimizer.zero_grad()
@@ -127,23 +248,29 @@ class MLP(nn.Module):
         avg_epoch_train_loss = epoch_train_loss / total_train_samples
         return avg_epoch_train_loss
 
-    def train(
+    def fit(
         self,
         train_loader: DataLoader,
-        val_loader: DataLoader,
-        model,
         epochs: int,
         optimizer: torch.optim.Optimizer,
         criterion: Callable,
-        **kwargs,
+        val_loader: DataLoader | None,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> None:
         """
-        Train the model using provided dataloaders.
+        Train the MLP model.
+
         Args:
             train_loader (DataLoader): DataLoader for training data.
-            val_loader (DataLoader): DataLoader for validation data.
-        """
+            val_loader (DataLoader | None): DataLoader for validation data.
+            epochs (int): Number of training epochs.
+            optimizer (torch.optim.Optimizer): Optimizer.
+            criterion (Callable): Loss function.
 
+        Example:
+            >>> model.fit(train_loader, val_loader, epochs=10, optimizer=optim.Adam(), criterion=nn.MSELoss())
+        """
+        self.model.train()
         best_model = {
             "epoch": -1,
             "model": None,
@@ -152,21 +279,23 @@ class MLP(nn.Module):
 
         with tqdm(range(epochs), desc="Training", unit="epoch") as progress_bar:
             for epoch_idx in progress_bar:
-                progress_bar.set_description(f"Epoch {epoch_idx + 1}/{self.epochs}")
+                progress_bar.set_description(f"Epoch {epoch_idx + 1}/{epochs}")
 
                 avg_epoch_train_loss = self._train_epoch(
-                    model=self.model, train_loader, criterion=criterion, optimizer=optimizer
+                    model=self.model,
+                    train_loader=train_loader,
+                    criterion=criterion,
+                    optimizer=optimizer,
+                    device=device,
                 )
 
                 if val_loader is not None:
-                    avg_val_loss, metrics = self._run_evaluation_epoch(val_loader)
+                    avg_val_loss, metrics = self._run_evaluation_epoch(
+                        loader=val_loader, criterion=criterion, device=device
+                    )
                     # val_acc = metrics["explained_variance_score"]
                 else:
                     avg_val_loss = float("nan")
-
-                # Store results
-                self.history["train_loss"].append(avg_epoch_train_loss)
-                self.history["val_loss"].append(avg_val_loss)
 
                 # Show metrics in tqdm bar
                 progress_bar.set_postfix(
@@ -183,19 +312,54 @@ class MLP(nn.Module):
                     best_model["val_loss"] = avg_val_loss
 
     def evaluate(
-        self, x: list | torch.Tensor, y: list | torch.Tensor, metrics: list[Callable]
+        self,
+        x: list | torch.Tensor,
+        y: list | torch.Tensor,
+        metrics: list[Callable],
     ) -> dict:
+        """
+        Compute metrics for predictions and targets.
+
+        Args:
+            x (list | torch.Tensor): Predictions.
+            y (list | torch.Tensor): Targets.
+            metrics (list[Callable]): List of metric functions.
+
+        Returns:
+            dict: Dictionary of metric results.
+        """
         return {metric.__name__: metric(y, x) for metric in metrics}
 
-    def test(self, test_loader: DataLoader) -> tuple[float, dict]:
-        return self._run_evaluation_epoch(test_loader)
+    def test(
+        self,
+        test_loader: DataLoader,
+        criterion: Callable,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    ) -> tuple[float, dict]:
+        """
+        Evaluate the model on a test set.
 
-    def predict(self, loader: DataLoader) -> np.ndarray:
+        Args:
+            test_loader (DataLoader): DataLoader for test data.
+            criterion (Callable): Loss function.
+
+        Returns:
+            tuple: (average loss, metrics dictionary)
+        """
+        return self._run_evaluation_epoch(
+            test_loader, criterion=criterion, device=device
+        )
+
+    def predict(
+        self,
+        loader: DataLoader,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    ) -> np.ndarray:
         self.model.eval()
         y_pred = []
         with torch.no_grad():
             for X_batch, _ in loader:
-                X_batch = X_batch.to(self.device).float()
+                X_batch = X_batch.to(device).float()
                 outputs = self.model.forward(X_batch)
                 _, preds = torch.max(outputs, 1)
                 y_pred.extend(preds.cpu().numpy())
