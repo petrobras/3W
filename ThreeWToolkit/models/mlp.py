@@ -10,6 +10,7 @@ from ..core.enums import (
 )
 from typing import Iterable, Any, TypeAlias, Union, Callable
 from tqdm import tqdm
+from pydantic import Field, field_validator
 
 ParamsT: TypeAlias = Union[
     Iterable[torch.Tensor], Iterable[dict[str, Any]], Iterable[tuple[str, torch.Tensor]]
@@ -18,26 +19,69 @@ ParamsT: TypeAlias = Union[
 
 class MLPConfig(ModelsConfig):
     """
-    Configuration class for the MLP model.
+    Configuration for the Multi-Layer Perceptron (MLP) model.
+
+    Description:
+        Defines the hyperparameters and architecture for an MLP model, including input/output sizes, hidden layers, activation function, and regularization.
 
     Args:
         model_type (ModelTypeEnum): The type of model (default: MLP).
-        input_size (int): Number of input features.
-        hidden_sizes (tuple[int, ...]): Sizes of hidden layers.
-        output_size (int): Number of output features.
-        activation_function (str): "relu", "sigmoid", "tanh", Activation function to use, default to "relu".
-        regularization (float | None): Regularization parameter.
+        input_size (int): Number of input features (must be > 0).
+        hidden_sizes (tuple[int, ...]): Sizes of hidden layers (at least one, all > 0).
+        output_size (int): Number of output features (must be > 0).
+        activation_function (str): Activation function to use ("relu", "sigmoid", or "tanh").
+        regularization (float | None): Regularization parameter (>= 0 or None).
+        random_seed (int | None): Random seed for reproducibility.
 
     Example:
-        >>> config = MLPConfig(input_size=10, hidden_sizes=(64, 32), output_size=1, activation_function=ActivationFunctionEnum.RELU, regularization=None)
+        >>> from ThreeWToolkit.models.mlp import MLPConfig, ActivationFunctionEnum
+        >>> config = MLPConfig(
+        ...     input_size=10,
+        ...     hidden_sizes=(64, 32),
+        ...     output_size=1,
+        ...     activation_function=ActivationFunctionEnum.RELU.value,
+        ...     regularization=None,
+        ...     random_seed=42
+        ... )
     """
 
-    model_type: ModelTypeEnum = ModelTypeEnum.MLP
-    input_size: int
-    hidden_sizes: tuple[int, ...]
-    output_size: int
-    activation_function: str = "relu"
-    regularization: float | None
+    model_type: ModelTypeEnum = Field(
+        default=ModelTypeEnum.MLP, description="Type of model (MLP)."
+    )
+    input_size: int = Field(
+        ..., gt=0, description="Number of input features (must be > 0)."
+    )
+    hidden_sizes: tuple[int, ...] = Field(
+        ..., min_length=1, description="Sizes of hidden layers (at least one)."
+    )
+    output_size: int = Field(
+        ..., gt=0, description="Number of output features (must be > 0)."
+    )
+    activation_function: str = Field(
+        default="relu", description="Activation function to use."
+    )
+    regularization: float | None = Field(
+        default=None, ge=0, description="Regularization parameter (>=0 or None)."
+    )
+
+    @field_validator("activation_function")
+    @classmethod
+    def check_activation_function(cls, v):
+        valid = {
+            ActivationFunctionEnum.RELU.value,
+            ActivationFunctionEnum.SIGMOID.value,
+            ActivationFunctionEnum.TANH.value,
+        }
+        if v not in valid:
+            raise ValueError(f"activation_function must be one of {valid}")
+        return v
+
+    @field_validator("hidden_sizes")
+    @classmethod
+    def check_hidden_sizes(cls, v):
+        if not v or not all(isinstance(h, int) and h > 0 for h in v):
+            raise ValueError("hidden_sizes must be a tuple of positive integers")
+        return v
 
 
 class LabeledSubset(torch.utils.data.Dataset):
@@ -107,7 +151,7 @@ class MLP(BaseModels, nn.Module):
         >>> model = MLP(config)
     """
 
-    def __init__(self, config: MLPConfig):
+    def __init__(self, config: MLPConfig) -> None:
         """
         Initialize the MLP model.
 
@@ -126,7 +170,7 @@ class MLP(BaseModels, nn.Module):
         layers.append(nn.Linear(in_size, config.output_size))
         self.model = nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the MLP.
 
@@ -141,7 +185,7 @@ class MLP(BaseModels, nn.Module):
         """
         return self.model(x)
 
-    def _get_activation_function(self, activation: str):
+    def _get_activation_function(self, activation: str) -> nn.Module:
         """
         Get the activation function based on the enum.
 

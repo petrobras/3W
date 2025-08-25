@@ -1,17 +1,17 @@
-from typing import Callable
+from typing import Callable, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from pathlib import Path
 from torch.utils.data import DataLoader
-from typing import Any
+from pydantic import field_validator
 from sklearn.model_selection import KFold
 from ..core.base_model_trainer import BaseModelTrainer, ModelTrainerConfig
 from ..core.enums import (
     OptimizersEnum,
     CriterionEnum,
 )
-from ..models.mlp import MLPConfig, MLP, LabeledSubset
+from ..models.mlp import MLPConfig, LabeledSubset, MLP
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 from ..utils import ModelRecorder
 
@@ -61,6 +61,64 @@ class TrainerConfig(ModelTrainerConfig):
     cross_validation: bool | None = None
     n_splits: int | None = None
 
+    @field_validator("batch_size")
+    @classmethod
+    def check_batch_size(cls, v):
+        if v <= 0:
+            raise ValueError("batch_size must be > 0")
+        return v
+
+    @field_validator("epochs")
+    @classmethod
+    def check_epochs(cls, v):
+        if v <= 0:
+            raise ValueError("epochs must be > 0")
+        return v
+
+    @field_validator("learning_rate")
+    @classmethod
+    def check_learning_rate(cls, v):
+        if v <= 0:
+            raise ValueError("learning_rate must be > 0")
+        return v
+
+    @field_validator("n_splits")
+    @classmethod
+    def check_n_splits(cls, v, values):
+        # values is a ValidationInfo object in Pydantic v2
+        cross_val = (
+            values.data.get("cross_validation")
+            if hasattr(values, "data")
+            else values.get("cross_validation")
+        )
+        if cross_val and v is not None and v <= 1:
+            raise ValueError("n_splits must be > 1 for cross-validation")
+        return v
+
+    @field_validator("optimizer")
+    @classmethod
+    def check_optimizer(cls, v):
+        valid = {o.value for o in OptimizersEnum}
+        if v not in valid:
+            raise ValueError(f"optimizer must be one of {valid}")
+        return v
+
+    @field_validator("criterion")
+    @classmethod
+    def check_criterion(cls, v):
+        valid = {c.value for c in CriterionEnum}
+        if v not in valid:
+            raise ValueError(f"criterion must be one of {valid}")
+        return v
+
+    @field_validator("device")
+    @classmethod
+    def check_device(cls, v):
+        valid = {"cpu", "cuda"}
+        if v not in valid:
+            raise ValueError("device must be 'cpu' or 'cuda'")
+        return v
+
 
 class ModelTrainer(BaseModelTrainer):
     """
@@ -75,7 +133,7 @@ class ModelTrainer(BaseModelTrainer):
         >>> results = trainer.test(x_test, y_test, metrics=[...])
     """
 
-    def __init__(self, config: TrainerConfig):
+    def __init__(self, config: TrainerConfig) -> None:
         """
         Initialize the ModelTrainer.
 
@@ -103,7 +161,9 @@ class ModelTrainer(BaseModelTrainer):
         self.epochs = config.epochs
         self.seed = config.seed
 
-    def _get_model(self, config_model):
+    def _get_model(
+        self, config_model: MLPConfig | SklearnModelsConfig
+    ) -> MLP | SklearnModels:
         """
         Instantiate the model based on the configuration.
 
@@ -185,7 +245,7 @@ class ModelTrainer(BaseModelTrainer):
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
-    def _create_dataloader(self, x, y, shuffle: bool):
+    def _create_dataloader(self, x: Any, y: Any, shuffle: bool) -> DataLoader:
         """
         Create a DataLoader from input features and labels.
 
@@ -205,12 +265,12 @@ class ModelTrainer(BaseModelTrainer):
 
     def train(
         self,
-        x_train,
-        y_train,
-        x_val=None,
-        y_val=None,
+        x_train: Any,
+        y_train: Any,
+        x_val: Any = None,
+        y_val: Any = None,
         **kwargs,
-    ):
+    ) -> None:
         """
         Train the model using the provided data.
 
@@ -227,10 +287,11 @@ class ModelTrainer(BaseModelTrainer):
         # TODO: Handle StratifiedKfold implementation for Classification models
         if self.cross_validation:
             self.history = []
+            n_splits = self.n_splits if self.n_splits is not None else 5
             for _, (train_idx, val_idx) in enumerate(
-                KFold(n_splits=self.n_splits).split(x_train, y_train)
+                KFold(n_splits=n_splits).split(x_train, y_train)
             ):
-                print(f"Training fold {_ + 1}/{self.n_splits}")
+                print(f"Training fold {_ + 1}/{n_splits}")
                 fold_history = self.call_trainer(
                     x_train[train_idx],
                     y_train[train_idx],
@@ -251,7 +312,12 @@ class ModelTrainer(BaseModelTrainer):
             ]
 
     def call_trainer(
-        self, x_train, y_train, x_val=None, y_val=None, **kwargs
+        self,
+        x_train: Any,
+        y_train: Any,
+        x_val: Any = None,
+        y_val: Any = None,
+        **kwargs,
     ) -> dict[str, list[Any]] | None:
         if isinstance(self.model, MLP):
             train_loader = self._create_dataloader(x_train, y_train, shuffle=True)
@@ -277,7 +343,7 @@ class ModelTrainer(BaseModelTrainer):
         else:
             return self.model.fit(x_train, y_train, **kwargs)
 
-    def test(self, x, y, metrics, **kwargs) -> Any:
+    def test(self, x: Any, y: Any, metrics: list[Callable], **kwargs) -> Any:
         """
         Evaluate the model on test data.
 
@@ -304,7 +370,7 @@ class ModelTrainer(BaseModelTrainer):
         else:
             return self.model.evaluate(x, y, metrics)
 
-    def predict(self, x, **kwargs) -> Any:
+    def predict(self, x: Any, **kwargs) -> Any:
         """
         Generate predictions using the trained model.
 
@@ -332,7 +398,7 @@ class ModelTrainer(BaseModelTrainer):
         else:
             return self.model.predict(x, **kwargs)
 
-    def save(self, filepath: Path):
+    def save(self, filepath: Path) -> None:
         """
         Save a checkpoint of the model to the specified filepath.
 
@@ -361,16 +427,3 @@ class ModelTrainer(BaseModelTrainer):
         if isinstance(self.model, MLP):
             self.model.load_state_dict(state_dict)
         return self.model
-
-    # @property
-    # def history(self) -> list[Any]:
-    #     """
-    #     Access the training history (train/val loss per epoch).
-
-    #     Returns:
-    #         dict: Dictionary with keys 'train_loss' and 'val_loss'.
-    #     """
-    #     if isinstance(self.model, MLP):
-    #         return self.model.history
-    #     else:
-    #         raise AttributeError("This model does not track training history.")
