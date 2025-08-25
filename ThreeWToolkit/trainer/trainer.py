@@ -188,6 +188,7 @@ class ModelTrainer(BaseModelTrainer):
         y_train,
         x_val=None,
         y_val=None,
+        metrics: list[Callable] | None = None,
         **kwargs,
     ):
         """
@@ -222,6 +223,7 @@ class ModelTrainer(BaseModelTrainer):
                 self.optimizer,
                 self.criterion,
                 val_loader,
+                metrics,
                 self.device,
             )
         else:
@@ -250,7 +252,7 @@ class ModelTrainer(BaseModelTrainer):
                 batch_size=self.batch_size,
                 shuffle=False,
             )
-            return self.model.test(test_loader, self.criterion, self.device)
+            return self.model.test(test_loader, self.criterion, metrics, self.device)
         else:
             # For sklearn call evaluate with x, y
             return self.model.evaluate(x, y, metrics)

@@ -174,7 +174,11 @@ class MLP(BaseModels, nn.Module):
         return self.model.parameters()
 
     def _run_evaluation_epoch(
-        self, loader: DataLoader, criterion: Callable, device: str
+        self,
+        loader: DataLoader,
+        criterion: Callable,
+        device: str,
+        metrics: list[Callable] | None,
     ) -> tuple[float, dict]:
         """
         Run a full evaluation epoch over a DataLoader.
@@ -208,8 +212,12 @@ class MLP(BaseModels, nn.Module):
                 total_eval_samples += x_values.size(0)
 
         avg_loss = running_loss / total_eval_samples
-        metrics = self.evaluate(all_preds, all_labels, [explained_variance_score])
-        return avg_loss, metrics
+
+        if metrics is None or len(metrics) == 0:
+            metrics = [explained_variance_score]
+
+        result_metrics = self.evaluate(all_preds, all_labels, metrics)
+        return avg_loss, result_metrics
 
     def _train_epoch(
         self,
@@ -256,6 +264,7 @@ class MLP(BaseModels, nn.Module):
         optimizer: torch.optim.Optimizer,
         criterion: Callable,
         val_loader: DataLoader | None,
+        metrics: list[Callable] | None,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> None:
         """
@@ -272,7 +281,7 @@ class MLP(BaseModels, nn.Module):
             >>> model.fit(train_loader, val_loader, epochs=10, optimizer=optim.Adam(), criterion=nn.MSELoss())
         """
         self.model.train()
-        self.history = {"train_loss": [], "val_loss": []}
+        self.history = {"train_loss": [], "val_loss": [], "metrics": []}
         best_model = {
             "epoch": -1,
             "model": None,
@@ -290,18 +299,20 @@ class MLP(BaseModels, nn.Module):
                     optimizer=optimizer,
                     device=device,
                 )
+                self.history["train_loss"].append(avg_epoch_train_loss)
 
                 if val_loader is not None:
-                    avg_val_loss, metrics = self._run_evaluation_epoch(
-                        loader=val_loader, criterion=criterion, device=device
+                    avg_val_loss, result_metrics = self._run_evaluation_epoch(
+                        loader=val_loader,
+                        criterion=criterion,
+                        device=device,
+                        metrics=metrics,
                     )
-                    # val_acc = metrics["explained_variance_score"]
+                    self.history["metrics"].append(result_metrics)
+                    self.history["val_loss"].append(avg_val_loss)
                 else:
                     avg_val_loss = float("nan")
-
-                # Store losses in history
-                self.history["train_loss"].append(avg_epoch_train_loss)
-                self.history["val_loss"].append(avg_val_loss)
+                    self.history["val_loss"].append(avg_val_loss)
 
                 # Show metrics in tqdm bar
                 progress_bar.set_postfix(
@@ -340,6 +351,7 @@ class MLP(BaseModels, nn.Module):
         self,
         test_loader: DataLoader,
         criterion: Callable,
+        metrics: list[Callable],
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> tuple[float, dict]:
         """
@@ -348,12 +360,13 @@ class MLP(BaseModels, nn.Module):
         Args:
             test_loader (DataLoader): DataLoader for test data.
             criterion (Callable): Loss function.
+            metrics (list[Callable]): List of metric functions.
 
         Returns:
             tuple: (average loss, metrics dictionary)
         """
         return self._run_evaluation_epoch(
-            test_loader, criterion=criterion, device=device
+            test_loader, criterion=criterion, device=device, metrics=metrics
         )
 
     def predict(
