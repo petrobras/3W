@@ -312,3 +312,16 @@ class ModelTrainer(BaseModelTrainer):
         if isinstance(self.model, MLP):
             self.model.load_state_dict(state_dict)
         return self.model
+
+    @property
+    def history(self):
+        """
+        Access the training history (train/val loss per epoch).
+
+        Returns:
+            dict: Dictionary with keys 'train_loss' and 'val_loss'.
+        """
+        if isinstance(self.model, MLP):
+            return self.model.history
+        else:
+            raise AttributeError("This model does not track training history.")

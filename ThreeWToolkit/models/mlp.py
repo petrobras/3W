@@ -125,6 +125,7 @@ class MLP(BaseModels, nn.Module):
             in_size = h
         layers.append(nn.Linear(in_size, config.output_size))
         self.model = nn.Sequential(*layers)
+        self.history = {"train_loss": [], "val_loss": []}
 
     def forward(self, x):
         """
@@ -271,6 +272,7 @@ class MLP(BaseModels, nn.Module):
             >>> model.fit(train_loader, val_loader, epochs=10, optimizer=optim.Adam(), criterion=nn.MSELoss())
         """
         self.model.train()
+        self.history = {"train_loss": [], "val_loss": []}
         best_model = {
             "epoch": -1,
             "model": None,
@@ -296,6 +298,10 @@ class MLP(BaseModels, nn.Module):
                     # val_acc = metrics["explained_variance_score"]
                 else:
                     avg_val_loss = float("nan")
+
+                # Store losses in history
+                self.history["train_loss"].append(avg_epoch_train_loss)
+                self.history["val_loss"].append(avg_val_loss)
 
                 # Show metrics in tqdm bar
                 progress_bar.set_postfix(
