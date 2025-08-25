@@ -25,7 +25,7 @@ class MLPConfig(ModelsConfig):
         input_size (int): Number of input features.
         hidden_sizes (tuple[int, ...]): Sizes of hidden layers.
         output_size (int): Number of output features.
-        activation_function (ActivationFunctionEnum): Activation function to use.
+        activation_function (str): "relu", "sigmoid", "tanh", Activation function to use, default to "relu".
         regularization (float | None): Regularization parameter.
 
     Example:
@@ -36,7 +36,7 @@ class MLPConfig(ModelsConfig):
     input_size: int
     hidden_sizes: tuple[int, ...]
     output_size: int
-    activation_function: ActivationFunctionEnum
+    activation_function: str = "relu"
     regularization: float | None
 
 
@@ -125,7 +125,6 @@ class MLP(BaseModels, nn.Module):
             in_size = h
         layers.append(nn.Linear(in_size, config.output_size))
         self.model = nn.Sequential(*layers)
-        self.history = {"train_loss": [], "val_loss": []}
 
     def forward(self, x):
         """
@@ -142,21 +141,21 @@ class MLP(BaseModels, nn.Module):
         """
         return self.model(x)
 
-    def _get_activation_function(self, activation: ActivationFunctionEnum):
+    def _get_activation_function(self, activation: str):
         """
         Get the activation function based on the enum.
 
         Args:
-            activation (ActivationFunctionEnum): Activation function enum.
+            activation (str): Activation function enum.
 
         Returns:
             nn.Module: Activation function module.
         """
-        if activation == ActivationFunctionEnum.RELU:
+        if activation == ActivationFunctionEnum.RELU.value:
             return nn.ReLU()
-        elif activation == ActivationFunctionEnum.SIGMOID:
+        elif activation == ActivationFunctionEnum.SIGMOID.value:
             return nn.Sigmoid()
-        elif activation == ActivationFunctionEnum.TANH:
+        elif activation == ActivationFunctionEnum.TANH.value:
             return nn.Tanh()
         else:
             raise ValueError(f"Unknown activation function: {activation}")
@@ -266,7 +265,7 @@ class MLP(BaseModels, nn.Module):
         val_loader: DataLoader | None,
         metrics: list[Callable] | None,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
-    ) -> None:
+    ) -> dict[str, list[Any]]:
         """
         Train the MLP model.
 
@@ -281,14 +280,16 @@ class MLP(BaseModels, nn.Module):
             >>> model.fit(train_loader, val_loader, epochs=10, optimizer=optim.Adam(), criterion=nn.MSELoss())
         """
         self.model.train()
-        self.history = {"train_loss": [], "val_loss": [], "metrics": []}
         best_model = {
             "epoch": -1,
             "model": None,
             "val_loss": float("inf"),
         }
+        loss_dict = {"train_loss": [], "val_loss": [], "metrics": []}
 
-        with tqdm(range(epochs), desc="Training", unit="epoch") as progress_bar:
+        with tqdm(
+            range(epochs), desc="Training", unit="epoch", leave=False
+        ) as progress_bar:
             for epoch_idx in progress_bar:
                 progress_bar.set_description(f"Epoch {epoch_idx + 1}/{epochs}")
 
@@ -299,7 +300,7 @@ class MLP(BaseModels, nn.Module):
                     optimizer=optimizer,
                     device=device,
                 )
-                self.history["train_loss"].append(avg_epoch_train_loss)
+                loss_dict["train_loss"].append(avg_epoch_train_loss)
 
                 if val_loader is not None:
                     avg_val_loss, result_metrics = self._run_evaluation_epoch(
@@ -308,11 +309,11 @@ class MLP(BaseModels, nn.Module):
                         device=device,
                         metrics=metrics,
                     )
-                    self.history["metrics"].append(result_metrics)
-                    self.history["val_loss"].append(avg_val_loss)
+                    loss_dict["metrics"].append(result_metrics)
+                    loss_dict["val_loss"].append(avg_val_loss)
                 else:
                     avg_val_loss = float("nan")
-                    self.history["val_loss"].append(avg_val_loss)
+                    loss_dict["val_loss"].append(avg_val_loss)
 
                 # Show metrics in tqdm bar
                 progress_bar.set_postfix(
@@ -327,6 +328,7 @@ class MLP(BaseModels, nn.Module):
                     best_model["epoch"] = epoch_idx
                     best_model["model"] = self.model.eval()
                     best_model["val_loss"] = avg_val_loss
+        return loss_dict
 
     def evaluate(
         self,
@@ -377,7 +379,7 @@ class MLP(BaseModels, nn.Module):
         self.model.eval()
         y_pred = []
         with torch.no_grad():
-            for X_batch, _ in loader:
+            for X_batch in loader:
                 X_batch = X_batch.to(device).float()
                 outputs = self.model.forward(X_batch)
                 _, preds = torch.max(outputs, 1)
