@@ -234,18 +234,19 @@ def test_trainer_unknown_model_config_explicit():
         trainer = ModelTrainer(trainer_config)
         fn = trainer._get_fn_cost(crit)
         assert fn is not None
-    trainer_config = TrainerConfig(
-        batch_size=2,
-        epochs=1,
-        seed=42,
-        learning_rate=1e-3,
-        config_model=valid_config,
-        optimizer=OptimizersEnum.ADAM.value,
-        criterion="notarealcriterion",
-        device="cpu",
-    )
-    with pytest.raises(ValueError):
-        ModelTrainer(trainer_config)
+    import pydantic
+
+    with pytest.raises(pydantic.ValidationError, match="criterion must be one of"):
+        TrainerConfig(
+            batch_size=2,
+            epochs=1,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=valid_config,
+            optimizer=OptimizersEnum.ADAM.value,
+            criterion="notarealcriterion",
+            device="cpu",
+        )
 
     # Covers else branch in predict (sklearn)
     from sklearn.datasets import make_classification
@@ -310,6 +311,127 @@ def test_trainer_unknown_model_config_explicit():
 
 
 def test_trainer_all_missing_branches(mlp_trainer_and_data):
+    import pydantic
+
+    # Cover TrainerConfig batch_size validator (<=0)
+    with pytest.raises(ValueError, match="batch_size must be > 0"):
+        TrainerConfig(
+            batch_size=0,
+            epochs=1,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=mlp_trainer_and_data[0].config.config_model,
+            optimizer=OptimizersEnum.ADAM.value,
+            criterion=CriterionEnum.MSE.value,
+            device="cpu",
+        )
+
+    # Cover TrainerConfig epochs validator (<=0)
+    with pytest.raises(ValueError, match="epochs must be > 0"):
+        TrainerConfig(
+            batch_size=1,
+            epochs=0,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=mlp_trainer_and_data[0].config.config_model,
+            optimizer=OptimizersEnum.ADAM.value,
+            criterion=CriterionEnum.MSE.value,
+            device="cpu",
+        )
+
+    # Cover TrainerConfig learning_rate validator (<=0)
+    with pytest.raises(ValueError, match="learning_rate must be > 0"):
+        TrainerConfig(
+            batch_size=1,
+            epochs=1,
+            seed=42,
+            learning_rate=0,
+            config_model=mlp_trainer_and_data[0].config.config_model,
+            optimizer=OptimizersEnum.ADAM.value,
+            criterion=CriterionEnum.MSE.value,
+            device="cpu",
+        )
+
+    # Cover TrainerConfig n_splits validator (<=1 with cross_validation)
+    with pytest.raises(ValueError, match="n_splits must be > 1 for cross-validation"):
+        TrainerConfig(
+            batch_size=1,
+            epochs=1,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=mlp_trainer_and_data[0].config.config_model,
+            optimizer=OptimizersEnum.ADAM.value,
+            criterion=CriterionEnum.MSE.value,
+            device="cpu",
+            cross_validation=True,
+            n_splits=1,
+        )
+
+    # Cover TrainerConfig optimizer validator (invalid value)
+    with pytest.raises(ValueError, match="optimizer must be one of"):
+        TrainerConfig(
+            batch_size=1,
+            epochs=1,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=mlp_trainer_and_data[0].config.config_model,
+            optimizer="notarealoptimizer",
+            criterion=CriterionEnum.MSE.value,
+            device="cpu",
+        )
+
+    # Cover TrainerConfig criterion validator (invalid value)
+    with pytest.raises(ValueError, match="criterion must be one of"):
+        TrainerConfig(
+            batch_size=1,
+            epochs=1,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=mlp_trainer_and_data[0].config.config_model,
+            optimizer=OptimizersEnum.ADAM.value,
+            criterion="notarealcriterion",
+            device="cpu",
+        )
+
+    # Cover TrainerConfig device validator (invalid value)
+    with pytest.raises(ValueError, match="device must be 'cpu' or 'cuda'"):
+        TrainerConfig(
+            batch_size=1,
+            epochs=1,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=mlp_trainer_and_data[0].config.config_model,
+            optimizer=OptimizersEnum.ADAM.value,
+            criterion=CriterionEnum.MSE.value,
+            device="notarealdevice",
+        )
+
+    # Cover else branch in call_trainer (sklearn)
+    class DummySklearn:
+        def fit(self, x, y, **kwargs):
+            return {"dummy": True}
+
+    trainer = mlp_trainer_and_data[0]
+    # Save original model
+    original_model = trainer.model
+    trainer.model = DummySklearn()
+    result = trainer.call_trainer(np.zeros((2, 2)), np.zeros((2, 1)))
+    assert result == {"dummy": True}
+
+    # Restore to a valid MLP model for error branch tests
+    trainer.model = original_model
+
+    # Cover else branch in _get_fn_cost
+    with pytest.raises(ValueError):
+        trainer._get_fn_cost("notarealcriterion")
+
+    # Cover else branch in _get_optimizer
+    with pytest.raises(ValueError):
+        trainer._get_optimizer("notarealoptimizer")
+
+    # Cover else branch in _get_model
+    with pytest.raises(ValueError):
+        trainer._get_model("not_a_model_config")
     # Covers default n_splits branch
     config = SklearnModelsConfig(
         model_type=ModelTypeEnum.LOGISTIC_REGRESSION, random_seed=42, model_params={}

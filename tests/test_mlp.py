@@ -9,6 +9,8 @@ from ThreeWToolkit.models.mlp import (
     ActivationFunctionEnum,
 )
 from ThreeWToolkit.trainer.trainer import ModelTrainer, TrainerConfig
+import pydantic
+from sklearn.metrics import mean_squared_error
 
 
 @pytest.fixture
@@ -63,17 +65,47 @@ class TestLabeledSubset:
 
 
 class TestMLP:
-    def test_invalid_activation_function(self):
+    def test_get_activation_function(self):
         config = MLPConfig(
             input_size=5,
             hidden_sizes=(4,),
             output_size=1,
-            activation_function="notarealactivation",
+            activation_function="relu",
             regularization=None,
             random_seed=42,
         )
-        with pytest.raises(ValueError, match="Unknown activation function"):
-            MLP(config)
+        model = MLP(config)
+        with pytest.raises(
+            ValueError, match="Unknown activation function: notarealactivation"
+        ):
+            model._get_activation_function("notarealactivation")
+
+    def test_predict_invalid_input(self):
+        config = MLPConfig(
+            input_size=5,
+            hidden_sizes=(4,),
+            output_size=1,
+            activation_function=ActivationFunctionEnum.RELU.value,
+            regularization=None,
+            random_seed=42,
+        )
+        model = MLP(config)
+        # Pass a list instead of DataLoader to cover the else branch
+        with pytest.raises(AttributeError):
+            model.predict([[1, 2, 3, 4, 5]])
+
+    def test_invalid_activation_function(self):
+        with pytest.raises(
+            pydantic.ValidationError, match="activation_function must be one of"
+        ):
+            MLPConfig(
+                input_size=5,
+                hidden_sizes=(4,),
+                output_size=1,
+                activation_function="notarealactivation",
+                regularization=None,
+                random_seed=42,
+            )
 
     @pytest.mark.parametrize(
         "activation_enum, expected_type",
@@ -108,6 +140,19 @@ class TestMLP:
         ):
             MLP(config={"input_size": 10})  # type: ignore
 
+    def test_check_hidden_sizes(self):
+        with pytest.raises(
+            pydantic.ValidationError, match="hidden_sizes must be a tuple"
+        ):
+            MLPConfig(
+                input_size=5,
+                hidden_sizes=(-4,),
+                output_size=1,
+                activation_function=ActivationFunctionEnum.RELU.value,
+                regularization=None,
+                random_seed=42,
+            )
+
 
 class TestModelTrainer:
     def test_trainer_initialization(self, trainer_setup):
@@ -131,7 +176,6 @@ class TestModelTrainer:
         x = trainer_setup["x_tensor"]
         y = trainer_setup["y_tensor"]
         trainer.train(x, y)
-        from sklearn.metrics import mean_squared_error
 
         test_loss, test_metrics = trainer.test(x, y, metrics=[mean_squared_error])
         assert isinstance(test_loss, float)
