@@ -160,7 +160,7 @@ class MLP(BaseModels, nn.Module):
         """
         nn.Module.__init__(self)
         BaseModels.__init__(self, config)
-        layers = []
+        layers: list[nn.Module] = []
         self.activation_func = self._get_activation_function(config.activation_function)
         in_size = config.input_size
         for h in config.hidden_sizes:
@@ -324,12 +324,16 @@ class MLP(BaseModels, nn.Module):
             >>> model.fit(train_loader, val_loader, epochs=10, optimizer=optim.Adam(), criterion=nn.MSELoss())
         """
         self.model.train()
-        best_model = {
+        best_model: dict[str, Any] = {
             "epoch": -1,
             "model": None,
             "val_loss": float("inf"),
         }
-        loss_dict = {"train_loss": [], "val_loss": [], "metrics": []}
+        loss_dict: dict[str, list[Any]] = {
+            "train_loss": [],
+            "val_loss": [],
+            "metrics": [],
+        }
 
         with tqdm(
             range(epochs), desc="Training", unit="epoch", leave=False
@@ -368,9 +372,13 @@ class MLP(BaseModels, nn.Module):
                 )
 
                 # Update the best model if the current epoch has the best validation loss
-                if avg_val_loss < best_model["val_loss"]:
+                if (
+                    best_model["val_loss"] is not None
+                    and isinstance(avg_val_loss, float)
+                    and avg_val_loss < float(best_model["val_loss"])
+                ):
                     best_model["epoch"] = epoch_idx
-                    best_model["model"] = self.model.eval()
+                    best_model["model"] = self.model.state_dict()
                     best_model["val_loss"] = avg_val_loss
         return loss_dict
 
@@ -421,7 +429,7 @@ class MLP(BaseModels, nn.Module):
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> np.ndarray:
         self.model.eval()
-        y_pred = []
+        y_pred: list[Any] = []
         with torch.no_grad():
             for X_batch in loader:
                 X_batch = X_batch.to(device).float()
