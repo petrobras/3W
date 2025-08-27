@@ -32,6 +32,7 @@ class TrainerConfig(ModelTrainerConfig):
         metrics (list[Callable] | None): List of metrics to evaluate the model.
         cross_validation (bool | None): Whether to use cross-validation (default: None).
         n_splits (int | None): Number of splits for cross-validation (default: None).
+        shuffle_train (bool): Whether to shuffle the training data (default: True).
 
     Example:
         >>> trainer_config = TrainerConfig(
@@ -59,7 +60,8 @@ class TrainerConfig(ModelTrainerConfig):
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     metrics: list[Callable] | None = None
     cross_validation: bool | None = None
-    n_splits: int | None = None
+    n_splits: int = 5
+    shuffle_train: bool = True
 
     @field_validator("batch_size")
     @classmethod
@@ -154,12 +156,11 @@ class ModelTrainer(BaseModelTrainer):
         self.cross_validation = config.cross_validation
         if self.config.cross_validation:
             self.n_splits = config.n_splits
-            if self.n_splits is None:
-                self.n_splits = 5
         self.metrics = config.metrics
         self.batch_size = config.batch_size
         self.epochs = config.epochs
         self.seed = config.seed
+        self.shuffle_train = config.shuffle_train
 
     def _get_model(
         self, config_model: MLPConfig | SklearnModelsConfig
@@ -287,11 +288,10 @@ class ModelTrainer(BaseModelTrainer):
         # TODO: Handle StratifiedKfold implementation for Classification models
         if self.cross_validation:
             self.history = []
-            n_splits = self.n_splits if self.n_splits is not None else 5
-            for _, (train_idx, val_idx) in enumerate(
-                KFold(n_splits=n_splits).split(x_train, y_train)
+            for fold, (train_idx, val_idx) in enumerate(
+                KFold(n_splits=self.n_splits).split(x_train, y_train)
             ):
-                print(f"Training fold {_ + 1}/{n_splits}")
+                print(f"Training fold {fold + 1}/{self.n_splits}")
                 fold_history = self.call_trainer(
                     x_train[train_idx],
                     y_train[train_idx],
@@ -320,7 +320,9 @@ class ModelTrainer(BaseModelTrainer):
         **kwargs,
     ) -> dict[str, list[Any]] | None:
         if isinstance(self.model, MLP):
-            train_loader = self._create_dataloader(x_train, y_train, shuffle=True)
+            train_loader = self._create_dataloader(
+                x_train, y_train, shuffle=self.shuffle_train
+            )
             val_loader = None
             if x_val is not None and y_val is not None:
                 val_loader = self._create_dataloader(x_val, y_val, shuffle=False)

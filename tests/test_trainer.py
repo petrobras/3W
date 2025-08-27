@@ -311,8 +311,6 @@ def test_trainer_unknown_model_config_explicit():
 
 
 def test_trainer_all_missing_branches(mlp_trainer_and_data):
-    import pydantic
-
     # Cover TrainerConfig batch_size validator (<=0)
     with pytest.raises(ValueError, match="batch_size must be > 0"):
         TrainerConfig(
@@ -462,21 +460,6 @@ def test_trainer_all_missing_branches(mlp_trainer_and_data):
         device="cpu",
         cross_validation=True,
         n_splits=5,
-    )
-    trainer = ModelTrainer(trainer_config)
-    assert trainer.n_splits == 5
-
-    trainer_config = TrainerConfig(
-        batch_size=2,
-        epochs=1,
-        seed=42,
-        learning_rate=1e-3,
-        config_model=config,
-        optimizer=OptimizersEnum.ADAM.value,
-        criterion=CriterionEnum.MSE.value,
-        device="cpu",
-        cross_validation=True,
-        n_splits=None,
     )
     trainer = ModelTrainer(trainer_config)
     assert trainer.n_splits == 5
