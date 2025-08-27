@@ -21,3 +21,23 @@ class EventPrefixEnum(str, Enum):
     REAL = "WELL"
     SIMULATED = "SIMULATED"
     DRAWN = "DRAWN"
+
+
+class ActivationFunctionEnum(Enum):
+    RELU = "relu"
+    SIGMOID = "sigmoid"
+    TANH = "tanh"
+
+
+class OptimizersEnum(Enum):
+    ADAM = "adam"
+    ADAMW = "adamw"
+    SGD = "sgd"
+    RMSPROP = "rmsprop"
+
+
+class CriterionEnum(Enum):
+    CROSS_ENTROPY = "cross_entropy"
+    BINARY_CROSS_ENTROPY = "binary_cross_entropy"
+    MSE = "mse"
+    MAE = "mae"

@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Callable, Optional
+from typing import Dict, Any, List, Callable, Optional, Iterable
 from pydantic import Field
 import numpy as np
 
@@ -58,7 +58,7 @@ class SklearnModels(BaseModels):
             params["random_state"] = config.random_seed
         self.model = model_class(**params)
 
-    def train(self, x: Any, y: Any = None, **kwargs) -> None:
+    def fit(self, x: Any, y: Any = None, **kwargs) -> None:
         """Trains the model on the given data."""
         self.model.fit(x, y, **kwargs)
 
@@ -109,7 +109,7 @@ class SklearnModels(BaseModels):
 
         return results
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self) -> Iterable[dict[str, Any]]:
         """Gets the model's parameters."""
         return self.model.get_params()
 
