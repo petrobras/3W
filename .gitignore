@@ -187,3 +187,5 @@ cython_debug/
 .VolumeIcon.icns
 # Apple macOS Temporary files
 .TemporaryItems
+
+dataset/

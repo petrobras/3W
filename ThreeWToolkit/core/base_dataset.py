@@ -16,7 +16,7 @@ class DatasetConfig(BaseModel):
     )
 
     file_type: Literal["csv", "parquet", "json"] = Field(
-        ..., description="File type. (e.g. csv, parquet, ...)"
+        default="parquet", description="File type. (e.g. csv, parquet, ...)"
     )
 
     event_type: Optional[list[EventPrefixEnum]] = Field(
