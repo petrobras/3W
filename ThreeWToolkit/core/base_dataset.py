@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal, Any, Dict, Callable
+from typing import Optional, Literal, Any, Callable
 
 from pathlib import Path
 from .enums import EventPrefixEnum
@@ -88,7 +88,7 @@ class BaseDataset(ABC):
             e for e in events if self.check_event_type(e) and self.check_event_class(e)
         ]
 
-    def transform(self, transforms: Dict[str, Callable]):
+    def transform(self, transforms: dict[str, Callable]):
         """Returns a wrapper applying transforms to this dataset"""
         return TransformedDataset(self, transforms)
 
@@ -100,14 +100,14 @@ class BaseDataset(ABC):
         pass
 
     @abstractmethod
-    def load_data(self, idx) -> Dict[str, Any]:
+    def load_data(self, idx) -> dict[str, Any]:
         """
         Loads data based on the configuration.
         Should return (X, y) or just X.
         """
         pass
 
-    def __getitem__(self, idx) -> Dict[str, Any]:
+    def __getitem__(self, idx) -> dict[str, Any]:
         """
         Alias to load_data(idx).
         """
@@ -124,7 +124,7 @@ class TransformedDataset(BaseDataset):
     Will raise if "kn" not in inner[idx].
     """
 
-    def __init__(self, dataset: BaseDataset, transforms: Dict[str, Callable]):
+    def __init__(self, dataset: BaseDataset, transforms: dict[str, Callable]):
         self.dataset = dataset
         self.config = dataset.config
         self.transforms = transforms
@@ -132,7 +132,7 @@ class TransformedDataset(BaseDataset):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def load_data(self, idx: int) -> Dict[str, Any]:
+    def load_data(self, idx: int) -> dict[str, Any]:
         # load from base dataset
         item = self.dataset.load_data(idx)
 

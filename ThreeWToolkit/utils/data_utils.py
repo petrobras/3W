@@ -2,13 +2,13 @@ import numpy as np
 import pandas as pd
 
 
-""" signals in dataset but with few cases (or no case at all) """
+""" Signals in dataset but with few samples (or no samples at all). """
 UNUSED_TAGS = [
     "P-JUS-BS",  # zero instances
     "P-MON-SDV-P",  # zero instances
     "PT-P",  # zero instances
     "QBS",  # zero instances
-    "P-MON-CKGL",  # only two events have this tag non NA.
+    "P-MON-CKGL",  # only two events have this tag non-NA.
     "state",  # categorical variable, unclear meaning. TODO: revisit this one.
 ]
 
@@ -61,6 +61,12 @@ DEVIATION_THRESHOLD = {
     "T-TPT": 1e-7,
 }
 
+""" Averages and standard deviations taken from cleaned up data.
+    Cleaned up data means (in order):
+        * tags in UNUSED_TAGS are removed from the dataset.
+        * all values outside the ranges `VALID_RANGE` are removed
+        * all values within an event where the sensor appears frozen (standard deviation below threshold) are removed.
+"""
 GLOBAL_AVERAGES = {  # computed from cleaned up data
     "ABER-CKGL": 1.931843e01,
     "ABER-CKP": 4.239023e01,
