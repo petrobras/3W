@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal, Any, Dict
+from typing import Optional, Literal, Any, Callable
 
 from pathlib import Path
 from .enums import EventPrefixEnum
@@ -88,6 +88,10 @@ class BaseDataset(ABC):
             e for e in events if self.check_event_type(e) and self.check_event_class(e)
         ]
 
+    def transform(self, transforms: dict[str, Callable]):
+        """Returns a wrapper applying transforms to this dataset"""
+        return TransformedDataset(self, transforms)
+
     @abstractmethod
     def __len__(self) -> int:
         """
@@ -95,16 +99,55 @@ class BaseDataset(ABC):
         """
         pass
 
-    def __getitem__(self, idx) -> Dict[str, Any]:
-        """
-        Alias to load_data(idx).
-        """
-        return self.load_data(idx)
-
     @abstractmethod
-    def load_data(self, idx) -> Dict[str, Any]:
+    def load_data(self, idx) -> dict[str, Any]:
         """
         Loads data based on the configuration.
         Should return (X, y) or just X.
         """
         pass
+
+    def __getitem__(self, idx) -> dict[str, Any]:
+        """
+        Alias to load_data(idx).
+        """
+        return self.load_data(idx)
+
+
+class TransformedDataset(BaseDataset):
+    """Apply transformations to an inner dataset.
+
+    Given a dict of callables, transforms = {"k1": f1, "k2": f2, ...},
+    will return
+        transformed[idx] == {"k1": f1(**inner[idx]), "k2": f2(**inner), ...}.
+    Functions will default to identity if not provided.
+    Will raise if "kn" not in inner[idx].
+    """
+
+    def __init__(self, dataset: BaseDataset, transforms: dict[str, Callable]):
+        self.dataset = dataset
+        self.config = dataset.config
+        self.transforms = transforms
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def load_data(self, idx: int) -> dict[str, Any]:
+        # load from base dataset
+        item = self.dataset.load_data(idx)
+
+        # check that keys match
+        missing_keys = set(self.transforms.keys()).difference(item.keys())
+        if len(missing_keys) > 0:
+            raise RuntimeError(
+                f"Error: {', '.join(missing_keys)} not present in base item."
+            )
+
+        transformed = {}
+        for key in item.keys():
+            if key in self.transforms:  # apply only to keys which are in transforms
+                transformed[key] = self.transforms[key](**item)
+            else:
+                transformed[key] = item[key]
+
+        return transformed
