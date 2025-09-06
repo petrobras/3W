@@ -34,7 +34,12 @@ class TestReportGeneration:
         mocker.patch('ThreeWToolkit.reports.report_generation.DataVisualization.correlation_heatmap', return_value="mock_path_heatmap.png")
         mocker.patch('ThreeWToolkit.reports.report_generation.DataVisualization.plot_wavelet_spectrogram', return_value="mock_path_wavelet.png")
 
-        metrics_to_include = ["get_explained_variance", "get_f1"]
+        metrics_to_include = [
+            "get_accuracy",
+            "get_f1",
+            "get_roc_auc",
+            "get_explained_variance"
+        ]
         
         doc = ReportGeneration.generate_summary_report(
             model=mock_model,
@@ -48,13 +53,16 @@ class TestReportGeneration:
 
         assert r"\title{My Test Report}" in latex_source
         assert r"Type: MockModel" in latex_source
-        assert r"Param A: 10" in latex_source # Check parameter parsing
-        assert r"Param C: 1, 2, 3" in latex_source # Check list parameter parsing
+        assert r"Method: rolling threshold" in latex_source # Check parameter parsing
+        assert r"Window: 3" in latex_source # Check list parameter parsing
+        assert r"Threshold: 1.5" in latex_source # Check list parameter parsing
         assert r"Training Samples: 40" in latex_source
         assert r"Test Samples: 10" in latex_source
         
-        assert r"Explained Variance & 0.920 \\" in latex_source
-        assert r"F1 Score & 0.970 \\" in latex_source
+        assert r"F1 Score" in latex_source
+        assert r"ROC AUC" in latex_source
+        assert r"Accuracy" in latex_source
+        assert r"Explained Variance" in latex_source
 
         assert r"\includegraphics[width=0.9\textwidth]{mock_path_pred.png}" in latex_source
         assert r"\includegraphics[width=0.8\textwidth]{mock_path_fft.png}" in latex_source

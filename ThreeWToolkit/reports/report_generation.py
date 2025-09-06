@@ -12,6 +12,12 @@ from pylatex.package import Package
 
 from ThreeWToolkit.constants import PLOTS_DIR, LATEX_DIR, REPORTS_DIR
 from ThreeWToolkit.utils.latex_manager import latex_environment
+from ThreeWToolkit.metrics import (
+    accuracy_score,
+    f1_score,
+    roc_auc_score,
+    explained_variance_score,
+)
 
 
 class DataVisualization:
@@ -41,8 +47,15 @@ class DataVisualization:
         xlabel: str,
         ylabel: str,
     ) -> str:
+        for i, series in enumerate(series_list):
+            if isinstance(series, np.ndarray):
+                series_list[i] = pd.Series(series)
+            elif not isinstance(series, pd.Series):
+                raise ValueError("Input series must be pandas Series or numpy ndarray.")
+
         plt.figure(figsize=(10, 5))
         for series, label in zip(series_list, labels):
+            print(series)
             plt.plot(series.index, series.values, label=label)
         plt.title(title)
         plt.xlabel(xlabel)
@@ -230,11 +243,22 @@ class ReportGeneration:
         """
 
         print(f"Generating Beamer report: '{title}'...")
-        metrics_calculator = Metrics(model=model, X=X_test, y=y_test)
+        # Map the metric names from the config to the actual metric functions.
+        metric_function_map = {
+            "get_accuracy": accuracy_score,
+            "get_f1": f1_score,
+            "get_roc_auc": roc_auc_score,
+            "get_explained_variance": explained_variance_score,
+        }
+
+        # Calculate predictions once to avoid re-computing for each metric.
+        y_pred = model.predict(X_test)
         calculated_metrics = []
+
         for name in metrics:
-            if hasattr(metrics_calculator, name):
-                value = getattr(metrics_calculator, name)()
+            if name in metric_function_map:
+                metric_func = metric_function_map[name]
+                value = metric_func(y_true=y_test, y_pred=y_pred)
                 calculated_metrics.append(
                     (ReportGeneration._format_metric_name(name), f"{value:.3f}")
                 )
