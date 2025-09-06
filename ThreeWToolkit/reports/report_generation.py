@@ -187,8 +187,7 @@ class ReportGeneration:
     as Beamer presentations and to export numerical results to CSV files.
     """
 
-    @staticmethod
-    def _format_metric_name(method_name: str) -> str:
+    def _format_metric_name(self, method_name: str) -> str:
         """Formats a metric's method name into a human-readable title.
 
         Handles special cases like 'get_f1' and general cases by removing
@@ -209,8 +208,8 @@ class ReportGeneration:
             return "ROC AUC"
         return method_name.replace("get_", "").replace("_", " ").strip().title()
 
-    @staticmethod
     def generate_summary_report(
+        self,
         model: Any,
         X_train: pd.Series,
         y_train: pd.Series,
@@ -260,7 +259,7 @@ class ReportGeneration:
                 metric_func = metric_function_map[name]
                 value = metric_func(y_true=y_test, y_pred=y_pred)
                 calculated_metrics.append(
-                    (ReportGeneration._format_metric_name(name), f"{value:.3f}")
+                    (self._format_metric_name(name), f"{value:.3f}")
                 )
 
         doc = Document(documentclass="beamer", document_options=["t,compress"])
@@ -425,8 +424,7 @@ class ReportGeneration:
         print("Beamer document generated successfully.")
         return doc
 
-    @staticmethod
-    def save_report(doc: Document, filename: str) -> None:
+    def save_report(self, doc: Document, filename: str) -> None:
         """Compiles and saves a PyLaTeX Document to a PDF file using lualatex.
 
         This method configures the environment for the LaTeX compiler by setting
@@ -458,8 +456,7 @@ class ReportGeneration:
             )
             print(f"Report saved successfully to '{filename}.pdf'")
 
-    @staticmethod
-    def export_results_to_csv(results: Dict[str, Any], filename: str) -> pd.DataFrame:
+    def export_results_to_csv(self, results: Dict[str, Any], filename: str) -> pd.DataFrame:
         """Exports a comprehensive dictionary of experiment results to a CSV file.
 
         This method creates a single DataFrame where each row corresponds to a

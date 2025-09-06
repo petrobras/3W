@@ -20,7 +20,9 @@ class TestReportGeneration:
     ])
     def test_format_metric_name(self, input_name, expected_output):
         """Test the static helper for formatting metric names."""
-        assert ReportGeneration._format_metric_name(input_name) == expected_output
+        report_generation = ReportGeneration()
+
+        assert report_generation._format_metric_name(input_name) == expected_output
 
     def test_generate_summary_report(self, mocker, mock_model, mock_time_series_data):
         """
@@ -40,8 +42,10 @@ class TestReportGeneration:
             "get_roc_auc",
             "get_explained_variance"
         ]
-        
-        doc = ReportGeneration.generate_summary_report(
+
+        report_generation = ReportGeneration()
+
+        doc = report_generation.generate_summary_report(
             model=mock_model,
             metrics=metrics_to_include,
             title="My Test Report",
@@ -81,7 +85,9 @@ class TestReportGeneration:
         mock_manager = mocker.patch('ThreeWToolkit.reports.report_generation.latex_environment', MagicMock())
 
         mock_doc = MagicMock()
-        ReportGeneration.save_report(mock_doc, test_filename)
+        report_generation = ReportGeneration()
+
+        report_generation.save_report(mock_doc, test_filename)
 
         mock_manager.assert_called_once_with(tmp_path)
 
@@ -115,7 +121,9 @@ class TestReportGeneration:
             }
         }
 
-        returned_df = ReportGeneration.export_results_to_csv(results_data, str(filename))
+        report_generation = ReportGeneration()
+
+        returned_df = report_generation.export_results_to_csv(results_data, str(filename))
 
         assert isinstance(returned_df, pd.DataFrame)
         expected_columns = ['X_test', 'y_test', 'prediction', 'model_name', 'mae', 'rmse']
@@ -142,8 +150,9 @@ class TestReportGeneration:
             # 'model_name': 'MyMockModel', # Intentionally missing
             'metrics': {'mae': 0.1}
         }
+        report_generation = ReportGeneration()
 
         with pytest.raises(ValueError) as excinfo:
-            ReportGeneration.export_results_to_csv(incomplete_results, "dummy_filename.csv")
+            report_generation.export_results_to_csv(incomplete_results, "dummy_filename.csv")
 
         assert "must contain all keys" in str(excinfo.value)
