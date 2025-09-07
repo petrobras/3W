@@ -134,6 +134,7 @@ class DataVisualization:
         plt.ylabel("Frequency Scale")
         return DataVisualization._save_plot(title)
 
+
 class ReportGeneration:
     """
     A class for generating and exporting model evaluation reports.
@@ -411,7 +412,9 @@ class ReportGeneration:
             )
             print(f"Report saved successfully to '{filename}.pdf'")
 
-    def export_results_to_csv(self, results: Dict[str, Any], filename: str) -> pd.DataFrame:
+    def export_results_to_csv(
+        self, results: Dict[str, Any], filename: str
+    ) -> pd.DataFrame:
         """Exports a comprehensive dictionary of experiment results to a CSV file.
 
         This method creates a single DataFrame where each row corresponds to a
