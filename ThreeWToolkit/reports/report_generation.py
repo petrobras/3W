@@ -134,54 +134,9 @@ class DataVisualization:
         plt.ylabel("Frequency Scale")
         return DataVisualization._save_plot(title)
 
-
-class Metrics:
-    # TODO replace Metrics usage with the already implemented Metrics functionalities befor v2.0.0 release.
-    """A mock class for calculating various model performance metrics.
-    This class simulates the behavior of a metrics calculator, providing
-    predefined values for different metrics to demonstrate functionality
-    without requiring a real model or data.
-    Attributes:
-        model (Any): The model object for which metrics are calculated.
-        X (pd.Series): The feature data used for evaluation.
-        y (pd.Series): The target data used for evaluation.
-        pip_config (Optional[dict[Any, Any]]): Optional configuration dictionary.
-    """
-
-    def __init__(
-        self,
-        model: Any,
-        X: pd.Series,
-        y: pd.Series,
-        pip_config: Optional[dict[Any, Any]] = None,
-    ):
-        self.model = model
-        self.X = X
-        self.y = y
-        self.pip_config = pip_config if pip_config is not None else {}
-
-    def get_neg_mean_absolute_error(self) -> float:
-        return -0.15
-
-    def get_neg_root_mean_squared_error(self) -> float:
-        return -0.25
-
-    def get_explained_variance(self) -> float:
-        return 0.92
-
-    def get_accuracy(self) -> float:
-        return 0.95
-
-    def get_f1(self) -> float:
-        return 0.97
-
-    def get_roc_auc(self) -> float:
-        return 0.99
-
-
 class ReportGeneration:
     """
-    A static class for generating and exporting model evaluation reports.
+    A class for generating and exporting model evaluation reports.
 
     This class provides methods to create comprehensive PDF summary reports
     as Beamer presentations and to export numerical results to CSV files.
