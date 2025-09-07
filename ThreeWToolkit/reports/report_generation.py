@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 import numpy as np
 import seaborn as sns
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict
 
 import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
