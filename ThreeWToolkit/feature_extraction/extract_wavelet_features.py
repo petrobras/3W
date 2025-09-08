@@ -2,7 +2,6 @@ import pandas as pd
 import torch
 import numpy as np
 import pywt
-from typing import Optional
 from pydantic import field_validator
 
 from ..core.base_feature_extractor import BaseFeatureExtractor, FeatureExtractorConfig
@@ -15,13 +14,6 @@ class WaveletConfig(FeatureExtractorConfig):
     level: int = 1
     overlap: float = 0.0
     offset: int = 0
-
-    @field_validator("level")
-    def check_level_is_positive(cls, v):
-        """Validates that the wavelet level is a positive integer."""
-        if v < 1:
-            raise ValueError("Wavelet level must be a positive integer (>= 1).")
-        return v
 
     @field_validator("overlap")
     def check_overlap_range(cls, v):
@@ -37,11 +29,17 @@ class WaveletConfig(FeatureExtractorConfig):
             raise ValueError("Offset must be a non-negative integer.")
         return v
 
+    @field_validator("level")
+    def check_level_is_positive(cls, v):
+        """Validates that the wavelet level is a positive integer."""
+        if v < 1:
+            raise ValueError("Wavelet level must be a positive integer (>= 1).")
+        return v
+
 
 class ExtractWaveletFeatures(BaseFeatureExtractor):
     """
-    PyTorch implementation of the wavelet feature mapper, refactored
-    to use the toolkit's `windowing` function.
+    PyTorch implementation of the wavelet feature mapper.
     """
 
     def __init__(self, config: WaveletConfig):
@@ -56,10 +54,13 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
 
         # SWT: Stationary Wavelet Transform
         swt_coefficients = pywt.swt(impulse, "haar", level=self.level)
-        wt_filter_matrix = np.stack(
-            [coeff[i] for coeff in swt_coefficients for i in range(2)] + [impulse],
-            axis=-1,
-        )
+        self.wt_filter_matrix = torch.tensor(
+            np.stack(
+                [coeff for level_coeffs in swt_coefficients for coeff in level_coeffs]
+                + [impulse],
+                axis=-1,
+            )
+        ).double()
 
         self.feat_names = [
             f"{type_}{level}"
@@ -69,16 +70,19 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
                 "D",
             ]  # A -> approximation coefficients; D -> detail coefficients
         ] + ["A0"]  # A0 -> approx coeff on first level of wavelet filtering
-        self.wt_filter_matrix = torch.tensor(wt_filter_matrix).double()
 
-    def __call__(
-        self, tags: pd.DataFrame, event_type: Optional[str] = None
-    ) -> pd.DataFrame:
+    def __call__(self, tags: pd.DataFrame, y: pd.Series | None = None):
         # preserve names and index
         original_index_name = tags.index.name
 
+        if y is None:
+            raise ValueError(
+                "The 'y' series (labels) must be provided for feature extraction."
+            )
+
         if self.offset > 0:
             tags = tags.iloc[self.offset :]
+            y = y.iloc[self.offset :]
 
         # This list will track columns that actually produce features.
         processed_columns = []
@@ -121,13 +125,19 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
 
         # If no columns were successfully processed, return an empty DataFrame.
         if not all_column_features:
-            # Defining out_columns here for the empty case, using the original columns
             out_columns = [f"{t}_{f}" for f in self.feat_names for t in tags.columns]
-            return pd.DataFrame(
-                columns=out_columns,
-                dtype=np.float64,
-                index=pd.Index([], name=original_index_name),
+            empty_index = pd.Index([], name=original_index_name)
+            X = pd.DataFrame(columns=out_columns, dtype=np.float64, index=empty_index)
+            y_out = (
+                pd.Series(
+                    [],
+                    dtype=y.dtype if y is not None else np.float64,
+                    index=empty_index,
+                )
+                if y is not None
+                else None
             )
+            return X, y_out
 
         # Build the final column list ONLY from processed columns.
         out_columns_final = [
@@ -135,14 +145,21 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
         ]
 
         stride = int(self.window_size * (1 - self.overlap))
+        if stride == 0:
+            stride = 1
 
         output_index = tags.index[self.window_size - 1 :: stride]
         num_windows = len(all_column_features[0])
         output_index = output_index[:num_windows]
 
-        final_df = pd.concat(all_column_features, axis=1)
-        final_df.index = output_index
-        final_df.index.name = original_index_name
+        X = pd.concat(all_column_features, axis=1)
+        X.index = output_index
+        X.index.name = original_index_name
 
         # Now, reindex will only use columns that should actually exist.
-        return final_df.reindex(columns=out_columns_final)
+        X = X.reindex(columns=out_columns_final)
+
+        # Align y with the new windowed index
+        y_out = y.loc[output_index]
+
+        return X, y_out

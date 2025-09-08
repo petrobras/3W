@@ -9,7 +9,7 @@ from ..preprocessing._data_processing import windowing
 
 class EWStatisticalConfig(FeatureExtractorConfig):
     """
-    Configuration for the Exponetially Weighted
+    Configuration for the Exponentially Weighted
     Statistical feature extractor.
     """
 
@@ -43,7 +43,8 @@ class EWStatisticalConfig(FeatureExtractorConfig):
 
 class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
     """
-    PyTorch implementation of an exponentially weighted statistical feature mapper.
+    Configuration for the Exponetially Weighted
+    Statistical feature extractor.
     """
 
     FEATURES = [
@@ -64,21 +65,27 @@ class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
         self.overlap = config.overlap
         self.offset = config.offset
         self.eps = config.eps
-
-        ew_weights = config.decay ** torch.arange(
+        h = config.decay ** torch.arange(
             self.window_size, 0, step=-1, dtype=torch.double
         )
-        self.ew_weights = ew_weights / (ew_weights.abs().sum() + self.eps)
+        self.weights = h / (h.abs().sum() + self.eps)
 
     def _apply_weights(self, X, dim=-1):
-        """Take the exponentially weighted average through a dot product in the specified dimension."""
-        return torch.tensordot(X, self.ew_weights, dims=[[dim], [0]])
+        """Take the exponentially weighted average through a dot product."""
+        return torch.tensordot(X, self.weights, dims=[[dim], [0]])
 
-    def __call__(self, tags: pd.DataFrame, event_type=None) -> pd.DataFrame:
+    def __call__(self, tags: pd.DataFrame, y: pd.Series | None = None, event_type=None):
+        # Raise an error if y is not provided.
+        if y is None:
+            raise ValueError(
+                "The 'y' series (labels) must be provided for feature extraction."
+            )
+
         original_index_name = tags.index.name
 
         if self.offset > 0:
             tags = tags.iloc[self.offset :]
+            y = y.iloc[self.offset :]
 
         # This list will track columns that actually produced features.
         processed_columns = []
@@ -123,24 +130,19 @@ class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
             q = cstags.quantile(quantiles, dim=-1)
 
             records = {
-                f"{col_name}_ew_mean": mean,
-                f"{col_name}_ew_std": std,
-                f"{col_name}_ew_skew": skew,
-                f"{col_name}_ew_kurt": kurt,
-                f"{col_name}_ew_min": q[0],
-                f"{col_name}_ew_1qrt": q[1],
-                f"{col_name}_ew_med": q[2],
-                f"{col_name}_ew_3qrt": q[3],
-                f"{col_name}_ew_max": q[4],
+                f"{col_name}_{feat}": val
+                for feat, val in zip(
+                    self.FEATURES, [mean, std, skew, kurt, q[0], q[1], q[2], q[3], q[4]]
+                )
             }
             all_column_features.append(pd.DataFrame(records))
 
         if not all_column_features:
             out_columns = [f"{t}_{f}" for f in self.FEATURES for t in tags.columns]
             empty_index = pd.Index([], name=original_index_name)
-            return pd.DataFrame(
-                columns=out_columns, dtype=np.float64, index=empty_index
-            )
+            X = pd.DataFrame(columns=out_columns, dtype=np.float64, index=empty_index)
+            y_out = pd.Series([], dtype=y.dtype, index=empty_index)
+            return X, y_out
 
         # Build the final column list ONLY from the processed columns.
         out_columns_final = [
@@ -148,14 +150,19 @@ class ExtractEWStatisticalFeatures(BaseFeatureExtractor):
         ]
 
         stride = int(self.window_size * (1 - self.overlap))
+        if stride == 0:
+            stride = 1
 
         output_index = tags.index[self.window_size - 1 :: stride]
         num_windows = len(all_column_features[0])
         output_index = output_index[:num_windows]
 
-        final_df = pd.concat(all_column_features, axis=1)
-        final_df.index = output_index
-        final_df.index.name = original_index_name
+        X = pd.concat(all_column_features, axis=1)
+        X.index = output_index
+        X.index.name = original_index_name
+        X = X.reindex(columns=out_columns_final)
 
-        # Now, reindex will only organize the columns that should actually exist.
-        return final_df.reindex(columns=out_columns_final)
+        # Align y with the new windowed index
+        y_out = y.loc[output_index]
+
+        return X, y_out
