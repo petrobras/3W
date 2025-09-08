@@ -39,8 +39,7 @@ class StatisticalConfig(FeatureExtractorConfig):
 
 class ExtractStatisticalFeatures(BaseFeatureExtractor):
     """
-    Final, definitively corrected version. This implementation correctly handles
-    scenarios where some columns produce features and others do not.
+    Extracts statistical features out of windows from given dataframe.
     """
 
     FEATURES = ["mean", "std", "skew", "kurt", "min", "1qrt", "med", "3qrt", "max"]
@@ -52,18 +51,22 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
         self.offset = config.offset
         self.eps = config.eps
 
-    def __call__(self, tags: pd.DataFrame, event_type=None) -> pd.DataFrame:
+    def __call__(self, tags: pd.DataFrame, y: pd.Series | None = None, event_type=None):
         original_index_name = tags.index.name
+
+        if y is None:
+            raise ValueError(
+                "The 'y' series (labels) must be provided for feature extraction."
+            )
 
         if self.offset > 0:
             tags = tags.iloc[self.offset :]
+            y = y.iloc[self.offset :]
 
-        # This list will track columns that actually produce features.
         processed_columns = []
         all_column_features = []
 
         for col_name in tags.columns:
-            # Skipping column with insufficient data
             if len(tags[col_name]) < self.window_size:
                 continue
 
@@ -77,7 +80,6 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
             if windows_df.empty:
                 continue
 
-            # This column was successfully processed, so it is added to the list.
             processed_columns.append(col_name)
 
             if windows_df.shape[1] > self.window_size:
@@ -107,29 +109,36 @@ class ExtractStatisticalFeatures(BaseFeatureExtractor):
             }
             all_column_features.append(pd.DataFrame(records))
 
-        # If no columns were successfully processed, return an empty DataFrame.
         if not all_column_features:
-            # Defining out_columns here for the empty case, using the original columns
             out_columns = [f"{t}_{f}" for f in self.FEATURES for t in tags.columns]
             empty_index = pd.Index([], name=original_index_name)
-            return pd.DataFrame(
-                columns=out_columns, dtype=np.float64, index=empty_index
+            X = pd.DataFrame(columns=out_columns, dtype=np.float64, index=empty_index)
+            y_out = (
+                pd.Series([], dtype=np.float64, index=empty_index)
+                if y is not None
+                else None
             )
+            return X, y_out
 
-        # Build the final column list ONLY from processed columns.
         out_columns_final = [
             f"{t}_{f}" for f in self.FEATURES for t in processed_columns
         ]
 
         stride = int(self.window_size * (1 - self.overlap))
 
+        if stride == 0:
+            stride = 1
+
         output_index = tags.index[self.window_size - 1 :: stride]
         num_windows = len(all_column_features[0])
         output_index = output_index[:num_windows]
 
-        final_df = pd.concat(all_column_features, axis=1)
-        final_df.index = output_index
-        final_df.index.name = original_index_name
+        X = pd.concat(all_column_features, axis=1)
+        X.index = output_index
+        X.index.name = original_index_name
+        X = X.reindex(columns=out_columns_final)
 
-        # Now, reindex will only use columns that should actually exist.
-        return final_df.reindex(columns=out_columns_final)
+        # Align y with the new windowed index
+        y_out = y.loc[output_index]
+
+        return X, y_out
