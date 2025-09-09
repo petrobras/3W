@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 import numpy as np
 import seaborn as sns
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict
 
 import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
@@ -12,6 +12,12 @@ from pylatex.package import Package
 
 from ThreeWToolkit.constants import PLOTS_DIR, LATEX_DIR, REPORTS_DIR
 from ThreeWToolkit.utils.latex_manager import latex_environment
+from ThreeWToolkit.metrics import (
+    accuracy_score,
+    f1_score,
+    roc_auc_score,
+    explained_variance_score,
+)
 
 
 class DataVisualization:
@@ -41,8 +47,15 @@ class DataVisualization:
         xlabel: str,
         ylabel: str,
     ) -> str:
+        for i, series in enumerate(series_list):
+            if isinstance(series, np.ndarray):
+                series_list[i] = pd.Series(series)
+            elif not isinstance(series, pd.Series):
+                raise ValueError("Input series must be pandas Series or numpy ndarray.")
+
         plt.figure(figsize=(10, 5))
         for series, label in zip(series_list, labels):
+            print(series)
             plt.plot(series.index, series.values, label=label)
         plt.title(title)
         plt.xlabel(xlabel)
@@ -122,60 +135,15 @@ class DataVisualization:
         return DataVisualization._save_plot(title)
 
 
-class Metrics:
-    # TODO replace Metrics usage with the already implemented Metrics functionalities befor v2.0.0 release.
-    """A mock class for calculating various model performance metrics.
-    This class simulates the behavior of a metrics calculator, providing
-    predefined values for different metrics to demonstrate functionality
-    without requiring a real model or data.
-    Attributes:
-        model (Any): The model object for which metrics are calculated.
-        X (pd.Series): The feature data used for evaluation.
-        y (pd.Series): The target data used for evaluation.
-        pip_config (Optional[dict[Any, Any]]): Optional configuration dictionary.
-    """
-
-    def __init__(
-        self,
-        model: Any,
-        X: pd.Series,
-        y: pd.Series,
-        pip_config: Optional[dict[Any, Any]] = None,
-    ):
-        self.model = model
-        self.X = X
-        self.y = y
-        self.pip_config = pip_config if pip_config is not None else {}
-
-    def get_neg_mean_absolute_error(self) -> float:
-        return -0.15
-
-    def get_neg_root_mean_squared_error(self) -> float:
-        return -0.25
-
-    def get_explained_variance(self) -> float:
-        return 0.92
-
-    def get_accuracy(self) -> float:
-        return 0.95
-
-    def get_f1(self) -> float:
-        return 0.97
-
-    def get_roc_auc(self) -> float:
-        return 0.99
-
-
 class ReportGeneration:
     """
-    A static class for generating and exporting model evaluation reports.
+    A class for generating and exporting model evaluation reports.
 
     This class provides methods to create comprehensive PDF summary reports
     as Beamer presentations and to export numerical results to CSV files.
     """
 
-    @staticmethod
-    def _format_metric_name(method_name: str) -> str:
+    def _format_metric_name(self, method_name: str) -> str:
         """Formats a metric's method name into a human-readable title.
 
         Handles special cases like 'get_f1' and general cases by removing
@@ -196,8 +164,8 @@ class ReportGeneration:
             return "ROC AUC"
         return method_name.replace("get_", "").replace("_", " ").strip().title()
 
-    @staticmethod
     def generate_summary_report(
+        self,
         model: Any,
         X_train: pd.Series,
         y_train: pd.Series,
@@ -230,13 +198,24 @@ class ReportGeneration:
         """
 
         print(f"Generating Beamer report: '{title}'...")
-        metrics_calculator = Metrics(model=model, X=X_test, y=y_test)
+        # Map the metric names from the config to the actual metric functions.
+        metric_function_map = {
+            "get_accuracy": accuracy_score,
+            "get_f1": f1_score,
+            "get_roc_auc": roc_auc_score,
+            "get_explained_variance": explained_variance_score,
+        }
+
+        # Calculate predictions once to avoid re-computing for each metric.
+        y_pred = model.predict(X_test)
         calculated_metrics = []
+
         for name in metrics:
-            if hasattr(metrics_calculator, name):
-                value = getattr(metrics_calculator, name)()
+            if name in metric_function_map:
+                metric_func = metric_function_map[name]
+                value = metric_func(y_true=y_test, y_pred=y_pred)
                 calculated_metrics.append(
-                    (ReportGeneration._format_metric_name(name), f"{value:.3f}")
+                    (self._format_metric_name(name), f"{value:.3f}")
                 )
 
         doc = Document(documentclass="beamer", document_options=["t,compress"])
@@ -401,8 +380,7 @@ class ReportGeneration:
         print("Beamer document generated successfully.")
         return doc
 
-    @staticmethod
-    def save_report(doc: Document, filename: str) -> None:
+    def save_report(self, doc: Document, filename: str) -> None:
         """Compiles and saves a PyLaTeX Document to a PDF file using lualatex.
 
         This method configures the environment for the LaTeX compiler by setting
@@ -434,8 +412,9 @@ class ReportGeneration:
             )
             print(f"Report saved successfully to '{filename}.pdf'")
 
-    @staticmethod
-    def export_results_to_csv(results: Dict[str, Any], filename: str) -> pd.DataFrame:
+    def export_results_to_csv(
+        self, results: Dict[str, Any], filename: str
+    ) -> pd.DataFrame:
         """Exports a comprehensive dictionary of experiment results to a CSV file.
 
         This method creates a single DataFrame where each row corresponds to a

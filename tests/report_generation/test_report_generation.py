@@ -20,7 +20,9 @@ class TestReportGeneration:
     ])
     def test_format_metric_name(self, input_name, expected_output):
         """Test the static helper for formatting metric names."""
-        assert ReportGeneration._format_metric_name(input_name) == expected_output
+        report_generation = ReportGeneration()
+
+        assert report_generation._format_metric_name(input_name) == expected_output
 
     def test_generate_summary_report(self, mocker, mock_model, mock_time_series_data):
         """
@@ -34,9 +36,16 @@ class TestReportGeneration:
         mocker.patch('ThreeWToolkit.reports.report_generation.DataVisualization.correlation_heatmap', return_value="mock_path_heatmap.png")
         mocker.patch('ThreeWToolkit.reports.report_generation.DataVisualization.plot_wavelet_spectrogram', return_value="mock_path_wavelet.png")
 
-        metrics_to_include = ["get_explained_variance", "get_f1"]
-        
-        doc = ReportGeneration.generate_summary_report(
+        metrics_to_include = [
+            "get_accuracy",
+            "get_f1",
+            "get_roc_auc",
+            "get_explained_variance"
+        ]
+
+        report_generation = ReportGeneration()
+
+        doc = report_generation.generate_summary_report(
             model=mock_model,
             metrics=metrics_to_include,
             title="My Test Report",
@@ -48,13 +57,16 @@ class TestReportGeneration:
 
         assert r"\title{My Test Report}" in latex_source
         assert r"Type: MockModel" in latex_source
-        assert r"Param A: 10" in latex_source # Check parameter parsing
-        assert r"Param C: 1, 2, 3" in latex_source # Check list parameter parsing
+        assert r"Method: rolling threshold" in latex_source # Check parameter parsing
+        assert r"Window: 3" in latex_source # Check list parameter parsing
+        assert r"Threshold: 1.5" in latex_source # Check list parameter parsing
         assert r"Training Samples: 40" in latex_source
         assert r"Test Samples: 10" in latex_source
         
-        assert r"Explained Variance & 0.920 \\" in latex_source
-        assert r"F1 Score & 0.970 \\" in latex_source
+        assert r"F1 Score" in latex_source
+        assert r"ROC AUC" in latex_source
+        assert r"Accuracy" in latex_source
+        assert r"Explained Variance" in latex_source
 
         assert r"\includegraphics[width=0.9\textwidth]{mock_path_pred.png}" in latex_source
         assert r"\includegraphics[width=0.8\textwidth]{mock_path_fft.png}" in latex_source
@@ -73,7 +85,9 @@ class TestReportGeneration:
         mock_manager = mocker.patch('ThreeWToolkit.reports.report_generation.latex_environment', MagicMock())
 
         mock_doc = MagicMock()
-        ReportGeneration.save_report(mock_doc, test_filename)
+        report_generation = ReportGeneration()
+
+        report_generation.save_report(mock_doc, test_filename)
 
         mock_manager.assert_called_once_with(tmp_path)
 
@@ -107,7 +121,9 @@ class TestReportGeneration:
             }
         }
 
-        returned_df = ReportGeneration.export_results_to_csv(results_data, str(filename))
+        report_generation = ReportGeneration()
+
+        returned_df = report_generation.export_results_to_csv(results_data, str(filename))
 
         assert isinstance(returned_df, pd.DataFrame)
         expected_columns = ['X_test', 'y_test', 'prediction', 'model_name', 'mae', 'rmse']
@@ -134,8 +150,9 @@ class TestReportGeneration:
             # 'model_name': 'MyMockModel', # Intentionally missing
             'metrics': {'mae': 0.1}
         }
+        report_generation = ReportGeneration()
 
         with pytest.raises(ValueError) as excinfo:
-            ReportGeneration.export_results_to_csv(incomplete_results, "dummy_filename.csv")
+            report_generation.export_results_to_csv(incomplete_results, "dummy_filename.csv")
 
         assert "must contain all keys" in str(excinfo.value)
