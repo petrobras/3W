@@ -16,10 +16,15 @@ from .cross_validation import CrossValidator
 from .data_augmentation import DataAugmentor
 from .data_persistence import DataPersistence
 from .training_utils import training_notebook_setup, quick_load_cv_data, get_fold_data
+from .autoencoder_models import StableLSTMAutoencoder
+from .unsupervised_preprocessing import UnsupervisedDataPreprocessor
+from .anomaly_detection import AnomalyDetector, visualize_latent_space
 from . import config
 
 __all__ = [
     'DataLoader', 'DataPreprocessor', 'DataVisualizer', 'CrossValidator', 
     'DataAugmentor', 'DataPersistence', 'training_notebook_setup', 
-    'quick_load_cv_data', 'get_fold_data', 'config'
+    'quick_load_cv_data', 'get_fold_data', 'StableLSTMAutoencoder',
+    'UnsupervisedDataPreprocessor', 'AnomalyDetector', 'visualize_latent_space',
+    'config'
 ]

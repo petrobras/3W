@@ -439,7 +439,20 @@ def quick_noise_augmentation(dfs: List[pd.DataFrame], classes: List[str],
     return augmentor.add_noise(dfs, classes, noise_level=noise_level)
 
 def quick_balance_classes(dfs: List[pd.DataFrame], classes: List[str], 
-                         strategy: str = 'combined') -> Tuple[List[pd.DataFrame], List[str]]:
-    """Quick class balancing with default settings."""
+                         strategy: str = 'combined', 
+                         min_samples_per_class: Optional[int] = None) -> Tuple[List[pd.DataFrame], List[str]]:
+    """
+    Quick class balancing with default settings.
+    
+    Args:
+        dfs: List of dataframes
+        classes: List of class labels
+        strategy: Balancing strategy ('combined', 'oversample', 'undersample', 'smote')
+        min_samples_per_class: Minimum samples per class (used as target_samples_per_class)
+    
+    Returns:
+        tuple: (balanced_dfs, balanced_classes)
+    """
     augmentor = DataAugmentor(verbose=True)
-    return augmentor.balance_classes(dfs, classes, strategy=strategy)
+    return augmentor.balance_classes(dfs, classes, strategy=strategy, 
+                                   target_samples_per_class=min_samples_per_class)
