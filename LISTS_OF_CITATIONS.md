@@ -67,7 +67,8 @@ If you use any resource published in this Git repository, we ask that it be prop
 
 ## Doctoral Theses
 
-1. L.G.O. Lopes. Open-World Learning Applied to Oil Wells Using Autoencoder-Based Clustering. Universidade Federal de Alagoas. 2025. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_lucas_lopes.pdf.
+1. P.E. Aranha Development of Data-Driven Methodologies for Predicting Anomalies and Ensuring Well Integrity in Offshore Oil Production Using Machine Learning Approaches. 2025 https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_pedro_aranha.pdf
+2. L.G.O. Lopes. Open-World Learning Applied to Oil Wells Using Autoencoder-Based Clustering. Universidade Federal de Alagoas. 2025. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_lucas_lopes.pdf.
 1. A.P.F. Machado. Methodologies to Improve One-Class Classifier Performance Applied to Multivariate Time Series. Universidade Federal do Espírito Santo. 2024. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_andre_machado.pdf.
 1. E.M. Turan. Advances in Optimisation and Machine Learning for Process Systems Engineering. Norwegian University of Science and Technology. 2024. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_evren_turan.pdf.
 1. Y. Li. Predictive Analysis and Critical Event Monitoring in Large Dynamic Networks. University of Massachusetts Lowell. 2023. https://github.com/petrobras/3W/raw/main/docs/doctoral_thesis_yan_li.pdf.
