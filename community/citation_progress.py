@@ -4,9 +4,9 @@ import matplotlib as mpl
 import os
 
 # Plot style settings
-mpl.style.use('default')
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif', size=11)
+mpl.style.use("default")
+plt.rc("text", usetex=True)
+plt.rc("font", family="serif", size=11)
 
 # File paths
 script_dir = os.path.dirname(__file__)  # 3W/community
@@ -23,16 +23,16 @@ df_count = df_raw.groupby(["Year", "Category"]).size().unstack(fill_value=0)
 
 # Reorder columns
 ordered_columns = [
-    'Books',
-    'Conference Papers',
-    'Data Articles',
-    'Doctoral Theses',
-    'Final Graduation Projects',
-    'Journal Articles',
+    "Books",
+    "Conference Papers",
+    "Data Articles",
+    "Doctoral Theses",
+    "Final Graduation Projects",
+    "Journal Articles",
     "Master's Degree Dissertations",
-    'Other Articles',
-    'Repository Articles',
-    'Specialization Monographs'
+    "Other Articles",
+    "Repository Articles",
+    "Specialization Monographs",
 ]
 
 # Ensure all expected categories exist
@@ -47,11 +47,11 @@ df_cumulative = df_count.cumsum()
 
 # Plot the data
 fig, ax = plt.subplots(figsize=(12, 9))
-df_cumulative.plot(kind='bar', stacked=True, ax=ax, width=0.5)
+df_cumulative.plot(kind="bar", stacked=True, ax=ax, width=0.5)
 
 # Axes and legend
-plt.ylabel('Number of Citations')
-plt.xlabel('Year')
+plt.ylabel("Number of Citations")
+plt.xlabel("Year")
 plt.xticks(rotation=0)
 ax.legend(title=None)
 
@@ -61,9 +61,17 @@ plt.grid(False)
 # Add totals on top of bars
 totals = df_cumulative.sum(axis=1)
 for i, total in enumerate(totals):
-    ax.text(i, total + 0.5, str(int(total)), ha='center', va='bottom',
-            fontsize=12, weight='bold', color='black')
+    ax.text(
+        i,
+        total + 0.5,
+        str(int(total)),
+        ha="center",
+        va="bottom",
+        fontsize=12,
+        weight="bold",
+        color="black",
+    )
 
-# Save figure 
-plt.savefig(output_file, format='svg', bbox_inches='tight')
+# Save figure
+plt.savefig(output_file, format="svg", bbox_inches="tight")
 plt.show()
