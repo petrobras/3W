@@ -1,8 +1,8 @@
-# 3W Dataset Machine Learning Pipeline
+# 3W Dataset Data Science and Machine Learning Notebooks
 
 ## 🎯 Overview
 
-This repository contains a comprehensive machine learning pipeline for the **3W Dataset** - a real-world dataset for fault detection in oil wells. The pipeline includes data preprocessing, supervised learning, unsupervised learning, and clustering analysis methods.
+This repository contains Data Science and Machine Learning notebooks for the **3W Dataset**. The notebooks includes data preprocessing, supervised learning, unsupervised learning, and clustering analysis methods.
 
 ## ⚠️ **Configuration Disclaimer**
 
@@ -14,7 +14,7 @@ This repository contains a comprehensive machine learning pipeline for the **3W 
 > 
 > **🔧 Customization**: Modify `src/config.py` to adapt the pipeline to your specific requirements. The current configuration is optimized for workshop presentation time constraints.
 
-## 📊 Pipeline Architecture & Data Contracts
+## 📊 Notebooks Architecture & Data Contracts
 
 ```mermaid
 graph TB
@@ -552,8 +552,6 @@ processed_data/
 ## 📝 Notes
 
 - **Data Dependencies**: Notebook 1 must be run before others
-- **Memory Requirements**: Large datasets may require sampling
-- **Execution Time**: Full pipeline can take several hours
+- **Memory Requirements**: Large training may require sampling
+- **Execution Time**: Full pipeline can take several minutes
 - **Reproducibility**: Random seeds are set for consistent results
-
--
