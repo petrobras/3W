@@ -4,6 +4,16 @@
 
 This repository contains a comprehensive machine learning pipeline for the **3W Dataset** - a real-world dataset for fault detection in oil wells. The pipeline includes data preprocessing, supervised learning, unsupervised learning, and clustering analysis methods.
 
+## ⚠️ **Configuration Disclaimer**
+
+> **📋 Important Note**: All configurations shown in this documentation (sensor variables, data shapes, window sizes, etc.) are **examples for demonstration purposes**. The pipeline is **fully configurable** and can be adapted to:
+> - **Any sensor combination** (P-TPT, T-TPT are just examples)
+> - **Variable window sizes** (300 points is configurable)
+> - **Different feature counts** (shapes shown are examples)
+> - **Custom preprocessing methods** (scaling, windowing, etc.)
+> 
+> **🔧 Customization**: Modify `src/config.py` to adapt the pipeline to your specific requirements. The current configuration is optimized for workshop presentation time constraints.
+
 ## 📊 Pipeline Architecture & Data Contracts
 
 ```mermaid
@@ -539,12 +549,6 @@ processed_data/
 - Experiment with different scaling methods
 - Customize clustering parameters and algorithms
 
-### Extension Points
-- Add new classification algorithms in notebook 3
-- Implement additional clustering methods in notebook 5
-- Extend visualization techniques in notebook 2
-- Develop custom novelty detection approaches in notebook 4
-
 ## 📝 Notes
 
 - **Data Dependencies**: Notebook 1 must be run before others
@@ -552,8 +556,4 @@ processed_data/
 - **Execution Time**: Full pipeline can take several hours
 - **Reproducibility**: Random seeds are set for consistent results
 
----
-
-**Authors**: 3W Dataset Research Team  
-**License**: [Specify License]  
-**Last Updated**: September 2025
+-
