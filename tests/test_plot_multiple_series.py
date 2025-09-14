@@ -36,6 +36,7 @@ class TestPlotMultipleSeries:
 
         assert isinstance(fig, Figure)
         assert isinstance(ax, Axes)
+        plt.close(fig)
 
     def test_plot_multiple_series_without_ax(self):
         """
@@ -51,6 +52,7 @@ class TestPlotMultipleSeries:
 
         assert isinstance(fig, Figure)
         assert isinstance(fig.gca(), Axes)
+        plt.close(fig)
 
     def test_plot_multiple_series_with_empty_list(self):
         """
@@ -69,3 +71,4 @@ class TestPlotMultipleSeries:
         assert isinstance(fig, Figure)
         assert isinstance(ax, Axes)
         assert len(ax.lines) == 0
+        plt.close(fig)

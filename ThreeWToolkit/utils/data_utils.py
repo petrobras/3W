@@ -9,7 +9,7 @@ UNUSED_TAGS = [
     "PT-P",  # zero instances
     "QBS",  # zero instances
     "P-MON-CKGL",  # only two events have this tag non-NA.
-    "state",  # categorical variable, unclear meaning. TODO: revisit this one.
+    "state",
 ]
 
 """ Faulty sensors may give wrong readings. Values outside this range should be discarded. """
@@ -118,45 +118,75 @@ GLOBAL_STDS = {  # computed from cleaned up data
 }
 
 
-def default_data_cleanup(signal: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+def default_data_cleanup(
+    data: pd.DataFrame, target_column: str | None = None, *args, **kwargs
+) -> pd.DataFrame:
     """Apply default cleanup for signal dataframes.
     Removes unused tags, frozen sensors and out of range sensors.
     """
 
     # drop unused columns
-    signal = signal.drop([tag for tag in UNUSED_TAGS if tag in signal.columns], axis=1)
+    columns_to_drop = UNUSED_TAGS.copy()
+    if target_column is not None:
+        columns_to_drop += [target_column]
+
+    # Make sure columns to drop are actually in the data
+    columns_to_drop = [col for col in columns_to_drop if col in data.columns]
+
+    data = data.drop(columns_to_drop, axis=1)
 
     # per-column cleanup
-    for tag in signal.columns:
+    for tag in data.columns:
         # clean stuck sensors
         if tag in DEVIATION_THRESHOLD:
-            if signal[tag].std() < DEVIATION_THRESHOLD[tag]:
-                signal[tag] = np.nan
+            if data[tag].std() < DEVIATION_THRESHOLD[tag]:
+                data[tag] = np.nan
 
         # remove values outside valid range
         if tag in VALID_RANGE:
             lower, upper = VALID_RANGE[tag]
-            signal[tag] = signal[tag].where(
-                signal[tag].between(lower, upper), other=np.nan
-            )
+            data[tag] = data[tag].where(data[tag].between(lower, upper), other=np.nan)
 
-    return signal
+    return data
 
 
-def default_data_normalization(signal: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+def default_data_normalization(
+    data: pd.DataFrame, target_column: str | None = None, *args, **kwargs
+) -> pd.DataFrame:
     """Apply default scaling on data.
     Global averages and standard deviations are computed from the canon cleaned values.
     """
 
-    # filter loaded signals
-    avg = pd.Series({tag: GLOBAL_AVERAGES[tag] for tag in signal.columns})
-    std = pd.Series({tag: GLOBAL_STDS[tag] for tag in signal.columns})
-    return (signal - avg) / std
+    # Filter loaded signals
+    selected_columns = data.columns
+
+    # Remove target column
+    if target_column is not None:
+        selected_columns = [col for col in selected_columns if col != target_column]
+
+    avg = pd.Series({tag: GLOBAL_AVERAGES[tag] for tag in selected_columns})
+    std = pd.Series({tag: GLOBAL_STDS[tag] for tag in selected_columns})
+    return (data - avg) / std
 
 
-def default_data_processing(signal: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+def default_data_processing(
+    data: dict[str, pd.DataFrame],
+    fillna: bool = True,
+    target_column: str | None = None,
+    fill_target_value: int | None = None,
+    *args,
+    **kwargs,
+) -> pd.DataFrame:
     """Apply default cleaning and scaling on data, while filling missing values with 0 (the default average)."""
-    signal = default_data_cleanup(signal)
-    signal = default_data_normalization(signal)
-    signal = signal.fillna(0)
-    return signal
+
+    # signal
+    data["signal"] = default_data_cleanup(data["signal"], target_column)
+    data["signal"] = default_data_normalization(data["signal"], target_column)
+    if fillna:
+        data["signal"] = data["signal"].fillna(0)
+
+    # label
+    # TODO: Implement normalization labels for regression tasks
+    if target_column is not None:
+        data["label"]["class"] = fill_target_value
+    return data

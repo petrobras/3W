@@ -34,6 +34,7 @@ class TestPlotSeries:
 
         assert isinstance(fig, Figure)
         assert isinstance(ax, Axes)
+        plt.close(fig)
 
     def test_plot_series_without_ax(self):
         """
@@ -69,6 +70,7 @@ class TestPlotSeries:
 
         assert isinstance(fig, Figure)
         assert ax.has_data()
+        plt.close(fig)
 
     def test_plot_series_without_overlay(self):
         """
@@ -86,6 +88,7 @@ class TestPlotSeries:
 
         assert isinstance(fig, Figure)
         assert len(fig.axes) == 1
+        plt.close(fig)
 
     def test_plot_series_with_empty_series(self):
         """
@@ -105,3 +108,4 @@ class TestPlotSeries:
 
         assert isinstance(fig, Figure)
         assert isinstance(ax, Axes)
+        plt.close(fig)

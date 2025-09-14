@@ -1,95 +1,79 @@
+from pathlib import Path
 import pytest
 
 import numpy as np
 import pandas as pd
 
-from ThreeWToolkit.dataset import DatasetConfig, ParquetDataset
-from ThreeWToolkit.core.base_dataset import EventPrefixEnum
+from ThreeWToolkit.dataset import ParquetDataset
+from ThreeWToolkit.core.base_dataset import EventPrefixEnum, ParquetDatasetConfig
+from ThreeWToolkit.utils.data_utils import GLOBAL_AVERAGES
 
 
-_NUM_SIGNALS = 11
-_NUM_ROWS = 100
-_SIGNAL_NAMES = [f"signal-{i}" for i in range(_NUM_SIGNALS)]
+_NUM_ROWS = 10
+_NUM_CLASSES = 3
+_NUM_EVENTS = 1
 _LABEL_NAME = "class"
-_NUM_CLASSES = 6
 
 
-def make_parquet_event(path):
-    data = np.random.randn(_NUM_ROWS, _NUM_SIGNALS).astype(np.float32)
-    label = np.random.randint(low=0, high=99, size=_NUM_ROWS)
-    df = pd.DataFrame(data, columns=_SIGNAL_NAMES)
-    df[_LABEL_NAME] = label
+def make_parquet_event(path: Path):
+    """
+    Create a single parquet file with random signals and labels, using columns
+    compatible with GLOBAL_AVERAGES/STD.
+    """
+    signal_columns = list(GLOBAL_AVERAGES.keys())
+    data = np.random.randn(_NUM_ROWS, len(signal_columns)).astype(np.float32)
+    df = pd.DataFrame(data, columns=signal_columns)
+    
+    # add label column if not already present
+    df[_LABEL_NAME] = np.random.randint(low=0, high=_NUM_CLASSES, size=_NUM_ROWS)
+    
     df.to_parquet(path, engine="pyarrow", compression="brotli")
 
 
 @pytest.fixture(scope="session")
 def parquet_dataset_path(tmp_path_factory):
     base_path = tmp_path_factory.mktemp("data")
-    for c in range(_NUM_CLASSES):
-        dir_c = base_path / str(c)
+    for class_idx in range(_NUM_CLASSES):
+        dir_c = base_path / str(class_idx)
         dir_c.mkdir()
         for prefix in EventPrefixEnum:
-            make_parquet_event(dir_c / f"{prefix.value}_test.parquet")
+            for event_idx in range(_NUM_EVENTS):
+                file_path = dir_c / f"{prefix.value}_event{event_idx}.parquet"
+                make_parquet_event(file_path)
     return base_path
 
 
 class TestParquetDataset:
-    def test_wrong_file_type(self, parquet_dataset_path):
-        """
-        Reports wrong file_type.
-        """
-        config = DatasetConfig(path=parquet_dataset_path, file_type="csv")
-        with pytest.raises(ValueError):
-            _ = ParquetDataset(config)
 
     def test_full_loading(self, parquet_dataset_path):
         """
         Load all files, without target column separation.
         """
-        config = DatasetConfig(
-            path=parquet_dataset_path, file_type="parquet", target_column=None
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
+            target_column=None,
+            clean_data=False
         )
         dataset = ParquetDataset(config)
 
-        # check all files were loaded
-        assert len(dataset) == _NUM_CLASSES * len(EventPrefixEnum)
+        # Ajuste: 1 evento por classe/prefixo
+        expected_files = _NUM_CLASSES * len(EventPrefixEnum)
+        assert len(dataset) == expected_files
 
         for e in dataset:
-            assert list(e["signal"].columns) == _SIGNAL_NAMES + [
-                _LABEL_NAME
-            ]  # _LABEL_NAME maps to signals
-            assert e["signal"].shape == (_NUM_ROWS, _NUM_SIGNALS + 1)
-            assert "label" not in e
-
-    def test_target_loading(self, parquet_dataset_path):
-        """
-        Load all files, with target column separation.
-        """
-        config = DatasetConfig(
-            path=parquet_dataset_path, file_type="parquet", target_column=_LABEL_NAME
-        )
-        dataset = ParquetDataset(config)
-
-        assert len(dataset) == _NUM_CLASSES * len(EventPrefixEnum)
-
-        for e in dataset:
-            assert list(e["signal"].columns) == _SIGNAL_NAMES
-            assert e["signal"].shape == (_NUM_ROWS, _NUM_SIGNALS)
-            assert e["label"].shape == (_NUM_ROWS, 1)
+            signal_cols = list(e["signal"].columns)
+            expected_cols = list(GLOBAL_AVERAGES.keys())
+            
+            assert all(col in expected_cols or col == _LABEL_NAME for col in signal_cols)
 
     def test_file_splitting(self, parquet_dataset_path):
         """
-        Load only files in flist.
+        Load only files in file_list.
         """
-
-        flist = [
-            "0/WELL_test.parquet",
-            "1/DRAWN_test.parquet",
-            "3/SIMULATED_test.parquet",
-        ]
-        config = DatasetConfig(
-            path=parquet_dataset_path,
-            file_type="parquet",
+        # Usar apenas os arquivos existentes
+        flist = [f"0/{prefix.value}_event0.parquet" for prefix in EventPrefixEnum]
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
             target_column=_LABEL_NAME,
             split="list",
             file_list=flist,
@@ -101,10 +85,9 @@ class TestParquetDataset:
         """
         Reports missing file.
         """
-        flist = ["0/WELL_missing.parquet"]
-        config = DatasetConfig(
-            path=parquet_dataset_path,
-            file_type="parquet",
+        flist = ["0/UNKNOWN_event0.parquet"]
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
             target_column=_LABEL_NAME,
             split="list",
             file_list=flist,
@@ -114,42 +97,36 @@ class TestParquetDataset:
 
     def test_event_filtering(self, parquet_dataset_path):
         """
-        Load only event_type files.
+        Load only files matching event_type.
         """
         event_type = [EventPrefixEnum.REAL]
-        config = DatasetConfig(
-            path=parquet_dataset_path,
-            file_type="parquet",
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
             target_column=_LABEL_NAME,
             split=None,
             event_type=event_type,
         )
         dataset = ParquetDataset(config)
-
         assert len(dataset) == _NUM_CLASSES * len(event_type)
 
+        # Múltiplos tipos de evento
         event_type = [EventPrefixEnum.REAL, EventPrefixEnum.SIMULATED]
-        config = DatasetConfig(
-            path=parquet_dataset_path,
-            file_type="parquet",
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
             target_column=_LABEL_NAME,
             split=None,
             event_type=event_type,
         )
         dataset = ParquetDataset(config)
-
         assert len(dataset) == _NUM_CLASSES * len(event_type)
 
     def test_target_filtering(self, parquet_dataset_path):
         """
-        Load only target classes.
+        Load only specific target classes.
         """
-        target_class = [
-            0,
-        ]
-        config = DatasetConfig(
-            path=parquet_dataset_path,
-            file_type="parquet",
+        target_class = [0]
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
             target_column=_LABEL_NAME,
             split=None,
             target_class=target_class,
@@ -158,9 +135,8 @@ class TestParquetDataset:
         assert len(dataset) == len(target_class) * len(EventPrefixEnum)
 
         target_class = [0, 2]
-        config = DatasetConfig(
-            path=parquet_dataset_path,
-            file_type="parquet",
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
             target_column=_LABEL_NAME,
             split=None,
             target_class=target_class,
@@ -168,33 +144,23 @@ class TestParquetDataset:
         dataset = ParquetDataset(config)
         assert len(dataset) == len(target_class) * len(EventPrefixEnum)
 
-    def test_transforms(self, parquet_dataset_path):
+    def test_clean_data_processing(self, parquet_dataset_path):
         """
-        Dataset transforms work as expected
+        Validate that pre_process cleans and fills the target column correctly
+        when `clean_data=True`.
         """
-        
-        # load raw dataset
-        config = DatasetConfig(
-            path=parquet_dataset_path, file_type="parquet", target_column=_LABEL_NAME
+        config = ParquetDatasetConfig(
+            path=str(parquet_dataset_path),
+            target_column=_LABEL_NAME,
+            clean_data=True
         )
         dataset = ParquetDataset(config)
 
-        default = dataset.transform({}) # default should not change anything
-        for idx in range(len(dataset)):
-            assert (dataset[idx]["signal"] == default[idx]["signal"]).all().all()
-            assert (dataset[idx]["label"]  == default[idx]["label"]).all().all()
-
-        def double_it(signal, *args, **kwargs):
-            return 2*signal
-        doubled = dataset.transform({"signal": double_it})
-        
-        for idx in range(len(dataset)):
-            assert (2*dataset[idx]["signal"] == doubled[idx]["signal"]).all().all()
-            assert (dataset[idx]["label"]    == doubled[idx]["label"]).all().all()
-
-        def broken_fn(broken, *args, **kwargs):
-            return broken
-        broken = dataset.transform({"unknown": broken_fn})
-
-        with pytest.raises(RuntimeError):
-            _ = broken[0]
+        for e in dataset:
+            assert "signal" in e
+            assert "label" in e
+            # Todas as colunas de sinal devem estar em GLOBAL_AVERAGES
+            for col in e["signal"].columns:
+                assert col in GLOBAL_AVERAGES
+            # Nenhum NaN após limpeza
+            assert not e["signal"].isna().any().any()

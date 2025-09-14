@@ -1,7 +1,7 @@
 import pandas as pd
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from typing import Literal, Optional, Union, List, Dict
+from typing import Any, Literal, Optional, Union, List, Dict
 
 
 class ImputeMissingArgsValidator(BaseModel):
@@ -146,7 +146,7 @@ class RenameColumnsArgsValidator(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @field_validator("columns_map")
-    def validate_columns_exist(cls, columns_map, info):
+    def validate_columns_exist(cls, columns_map, info: Any):
         """
         Validate that all columns to be renamed exist in the DataFrame.
 

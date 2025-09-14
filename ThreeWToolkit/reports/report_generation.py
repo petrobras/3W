@@ -1,23 +1,19 @@
 import pandas as pd
-from pathlib import Path
 import numpy as np
+import matplotlib.pyplot as plt
 import seaborn as sns
+
+from pathlib import Path
 from typing import Any, List, Dict
 
-import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
 from pylatex.package import Package
 
-from ThreeWToolkit.constants import PLOTS_DIR, LATEX_DIR, REPORTS_DIR
-from ThreeWToolkit.utils.latex_manager import latex_environment
-from ThreeWToolkit.metrics import (
-    accuracy_score,
-    f1_score,
-    roc_auc_score,
-    explained_variance_score,
-)
+from ..constants import PLOTS_DIR, LATEX_DIR, REPORTS_DIR
+from ..utils.latex_manager import latex_environment
+from ..metrics import accuracy_score, f1_score, roc_auc_score, explained_variance_score
 
 
 class DataVisualization:
