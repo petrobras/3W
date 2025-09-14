@@ -237,24 +237,21 @@ class MLP(BaseModels, nn.Module):
         running_loss = 0.0
         all_preds = []
         all_labels = []
-        total_eval_samples = 0
         with torch.no_grad():
             for x_values, y_values in loader:
                 x_values, y_values = (
-                    x_values.to(device).float(),
-                    y_values.to(device).float(),
+                    x_values.to(device),
+                    y_values.to(device),
                 )
 
-                out = self.model(x_values)
+                out = self.model(x_values).squeeze(1)
                 loss = criterion(out, y_values)
-                running_loss += loss.item() * x_values.size(0)
+                running_loss += loss.item()
 
-                preds = out.argmax(dim=1)
-                all_preds.extend(preds.cpu().numpy())
+                all_preds.extend(out.cpu().numpy())
                 all_labels.extend(y_values.cpu().numpy())
-                total_eval_samples += x_values.size(0)
 
-        avg_loss = running_loss / total_eval_samples
+        avg_loss = running_loss / len(loader)
 
         if metrics is None or len(metrics) == 0:
             metrics = [explained_variance_score]
@@ -272,15 +269,14 @@ class MLP(BaseModels, nn.Module):
     ) -> float:
         model.train()
         epoch_train_loss = 0.0
-        total_train_samples = 0
         for x_values, y_values in train_loader:
             x_values, y_values = (
-                x_values.to(device).float(),
-                y_values.to(device).float(),
+                x_values.to(device),
+                y_values.to(device),
             )
             # Forward pass
             optimizer.zero_grad()
-            outputs = model(x_values)
+            outputs = model(x_values).squeeze(1)
 
             # Compute the loss
             loss = criterion(outputs, y_values)
@@ -292,12 +288,10 @@ class MLP(BaseModels, nn.Module):
             optimizer.step()
 
             # Compute the loss for the batch
-            samples_in_batch = x_values.size(0)
-            epoch_train_loss += loss.item() * samples_in_batch
-            total_train_samples += samples_in_batch
+            epoch_train_loss += loss.item()
 
         # Compute the average loss for the epoch
-        avg_epoch_train_loss = epoch_train_loss / total_train_samples
+        avg_epoch_train_loss = epoch_train_loss / len(train_loader)
         return avg_epoch_train_loss
 
     def fit(

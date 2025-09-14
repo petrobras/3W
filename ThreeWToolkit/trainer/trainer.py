@@ -3,9 +3,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from pathlib import Path
+import pandas as pd
 from torch.utils.data import DataLoader
 from pydantic import field_validator
-from sklearn.model_selection import KFold
+from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from ..core.base_model_trainer import BaseModelTrainer, ModelTrainerConfig
 from ..core.enums import (
     OptimizersEnum,
@@ -14,6 +15,7 @@ from ..core.enums import (
 from ..models.mlp import MLPConfig, LabeledSubset, MLP
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 from ..utils import ModelRecorder
+from torch.utils.data import TensorDataset
 
 
 class TrainerConfig(ModelTrainerConfig):
@@ -61,7 +63,7 @@ class TrainerConfig(ModelTrainerConfig):
     metrics: list[Callable] | None = None
     cross_validation: bool | None = None
     n_splits: int = 5
-    shuffle_train: bool = True
+    shuffle_train: bool = False
 
     @field_validator("batch_size")
     @classmethod
@@ -261,46 +263,61 @@ class ModelTrainer(BaseModelTrainer):
         Example:
             >>> loader = trainer.create_dataloader(X, y, shuffle=True)
         """
-        dataset = LabeledSubset(x, y)
+        X_tensor = torch.tensor(x.values, dtype=torch.float32)
+        y_tensor = torch.tensor(y.values, dtype=torch.float32)
+        dataset = TensorDataset(X_tensor, y_tensor)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
 
     def train(
         self,
-        x_train: Any,
-        y_train: Any,
-        x_val: Any = None,
-        y_val: Any = None,
+        x_train: pd.DataFrame,
+        y_train: pd.DataFrame | pd.Series,
+        x_val: pd.DataFrame | None = None,
+        y_val: pd.DataFrame | pd.Series | None = None,
         **kwargs,
     ) -> None:
         """
         Train the model using the provided data.
 
         Args:
-            x_train (np.ndarray | torch.Tensor): Training features.
-            y_train (np.ndarray | torch.Tensor): Training labels.
-            x_val (np.ndarray | torch.Tensor, optional): Validation features.
-            y_val (np.ndarray | torch.Tensor, optional): Validation labels.
-            **kwargs: Additional arguments for the model's fit method.
+            x_train (pd.DataFrame): Windowed training data.
+            y_train (pd.DataFrame): Windowed training labels.
 
         Example:
-            >>> trainer.train(X_train, y_train, X_val, y_val)
+            >>> trainer.train(windowed_data)
         """
-        # TODO: Handle StratifiedKfold implementation for Classification models
         if self.cross_validation:
             self.history = []
             for fold, (train_idx, val_idx) in enumerate(
-                KFold(n_splits=self.n_splits).split(x_train, y_train)
+                Strati(n_splits=self.n_splits).split(x_train, y_train)
             ):
                 print(f"Training fold {fold + 1}/{self.n_splits}")
                 fold_history = self.call_trainer(
-                    x_train[train_idx],
-                    y_train[train_idx],
-                    x_val=x_train[val_idx],
-                    y_val=y_train[val_idx],
+                    x_train.iloc[train_idx],
+                    y_train.iloc[train_idx],
+                    x_val=x_train.iloc[val_idx],
+                    y_val=y_train.iloc[val_idx],
                     **kwargs,
                 )
                 self.history.append(fold_history)
+        elif x_val is not None and y_val is not None:
+            self.history = [
+                self.call_trainer(
+                    x_train,
+                    y_train,
+                    x_val=x_val,
+                    y_val=y_val,
+                    **kwargs,
+                )
+            ]
         else:
+            x_train, x_val, y_train, y_val = train_test_split(
+                x_train,
+                y_train,
+                test_size=0.2,
+                shuffle=self.shuffle_train,
+                stratify=y_train,
+            )
             self.history = [
                 self.call_trainer(
                     x_train,
