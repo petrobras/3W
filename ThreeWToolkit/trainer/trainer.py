@@ -289,7 +289,7 @@ class ModelTrainer(BaseModelTrainer):
         if self.cross_validation:
             self.history = []
             for fold, (train_idx, val_idx) in enumerate(
-                Strati(n_splits=self.n_splits).split(x_train, y_train)
+                TimeSeriesSplit(n_splits=self.n_splits).split(x_train, y_train)
             ):
                 print(f"Training fold {fold + 1}/{self.n_splits}")
                 fold_history = self.call_trainer(
@@ -379,10 +379,8 @@ class ModelTrainer(BaseModelTrainer):
             >>> test_loss, test_metrics = trainer.test(X_test, y_test, metrics=[mean_squared_error])
         """
         if isinstance(self.model, MLP):
-            test_loader = DataLoader(
-                LabeledSubset(x, y),
-                batch_size=self.batch_size,
-                shuffle=False,
+            test_loader = self._create_dataloader(
+                x, y, shuffle=False
             )
             criterion = self.criterion if self.criterion is not None else nn.MSELoss()
             return self.model.test(test_loader, criterion, metrics, self.device)

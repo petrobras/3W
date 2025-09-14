@@ -12,14 +12,10 @@ from ..core.base_assessment_visualization import (
 )
 
 
-class ConfigAssessmentVisualization(BaseAssessmentVisualizationConfig):
-    pass
-
-
 class AssessmentVisualization(BaseAssessmentVisualization):
     """Class for visualizing assessment results"""
 
-    def __init__(self, config: ConfigAssessmentVisualization):
+    def __init__(self, config: BaseAssessmentVisualizationConfig):
         self.config = config
         self.class_names = config.class_names
 
