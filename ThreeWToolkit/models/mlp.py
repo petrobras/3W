@@ -2,7 +2,6 @@ import numpy as np
 import torch.nn as nn
 import torch
 from torch.utils.data import DataLoader
-from ..metrics import explained_variance_score
 from ..core.base_models import ModelsConfig, BaseModels
 from ..core.enums import (
     ModelTypeEnum,
@@ -206,8 +205,8 @@ class MLP(BaseModels, nn.Module):
         """Run one evaluation epoch on validation/test set."""
         self.model.eval()
         running_loss = 0.0
-        all_preds = []
-        all_labels = []
+        all_preds: list[Any] = []
+        all_labels: list[Any] = []
 
         with torch.no_grad():
             for x_values, y_values in loader:
@@ -240,6 +239,7 @@ class MLP(BaseModels, nn.Module):
 
         if metrics is None or len(metrics) == 0:
             from sklearn.metrics import explained_variance_score
+
             metrics = [explained_variance_score]
 
         result_metrics = self.evaluate(all_preds, all_labels, metrics)
@@ -308,10 +308,20 @@ class MLP(BaseModels, nn.Module):
             dict[str, list[Any]]: Dictionary containing training/validation losses and metrics.
         """
         self.model.to(device)
-        best_model: dict[str, Any] = {"epoch": -1, "model": None, "val_loss": float("inf")}
-        loss_dict: dict[str, list[Any]] = {"train_loss": [], "val_loss": [], "metrics": []}
+        best_model: dict[str, Any] = {
+            "epoch": -1,
+            "model": None,
+            "val_loss": float("inf"),
+        }
+        loss_dict: dict[str, list[Any]] = {
+            "train_loss": [],
+            "val_loss": [],
+            "metrics": [],
+        }
 
-        with tqdm(range(epochs), desc="Training", unit="epoch", leave=False) as progress_bar:
+        with tqdm(
+            range(epochs), desc="Training", unit="epoch", leave=False
+        ) as progress_bar:
             for epoch_idx in progress_bar:
                 progress_bar.set_description(f"Epoch {epoch_idx + 1}/{epochs}")
 
@@ -337,13 +347,19 @@ class MLP(BaseModels, nn.Module):
                     avg_val_loss = float("nan")
                     loss_dict["val_loss"].append(avg_val_loss)
 
-                progress_bar.set_postfix({"train_loss": f"{avg_epoch_train_loss:.4f}",
-                                          "val_loss": f"{avg_val_loss:.4f}"})
+                progress_bar.set_postfix(
+                    {
+                        "train_loss": f"{avg_epoch_train_loss:.4f}",
+                        "val_loss": f"{avg_val_loss:.4f}",
+                    }
+                )
 
                 # Save best model
-                if (best_model["val_loss"] is not None
+                if (
+                    best_model["val_loss"] is not None
                     and isinstance(avg_val_loss, float)
-                    and avg_val_loss < float(best_model["val_loss"])):
+                    and avg_val_loss < float(best_model["val_loss"])
+                ):
                     best_model["epoch"] = epoch_idx
                     best_model["model"] = self.model.state_dict()
                     best_model["val_loss"] = avg_val_loss
@@ -367,7 +383,9 @@ class MLP(BaseModels, nn.Module):
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> tuple[float, dict]:
         """Evaluate the model on a test set."""
-        return self._run_evaluation_epoch(test_loader, criterion=criterion, device=device, metrics=metrics)
+        return self._run_evaluation_epoch(
+            test_loader, criterion=criterion, device=device, metrics=metrics
+        )
 
     def predict(
         self,
@@ -380,6 +398,7 @@ class MLP(BaseModels, nn.Module):
 
         with torch.no_grad():
             for X_batch in loader:
+                print(X_batch)
                 X_batch = X_batch.to(device).float()
                 outputs = self.model.forward(X_batch)
 
