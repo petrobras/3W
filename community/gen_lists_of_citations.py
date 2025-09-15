@@ -58,10 +58,13 @@ def format_citation(row):
     parts = [str(row[col]) for col in columns if pd.notna(row[col])]
     return ". ".join(parts) + "."
 
+
 def process_excel_to_markdown():
     """Processes the Excel file and generates the Markdown file."""
     if not EXCEL_PATH.exists():
-        raise FileNotFoundError(f"The file 'citations.xlsx' was not found at {EXCEL_PATH}.")
+        raise FileNotFoundError(
+            f"The file 'citations.xlsx' was not found at {EXCEL_PATH}."
+        )
 
     df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
@@ -77,7 +80,7 @@ def process_excel_to_markdown():
         raise ValueError(
             f"The file 'citations.xlsx' must contain the following columns: {', '.join(required_columns)}."
         )
-        
+
     # Sort by year in descending order
     df = df.sort_values(by=["Year"], ascending=False)
     df["Formatted"] = df.apply(format_citation, axis=1)
@@ -103,6 +106,7 @@ def process_excel_to_markdown():
         file.write(final_content)
 
     print(f"Updated Markdown file saved at: {MD_PATH}")
+
 
 if __name__ == "__main__":
     process_excel_to_markdown()
