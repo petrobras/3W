@@ -564,15 +564,45 @@ def test_trainer_metrics_assignment():
     assert trainer.metrics is not None
 
 
-# def test_trainer_predict_with_dataloader(mlp_trainer_and_data):
-#     trainer, x, y = mlp_trainer_and_data
-#     trainer.train(x, y)
-#     from torch.utils.data import DataLoader
+def test_trainer_train_with_val(mlp_trainer_and_data):
+    trainer, x, y = mlp_trainer_and_data
+    trainer.cross_validation = False
+    # Use a split for validation
+    x_val = x.iloc[:10]
+    y_val = y.iloc[:10]
+    x_train = x.iloc[10:]
+    y_train = y.iloc[10:]
+    trainer.train(x_train, y_train, x_val=x_val, y_val=y_val)
+    assert isinstance(trainer.history, list)
+    assert len(trainer.history) == 1
+    assert "train_loss" in trainer.history[0]
+    assert len(trainer.history[0]["train_loss"]) == trainer.epochs
 
-#     loader = DataLoader(torch.tensor(x), batch_size=8)
-#     preds = trainer.predict(loader)
-#     assert isinstance(preds, np.ndarray)
-#     assert preds.shape[0] == x.shape[0]
+
+def test_call_trainer_with_val_loader(mlp_trainer_and_data):
+    trainer, x, y = mlp_trainer_and_data
+    trainer.cross_validation = False
+    # Use a split for validation
+    x_val = x.iloc[:10]
+    y_val = y.iloc[:10]
+    x_train = x.iloc[10:]
+    y_train = y.iloc[10:]
+    # Directly call call_trainer to ensure val_loader is created
+    result = trainer.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val)
+    assert result is not None
+    assert "train_loss" in result
+
+
+def test_call_trainer_without_val_loader(mlp_trainer_and_data):
+    trainer, x, y = mlp_trainer_and_data
+    trainer.cross_validation = False
+    # Use a split for validation
+    x_train = x.iloc[10:]
+    y_train = y.iloc[10:]
+    # Directly call call_trainer to ensure val_loader is created
+    result = trainer.call_trainer(x_train, y_train, x_val=None, y_val=None)
+    assert result is not None
+    assert "train_loss" in result
 
 
 def test_trainer_save_and_load_sklearn(tmp_path, sklearn_trainer_and_data):

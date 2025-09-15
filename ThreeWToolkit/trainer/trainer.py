@@ -269,7 +269,8 @@ class ModelTrainer(BaseModelTrainer):
             y_tensor = torch.tensor(y.values, dtype=torch.float32)
             dataset = TensorDataset(X_tensor, y_tensor)
         else:
-            dataset = TensorDataset(X_tensor)
+            y_tensor = torch.empty_like(X_tensor)
+            dataset = TensorDataset(X_tensor, y_tensor)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
 
     def train(
@@ -331,7 +332,6 @@ class ModelTrainer(BaseModelTrainer):
                 y_train,
                 test_size=0.2,
                 shuffle=self.shuffle_train,
-                # stratify=y_train,
             )
             self.history = [
                 self.call_trainer(
@@ -361,9 +361,12 @@ class ModelTrainer(BaseModelTrainer):
             train_loader = self._create_dataloader(
                 x_train, y_train, shuffle=self.shuffle_train
             )
-            val_loader = None
+
             if x_val is not None and y_val is not None:
                 val_loader = self._create_dataloader(x_val, y_val, shuffle=False)
+            else:
+                val_loader = None
+
             # Only pass optimizer/criterion if not None
             optimizer = (
                 self.optimizer

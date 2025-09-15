@@ -218,7 +218,7 @@ class MLP(BaseModels, nn.Module):
                     preds = torch.argmax(out, dim=1)
                     y_values = y_values.long()
                     loss = criterion(out, y_values)
-                elif out.shape[1] == 1:  # binary or regression
+                else:  # binary or regression
                     if isinstance(criterion, nn.BCEWithLogitsLoss):
                         preds = (torch.sigmoid(out) > 0.5).long().squeeze(1)
                         y_values = y_values.float()
@@ -227,9 +227,6 @@ class MLP(BaseModels, nn.Module):
                         preds = out.squeeze(1)
                         y_values = y_values.float()
                         loss = criterion(out.squeeze(1), y_values)
-                else:
-                    preds = out
-                    loss = criterion(out, y_values)
 
                 running_loss += loss.item()
                 all_preds.extend(preds.cpu().numpy())
@@ -267,16 +264,13 @@ class MLP(BaseModels, nn.Module):
             if outputs.shape[1] > 1:  # multiclass
                 y_values = y_values.long()
                 loss = criterion(outputs, y_values)
-            elif outputs.shape[1] == 1:  # binary or regression
+            else:  # binary or regression
                 if isinstance(criterion, nn.BCEWithLogitsLoss):
                     y_values = y_values.float()
                     loss = criterion(outputs.squeeze(1), y_values)
                 else:
                     y_values = y_values.float()
                     loss = criterion(outputs.squeeze(1), y_values)
-            else:
-                y_values = y_values.float()
-                loss = criterion(outputs, y_values)
 
             loss.backward()
             optimizer.step()
@@ -397,8 +391,7 @@ class MLP(BaseModels, nn.Module):
         y_pred: list[Any] = []
 
         with torch.no_grad():
-            for X_batch in loader:
-                print(X_batch)
+            for X_batch, _ in loader:
                 X_batch = X_batch.to(device).float()
                 outputs = self.model.forward(X_batch)
 
