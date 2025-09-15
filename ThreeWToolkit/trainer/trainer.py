@@ -3,17 +3,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from pathlib import Path
+import pandas as pd
 from torch.utils.data import DataLoader
 from pydantic import field_validator
-from sklearn.model_selection import KFold
+from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from ..core.base_model_trainer import BaseModelTrainer, ModelTrainerConfig
 from ..core.enums import (
     OptimizersEnum,
     CriterionEnum,
 )
-from ..models.mlp import MLPConfig, LabeledSubset, MLP
+from ..models.mlp import MLPConfig, MLP
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 from ..utils import ModelRecorder
+from torch.utils.data import TensorDataset
 
 
 class TrainerConfig(ModelTrainerConfig):
@@ -246,14 +248,15 @@ class ModelTrainer(BaseModelTrainer):
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
-    def _create_dataloader(self, x: Any, y: Any, shuffle: bool) -> DataLoader:
+    def _create_dataloader(
+        self, x: Any, y: Any = None, shuffle: bool = False
+    ) -> DataLoader:
         """
         Create a DataLoader from input features and labels.
 
         Args:
             x (np.ndarray | torch.Tensor): Input features.
             y (np.ndarray | torch.Tensor): Labels.
-            shuffle (bool): Whether to shuffle the data.
 
         Returns:
             DataLoader: PyTorch DataLoader for the dataset.
@@ -261,46 +264,59 @@ class ModelTrainer(BaseModelTrainer):
         Example:
             >>> loader = trainer.create_dataloader(X, y, shuffle=True)
         """
-        dataset = LabeledSubset(x, y)
+        X_tensor = torch.tensor(x.values, dtype=torch.float32)
+        if y is not None:
+            y_tensor = torch.tensor(y.values, dtype=torch.float32)
+            dataset = TensorDataset(X_tensor, y_tensor)
+        else:
+            y_tensor = torch.empty_like(X_tensor)
+            dataset = TensorDataset(X_tensor, y_tensor)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
 
     def train(
         self,
-        x_train: Any,
-        y_train: Any,
-        x_val: Any = None,
-        y_val: Any = None,
+        x_train: pd.DataFrame,
+        y_train: pd.DataFrame | pd.Series,
+        x_val: pd.DataFrame | None = None,
+        y_val: pd.DataFrame | pd.Series | None = None,
         **kwargs,
     ) -> None:
         """
         Train the model using the provided data.
 
         Args:
-            x_train (np.ndarray | torch.Tensor): Training features.
-            y_train (np.ndarray | torch.Tensor): Training labels.
-            x_val (np.ndarray | torch.Tensor, optional): Validation features.
-            y_val (np.ndarray | torch.Tensor, optional): Validation labels.
-            **kwargs: Additional arguments for the model's fit method.
+            x_train (pd.DataFrame): Windowed training data.
+            y_train (pd.DataFrame): Windowed training labels.
 
         Example:
-            >>> trainer.train(X_train, y_train, X_val, y_val)
+            >>> trainer.train(windowed_data)
         """
-        # TODO: Handle StratifiedKfold implementation for Classification models
         if self.cross_validation:
+            # Save model initial state dict
+            initial_state_dict = (
+                self.model.state_dict() if isinstance(self.model, MLP) else None
+            )
             self.history = []
             for fold, (train_idx, val_idx) in enumerate(
-                KFold(n_splits=self.n_splits).split(x_train, y_train)
+                TimeSeriesSplit(n_splits=self.n_splits).split(x_train, y_train)
             ):
                 print(f"Training fold {fold + 1}/{self.n_splits}")
+                # Reset model to initial state before each fold
+                if isinstance(self.model, MLP) and initial_state_dict is not None:
+                    self.model.load_state_dict(initial_state_dict)
+                x_train_fold = self._select_rows(x_train, train_idx)
+                y_train_fold = self._select_rows(y_train, train_idx)
+                x_val_fold = self._select_rows(x_train, val_idx)
+                y_val_fold = self._select_rows(y_train, val_idx)
                 fold_history = self.call_trainer(
-                    x_train[train_idx],
-                    y_train[train_idx],
-                    x_val=x_train[val_idx],
-                    y_val=y_train[val_idx],
+                    x_train_fold,
+                    y_train_fold,
+                    x_val=x_val_fold,
+                    y_val=y_val_fold,
                     **kwargs,
                 )
                 self.history.append(fold_history)
-        else:
+        elif x_val is not None and y_val is not None:
             self.history = [
                 self.call_trainer(
                     x_train,
@@ -310,6 +326,28 @@ class ModelTrainer(BaseModelTrainer):
                     **kwargs,
                 )
             ]
+        else:
+            x_train, x_val, y_train, y_val = train_test_split(
+                x_train,
+                y_train,
+                test_size=0.2,
+                shuffle=self.shuffle_train,
+            )
+            self.history = [
+                self.call_trainer(
+                    x_train,
+                    y_train,
+                    x_val=x_val,
+                    y_val=y_val,
+                    **kwargs,
+                )
+            ]
+
+    def _select_rows(self, data, idx):
+        if hasattr(data, "iloc"):
+            return data.iloc[idx]
+        else:
+            return data[idx]
 
     def call_trainer(
         self,
@@ -323,9 +361,12 @@ class ModelTrainer(BaseModelTrainer):
             train_loader = self._create_dataloader(
                 x_train, y_train, shuffle=self.shuffle_train
             )
-            val_loader = None
+
             if x_val is not None and y_val is not None:
                 val_loader = self._create_dataloader(x_val, y_val, shuffle=False)
+            else:
+                val_loader = None
+
             # Only pass optimizer/criterion if not None
             optimizer = (
                 self.optimizer
@@ -362,11 +403,7 @@ class ModelTrainer(BaseModelTrainer):
             >>> test_loss, test_metrics = trainer.test(X_test, y_test, metrics=[mean_squared_error])
         """
         if isinstance(self.model, MLP):
-            test_loader = DataLoader(
-                LabeledSubset(x, y),
-                batch_size=self.batch_size,
-                shuffle=False,
-            )
+            test_loader = self._create_dataloader(x, y, shuffle=False)
             criterion = self.criterion if self.criterion is not None else nn.MSELoss()
             return self.model.test(test_loader, criterion, metrics, self.device)
         else:
@@ -377,7 +414,7 @@ class ModelTrainer(BaseModelTrainer):
         Generate predictions using the trained model.
 
         Args:
-            x (np.ndarray | torch.Tensor | DataLoader): Input features or DataLoader.
+            x (Dataloader): Input features.
             **kwargs: Additional arguments for the model's predict method.
 
         Returns:
@@ -387,15 +424,7 @@ class ModelTrainer(BaseModelTrainer):
             >>> preds = trainer.predict(X_test)
         """
         if isinstance(self.model, MLP):
-            pred_loader = (
-                DataLoader(
-                    x,
-                    batch_size=self.batch_size,
-                    shuffle=False,
-                )
-                if not isinstance(x, DataLoader)
-                else x
-            )
+            pred_loader = self._create_dataloader(x, shuffle=False)
             return self.model.predict(pred_loader, self.device, **kwargs)
         else:
             return self.model.predict(x, **kwargs)

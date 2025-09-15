@@ -12,8 +12,13 @@ from ThreeWToolkit.core.enums import OptimizersEnum, CriterionEnum, ModelTypeEnu
 def mlp_trainer_and_data():
     np.random.seed(42)
     torch.manual_seed(42)
+    import pandas as pd
+
     x = np.random.rand(50, 8).astype(np.float32)
-    y = np.random.rand(50, 1).astype(np.float32)
+    # Create a binary label for demonstration, as int
+    y = (np.random.rand(50) > 0.5).astype(int)
+    x_df = pd.DataFrame(x, columns=[f"f{i}" for i in range(8)])
+    y_series = pd.Series(y, name="label")
     config = MLPConfig(
         input_size=8,
         hidden_sizes=(16, 8),
@@ -31,9 +36,10 @@ def mlp_trainer_and_data():
         optimizer=OptimizersEnum.ADAM.value,
         criterion=CriterionEnum.MSE.value,
         device="cpu",
+        shuffle_train=True,
     )
     trainer = ModelTrainer(trainer_config)
-    return trainer, x, y
+    return trainer, x_df, y_series
 
 
 @pytest.fixture
@@ -53,6 +59,7 @@ def sklearn_trainer_and_data():
         optimizer=OptimizersEnum.ADAM.value,
         criterion=CriterionEnum.MSE.value,
         device="cpu",
+        shuffle_train=True,
     )
     trainer = ModelTrainer(trainer_config)
     return trainer, x, y
@@ -410,10 +417,15 @@ def test_trainer_all_missing_branches(mlp_trainer_and_data):
             return {"dummy": True}
 
     trainer = mlp_trainer_and_data[0]
+    import pandas as pd
+
     # Save original model
     original_model = trainer.model
     trainer.model = DummySklearn()
-    result = trainer.call_trainer(np.zeros((2, 2)), np.zeros((2, 1)))
+    # Use DataFrame/Series for compatibility
+    x_df = pd.DataFrame(np.zeros((2, 2)), columns=["f0", "f1"])
+    y_series = pd.Series(np.zeros((2, 1)).flatten(), name="label")
+    result = trainer.call_trainer(x_df, y_series)
     assert result == {"dummy": True}
 
     # Restore to a valid MLP model for error branch tests
@@ -552,15 +564,45 @@ def test_trainer_metrics_assignment():
     assert trainer.metrics is not None
 
 
-def test_trainer_predict_with_dataloader(mlp_trainer_and_data):
+def test_trainer_train_with_val(mlp_trainer_and_data):
     trainer, x, y = mlp_trainer_and_data
-    trainer.train(x, y)
-    from torch.utils.data import DataLoader, TensorDataset
+    trainer.cross_validation = False
+    # Use a split for validation
+    x_val = x.iloc[:10]
+    y_val = y.iloc[:10]
+    x_train = x.iloc[10:]
+    y_train = y.iloc[10:]
+    trainer.train(x_train, y_train, x_val=x_val, y_val=y_val)
+    assert isinstance(trainer.history, list)
+    assert len(trainer.history) == 1
+    assert "train_loss" in trainer.history[0]
+    assert len(trainer.history[0]["train_loss"]) == trainer.epochs
 
-    loader = DataLoader(torch.tensor(x), batch_size=8)
-    preds = trainer.predict(loader)
-    assert isinstance(preds, np.ndarray)
-    assert preds.shape[0] == x.shape[0]
+
+def test_call_trainer_with_val_loader(mlp_trainer_and_data):
+    trainer, x, y = mlp_trainer_and_data
+    trainer.cross_validation = False
+    # Use a split for validation
+    x_val = x.iloc[:10]
+    y_val = y.iloc[:10]
+    x_train = x.iloc[10:]
+    y_train = y.iloc[10:]
+    # Directly call call_trainer to ensure val_loader is created
+    result = trainer.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val)
+    assert result is not None
+    assert "train_loss" in result
+
+
+def test_call_trainer_without_val_loader(mlp_trainer_and_data):
+    trainer, x, y = mlp_trainer_and_data
+    trainer.cross_validation = False
+    # Use a split for validation
+    x_train = x.iloc[10:]
+    y_train = y.iloc[10:]
+    # Directly call call_trainer to ensure val_loader is created
+    result = trainer.call_trainer(x_train, y_train, x_val=None, y_val=None)
+    assert result is not None
+    assert "train_loss" in result
 
 
 def test_trainer_save_and_load_sklearn(tmp_path, sklearn_trainer_and_data):

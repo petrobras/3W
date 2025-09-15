@@ -2,7 +2,6 @@ import numpy as np
 import torch.nn as nn
 import torch
 from torch.utils.data import DataLoader
-from ..metrics import explained_variance_score
 from ..core.base_models import ModelsConfig, BaseModels
 from ..core.enums import (
     ModelTypeEnum,
@@ -147,26 +146,25 @@ class MLP(BaseModels, nn.Module):
         config (MLPConfig): Configuration for the MLP model.
 
     Example:
-        >>> config = MLPConfig(input_size=10, hidden_sizes=(64, 32), output_size=1, activation_function=ActivationFunctionEnum.RELU, regularization=None)
+        >>> config = MLPConfig(input_size=10, hidden_sizes=(64, 32), output_size=1,
+        ...                    activation_function=ActivationFunctionEnum.RELU,
+        ...                    regularization=None)
         >>> model = MLP(config)
     """
 
     def __init__(self, config: MLPConfig) -> None:
-        """
-        Initialize the MLP model.
-
-        Args:
-            config (MLPConfig): Configuration for the MLP model.
-        """
         nn.Module.__init__(self)
         BaseModels.__init__(self, config)
+
         layers: list[nn.Module] = []
         self.activation_func = self._get_activation_function(config.activation_function)
+
         in_size = config.input_size
         for h in config.hidden_sizes:
             layers.append(nn.Linear(in_size, h))
             layers.append(self.activation_func)
             in_size = h
+
         layers.append(nn.Linear(in_size, config.output_size))
         self.model = nn.Sequential(*layers)
 
@@ -179,22 +177,11 @@ class MLP(BaseModels, nn.Module):
 
         Returns:
             torch.Tensor: Output tensor.
-
-        Example:
-            >>> output = model(torch.randn(32, 10))
         """
         return self.model(x)
 
     def _get_activation_function(self, activation: str) -> nn.Module:
-        """
-        Get the activation function based on the enum.
-
-        Args:
-            activation (str): Activation function enum.
-
-        Returns:
-            nn.Module: Activation function module.
-        """
+        """Return activation function module from enum value."""
         if activation == ActivationFunctionEnum.RELU.value:
             return nn.ReLU()
         elif activation == ActivationFunctionEnum.SIGMOID.value:
@@ -205,15 +192,7 @@ class MLP(BaseModels, nn.Module):
             raise ValueError(f"Unknown activation function: {activation}")
 
     def get_params(self) -> ParamsT:
-        """
-        Get the model's parameters for optimization.
-
-        Returns:
-            Iterator over model parameters.
-
-        Example:
-            >>> params = model.get_params()
-        """
+        """Return model parameters for optimization."""
         return self.model.parameters()
 
     def _run_evaluation_epoch(
@@ -223,40 +202,41 @@ class MLP(BaseModels, nn.Module):
         device: str,
         metrics: list[Callable] | None,
     ) -> tuple[float, dict]:
-        """
-        Run a full evaluation epoch over a DataLoader.
-
-        Args:
-            loader (DataLoader): DataLoader for evaluation.
-            criterion (Callable): Loss function.
-
-        Returns:
-            tuple: (average loss, metrics dictionary)
-        """
+        """Run one evaluation epoch on validation/test set."""
         self.model.eval()
         running_loss = 0.0
-        all_preds = []
-        all_labels = []
-        total_eval_samples = 0
+        all_preds: list[Any] = []
+        all_labels: list[Any] = []
+
         with torch.no_grad():
             for x_values, y_values in loader:
-                x_values, y_values = (
-                    x_values.to(device).float(),
-                    y_values.to(device).float(),
-                )
-
+                x_values, y_values = x_values.to(device), y_values.to(device)
                 out = self.model(x_values)
-                loss = criterion(out, y_values)
-                running_loss += loss.item() * x_values.size(0)
 
-                preds = out.argmax(dim=1)
+                # Task detection
+                if out.shape[1] > 1:  # multiclass
+                    preds = torch.argmax(out, dim=1)
+                    y_values = y_values.long()
+                    loss = criterion(out, y_values)
+                else:  # binary or regression
+                    if isinstance(criterion, nn.BCEWithLogitsLoss):
+                        preds = (torch.sigmoid(out) > 0.5).long().squeeze(1)
+                        y_values = y_values.float()
+                        loss = criterion(out.squeeze(1), y_values)
+                    else:  # regression
+                        preds = out.squeeze(1)
+                        y_values = y_values.float()
+                        loss = criterion(out.squeeze(1), y_values)
+
+                running_loss += loss.item()
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(y_values.cpu().numpy())
-                total_eval_samples += x_values.size(0)
 
-        avg_loss = running_loss / total_eval_samples
+        avg_loss = running_loss / len(loader)
 
         if metrics is None or len(metrics) == 0:
+            from sklearn.metrics import explained_variance_score
+
             metrics = [explained_variance_score]
 
         result_metrics = self.evaluate(all_preds, all_labels, metrics)
@@ -270,35 +250,33 @@ class MLP(BaseModels, nn.Module):
         optimizer: torch.optim.Optimizer,
         device: str,
     ) -> float:
+        """Run one training epoch."""
         model.train()
         epoch_train_loss = 0.0
-        total_train_samples = 0
+
         for x_values, y_values in train_loader:
-            x_values, y_values = (
-                x_values.to(device).float(),
-                y_values.to(device).float(),
-            )
-            # Forward pass
+            x_values, y_values = x_values.to(device), y_values.to(device)
+
             optimizer.zero_grad()
             outputs = model(x_values)
 
-            # Compute the loss
-            loss = criterion(outputs, y_values)
+            # Task detection
+            if outputs.shape[1] > 1:  # multiclass
+                y_values = y_values.long()
+                loss = criterion(outputs, y_values)
+            else:  # binary or regression
+                if isinstance(criterion, nn.BCEWithLogitsLoss):
+                    y_values = y_values.float()
+                    loss = criterion(outputs.squeeze(1), y_values)
+                else:
+                    y_values = y_values.float()
+                    loss = criterion(outputs.squeeze(1), y_values)
 
-            # Backward pass
             loss.backward()
-
-            # Update the weights
             optimizer.step()
+            epoch_train_loss += loss.item()
 
-            # Compute the loss for the batch
-            samples_in_batch = x_values.size(0)
-            epoch_train_loss += loss.item() * samples_in_batch
-            total_train_samples += samples_in_batch
-
-        # Compute the average loss for the epoch
-        avg_epoch_train_loss = epoch_train_loss / total_train_samples
-        return avg_epoch_train_loss
+        return epoch_train_loss / len(train_loader)
 
     def fit(
         self,
@@ -306,8 +284,8 @@ class MLP(BaseModels, nn.Module):
         epochs: int,
         optimizer: torch.optim.Optimizer,
         criterion: Callable,
-        val_loader: DataLoader | None,
-        metrics: list[Callable] | None,
+        val_loader: DataLoader | None = None,
+        metrics: list[Callable] | None = None,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> dict[str, list[Any]]:
         """
@@ -320,10 +298,10 @@ class MLP(BaseModels, nn.Module):
             optimizer (torch.optim.Optimizer): Optimizer.
             criterion (Callable): Loss function.
 
-        Example:
-            >>> model.fit(train_loader, val_loader, epochs=10, optimizer=optim.Adam(), criterion=nn.MSELoss())
+        Returns:
+            dict[str, list[Any]]: Dictionary containing training/validation losses and metrics.
         """
-        self.model.train()
+        self.model.to(device)
         best_model: dict[str, Any] = {
             "epoch": -1,
             "model": None,
@@ -363,7 +341,6 @@ class MLP(BaseModels, nn.Module):
                     avg_val_loss = float("nan")
                     loss_dict["val_loss"].append(avg_val_loss)
 
-                # Show metrics in tqdm bar
                 progress_bar.set_postfix(
                     {
                         "train_loss": f"{avg_epoch_train_loss:.4f}",
@@ -371,7 +348,7 @@ class MLP(BaseModels, nn.Module):
                     }
                 )
 
-                # Update the best model if the current epoch has the best validation loss
+                # Save best model
                 if (
                     best_model["val_loss"] is not None
                     and isinstance(avg_val_loss, float)
@@ -380,6 +357,7 @@ class MLP(BaseModels, nn.Module):
                     best_model["epoch"] = epoch_idx
                     best_model["model"] = self.model.state_dict()
                     best_model["val_loss"] = avg_val_loss
+
         return loss_dict
 
     def evaluate(
@@ -388,17 +366,7 @@ class MLP(BaseModels, nn.Module):
         y: list | torch.Tensor,
         metrics: list[Callable],
     ) -> dict:
-        """
-        Compute metrics for predictions and targets.
-
-        Args:
-            x (list | torch.Tensor): Predictions.
-            y (list | torch.Tensor): Targets.
-            metrics (list[Callable]): List of metric functions.
-
-        Returns:
-            dict: Dictionary of metric results.
-        """
+        """Compute metrics for predictions and targets."""
         return {metric.__name__: metric(y, x) for metric in metrics}
 
     def test(
@@ -408,17 +376,7 @@ class MLP(BaseModels, nn.Module):
         metrics: list[Callable],
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> tuple[float, dict]:
-        """
-        Evaluate the model on a test set.
-
-        Args:
-            test_loader (DataLoader): DataLoader for test data.
-            criterion (Callable): Loss function.
-            metrics (list[Callable]): List of metric functions.
-
-        Returns:
-            tuple: (average loss, metrics dictionary)
-        """
+        """Evaluate the model on a test set."""
         return self._run_evaluation_epoch(
             test_loader, criterion=criterion, device=device, metrics=metrics
         )
@@ -428,12 +386,22 @@ class MLP(BaseModels, nn.Module):
         loader: DataLoader,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> np.ndarray:
+        """Return predictions for given data loader."""
         self.model.eval()
         y_pred: list[Any] = []
+
         with torch.no_grad():
-            for X_batch in loader:
+            for X_batch, _ in loader:
                 X_batch = X_batch.to(device).float()
                 outputs = self.model.forward(X_batch)
-                _, preds = torch.max(outputs, 1)
+
+                if outputs.shape[1] > 1:  # multiclass
+                    _, preds = torch.max(outputs, 1)
+                elif outputs.shape[1] == 1:  # binary
+                    preds = (torch.sigmoid(outputs) > 0.5).long().squeeze(1)
+                else:  # regression
+                    preds = outputs.squeeze(1)
+
                 y_pred.extend(preds.cpu().numpy())
+
         return np.array(y_pred)

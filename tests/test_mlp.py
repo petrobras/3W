@@ -11,6 +11,7 @@ from ThreeWToolkit.models.mlp import (
 from ThreeWToolkit.trainer.trainer import ModelTrainer, TrainerConfig
 import pydantic
 from sklearn.metrics import mean_squared_error
+import pandas as pd
 
 
 @pytest.fixture
@@ -18,12 +19,12 @@ def trainer_setup():
     """
     Pytest fixture to set up a standard ModelTrainer and data for testing.
     """
-    num_samples = 100
-    input_size = 10
-    data = np.random.rand(num_samples, input_size)
-    target_data = np.random.randint(0, 2, num_samples)
-    x_tensor = torch.tensor(data, dtype=torch.float32)
-    y_tensor = torch.tensor(target_data, dtype=torch.float32).unsqueeze(1)
+    input_size = 8
+    x = np.random.rand(50, input_size).astype(np.float32)
+    # Create a binary label for demonstration, as int
+    y = (np.random.rand(50) > 0.5).astype(int)
+    x_df = pd.DataFrame(x, columns=[f"f{i}" for i in range(input_size)])
+    y_series = pd.Series(y, name="label")
     config = MLPConfig(
         input_size=input_size,
         hidden_sizes=(32, 16),
@@ -41,11 +42,12 @@ def trainer_setup():
         optimizer="adam",
         criterion="mse",
         device="cpu",
+        shuffle_train=True,
     )
     trainer = ModelTrainer(trainer_config)
     return {
-        "x_tensor": x_tensor,
-        "y_tensor": y_tensor,
+        "x_tensor": x_df,
+        "y_tensor": y_series,
         "config": config,
         "trainer": trainer,
     }
@@ -65,6 +67,29 @@ class TestLabeledSubset:
 
 
 class TestMLP:
+    def test_predict_multiclass(self):
+        # Multiclass: output_size > 1
+        input_size = 4
+        num_classes = 3
+        n_samples = 20
+        x = np.random.rand(n_samples, input_size).astype(np.float32)
+        y = np.random.randint(0, num_classes, size=n_samples)
+        dataset = LabeledSubset(torch.tensor(x), torch.tensor(y))
+        loader = torch.utils.data.DataLoader(dataset, batch_size=5)
+        config = MLPConfig(
+            input_size=input_size,
+            hidden_sizes=(6,),
+            output_size=num_classes,
+            activation_function="relu",
+            regularization=None,
+            random_seed=42,
+        )
+        model = MLP(config)
+        preds = model.predict(loader, device="cpu")
+        # Should be shape (n_samples,) and values in 0..num_classes-1
+        assert preds.shape == (n_samples,)
+        assert np.all((preds >= 0) & (preds < num_classes))
+
     def test_get_activation_function(self):
         config = MLPConfig(
             input_size=5,
@@ -79,20 +104,6 @@ class TestMLP:
             ValueError, match="Unknown activation function: notarealactivation"
         ):
             model._get_activation_function("notarealactivation")
-
-    def test_predict_invalid_input(self):
-        config = MLPConfig(
-            input_size=5,
-            hidden_sizes=(4,),
-            output_size=1,
-            activation_function=ActivationFunctionEnum.RELU.value,
-            regularization=None,
-            random_seed=42,
-        )
-        model = MLP(config)
-        # Pass a list instead of DataLoader to cover the else branch
-        with pytest.raises(AttributeError):
-            model.predict([[1, 2, 3, 4, 5]])
 
     def test_invalid_activation_function(self):
         with pytest.raises(
@@ -155,6 +166,91 @@ class TestMLP:
 
 
 class TestModelTrainer:
+    def test_mlp_regression_else_branch(self, trainer_setup):
+        # Use trainer_setup for regression (output_size=1, criterion=mse)
+        trainer = trainer_setup["trainer"]
+        x = trainer_setup["x_tensor"]
+        y = trainer_setup["y_tensor"]
+        trainer.train(x, y)
+        hist = trainer.history[0]
+        if hist is not None:
+            assert "train_loss" in hist and "val_loss" in hist
+        test_loss, _ = trainer.test(
+            x,
+            y,
+            metrics=[
+                lambda y_true, y_pred: np.mean(
+                    np.abs(np.array(y_true) - np.array(y_pred))
+                )
+            ],
+        )
+        assert isinstance(test_loss, float)
+
+    def test_mlp_binary_bce_training_and_eval(self, trainer_setup):
+        # Use trainer_setup, but update criterion to binary_cross_entropy
+        trainer = trainer_setup["trainer"]
+        x = trainer_setup["x_tensor"]
+        y = trainer_setup["y_tensor"]
+        # Update criterion and re-initialize optimizer/criterion for BCE
+        trainer.config.criterion = "binary_cross_entropy"
+        trainer.criterion = trainer._get_fn_cost("binary_cross_entropy")
+        trainer.train(x, y)
+        hist = trainer.history[0]
+        if hist is not None:
+            assert "train_loss" in hist and "val_loss" in hist
+        test_loss, test_metrics = trainer.test(
+            x,
+            y,
+            metrics=[
+                lambda y_true, y_pred: (np.array(y_true) == np.array(y_pred)).mean()
+            ],
+        )
+        assert isinstance(test_loss, float)
+
+    def test_mlp_multiclass_training_and_eval(self):
+        # Multiclass: output_size > 1, labels are class indices
+        input_size = 6
+        num_classes = 3
+        n_samples = 40
+        x = np.random.rand(n_samples, input_size).astype(np.float32)
+        y = np.random.randint(0, num_classes, size=n_samples)
+        x_df = pd.DataFrame(x, columns=[f"f{i}" for i in range(input_size)])
+        y_series = pd.Series(y, name="label")
+        config = MLPConfig(
+            input_size=input_size,
+            hidden_sizes=(12, 8),
+            output_size=num_classes,
+            activation_function="relu",
+            regularization=None,
+            random_seed=42,
+        )
+        trainer_config = TrainerConfig(
+            batch_size=8,
+            epochs=2,
+            seed=42,
+            learning_rate=1e-3,
+            config_model=config,
+            optimizer="adam",
+            criterion="cross_entropy",
+            device="cpu",
+            shuffle_train=True,
+        )
+        trainer = ModelTrainer(trainer_config)
+        trainer.train(x_df, y_series)
+        # Should have a history with train_loss and val_loss
+        hist = trainer.history[0]
+        if hist is not None:
+            assert "train_loss" in hist and "val_loss" in hist
+        # Evaluate (should hit multiclass branch)
+        test_loss, _ = trainer.test(
+            x_df,
+            y_series,
+            metrics=[
+                lambda y_true, y_pred: (np.array(y_true) == np.array(y_pred)).mean()
+            ],
+        )
+        assert isinstance(test_loss, float)
+
     def test_trainer_initialization(self, trainer_setup):
         trainer = trainer_setup["trainer"]
         assert trainer.batch_size == 16
