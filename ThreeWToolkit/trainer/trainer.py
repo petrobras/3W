@@ -12,7 +12,7 @@ from ..core.enums import (
     OptimizersEnum,
     CriterionEnum,
 )
-from ..models.mlp import MLPConfig, LabeledSubset, MLP
+from ..models.mlp import MLPConfig, MLP
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 from ..utils import ModelRecorder
 from torch.utils.data import TensorDataset
@@ -63,7 +63,7 @@ class TrainerConfig(ModelTrainerConfig):
     metrics: list[Callable] | None = None
     cross_validation: bool | None = None
     n_splits: int = 5
-    shuffle_train: bool = False
+    shuffle_train: bool = True
 
     @field_validator("batch_size")
     @classmethod
@@ -248,14 +248,15 @@ class ModelTrainer(BaseModelTrainer):
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
-    def _create_dataloader(self, x: Any, y: Any, shuffle: bool) -> DataLoader:
+    def _create_dataloader(
+        self, x: Any, y: Any = None, shuffle: bool = False
+    ) -> DataLoader:
         """
         Create a DataLoader from input features and labels.
 
         Args:
             x (np.ndarray | torch.Tensor): Input features.
             y (np.ndarray | torch.Tensor): Labels.
-            shuffle (bool): Whether to shuffle the data.
 
         Returns:
             DataLoader: PyTorch DataLoader for the dataset.
@@ -264,8 +265,11 @@ class ModelTrainer(BaseModelTrainer):
             >>> loader = trainer.create_dataloader(X, y, shuffle=True)
         """
         X_tensor = torch.tensor(x.values, dtype=torch.float32)
-        y_tensor = torch.tensor(y.values, dtype=torch.float32)
-        dataset = TensorDataset(X_tensor, y_tensor)
+        if y is not None:
+            y_tensor = torch.tensor(y.values, dtype=torch.float32)
+            dataset = TensorDataset(X_tensor, y_tensor)
+        else:
+            dataset = TensorDataset(X_tensor)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
 
     def train(
@@ -287,16 +291,27 @@ class ModelTrainer(BaseModelTrainer):
             >>> trainer.train(windowed_data)
         """
         if self.cross_validation:
+            # Save model initial state dict
+            initial_state_dict = (
+                self.model.state_dict() if isinstance(self.model, MLP) else None
+            )
             self.history = []
             for fold, (train_idx, val_idx) in enumerate(
                 TimeSeriesSplit(n_splits=self.n_splits).split(x_train, y_train)
             ):
                 print(f"Training fold {fold + 1}/{self.n_splits}")
+                # Reset model to initial state before each fold
+                if isinstance(self.model, MLP) and initial_state_dict is not None:
+                    self.model.load_state_dict(initial_state_dict)
+                x_train_fold = self._select_rows(x_train, train_idx)
+                y_train_fold = self._select_rows(y_train, train_idx)
+                x_val_fold = self._select_rows(x_train, val_idx)
+                y_val_fold = self._select_rows(y_train, val_idx)
                 fold_history = self.call_trainer(
-                    x_train.iloc[train_idx],
-                    y_train.iloc[train_idx],
-                    x_val=x_train.iloc[val_idx],
-                    y_val=y_train.iloc[val_idx],
+                    x_train_fold,
+                    y_train_fold,
+                    x_val=x_val_fold,
+                    y_val=y_val_fold,
                     **kwargs,
                 )
                 self.history.append(fold_history)
@@ -316,7 +331,7 @@ class ModelTrainer(BaseModelTrainer):
                 y_train,
                 test_size=0.2,
                 shuffle=self.shuffle_train,
-                stratify=y_train,
+                # stratify=y_train,
             )
             self.history = [
                 self.call_trainer(
@@ -327,6 +342,12 @@ class ModelTrainer(BaseModelTrainer):
                     **kwargs,
                 )
             ]
+
+    def _select_rows(self, data, idx):
+        if hasattr(data, "iloc"):
+            return data.iloc[idx]
+        else:
+            return data[idx]
 
     def call_trainer(
         self,
@@ -379,9 +400,7 @@ class ModelTrainer(BaseModelTrainer):
             >>> test_loss, test_metrics = trainer.test(X_test, y_test, metrics=[mean_squared_error])
         """
         if isinstance(self.model, MLP):
-            test_loader = self._create_dataloader(
-                x, y, shuffle=False
-            )
+            test_loader = self._create_dataloader(x, y, shuffle=False)
             criterion = self.criterion if self.criterion is not None else nn.MSELoss()
             return self.model.test(test_loader, criterion, metrics, self.device)
         else:
@@ -392,7 +411,7 @@ class ModelTrainer(BaseModelTrainer):
         Generate predictions using the trained model.
 
         Args:
-            x (np.ndarray | torch.Tensor | DataLoader): Input features or DataLoader.
+            x (Dataloader): Input features.
             **kwargs: Additional arguments for the model's predict method.
 
         Returns:
@@ -402,15 +421,7 @@ class ModelTrainer(BaseModelTrainer):
             >>> preds = trainer.predict(X_test)
         """
         if isinstance(self.model, MLP):
-            pred_loader = (
-                DataLoader(
-                    x,
-                    batch_size=self.batch_size,
-                    shuffle=False,
-                )
-                if not isinstance(x, DataLoader)
-                else x
-            )
+            pred_loader = self._create_dataloader(x, shuffle=False)
             return self.model.predict(pred_loader, self.device, **kwargs)
         else:
             return self.model.predict(x, **kwargs)
