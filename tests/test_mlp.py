@@ -41,6 +41,7 @@ def trainer_setup():
         optimizer="adam",
         criterion="mse",
         device="cpu",
+        shuffle_train=True,
     )
     trainer = ModelTrainer(trainer_config)
     return {

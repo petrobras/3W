@@ -10,7 +10,6 @@ import pydantic
 
 from ThreeWToolkit.assessment.assessment_visualizations import (
     AssessmentVisualization,
-    ConfigAssessmentVisualization,
 )
 
 from ThreeWToolkit.core.base_assessment_visualization import (
@@ -22,7 +21,7 @@ from ThreeWToolkit.core.base_assessment_visualization import (
 class TestAssessmentVisualization:
     @pytest.fixture
     def default_config(self):
-        return ConfigAssessmentVisualization(class_names=["A", "B", "C"])
+        return BaseAssessmentVisualizationConfig(class_names=["A", "B", "C"])
 
     @pytest.fixture
     def viz(self, default_config):
@@ -63,7 +62,7 @@ class TestAssessmentVisualization:
             viz.plot_confusion_matrix(y_true, y_pred)
 
     def test_plot_confusion_matrix_class_names_mismatch(self):
-        config = ConfigAssessmentVisualization(class_names=["A", "B", "C"])
+        config = BaseAssessmentVisualizationConfig(class_names=["A", "B", "C"])
         viz = AssessmentVisualization(config)
         y_true = [0, 1, 1, 1]
         y_pred = [0, 1, 1, 1]
@@ -71,7 +70,7 @@ class TestAssessmentVisualization:
             viz.plot_confusion_matrix(y_true, y_pred)
 
     def test_plot_confusion_matrix_no_class_names(self):
-        config = ConfigAssessmentVisualization(class_names=None)
+        config = BaseAssessmentVisualizationConfig(class_names=None)
         viz = AssessmentVisualization(config)
         y_true = [0, 1, 1, 1]
         y_pred = [0, 1, 1, 1]
