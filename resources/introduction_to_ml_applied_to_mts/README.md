@@ -16,7 +16,7 @@ This repository contains a comprehensive machine learning pipeline for the **3W 
 > 
 > **🔧 Customization**: Modify `src/config.py` to adapt the pipeline to your specific requirements. The current configuration is optimized for workshop presentation time constraints.
 
-## 📊 Pipeline Architecture & Data Contracts
+## 📊 Notebooks Architecture & Data Contracts
 
 ```mermaid
 graph TB
@@ -527,21 +527,6 @@ processed_data/
     └── cv_metadata.json
 ```
 
-## 🎯 Learning Objectives
-
-### Educational Goals
-- **Data Pipeline Design**: Understanding end-to-end ML workflows for multivariate time series
-- **Algorithm Comparison**: Supervised vs unsupervised approaches for MTS analysis
-- **Real-world Applications**: Industrial fault detection challenges in time series data
-- **Performance Evaluation**: Comprehensive metrics and validation for temporal data
-- **Pattern Discovery**: Clustering and visualization techniques for multivariate sequences
-
-### Practical Skills
-- **Time Series Processing**: Windowing and feature extraction from multivariate data
-- **Cross-Validation**: Proper evaluation methodologies for temporal datasets
-- **Anomaly Detection**: Autoencoder-based novelty detection in time series
-- **Clustering Analysis**: Pattern discovery and interpretation in MTS
-- **Visualization**: Dimensionality reduction and interactive plots for temporal data
 
 ## 🚀 Advanced Usage
 
