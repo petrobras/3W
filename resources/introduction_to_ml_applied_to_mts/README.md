@@ -1,8 +1,10 @@
-# 3W Dataset Machine Learning Pipeline
+# Introduction to Machine Learning applied to Multivariate Time Series
 
 ## 🎯 Overview
 
-This repository contains a comprehensive machine learning pipeline for the **3W Dataset** - a real-world dataset for fault detection in oil wells. The pipeline includes data preprocessing, supervised learning, unsupervised learning, and clustering analysis methods.
+This repository contains a comprehensive machine learning pipeline for the **3W Dataset** - a real-world dataset for fault detection in oil wells. The pipeline includes data preprocessing, supervised learning, unsupervised learning, and clustering analysis methods applied to **Multivariate Time Series (MTS)** data.
+
+**Multivariate Time Series (MTS)** refers to time-ordered data with multiple variables/sensors measured simultaneously over time. In the 3W dataset context, this includes multiple sensor readings (pressure, temperature, flow rates, etc.) from oil well operations captured at regular intervals.
 
 ## ⚠️ **Configuration Disclaimer**
 
@@ -27,7 +29,7 @@ graph TB
     end
     
     subgraph "Data Processing Layer"
-        B["📓 1 - Data Treatment<br/>
+        B["📓 1_data_treatment.ipynb<br/>
         Input: Raw parquet files<br/>
         Output: CV splits + windowed data<br/>
         Processing: Scaling, windowing, CV"]
@@ -50,22 +52,22 @@ graph TB
     end
     
     subgraph "Analysis Notebooks"
-        F["📓 2 - Visualization<br/>
+        F["📓 2_visualization_techniques.ipynb<br/>
         Input: Windowed data<br/>
         Output: Plots + embeddings<br/>
         Methods: t-SNE, UMAP"]
         
-        G["📓 3 - Supervised Learning<br/>
+        G["📓 3_introduction_to_supervised_learning.ipynb<br/>
         Input: Windowed data<br/>
         Output: Models + metrics<br/>
         Methods: RF, SVM, NN"]
         
-        H["📓 4 - Unsupervised Learning<br/>
+        H["📓 4_introduction_to_unsupervised_learning.ipynb<br/>
         Input: Windowed data (class 0 only)<br/>
         Output: Autoencoder + thresholds<br/>
         Methods: LSTM autoencoder"]
         
-        I["📓 5 - Clustering Methods<br/>
+        I["📓 5_clustering_methods.ipynb<br/>
         Input: Raw data (resized to 500pts)<br/>
         Output: Clusters + interpretations<br/>
         Methods: K-means, DBSCAN, Mean Shift"]
@@ -297,66 +299,66 @@ graph TB
 
 ## 📚 Notebook Pipeline Description
 
-### 1️⃣ **Data Treatment** (`1 - Data Treatment.ipynb`)
-**Purpose**: Foundation preprocessing and data preparation
+### 1️⃣ **Data Treatment** (`1_data_treatment.ipynb`)
+**Purpose**: Foundation preprocessing and data preparation for MTS analysis
 - **Input**: Raw 3W dataset (`dataset/0-9/*.parquet`)
 - **Processing**:
   - Centralized configuration management
-  - Multiple scaling methods comparison
+  - Multiple scaling methods comparison for time series
   - Smart cross-validation with real/simulated separation
   - Time windowing for sequence models
 - **Output**: 
-  - `processed_data/cv_splits/windowed/` - Windowed time series
+  - `processed_data/cv_splits/windowed/` - Windowed multivariate time series
   - `processed_data/cv_splits/raw/` - Raw time series with CV splits
   - Configuration metadata and preprocessing parameters
 
-### 2️⃣ **Visualization Techniques** (`2 - Visualization Techniques copy.ipynb`)
-**Purpose**: Exploratory data analysis and dimensionality reduction
+### 2️⃣ **Visualization Techniques** (`2_visualization_techniques.ipynb`)
+**Purpose**: Exploratory data analysis and dimensionality reduction for MTS
 - **Input**: Windowed data from `processed_data/cv_splits/windowed/`
 - **Processing**:
-  - Advanced dimensionality reduction (t-SNE, UMAP)
+  - Advanced dimensionality reduction (t-SNE, UMAP) for time series
   - Class mapping and balanced sampling
   - Interactive dashboards and statistical insights
 - **Output**: 
-  - Interactive visualizations
-  - Feature correlation analysis
-  - Class separability insights
+  - Interactive visualizations of multivariate patterns
+  - Feature correlation analysis across time series
+  - Class separability insights in reduced space
 
-### 3️⃣ **Supervised Learning** (`3 - Introdution to Supervised Learning.ipynb`)
-**Purpose**: Multi-class fault classification
+### 3️⃣ **Supervised Learning** (`3_introduction_to_supervised_learning.ipynb`)
+**Purpose**: Multi-class fault classification in multivariate time series
 - **Input**: Windowed data from `processed_data/cv_splits/windowed/`
 - **Processing**:
-  - Classification algorithms (Random Forest, SVM, Neural Networks)
-  - Cross-validation evaluation
-  - Performance metrics and comparison
+  - Classification algorithms adapted for time series (Random Forest, SVM, Neural Networks)
+  - Cross-validation evaluation with temporal considerations
+  - Performance metrics and comparison for MTS classification
 - **Output**:
-  - Trained classification models
-  - Performance benchmarks
-  - Feature importance analysis
+  - Trained classification models for fault detection
+  - Performance benchmarks for multivariate time series
+  - Feature importance analysis across sensors and time
 
-### 4️⃣ **Unsupervised Learning** (`4 - Introdution to Unsupervised Learning.ipynb`)
-**Purpose**: Novelty detection and anomaly identification
+### 4️⃣ **Unsupervised Learning** (`4_introduction_to_unsupervised_learning.ipynb`)
+**Purpose**: Novelty detection and anomaly identification in MTS
 - **Input**: Windowed data from `processed_data/cv_splits/windowed/`
 - **Processing**:
-  - LSTM autoencoder training on normal data (class 0)
-  - Reconstruction-based anomaly detection
-  - Statistical threshold determination
+  - LSTM autoencoder training on normal multivariate sequences (class 0)
+  - Reconstruction-based anomaly detection for time series
+  - Statistical threshold determination for temporal patterns
 - **Output**:
-  - Novelty detection models
-  - Anomaly scores and thresholds
-  - Detection performance metrics
+  - Novelty detection models for multivariate time series
+  - Anomaly scores and thresholds for temporal deviations
+  - Detection performance metrics for MTS anomalies
 
-### 5️⃣ **Clustering Methods** (`5 - Clustering methods.ipynb`)
-**Purpose**: Pattern discovery and operational insights
+### 5️⃣ **Clustering Methods** (`5_clustering_methods.ipynb`)
+**Purpose**: Pattern discovery and operational insights in multivariate time series
 - **Input**: Raw data from `processed_data/cv_splits/raw/`
 - **Processing**:
-  - K-means clustering with elbow method
-  - Density-based clustering (DBSCAN, Mean Shift)
-  - Cluster interpretation and validation
+  - K-means clustering with elbow method for MTS patterns
+  - Density-based clustering (DBSCAN, Mean Shift) for temporal clusters
+  - Cluster interpretation and validation for operational states
 - **Output**:
-  - Cluster assignments and centroids
-  - Operational pattern insights
-  - Clustering quality metrics
+  - Cluster assignments and centroids for multivariate patterns
+  - Operational pattern insights from time series clustering
+  - Clustering quality metrics for MTS data
 
 ## 🔄 Data Flow & Dependencies
 
@@ -466,9 +468,9 @@ pip install -r requirements.txt
 ```
 
 ### Execution Order
-1. **Start with Data Treatment**: Run `1 - Data Treatment.ipynb` first to prepare data
+1. **Start with Data Treatment**: Run `1_data_treatment.ipynb` first to prepare MTS data
 2. **Parallel Analysis**: Run notebooks 2-5 in any order (they're independent)
-3. **Configuration**: Modify `src/config.py` for different parameters
+3. **Configuration**: Modify `src/config.py` for different MTS parameters
 
 ### Quick Start
 ```python
@@ -528,32 +530,43 @@ processed_data/
 ## 🎯 Learning Objectives
 
 ### Educational Goals
-- **Data Pipeline Design**: Understanding end-to-end ML workflows
-- **Algorithm Comparison**: Supervised vs unsupervised approaches
-- **Real-world Applications**: Industrial fault detection challenges
-- **Performance Evaluation**: Comprehensive metrics and validation
-- **Pattern Discovery**: Clustering and visualization techniques
+- **Data Pipeline Design**: Understanding end-to-end ML workflows for multivariate time series
+- **Algorithm Comparison**: Supervised vs unsupervised approaches for MTS analysis
+- **Real-world Applications**: Industrial fault detection challenges in time series data
+- **Performance Evaluation**: Comprehensive metrics and validation for temporal data
+- **Pattern Discovery**: Clustering and visualization techniques for multivariate sequences
 
 ### Practical Skills
-- **Time Series Processing**: Windowing and feature extraction
-- **Cross-Validation**: Proper evaluation methodologies
-- **Anomaly Detection**: Autoencoder-based novelty detection
-- **Clustering Analysis**: Pattern discovery and interpretation
-- **Visualization**: Dimensionality reduction and interactive plots
+- **Time Series Processing**: Windowing and feature extraction from multivariate data
+- **Cross-Validation**: Proper evaluation methodologies for temporal datasets
+- **Anomaly Detection**: Autoencoder-based novelty detection in time series
+- **Clustering Analysis**: Pattern discovery and interpretation in MTS
+- **Visualization**: Dimensionality reduction and interactive plots for temporal data
 
 ## 🚀 Advanced Usage
 
 ### Custom Configurations
-- Modify window sizes and overlap in `src/config.py`
-- Adjust cross-validation parameters for different splits
-- Experiment with different scaling methods
-- Customize clustering parameters and algorithms
+- Modify window sizes and overlap in `src/config.py` for different MTS analysis needs
+- Adjust cross-validation parameters for different temporal splits
+- Experiment with different scaling methods for multivariate data
+- Customize clustering parameters and algorithms for time series patterns
+
+### Extension Points
+- Add new classification algorithms suitable for multivariate time series
+- Implement additional clustering methods for temporal pattern discovery
+- Extend visualization techniques for multivariate time series analysis
+- Develop custom novelty detection approaches for specific MTS applications
 
 ## 📝 Notes
 
-- **Data Dependencies**: Notebook 1 must be run before others
-- **Memory Requirements**: Large datasets may require sampling
-- **Execution Time**: Full pipeline can take several hours
-- **Reproducibility**: Random seeds are set for consistent results
+- **Data Dependencies**: Notebook 1 must be run before others to prepare MTS data
+- **Memory Requirements**: Large multivariate time series datasets may require sampling
+- **Execution Time**: Full pipeline can take several hours depending on MTS complexity
+- **Reproducibility**: Random seeds are set for consistent results across temporal analyses
 
--
+---
+
+**Repository**: Introduction to Machine Learning applied to Multivariate Time Series  
+**Purpose**: Educational material for exploring ML techniques on the 3W Dataset  
+**Target Audience**: Students, researchers, and practitioners working with industrial time series data  
+**Last Updated**: September 2025
