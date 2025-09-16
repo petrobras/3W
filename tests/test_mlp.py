@@ -2,16 +2,18 @@ import pytest
 import torch
 import torch.nn as nn
 import numpy as np
+import pandas as pd
+import pydantic
+
+from torch.utils.data import DataLoader, TensorDataset
+
 from ThreeWToolkit.models.mlp import (
     MLP,
     MLPConfig,
-    LabeledSubset,
     ActivationFunctionEnum,
 )
 from ThreeWToolkit.trainer.trainer import ModelTrainer, TrainerConfig
-import pydantic
-from sklearn.metrics import mean_squared_error
-import pandas as pd
+from ThreeWToolkit.metrics import explained_variance_score
 
 
 @pytest.fixture
@@ -50,20 +52,8 @@ def trainer_setup():
         "y_tensor": y_series,
         "config": config,
         "trainer": trainer,
+        "device": trainer.device
     }
-
-
-class TestLabeledSubset:
-    def test_init_value_error(self):
-        """
-        Tests if LabeledSubset raises ValueError for inputs of different lengths.
-        """
-        samples = torch.rand(10, 2)
-        labels = torch.rand(9)
-        with pytest.raises(
-            ValueError, match="Samples and labels must have the same length."
-        ):
-            LabeledSubset(samples, labels)
 
 
 class TestMLP:
@@ -74,8 +64,8 @@ class TestMLP:
         n_samples = 20
         x = np.random.rand(n_samples, input_size).astype(np.float32)
         y = np.random.randint(0, num_classes, size=n_samples)
-        dataset = LabeledSubset(torch.tensor(x), torch.tensor(y))
-        loader = torch.utils.data.DataLoader(dataset, batch_size=5)
+        dataset = TensorDataset(torch.tensor(x), torch.tensor(y))
+        loader = DataLoader(dataset, batch_size=5)
         config = MLPConfig(
             input_size=input_size,
             hidden_sizes=(6,),
@@ -164,7 +154,6 @@ class TestMLP:
                 random_seed=42,
             )
 
-
 class TestModelTrainer:
     def test_mlp_regression_else_branch(self, trainer_setup):
         # Use trainer_setup for regression (output_size=1, criterion=mse)
@@ -175,39 +164,8 @@ class TestModelTrainer:
         hist = trainer.history[0]
         if hist is not None:
             assert "train_loss" in hist and "val_loss" in hist
-        test_loss, _ = trainer.test(
-            x,
-            y,
-            metrics=[
-                lambda y_true, y_pred: np.mean(
-                    np.abs(np.array(y_true) - np.array(y_pred))
-                )
-            ],
-        )
-        assert isinstance(test_loss, float)
 
-    def test_mlp_binary_bce_training_and_eval(self, trainer_setup):
-        # Use trainer_setup, but update criterion to binary_cross_entropy
-        trainer = trainer_setup["trainer"]
-        x = trainer_setup["x_tensor"]
-        y = trainer_setup["y_tensor"]
-        # Update criterion and re-initialize optimizer/criterion for BCE
-        trainer.config.criterion = "binary_cross_entropy"
-        trainer.criterion = trainer._get_fn_cost("binary_cross_entropy")
-        trainer.train(x, y)
-        hist = trainer.history[0]
-        if hist is not None:
-            assert "train_loss" in hist and "val_loss" in hist
-        test_loss, test_metrics = trainer.test(
-            x,
-            y,
-            metrics=[
-                lambda y_true, y_pred: (np.array(y_true) == np.array(y_pred)).mean()
-            ],
-        )
-        assert isinstance(test_loss, float)
-
-    def test_mlp_multiclass_training_and_eval(self):
+    def test_mlp_multiclass_training(self):
         # Multiclass: output_size > 1, labels are class indices
         input_size = 6
         num_classes = 3
@@ -241,16 +199,7 @@ class TestModelTrainer:
         hist = trainer.history[0]
         if hist is not None:
             assert "train_loss" in hist and "val_loss" in hist
-        # Evaluate (should hit multiclass branch)
-        test_loss, _ = trainer.test(
-            x_df,
-            y_series,
-            metrics=[
-                lambda y_true, y_pred: (np.array(y_true) == np.array(y_pred)).mean()
-            ],
-        )
-        assert isinstance(test_loss, float)
-
+        
     def test_trainer_initialization(self, trainer_setup):
         trainer = trainer_setup["trainer"]
         assert trainer.batch_size == 16
@@ -267,16 +216,6 @@ class TestModelTrainer:
         assert "train_loss" in hist and "val_loss" in hist
         assert len(hist["train_loss"]) == trainer.epochs
 
-    def test_test_method(self, trainer_setup):
-        trainer = trainer_setup["trainer"]
-        x = trainer_setup["x_tensor"]
-        y = trainer_setup["y_tensor"]
-        trainer.train(x, y)
-
-        test_loss, test_metrics = trainer.test(x, y, metrics=[mean_squared_error])
-        assert isinstance(test_loss, float)
-        assert "mean_squared_error" in test_metrics
-
     def test_save_and_load(self, tmp_path, trainer_setup):
         trainer = trainer_setup["trainer"]
         x = trainer_setup["x_tensor"]
@@ -286,20 +225,6 @@ class TestModelTrainer:
         trainer.save(save_path)
         loaded_model = trainer.load(save_path)
         assert loaded_model is not None
-
-    def test_labeled_subset(self):
-        samples = torch.rand(10, 2)
-        labels = torch.rand(10, 1)
-        ds = LabeledSubset(samples, labels)
-        assert len(ds) == 10
-        x, y = ds[0]
-        assert x.shape[0] == 2
-
-    def test_labeled_subset_value_error(self):
-        samples = torch.rand(10, 2)
-        labels = torch.rand(9, 1)
-        with pytest.raises(ValueError):
-            LabeledSubset(samples, labels)
 
     def test_mlp_forward(self):
         config = MLPConfig(

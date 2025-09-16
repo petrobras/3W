@@ -1,52 +1,66 @@
-from typing import Callable, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from pathlib import Path
 import pandas as pd
+
+from pathlib import Path
+from typing import Callable, Any
 from torch.utils.data import DataLoader
 from pydantic import field_validator
-from sklearn.model_selection import TimeSeriesSplit, train_test_split
+
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from ..core.base_model_trainer import BaseModelTrainer, ModelTrainerConfig
-from ..core.enums import (
-    OptimizersEnum,
-    CriterionEnum,
-)
+from ..core.enums import OptimizersEnum, CriterionEnum, TaskType
 from ..models.mlp import MLPConfig, MLP
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 from ..utils import ModelRecorder
 from torch.utils.data import TensorDataset
+from ..assessment.model_assess import ModelAssessment, ModelAssessmentConfig
 
 
 class TrainerConfig(ModelTrainerConfig):
-    """
-    Configuration for the ModelTrainer, including training hyperparameters and model config.
+    """Configuration class for the ModelTrainer.
+
+    This class defines all the hyperparameters and settings needed to configure
+    the training process for machine learning models. It extends the base
+    ModelTrainerConfig with specific training-related parameters.
 
     Args:
-        batch_size (int): Batch size for training.
-        epochs (int): Number of training epochs.
-        seed (int): Random seed for reproducibility.
-        learning_rate (float): Learning rate for optimizer.
-        config_model (MLPConfig | SklearnModelsConfig): Model configuration object.
-        optimizer (str): "adam", "adamw", "sgd", "rmsprop" (default: "adam").
-        criterion (str): "cross_entropy", "binary_cross_entropy", "mse", "mae" (default: "cross_entropy").
-        device (str): Device to use (default: 'cuda' if available, else 'cpu').
-        metrics (list[Callable] | None): List of metrics to evaluate the model.
-        cross_validation (bool | None): Whether to use cross-validation (default: None).
-        n_splits (int | None): Number of splits for cross-validation (default: None).
-        shuffle_train (bool): Whether to shuffle the training data (default: True).
+        batch_size (int): The number of samples per batch during training.
+            Must be greater than 0.
+        epochs (int): The total number of training epochs to run.
+            Must be greater than 0.
+        seed (int): Random seed for reproducibility across training runs.
+        learning_rate (float): The learning rate for the optimizer.
+            Must be greater than 0.
+        config_model (MLPConfig | SklearnModelsConfig): Configuration object
+            for the specific model type to be trained.
+        criterion (str, optional): Loss function to use during training.
+            Options: "cross_entropy", "binary_cross_entropy", "mse", "mae".
+            Defaults to "cross_entropy".
+        optimizer (str, optional): Optimization algorithm to use.
+            Options: "adam", "adamw", "sgd", "rmsprop".
+            Defaults to "adam".
+        device (str, optional): Computing device for training.
+            Options: "cpu", "cuda". Defaults to "cuda" if available, else "cpu".
+        cross_validation (bool | None, optional): Whether to use k-fold
+            cross-validation during training. Defaults to None (disabled).
+        n_splits (int, optional): Number of folds for cross-validation.
+            Only used when cross_validation is True. Defaults to 5.
+        shuffle_train (bool, optional): Whether to shuffle training data
+            before each epoch. Defaults to True.
+
+    Raises:
+        ValueError: If any validation constraint is violated (e.g., negative
+            batch_size, invalid optimizer name, etc.).
 
     Example:
-        >>> trainer_config = TrainerConfig(
+        >>> config = TrainerConfig(
         ...     batch_size=32,
-        ...     epochs=10,
+        ...     epochs=100,
         ...     seed=42,
         ...     learning_rate=0.001,
         ...     config_model=MLPConfig(...),
-        ...     optimizer=OptimizersEnum.ADAM,
-        ...     criterion=CriterionEnum.MSE,
-        ...     device='cuda',
-        ...     metrics=[mean_squared_error, r2_score],
         ...     cross_validation=True,
         ...     n_splits=5
         ... )
@@ -60,7 +74,6 @@ class TrainerConfig(ModelTrainerConfig):
     criterion: str = "cross_entropy"
     optimizer: str = "adam"
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    metrics: list[Callable] | None = None
     cross_validation: bool | None = None
     n_splits: int = 5
     shuffle_train: bool = True
@@ -68,6 +81,17 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("batch_size")
     @classmethod
     def check_batch_size(cls, v):
+        """Validate that batch_size is positive.
+
+        Args:
+            v (int): The batch size value to validate.
+
+        Returns:
+            int: The validated batch size.
+
+        Raises:
+            ValueError: If batch_size is not greater than 0.
+        """
         if v <= 0:
             raise ValueError("batch_size must be > 0")
         return v
@@ -75,6 +99,17 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("epochs")
     @classmethod
     def check_epochs(cls, v):
+        """Validate that epochs is positive.
+
+        Args:
+            v (int): The number of epochs to validate.
+
+        Returns:
+            int: The validated number of epochs.
+
+        Raises:
+            ValueError: If epochs is not greater than 0.
+        """
         if v <= 0:
             raise ValueError("epochs must be > 0")
         return v
@@ -82,6 +117,17 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("learning_rate")
     @classmethod
     def check_learning_rate(cls, v):
+        """Validate that learning_rate is positive.
+
+        Args:
+            v (float): The learning rate value to validate.
+
+        Returns:
+            float: The validated learning rate.
+
+        Raises:
+            ValueError: If learning_rate is not greater than 0.
+        """
         if v <= 0:
             raise ValueError("learning_rate must be > 0")
         return v
@@ -89,7 +135,18 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("n_splits")
     @classmethod
     def check_n_splits(cls, v, values):
-        # values is a ValidationInfo object in Pydantic v2
+        """Validate n_splits when cross-validation is enabled.
+
+        Args:
+            v (int): The number of splits to validate.
+            values: The validation context containing other field values.
+
+        Returns:
+            int: The validated number of splits.
+
+        Raises:
+            ValueError: If n_splits is not greater than 1 when cross_validation is True.
+        """
         cross_val = (
             values.data.get("cross_validation")
             if hasattr(values, "data")
@@ -102,6 +159,17 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("optimizer")
     @classmethod
     def check_optimizer(cls, v):
+        """Validate that optimizer is from the supported list.
+
+        Args:
+            v (str): The optimizer name to validate.
+
+        Returns:
+            str: The validated optimizer name.
+
+        Raises:
+            ValueError: If optimizer is not in the supported list.
+        """
         valid = {o.value for o in OptimizersEnum}
         if v not in valid:
             raise ValueError(f"optimizer must be one of {valid}")
@@ -110,6 +178,17 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("criterion")
     @classmethod
     def check_criterion(cls, v):
+        """Validate that criterion is from the supported list.
+
+        Args:
+            v (str): The criterion name to validate.
+
+        Returns:
+            str: The validated criterion name.
+
+        Raises:
+            ValueError: If criterion is not in the supported list.
+        """
         valid = {c.value for c in CriterionEnum}
         if v not in valid:
             raise ValueError(f"criterion must be one of {valid}")
@@ -118,6 +197,17 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("device")
     @classmethod
     def check_device(cls, v):
+        """Validate that device is either 'cpu' or 'cuda'.
+
+        Args:
+            v (str): The device name to validate.
+
+        Returns:
+            str: The validated device name.
+
+        Raises:
+            ValueError: If device is not 'cpu' or 'cuda'.
+        """
         valid = {"cpu", "cuda"}
         if v not in valid:
             raise ValueError("device must be 'cpu' or 'cuda'")
@@ -125,29 +215,79 @@ class TrainerConfig(ModelTrainerConfig):
 
 
 class ModelTrainer(BaseModelTrainer):
-    """
-    Generic model trainer supporting both PyTorch and scikit-learn models.
+    """Simplified model trainer focused on training with delegated evaluation.
+
+    This class handles the training process for both PyTorch neural networks (MLP)
+    and scikit-learn models. It supports regular training, cross-validation, and
+    provides convenient methods for model persistence and evaluation.
+
+    The trainer is designed to be lightweight and focused solely on training,
+    with evaluation capabilities delegated to the ModelAssessment class for
+    better separation of concerns.
 
     Args:
-        config (TrainerConfig): Configuration for the trainer and model.
+        config (TrainerConfig): Configuration object containing all training
+            parameters and model configuration.
+
+    Attributes:
+        config (TrainerConfig): The training configuration.
+        lr (float): Learning rate from configuration.
+        device (str): Computing device ('cpu' or 'cuda').
+        model (MLP | SklearnModels): The instantiated model to train.
+        optimizer (torch.optim.Optimizer | None): PyTorch optimizer (None for sklearn models).
+        criterion (Callable | None): Loss function (None for sklearn models).
+        cross_validation (bool | None): Whether cross-validation is enabled.
+        n_splits (int): Number of folds for cross-validation.
+        batch_size (int): Batch size for training.
+        epochs (int): Number of training epochs.
+        seed (int): Random seed for reproducibility.
+        shuffle_train (bool): Whether to shuffle training data.
+        history (list): Training history from completed training runs.
 
     Example:
-        >>> trainer = ModelTrainer(trainer_config)
-        >>> trainer.train(x_train, y_train, x_val, y_val)
-        >>> results = trainer.test(x_test, y_test, metrics=[...])
+        Basic usage:
+        >>> config = TrainerConfig(
+        ...     batch_size=32,
+        ...     epochs=100,
+        ...     seed=42,
+        ...     learning_rate=0.001,
+        ...     config_model=MLPConfig(...)
+        ... )
+        >>> trainer = ModelTrainer(config)
+        >>> trainer.train(X_train, y_train, X_val, y_val)
+        >>>
+        >>> # Save the trained model
+        >>> trainer.save(Path("model.pth"))
+        >>>
+        >>> # Evaluate using ModelAssessment
+        >>> results = trainer.assess(X_test, y_test)
+
+        Cross-validation usage:
+        >>> config = TrainerConfig(
+        ...     batch_size=32,
+        ...     epochs=100,
+        ...     seed=42,
+        ...     learning_rate=0.001,
+        ...     config_model=MLPConfig(...),
+        ...     cross_validation=True,
+        ...     n_splits=5
+        ... )
+        >>> trainer = ModelTrainer(config)
+        >>> trainer.train(X_train, y_train)  # No validation set needed
     """
 
     def __init__(self, config: TrainerConfig) -> None:
-        """
-        Initialize the ModelTrainer.
+        """Initialize the ModelTrainer with the given configuration.
 
         Args:
-            config (TrainerConfig): Trainer configuration object.
+            config (TrainerConfig): Configuration object containing all
+                training parameters and model settings.
         """
         self.config = config
         self.lr = config.learning_rate
         self.device = config.device
         self.model = self._get_model(config.config_model)
+
         # Only create optimizer and criterion for PyTorch models
         if isinstance(self.model, MLP):
             self.optimizer = self._get_optimizer(self.config.optimizer)
@@ -155,10 +295,10 @@ class ModelTrainer(BaseModelTrainer):
         else:
             self.optimizer = None
             self.criterion = None
+
         self.cross_validation = config.cross_validation
         if self.config.cross_validation:
             self.n_splits = config.n_splits
-        self.metrics = config.metrics
         self.batch_size = config.batch_size
         self.epochs = config.epochs
         self.seed = config.seed
@@ -167,17 +307,18 @@ class ModelTrainer(BaseModelTrainer):
     def _get_model(
         self, config_model: MLPConfig | SklearnModelsConfig
     ) -> MLP | SklearnModels:
-        """
-        Instantiate the model based on the configuration.
+        """Instantiate the appropriate model based on the configuration.
 
         Args:
-            config_model (MLPConfig | SklearnModelsConfig): Model configuration object.
+            config_model (MLPConfig | SklearnModelsConfig): Model configuration
+                object that determines which type of model to create.
 
         Returns:
-            MLP | SklearnModels: Instantiated model.
+            MLP | SklearnModels: The instantiated model, moved to the appropriate
+                device if it's a PyTorch model.
 
         Raises:
-            ValueError: If the model config is unknown.
+            ValueError: If the model configuration type is not recognized.
         """
         match config_model:
             case MLPConfig():
@@ -188,32 +329,24 @@ class ModelTrainer(BaseModelTrainer):
                 raise ValueError(f"Unknown model config: {config_model}")
 
     def _get_optimizer(self, optimizer: str) -> torch.optim.Optimizer:
-        """
-        Get the optimizer for the model.
+        """Create and return the specified PyTorch optimizer.
 
         Args:
-            optimizer (str): Optimizer type.
+            optimizer (str): Name of the optimizer to create. Must be one of:
+                "adam", "adamw", "sgd", "rmsprop".
 
         Returns:
-            torch.optim.Optimizer: Instantiated optimizer.
+            torch.optim.Optimizer: The configured optimizer instance with
+                model parameters and learning rate set.
 
         Raises:
-            ValueError: If the optimizer is unknown.
-
-        Example:
-            >>> optimizer = trainer._get_optimizer(OptimizersEnum.ADAM)
+            ValueError: If the optimizer name is not recognized.
         """
         model_params = self.model.get_params()
         if optimizer == OptimizersEnum.ADAM.value:
-            return optim.Adam(
-                params=model_params,
-                lr=self.lr,
-            )
+            return optim.Adam(params=model_params, lr=self.lr)
         elif optimizer == OptimizersEnum.ADAMW.value:
-            return optim.AdamW(
-                params=model_params,
-                lr=self.lr,
-            )
+            return optim.AdamW(params=model_params, lr=self.lr)
         elif optimizer == OptimizersEnum.SGD.value:
             return optim.SGD(params=model_params, lr=self.lr)
         elif optimizer == OptimizersEnum.RMSPROP.value:
@@ -222,20 +355,17 @@ class ModelTrainer(BaseModelTrainer):
             raise ValueError(f"Unknown optimizer: {optimizer}")
 
     def _get_fn_cost(self, criterion: str | None) -> Callable:
-        """
-        Get the loss function based on the criterion enum.
+        """Create and return the specified loss function.
 
         Args:
-            criterion (str | None): Loss function type.
+            criterion (str | None): Name of the loss function to create. Must be
+                one of: "cross_entropy", "binary_cross_entropy", "mse", "mae".
 
         Returns:
-            Callable: Loss function.
+            Callable: The configured loss function instance.
 
         Raises:
-            ValueError: If the criterion is unknown.
-
-        Example:
-            >>> loss_fn = trainer._get_fn_cost("mse")
+            ValueError: If the criterion name is not recognized.
         """
         if criterion == CriterionEnum.CROSS_ENTROPY.value:
             return nn.CrossEntropyLoss()
@@ -251,18 +381,21 @@ class ModelTrainer(BaseModelTrainer):
     def _create_dataloader(
         self, x: Any, y: Any = None, shuffle: bool = False
     ) -> DataLoader:
-        """
-        Create a DataLoader from input features and labels.
+        """Create a PyTorch DataLoader from pandas DataFrame/Series.
+
+        Converts pandas data structures to PyTorch tensors and wraps them
+        in a DataLoader for batch processing during training.
 
         Args:
-            x (np.ndarray | torch.Tensor): Input features.
-            y (np.ndarray | torch.Tensor): Labels.
+            x (Any): Input features as pandas DataFrame or compatible structure.
+            y (Any, optional): Target labels as pandas DataFrame/Series or
+                compatible structure. If None, creates empty tensors.
+            shuffle (bool, optional): Whether to shuffle data in the DataLoader.
+                Defaults to False.
 
         Returns:
-            DataLoader: PyTorch DataLoader for the dataset.
-
-        Example:
-            >>> loader = trainer.create_dataloader(X, y, shuffle=True)
+            DataLoader: PyTorch DataLoader configured with the specified
+                batch size and shuffle setting.
         """
         X_tensor = torch.tensor(x.values, dtype=torch.float32)
         if y is not None:
@@ -281,33 +414,55 @@ class ModelTrainer(BaseModelTrainer):
         y_val: pd.DataFrame | pd.Series | None = None,
         **kwargs,
     ) -> None:
-        """
-        Train the model using the provided data.
+        """Train the model using the provided training data.
+
+        This method handles three training scenarios:
+        1. Cross-validation: Uses k-fold cross-validation with stratified splits
+        2. Validation provided: Uses provided validation data
+        3. Auto-split: Automatically splits training data for validation
+
+        The training history is stored in self.history for later analysis.
 
         Args:
-            x_train (pd.DataFrame): Windowed training data.
-            y_train (pd.DataFrame): Windowed training labels.
+            x_train (pd.DataFrame): Training input features.
+            y_train (pd.DataFrame | pd.Series): Training target labels.
+            x_val (pd.DataFrame | None, optional): Validation input features.
+                If None and cross_validation is False, data will be auto-split.
+            y_val (pd.DataFrame | pd.Series | None, optional): Validation target
+                labels. If None and cross_validation is False, data will be auto-split.
+            **kwargs: Additional keyword arguments passed to the underlying
+                model's fit method.
 
-        Example:
-            >>> trainer.train(windowed_data)
+        Note:
+            - For cross-validation, x_val and y_val are ignored
+            - Model state is reset between cross-validation folds for PyTorch models
+            - Training history is stored as a list of fold histories (cross-validation)
+              or a single-element list (regular training)
         """
         if self.cross_validation:
-            # Save model initial state dict
+            # Store initial model state for cross-validation reset
             initial_state_dict = (
                 self.model.state_dict() if isinstance(self.model, MLP) else None
             )
             self.history = []
+
+            # Perform stratified k-fold cross-validation
             for fold, (train_idx, val_idx) in enumerate(
-                TimeSeriesSplit(n_splits=self.n_splits).split(x_train, y_train)
+                StratifiedKFold(n_splits=self.n_splits).split(x_train, y_train)
             ):
                 print(f"Training fold {fold + 1}/{self.n_splits}")
-                # Reset model to initial state before each fold
+
+                # Reset model state for each fold (PyTorch models only)
                 if isinstance(self.model, MLP) and initial_state_dict is not None:
                     self.model.load_state_dict(initial_state_dict)
+
+                # Split data for current fold
                 x_train_fold = self._select_rows(x_train, train_idx)
                 y_train_fold = self._select_rows(y_train, train_idx)
                 x_val_fold = self._select_rows(x_train, val_idx)
                 y_val_fold = self._select_rows(y_train, val_idx)
+
+                # Train on current fold and store history
                 fold_history = self.call_trainer(
                     x_train_fold,
                     y_train_fold,
@@ -316,34 +471,33 @@ class ModelTrainer(BaseModelTrainer):
                     **kwargs,
                 )
                 self.history.append(fold_history)
+
         elif x_val is not None and y_val is not None:
+            # Use provided validation data
             self.history = [
-                self.call_trainer(
-                    x_train,
-                    y_train,
-                    x_val=x_val,
-                    y_val=y_val,
-                    **kwargs,
-                )
+                self.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val, **kwargs)
             ]
         else:
+            # Automatically split training data for validation
             x_train, x_val, y_train, y_val = train_test_split(
-                x_train,
-                y_train,
-                test_size=0.2,
-                shuffle=self.shuffle_train,
+                x_train, y_train, test_size=0.2, shuffle=self.shuffle_train
             )
             self.history = [
-                self.call_trainer(
-                    x_train,
-                    y_train,
-                    x_val=x_val,
-                    y_val=y_val,
-                    **kwargs,
-                )
+                self.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val, **kwargs)
             ]
 
     def _select_rows(self, data, idx):
+        """Select rows from data using provided indices.
+
+        Handles both pandas DataFrames/Series and other indexable data structures.
+
+        Args:
+            data: The data structure to index (DataFrame, Series, or array-like).
+            idx: The indices to select.
+
+        Returns:
+            The selected subset of data.
+        """
         if hasattr(data, "iloc"):
             return data.iloc[idx]
         else:
@@ -357,104 +511,160 @@ class ModelTrainer(BaseModelTrainer):
         y_val: Any = None,
         **kwargs,
     ) -> dict[str, list[Any]] | None:
+        """Call the appropriate training method based on model type.
+
+        Dispatches training to either PyTorch neural network training loop
+        or scikit-learn model fitting, handling the different interfaces
+        transparently.
+
+        Args:
+            x_train (Any): Training input features.
+            y_train (Any): Training target labels.
+            x_val (Any, optional): Validation input features.
+            y_val (Any, optional): Validation target labels.
+            **kwargs: Additional arguments passed to the model's fit method.
+
+        Returns:
+            dict[str, list[Any]] | None: Training history dictionary for PyTorch
+                models (containing loss/metric trajectories), or None for
+                scikit-learn models.
+        """
         if isinstance(self.model, MLP):
+            # PyTorch model training
             train_loader = self._create_dataloader(
                 x_train, y_train, shuffle=self.shuffle_train
             )
+            val_loader = (
+                self._create_dataloader(x_val, y_val, shuffle=False)
+                if x_val is not None and y_val is not None
+                else None
+            )
 
-            if x_val is not None and y_val is not None:
-                val_loader = self._create_dataloader(x_val, y_val, shuffle=False)
-            else:
-                val_loader = None
-
-            # Only pass optimizer/criterion if not None
+            # Use configured optimizer/criterion or fallback to defaults
             optimizer = (
                 self.optimizer
                 if self.optimizer is not None
                 else torch.optim.Adam(self.model.parameters(), lr=self.lr)
             )
             criterion = self.criterion if self.criterion is not None else nn.MSELoss()
+
             return self.model.fit(
                 train_loader,
                 self.epochs,
                 optimizer,
                 criterion,
                 val_loader,
-                self.metrics,
-                self.device,
+                device=self.device,
             )
         else:
+            # Scikit-learn model training
             return self.model.fit(x_train, y_train, **kwargs)
 
-    def test(self, x: Any, y: Any, metrics: list[Callable], **kwargs) -> Any:
-        """
-        Evaluate the model on test data.
-
-        Args:
-            x (np.ndarray | torch.Tensor): Test features.
-            y (np.ndarray | torch.Tensor): Test labels.
-            metrics (list[Callable]): List of metric functions for evaluation.
-            **kwargs: Additional arguments for the model's test/evaluate method.
-
-        Returns:
-            Any: Test results (loss, metrics, etc.).
-
-        Example:
-            >>> test_loss, test_metrics = trainer.test(X_test, y_test, metrics=[mean_squared_error])
-        """
-        if isinstance(self.model, MLP):
-            test_loader = self._create_dataloader(x, y, shuffle=False)
-            criterion = self.criterion if self.criterion is not None else nn.MSELoss()
-            return self.model.test(test_loader, criterion, metrics, self.device)
-        else:
-            return self.model.evaluate(x, y, metrics)
-
-    def predict(self, x: Any, **kwargs) -> Any:
-        """
-        Generate predictions using the trained model.
-
-        Args:
-            x (Dataloader): Input features.
-            **kwargs: Additional arguments for the model's predict method.
-
-        Returns:
-            Any: Model predictions.
-
-        Example:
-            >>> preds = trainer.predict(X_test)
-        """
-        if isinstance(self.model, MLP):
-            pred_loader = self._create_dataloader(x, shuffle=False)
-            return self.model.predict(pred_loader, self.device, **kwargs)
-        else:
-            return self.model.predict(x, **kwargs)
-
     def save(self, filepath: Path) -> None:
-        """
-        Save a checkpoint of the model to the specified filepath.
+        """Save the trained model to disk.
+
+        Uses the ModelRecorder utility to save model checkpoints in a
+        consistent format across different model types.
 
         Args:
-            filepath (Path): Path to save the model checkpoint.
+            filepath (Path): The file path where the model should be saved.
+                The extension should be appropriate for the model type
+                (.pth for PyTorch models, .pkl for scikit-learn models).
 
-        Example:
-            >>> trainer.save(Path('best_model.pth'))
+        Note:
+            The saved model can be loaded later using the load() method.
         """
         ModelRecorder.save_best_model(model=self.model, filename=filepath)
 
     def load(self, filepath: Path) -> MLP | SklearnModels:
-        """
-        Load a checkpoint of the model from the specified filepath.
+        """Load a previously saved model from disk.
+
+        Loads model weights/parameters from the specified file and applies
+        them to the current model instance.
 
         Args:
-            filepath (Path): Path to the model checkpoint.
+            filepath (Path): The file path from which to load the model.
+                Should contain a model saved with the save() method.
 
         Returns:
-            MLP | SklearnModels: The loaded model instance.
+            MLP | SklearnModels: The model instance with loaded weights/parameters.
 
-        Example:
-            >>> model = trainer.load(Path('best_model.pth'))
+        Note:
+            For PyTorch models, this loads the state dict. For scikit-learn
+            models, this loads the entire model state.
         """
         state_dict = ModelRecorder.load_model(filename=filepath)
         if isinstance(self.model, MLP):
             self.model.load_state_dict(state_dict)
         return self.model
+
+    def assess(
+        self,
+        x_test: Any,
+        y_test: Any,
+        assessment_config: ModelAssessmentConfig | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
+        """Evaluate the trained model using ModelAssessment.
+
+        This is a convenience method that creates a ModelAssessment instance
+        and evaluates the current model on the provided test data.
+
+        Args:
+            x_test (Any): Test input features for evaluation.
+            y_test (Any): Test target labels for evaluation.
+            assessment_config (ModelAssessmentConfig | None, optional):
+                Configuration for the assessment process. If None, creates
+                a default configuration based on the task type.
+            **kwargs: Additional arguments passed to ModelAssessment.evaluate().
+
+        Returns:
+            dict[str, Any]: Dictionary containing evaluation results with
+                metrics, predictions, and other assessment information.
+
+        Example:
+            >>> # Basic assessment with default configuration
+            >>> results = trainer.assess(X_test, y_test)
+            >>> print(f"Accuracy: {results['accuracy']}")
+            >>>
+            >>> # Custom assessment configuration
+            >>> config = ModelAssessmentConfig(
+            ...     metrics=["accuracy", "f1", "precision", "recall"],
+            ...     task_type=TaskType.CLASSIFICATION
+            ... )
+            >>> results = trainer.assess(X_test, y_test, assessment_config=config)
+        """
+        if assessment_config is None:
+            # Create default assessment configuration based on task type
+            assessment_config = ModelAssessmentConfig(
+                metrics=["accuracy"]
+                if self._is_classification_task()
+                else ["explained_variance"],
+                task_type=TaskType.CLASSIFICATION
+                if self._is_classification_task()
+                else TaskType.REGRESSION,
+            )
+
+        assessor = ModelAssessment(assessment_config)
+        return assessor.evaluate(self.model, x_test, y_test, **kwargs)
+
+    def _is_classification_task(self) -> bool:
+        """Determine if the current task is classification based on the loss function.
+
+        Uses a heuristic approach by checking if the configured criterion
+        is typically used for classification tasks.
+
+        Returns:
+            bool: True if this appears to be a classification task,
+                False if it appears to be a regression task.
+
+        Note:
+            This is a heuristic and may not always be accurate. For more
+            precise control, specify the task_type explicitly in the
+            assessment_config parameter of the assess() method.
+        """
+        classification_criteria = {
+            CriterionEnum.CROSS_ENTROPY.value,
+            CriterionEnum.BINARY_CROSS_ENTROPY.value,
+        }
+        return self.config.criterion in classification_criteria

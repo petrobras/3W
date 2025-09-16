@@ -2,7 +2,7 @@ from abc import ABC
 from pydantic import BaseModel, Field, field_validator
 
 
-class BaseAssessmentVisualizationConfig(BaseModel):
+class AssessmentVisualizationConfig(BaseModel):
     class_names: list[str] | None = Field(
         default=None, description="List containing class names"
     )
@@ -21,5 +21,5 @@ class BaseAssessmentVisualizationConfig(BaseModel):
 
 
 class BaseAssessmentVisualization(ABC):
-    def __init__(self, config: BaseAssessmentVisualizationConfig):
+    def __init__(self, config: AssessmentVisualizationConfig):
         self.config = config

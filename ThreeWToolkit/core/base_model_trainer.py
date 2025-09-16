@@ -28,10 +28,6 @@ class BaseModelTrainer(ABC):
         pass
 
     @abstractmethod
-    def test(self, *args, **kwargs) -> dict:
-        pass
-
-    @abstractmethod
     def save(self, filepath: Path):
         pass
 
