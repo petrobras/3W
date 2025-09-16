@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import contextlib
+import subprocess
 
 
 @contextlib.contextmanager
@@ -39,6 +40,14 @@ def latex_environment(search_path: Path):
         os.environ["TEXINPUTS"] = new_texinputs
         print(f"Temporarily setting TEXINPUTS to: {os.environ['TEXINPUTS']}")
         yield
+    except subprocess.CalledProcessError as e:
+        # Handle LaTeX compilation errors
+        # sometimes LaTeX returns non-zero exit codes for warnings
+        print(f"LaTeX compilation returned non-zero exit status: {e}")
+        print(
+            "Sometimes this is due to warnings, please check the generated .log file for details."
+        )
+        print("Check if the pdf was generated correctly despite the error.")
     finally:
         # This block executes after the 'with' block, even if errors occurred
         if original_texinputs is not None:
