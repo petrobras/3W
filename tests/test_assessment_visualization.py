@@ -8,20 +8,15 @@ matplotlib.use("Agg")  # Use non-interactive backend for tests
 from matplotlib.figure import Figure
 import pydantic
 
-from ThreeWToolkit.assessment.assessment_visualizations import (
-    AssessmentVisualization,
-)
+from ThreeWToolkit.assessment.assessment_visualizations import AssessmentVisualization
 
-from ThreeWToolkit.core.base_assessment_visualization import (
-    BaseAssessmentVisualization,
-    BaseAssessmentVisualizationConfig,
-)
+from ThreeWToolkit.core.base_assessment_visualization import AssessmentVisualizationConfig
 
 
 class TestAssessmentVisualization:
     @pytest.fixture
     def default_config(self):
-        return BaseAssessmentVisualizationConfig(class_names=["A", "B", "C"])
+        return AssessmentVisualizationConfig(class_names=["A", "B", "C"])
 
     @pytest.fixture
     def viz(self, default_config):
@@ -62,7 +57,7 @@ class TestAssessmentVisualization:
             viz.plot_confusion_matrix(y_true, y_pred)
 
     def test_plot_confusion_matrix_class_names_mismatch(self):
-        config = BaseAssessmentVisualizationConfig(class_names=["A", "B", "C"])
+        config = AssessmentVisualizationConfig(class_names=["A", "B", "C"])
         viz = AssessmentVisualization(config)
         y_true = [0, 1, 1, 1]
         y_pred = [0, 1, 1, 1]
@@ -70,7 +65,7 @@ class TestAssessmentVisualization:
             viz.plot_confusion_matrix(y_true, y_pred)
 
     def test_plot_confusion_matrix_no_class_names(self):
-        config = BaseAssessmentVisualizationConfig(class_names=None)
+        config = AssessmentVisualizationConfig(class_names=None)
         viz = AssessmentVisualization(config)
         y_true = [0, 1, 1, 1]
         y_pred = [0, 1, 1, 1]
@@ -134,30 +129,30 @@ class TestAssessmentVisualization:
 
 class TestBaseAssessmentVisualizationConfig:
     def test_accepts_none(self):
-        cfg = BaseAssessmentVisualizationConfig(class_names=None)
+        cfg = AssessmentVisualizationConfig(class_names=None)
         assert cfg.class_names is None
 
     def test_accepts_valid_list(self):
-        cfg = BaseAssessmentVisualizationConfig(class_names=["A", "B", "C"])
+        cfg = AssessmentVisualizationConfig(class_names=["A", "B", "C"])
         assert cfg.class_names == ["A", "B", "C"]
 
     def test_rejects_empty_list(self):
         with pytest.raises(ValueError, match="non-empty list"):
-            BaseAssessmentVisualizationConfig(class_names=[])
+            AssessmentVisualizationConfig(class_names=[])
 
     def test_rejects_empty_string(self):
         with pytest.raises(ValueError, match="non-empty strings"):
-            BaseAssessmentVisualizationConfig(class_names=["A", ""])
+            AssessmentVisualizationConfig(class_names=["A", ""])
 
     def test_rejects_non_string_element(self):
         with pytest.raises(
             pydantic.ValidationError, match="Input should be a valid string"
         ):
-            BaseAssessmentVisualizationConfig(class_names=["A", 123])
+            AssessmentVisualizationConfig(class_names=["A", 123])
 
 
 class TestBaseAssessmentVisualization:
     def test_config_is_set(self):
-        config = BaseAssessmentVisualizationConfig(class_names=["A", "B"])
-        obj = BaseAssessmentVisualization(config)
+        config = AssessmentVisualizationConfig(class_names=["A", "B"])
+        obj = AssessmentVisualization(config)
         assert obj.config == config

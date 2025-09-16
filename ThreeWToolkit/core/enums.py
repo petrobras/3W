@@ -41,3 +41,8 @@ class CriterionEnum(Enum):
     BINARY_CROSS_ENTROPY = "binary_cross_entropy"
     MSE = "mse"
     MAE = "mae"
+
+
+class TaskType(Enum):
+    CLASSIFICATION = "classification"
+    REGRESSION = "regression"

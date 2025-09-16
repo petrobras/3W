@@ -1,21 +1,22 @@
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
+
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from sklearn.metrics import confusion_matrix
 from typing import cast
 from ..core.base_assessment_visualization import (
+    AssessmentVisualizationConfig,
     BaseAssessmentVisualization,
-    BaseAssessmentVisualizationConfig,
 )
 
 
 class AssessmentVisualization(BaseAssessmentVisualization):
     """Class for visualizing assessment results"""
 
-    def __init__(self, config: BaseAssessmentVisualizationConfig):
+    def __init__(self, config: AssessmentVisualizationConfig):
         self.config = config
         self.class_names = config.class_names
 

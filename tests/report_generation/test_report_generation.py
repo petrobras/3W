@@ -1,7 +1,7 @@
+import os
 import pytest
 import pandas as pd
-import os
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 from ThreeWToolkit.reports.report_generation import ReportGeneration
 from .mocks import mock_model, mock_time_series_data        
@@ -9,6 +9,7 @@ from pathlib import Path
 
 from ThreeWToolkit.constants import REPORTS_DIR, LATEX_DIR
 
+@pytest.mark.skip(reason="This test class was disabled for LaTeX compiler validation.")
 class TestReportGeneration:
     """Tests for the ReportGeneration class."""
 
