@@ -2,7 +2,9 @@
 
 ## 🎯 Overview
 
-This repository contains a comprehensive machine learning pipeline for the **3W Dataset** - a real-world dataset for fault detection in oil wells. The pipeline includes data preprocessing, supervised learning, unsupervised learning, and clustering analysis methods applied to **Multivariate Time Series (MTS)** data.
+This resource contains a comprehensive machine learning pipeline for the **3W Dataset** - a real-world dataset for fault detection in oil wells. The pipeline includes data preprocessing, supervised learning, unsupervised learning, and clustering analysis methods applied to **Multivariate Time Series (MTS)** data.
+
+**🎓 Educational Use**: This resource is designed for educational purposes and can be utilized in **machine learning courses, workshops, tutorials, and academic programs** focusing on time series analysis, fault detection, and industrial applications.
 
 **Multivariate Time Series (MTS)** refers to time-ordered data with multiple variables/sensors measured simultaneously over time. In the 3W dataset context, this includes multiple sensor readings (pressure, temperature, flow rates, etc.) from oil well operations captured at regular intervals.
 
