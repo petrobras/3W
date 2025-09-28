@@ -387,7 +387,6 @@ class DataPersistence:
         else:
             raise ValueError(f"Unsupported save format: {save_format}")
 
-
     def _save_as_csv(
         self, dfs: List[pd.DataFrame], classes: List[str], filepath: str
     ) -> str:
