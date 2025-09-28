@@ -1,13 +1,10 @@
 """
-3W Dataset Processing and Analysis Toolkit
-
 This package provides utilities for loading, preprocessing, and analyzing
 the 3W dataset for oil well fault detection.
 """
 
 __version__ = "1.0.0"
-__author__ = "3W Workshop Team"
-__email__ = "your-email@example.com"
+__maintainer__ = ["Lucas Lopes <lucas.lopes@lccv.ufal.br>"]
 
 from .data_loader import DataLoader
 from .preprocessing import DataPreprocessor

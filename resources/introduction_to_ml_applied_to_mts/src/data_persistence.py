@@ -381,39 +381,11 @@ class DataPersistence:
             str: Path to saved file
         """
         if save_format.lower() == "pickle":
-            return self._save_as_pickle(dfs, classes, filepath, compression)
+            return self._save_as_pickle(dfs, classes, filepath)
         elif save_format.lower() == "csv":
             return self._save_as_csv(dfs, classes, filepath)
-        elif save_format.lower() == "pickle":
-            return self._save_as_pickle(dfs, classes, filepath)
         else:
             raise ValueError(f"Unsupported save format: {save_format}")
-
-    def _save_as_pickle(
-        self,
-        dfs: List[pd.DataFrame],
-        classes: List[str],
-        filepath: str,
-        compression: str,
-    ) -> str:
-        """Save as pickle format with metadata."""
-        # Combine all dataframes with sample IDs
-        combined_data = []
-        for i, (df, class_label) in enumerate(zip(dfs, classes)):
-            df_copy = df.copy()
-            df_copy["sample_id"] = i
-            df_copy["class_label"] = class_label
-            combined_data.append(df_copy)
-
-        if combined_data:
-            combined_df = pd.concat(combined_data, ignore_index=True)
-            combined_df.to_pickle(filepath, compression=compression, index=False)
-        else:
-            # Create empty file with proper structure
-            empty_df = pd.DataFrame({"sample_id": [], "class_label": []})
-            empty_df.to_pickle(filepath, compression=compression, index=False)
-
-        return filepath
 
     def _save_as_csv(
         self, dfs: List[pd.DataFrame], classes: List[str], filepath: str
