@@ -1,0 +1,22 @@
+name: 3W-ml-mts
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - notebook
+  - pandas
+  - numpy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - tqdm
+  - plotly
+  - h5py
+  - pyarrow
+  - pip
+  - pip:
+    - umap-learn
+    - tslearn
+    - tensorflow
+    - alive-progress
