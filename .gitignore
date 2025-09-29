@@ -13,3 +13,6 @@ html/
 
 # VS Code configuration
 .vscode/
+
+# Data persistence folder
+processed_data/
