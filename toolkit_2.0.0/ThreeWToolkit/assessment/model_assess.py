@@ -130,11 +130,11 @@ class ModelAssessment:
                 "f1": lambda y_true, y_pred: f1_score(
                     y_true, y_pred, average="weighted", zero_division=0
                 ),
-                "average_precision": lambda y_true, y_pred: average_precision_score(
-                    y_true, y_pred, average="weighted"
-                )
-                if len(np.unique(y_true)) > 1
-                else 0.0,
+                "average_precision": lambda y_true, y_pred: (
+                    average_precision_score(y_true, y_pred, average="weighted")
+                    if len(np.unique(y_true)) > 1
+                    else 0.0
+                ),
             }
         else:  # TaskType.REGRESSION
             self.metric_functions = {
