@@ -6,8 +6,7 @@ CI="${CI:-true}"
 
 cd "$(dirname "$0")"/..
 
-LINT="ThreeWToolkit"
-#$(find . -type f -name '*.py')
+LINT="ThreeWToolkit tests"
 
 # Run mypy for type checking
 mypy ${LINT}
