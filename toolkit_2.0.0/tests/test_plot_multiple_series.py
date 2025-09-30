@@ -8,7 +8,6 @@ from ThreeWToolkit.data_visualization import PlotMultipleSeries
 
 
 class TestPlotMultipleSeries:
-    
     def setup_method(self):
         """
         Setup method to create multiple time series.
@@ -31,7 +30,7 @@ class TestPlotMultipleSeries:
             title="Test Multiple Series",
             xlabel="Date",
             ylabel="Value",
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)
@@ -47,7 +46,7 @@ class TestPlotMultipleSeries:
             labels=self.labels,
             title="No Ax Provided",
             xlabel="Date",
-            ylabel="Value"
+            ylabel="Value",
         )
 
         assert isinstance(fig, Figure)
@@ -65,7 +64,7 @@ class TestPlotMultipleSeries:
             title="Empty Series List",
             xlabel="Date",
             ylabel="Value",
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)

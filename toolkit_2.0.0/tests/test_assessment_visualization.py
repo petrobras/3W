@@ -10,7 +10,9 @@ import pydantic
 
 from ThreeWToolkit.assessment.assessment_visualizations import AssessmentVisualization
 
-from ThreeWToolkit.core.base_assessment_visualization import AssessmentVisualizationConfig
+from ThreeWToolkit.core.base_assessment_visualization import (
+    AssessmentVisualizationConfig,
+)
 
 
 class TestAssessmentVisualization:

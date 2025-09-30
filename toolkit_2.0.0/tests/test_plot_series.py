@@ -8,7 +8,6 @@ from ThreeWToolkit.data_visualization import DataVisualization
 
 
 class TestPlotSeries:
-
     def setup_method(self):
         """
         Setup method to create a default time series.
@@ -29,7 +28,7 @@ class TestPlotSeries:
             xlabel="Date",
             ylabel="Value",
             overlay_events=False,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)
@@ -45,7 +44,7 @@ class TestPlotSeries:
             title="No Ax Provided",
             xlabel="Date",
             ylabel="Value",
-            overlay_events=False
+            overlay_events=False,
         )
 
         assert isinstance(fig, Figure)
@@ -65,7 +64,7 @@ class TestPlotSeries:
             xlabel="Date",
             ylabel="Value",
             overlay_events=True,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)
@@ -83,7 +82,7 @@ class TestPlotSeries:
             xlabel="Date",
             ylabel="Value",
             overlay_events=False,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)
@@ -103,7 +102,7 @@ class TestPlotSeries:
             xlabel="Date",
             ylabel="Value",
             overlay_events=False,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)

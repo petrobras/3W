@@ -1,4 +1,3 @@
-
 class TestClass:
     def test_one(self):
         x = "hello"

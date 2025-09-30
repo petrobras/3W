@@ -21,7 +21,6 @@ class SimpleTorchModel(nn.Module):
 
 
 class TestModelRecorder:
-
     def setup_method(self):
         """
         Setup simple models for each supported framework.
@@ -64,7 +63,10 @@ class TestModelRecorder:
         Test passing a non-string and non-pathlike object raises TypeError.
         """
         filename = 12345
-        with pytest.raises(TypeError, match=f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object."):
+        with pytest.raises(
+            TypeError,
+            match=f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object.",
+        ):
             ModelRecorder.save_best_model(self.sklearn_model, filename)
 
     def test_file_like_object_not_supported(self):
@@ -72,17 +74,20 @@ class TestModelRecorder:
         Test passing a file-like object raises ValueError.
         """
         fake_file = BytesIO()
-        with pytest.raises(ValueError, match=f"Saving to file-like object '{fake_file}' is not supported. Please provide a valid file path."):
+        with pytest.raises(
+            ValueError,
+            match=f"Saving to file-like object '{fake_file}' is not supported. Please provide a valid file path.",
+        ):
             ModelRecorder.save_best_model(self.sklearn_model, fake_file)
 
     def test_exception_inside_torch_block(self, monkeypatch):
         """
         Simulate error inside torch.save to test exception handling.
         """
+
         def raise_error(*args, **kwargs):
             raise Exception("Simulated torch error")
 
-        import torch
         monkeypatch.setattr(torch, "save", raise_error)
 
         with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp:
@@ -94,6 +99,7 @@ class TestModelRecorder:
         """
         Simulate error inside pickle.dump to test exception handling.
         """
+
         def raise_error(*args, **kwargs):
             raise Exception("Simulated pickle error")
 
