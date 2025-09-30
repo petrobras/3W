@@ -62,16 +62,16 @@ class ExtractWaveletFeatures(BaseFeatureExtractor):
             )
         ).double()
 
+        # A -> approximation coefficients; D -> detail coefficients
+        # A0 -> approx coeff on first level of wavelet filtering
         self.feat_names = [
             f"{type_}{level}"
             for level in range(self.level, 0, -1)
             for type_ in [
                 "A",
                 "D",
-            ]  # A -> approximation coefficients; D -> detail coefficients
-        ] + [
-            "A0"
-        ]  # A0 -> approx coeff on first level of wavelet filtering
+            ]
+        ] + ["A0"]
 
     def __call__(self, tags: pd.DataFrame, y: pd.Series | None = None):
         # preserve names and index
