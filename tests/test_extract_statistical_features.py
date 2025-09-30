@@ -1,11 +1,10 @@
 import pytest
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_frame_equal
 
 from ThreeWToolkit.feature_extraction.extract_statistical_features import (
     ExtractStatisticalFeatures,
-    StatisticalConfig
+    StatisticalConfig,
 )
 
 
@@ -46,10 +45,12 @@ class TestExtractStatisticalFeatures:
 
     def test_multiple_columns(self):
         """Tests multiple columns with a boxcar window."""
-        data = pd.DataFrame({
-            "s1": np.arange(20, dtype=np.float64),
-            "s2": np.arange(20, 40, dtype=np.float64)
-        })
+        data = pd.DataFrame(
+            {
+                "s1": np.arange(20, dtype=np.float64),
+                "s2": np.arange(20, 40, dtype=np.float64),
+            }
+        )
         y = pd.Series(np.arange(20), index=data.index)
         config = StatisticalConfig(window_size=10, overlap=0.8)
         extractor = ExtractStatisticalFeatures(config)
@@ -105,22 +106,24 @@ class TestExtractStatisticalFeatures:
     def test_output_column_names(self):
         """Tests that the output DataFrame has correctly formatted column names."""
         input_cols = ["sensor_alpha", "sensor_beta"]
-        data = pd.DataFrame({
-            "sensor_alpha": np.arange(10),
-            "sensor_beta": np.arange(10, 20)
-        })
+        data = pd.DataFrame(
+            {"sensor_alpha": np.arange(10), "sensor_beta": np.arange(10, 20)}
+        )
         y = pd.Series(np.arange(10), index=data.index)
         config = StatisticalConfig(window_size=5, overlap=0.0)
         extractor = ExtractStatisticalFeatures(config)
         X, y_out = extractor(data, y=y)
 
         feature_suffixes = ExtractStatisticalFeatures.FEATURES
-        expected_columns = [f"{col}_{feat}" for feat in feature_suffixes for col in input_cols]
+        expected_columns = [
+            f"{col}_{feat}" for feat in feature_suffixes for col in input_cols
+        ]
         assert list(X.columns) == expected_columns
         assert list(X.index) == list(y_out.index)
 
     def test_handles_empty_windows_from_toolkit_function(self, monkeypatch):
         """Tests handling of empty windows from the toolkit function."""
+
         def mock_windowing(*args, **kwargs):
             return pd.DataFrame()
 
@@ -142,6 +145,7 @@ class TestExtractStatisticalFeatures:
 
     def test_handles_mixed_success_from_windowing(self, monkeypatch):
         """Tests scenario where windowing succeeds for one column but returns empty for another."""
+
         def mock_windowing_mixed(X: pd.Series, *args, **kwargs):
             col_name = X.name
             if col_name == "s1":
@@ -164,10 +168,10 @@ class TestExtractStatisticalFeatures:
         assert "s1_mean" in X.columns
         assert "s2_mean" not in X.columns
         assert list(X.index) == list(y_out.index)
-        
+
     def test_raises_error_if_y_is_not_provided(self):
         """Tests that a ValueError is raised if the 'y' labels are not passed."""
-        
+
         tags = pd.DataFrame({"signal": np.arange(20)})
         config = StatisticalConfig(window_size=10, overlap=0.5)
         extractor = ExtractStatisticalFeatures(config)

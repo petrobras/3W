@@ -9,8 +9,9 @@ from ThreeWToolkit.metrics import (
     recall_score,
     f1_score,
     roc_auc_score,
-    explained_variance_score
+    explained_variance_score,
 )
+
 
 class TestAccuracyScore:
     def test_accuracy_score_basic(self):
@@ -21,11 +22,13 @@ class TestAccuracyScore:
         y_pred = [1, 0, 0, 1]
         expected_result = 0.75
 
-        result = accuracy_score(y_true = y_true, y_pred = y_pred, sample_weight = None, normalize = True)
-        
+        result = accuracy_score(
+            y_true=y_true, y_pred=y_pred, sample_weight=None, normalize=True
+        )
+
         assert isinstance(result, float)
         assert 0 <= result <= 1
-        assert np.isclose(result, expected_result, atol = 1e-6)  # 3 of 4 
+        assert np.isclose(result, expected_result, atol=1e-6)  # 3 of 4
 
     def test_accuracy_score_with_sample_weight(self):
         """
@@ -36,41 +39,40 @@ class TestAccuracyScore:
         y_pred = np.array([1, 0, 0, 1])
         sample_weight = [0.5, 0.2, 0.1, 0.2]
 
-        result = accuracy_score(y_true = y_true, y_pred = y_pred, sample_weight = sample_weight)
-        
+        result = accuracy_score(
+            y_true=y_true, y_pred=y_pred, sample_weight=sample_weight
+        )
+
         assert isinstance(result, float)
-    
+
     def test_accuracy_score_invalid_types(self):
         """
         Test accuracy_score function with invalid input types.
         Ensures that the function raises TypeError for invalid y_true, y_pred, or normalize arguments.
         """
         with pytest.raises(TypeError):
-            accuracy_score(y_true = 123, y_pred = [1, 0, 1])  # invalid y_true
+            accuracy_score(y_true=123, y_pred=[1, 0, 1])  # invalid y_true
 
         with pytest.raises(TypeError):
-            accuracy_score(y_true = [1, 0, 1], y_pred = "wrong type")  # invalid y_pred
+            accuracy_score(y_true=[1, 0, 1], y_pred="wrong type")  # invalid y_pred
 
         with pytest.raises(TypeError):
-            accuracy_score(y_true = [1, 0, 1], y_pred = [1, 0, 1], normalize = "true")
+            accuracy_score(y_true=[1, 0, 1], y_pred=[1, 0, 1], normalize="true")
 
     def test_accuracy_score_shape_mismatch(self):
         """
         Test accuracy_score function with mismatched lengths of y_true and y_pred.
         """
         with pytest.raises(ValueError):
-            accuracy_score(y_true = [1, 0], y_pred = [1, 0, 1]) 
+            accuracy_score(y_true=[1, 0], y_pred=[1, 0, 1])
 
     def test_accuracy_score_sample_weight_shape_mismatch(self):
         """
         Test accuracy_score function with mismatched sample_weight length.
         """
         with pytest.raises(ValueError):
-            accuracy_score(
-                y_true = [1, 0, 1],
-                y_pred = [1, 0, 1],
-                sample_weight = [0.1, 0.2] 
-            )
+            accuracy_score(y_true=[1, 0, 1], y_pred=[1, 0, 1], sample_weight=[0.1, 0.2])
+
 
 class TestBalancedAccuracyScore:
     def test_balanced_accuracy_score_basic(self):
@@ -82,10 +84,10 @@ class TestBalancedAccuracyScore:
         expected_result = 0.8333333333333333
 
         result = balanced_accuracy_score(y_true, y_pred)
-        
+
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_balanced_accuracy_with_sample_weight(self):
         """
@@ -94,8 +96,8 @@ class TestBalancedAccuracyScore:
         y_true = [1, 0, 1, 0]
         y_pred = [1, 1, 1, 0]
         sample_weight = [1.0, 0.5, 1.5, 2.0]
-        
-        score = balanced_accuracy_score(y_true, y_pred, sample_weight = sample_weight)
+
+        score = balanced_accuracy_score(y_true, y_pred, sample_weight=sample_weight)
         assert isinstance(score, float)
 
     def test_balanced_accuracy_adjusted(self):
@@ -104,8 +106,8 @@ class TestBalancedAccuracyScore:
         """
         y_true = [0, 1, 1, 0]
         y_pred = [0, 0, 1, 1]
-        
-        adjusted_score = balanced_accuracy_score(y_true, y_pred, adjusted = True)
+
+        adjusted_score = balanced_accuracy_score(y_true, y_pred, adjusted=True)
         assert isinstance(adjusted_score, float)
 
     def test_balanced_accuracy_invalid_type_y_true(self):
@@ -127,21 +129,22 @@ class TestBalancedAccuracyScore:
         Test passing an invalid type for sample_weight (string instead of list/array).
         """
         with pytest.raises(TypeError):
-            balanced_accuracy_score([0, 1], [0, 1], sample_weight = "invalid")
+            balanced_accuracy_score([0, 1], [0, 1], sample_weight="invalid")
 
     def test_balanced_accuracy_invalid_sample_weight_shape(self):
         """
         Test sample_weight with a different length than y_true/y_pred.
         """
         with pytest.raises(ValueError):
-            balanced_accuracy_score([0, 1, 1], [0, 1, 1], sample_weight = [1.0, 2.0])
+            balanced_accuracy_score([0, 1, 1], [0, 1, 1], sample_weight=[1.0, 2.0])
 
     def test_balanced_accuracy_invalid_adjusted_type(self):
         """
         Test passing an invalid type for the `adjusted` parameter (string instead of boolean).
         """
         with pytest.raises(TypeError):
-            balanced_accuracy_score([1, 0], [1, 0], adjusted = "yes")
+            balanced_accuracy_score([1, 0], [1, 0], adjusted="yes")
+
 
 class TestAveragePrecisionScore:
     def test_ap_average_score_basic(self):
@@ -151,12 +154,12 @@ class TestAveragePrecisionScore:
         y_true = [0, 0, 1, 1]
         y_pred = [0.1, 0.4, 0.35, 0.8]
         expected_result = 0.8333333333333333
-        
-        result = average_precision_score(y_true = y_true, y_pred = y_pred, average = 'macro')
-        
+
+        result = average_precision_score(y_true=y_true, y_pred=y_pred, average="macro")
+
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_ap_with_sample_weight(self):
         """
@@ -168,15 +171,12 @@ class TestAveragePrecisionScore:
         expected_result = 0.75
 
         result = average_precision_score(
-            y_true = y_true,
-            y_pred = y_pred,
-            average = 'macro',
-            sample_weight = sample_weight
+            y_true=y_true, y_pred=y_pred, average="macro", sample_weight=sample_weight
         )
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_ap_micro_average(self):
         """
@@ -186,15 +186,11 @@ class TestAveragePrecisionScore:
         y_pred = [0.1, 0.4, 0.35, 0.8]
         expected_result = 0.8333333333333333
 
-        result = average_precision_score(
-            y_true = y_true,
-            y_pred = y_pred,
-            average = 'micro'
-        )
+        result = average_precision_score(y_true=y_true, y_pred=y_pred, average="micro")
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_ap_pos_label_argument(self):
         """
@@ -204,16 +200,11 @@ class TestAveragePrecisionScore:
         y_pred = [0.1, 0.4, 0.35, 0.8]
         expected_result = 0.8333333333333333
 
-        result = average_precision_score(
-            y_true = y_true,
-            y_pred = y_pred,
-            pos_label = 1
-        )
+        result = average_precision_score(y_true=y_true, y_pred=y_pred, pos_label=1)
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
-
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_ap_invalid_type(self):
         """
@@ -224,10 +215,12 @@ class TestAveragePrecisionScore:
         pos_label = "1"
 
         with pytest.raises(TypeError):
-            average_precision_score(y_true = y_true_invalid, y_pred = y_pred)
-        
+            average_precision_score(y_true=y_true_invalid, y_pred=y_pred)
+
         with pytest.raises(TypeError):
-            average_precision_score(y_true = [1, 0, 1], y_pred = y_pred, pos_label = pos_label)
+            average_precision_score(
+                y_true=[1, 0, 1], y_pred=y_pred, pos_label=pos_label
+            )
 
     def test_ap_shape_mismatch(self):
         """
@@ -236,7 +229,7 @@ class TestAveragePrecisionScore:
         y_true, y_pred = [1, 0, 1], [0.8, 0.5]
 
         with pytest.raises(ValueError):
-            average_precision_score(y_true = y_true, y_pred = y_pred)
+            average_precision_score(y_true=y_true, y_pred=y_pred)
 
     def test_ap_invalid_average_type(self):
         """
@@ -246,7 +239,7 @@ class TestAveragePrecisionScore:
         y_pred = [0.1, 0.4, 0.35, 0.8]
 
         with pytest.raises(ValueError):
-            average_precision_score(y_true = y_true, y_pred = y_pred, average = 123)
+            average_precision_score(y_true=y_true, y_pred=y_pred, average=123)
 
     def test_ap_invalid_sample_weight_shape(self):
         """
@@ -258,10 +251,9 @@ class TestAveragePrecisionScore:
 
         with pytest.raises(ValueError):
             average_precision_score(
-                y_true = y_true,
-                y_pred = y_pred,
-                sample_weight = sample_weight
+                y_true=y_true, y_pred=y_pred, sample_weight=sample_weight
             )
+
 
 class TestPrecisionScore:
     def test_precision_score_basic(self):
@@ -272,10 +264,10 @@ class TestPrecisionScore:
         y_pred = [0, 0, 1, 1, 0]
         expected_result = 0.5
 
-        result = precision_score(y_true = y_true, y_pred = y_pred)
+        result = precision_score(y_true=y_true, y_pred=y_pred)
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_precision_macro_average(self):
         """
@@ -285,10 +277,10 @@ class TestPrecisionScore:
         y_pred = [0, 2, 1, 0, 0, 1]
         expected_result = 0.2222222222222222
 
-        result = precision_score(y_true = y_true, y_pred = y_pred, average = 'macro')
+        result = precision_score(y_true=y_true, y_pred=y_pred, average="macro")
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_precision_with_labels_argument(self):
         """
@@ -299,10 +291,12 @@ class TestPrecisionScore:
         labels = [0, 2]
         expected_result = 0.3333333333333333
 
-        result = precision_score(y_true = y_true, y_pred = y_pred, labels = labels, average = 'macro')
+        result = precision_score(
+            y_true=y_true, y_pred=y_pred, labels=labels, average="macro"
+        )
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_precision_with_sample_weight(self):
         """
@@ -313,10 +307,10 @@ class TestPrecisionScore:
         weights = [1, 1, 5, 1]
         expected_result = 0.5
 
-        result = precision_score(y_true = y_true, y_pred = y_pred, sample_weight = weights)
+        result = precision_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_precision_zero_division(self):
         """
@@ -325,13 +319,13 @@ class TestPrecisionScore:
         y_true = [1, 1, 1, 1]
         y_pred = [0, 0, 0, 0]
 
-        result = precision_score(y_true = y_true, y_pred = y_pred, zero_division = 0)
+        result = precision_score(y_true=y_true, y_pred=y_pred, zero_division=0)
 
         assert isinstance(result, float)
         assert result == 0.0
-        
-        result = precision_score(y_true = y_true, y_pred = y_pred, zero_division = 1)
-        
+
+        result = precision_score(y_true=y_true, y_pred=y_pred, zero_division=1)
+
         assert isinstance(result, float)
         assert result == 1.0
 
@@ -340,49 +334,38 @@ class TestPrecisionScore:
         Test precision_score with invalid input types.
         """
         with pytest.raises(TypeError):
-            precision_score(y_true = "not_array", y_pred = [0, 1])
+            precision_score(y_true="not_array", y_pred=[0, 1])
 
         with pytest.raises(TypeError):
-            precision_score(y_true = [0, 1], y_pred = [0, 1], pos_label = "positive")
+            precision_score(y_true=[0, 1], y_pred=[0, 1], pos_label="positive")
 
         with pytest.raises(TypeError):
-            precision_score(y_true = [0, 1], y_pred = [0, 1], labels = "not list")
+            precision_score(y_true=[0, 1], y_pred=[0, 1], labels="not list")
 
     def test_precision_shape_mismatch(self):
         """
         Test precision_score when y_true and y_pred have different lengths.
         """
         with pytest.raises(ValueError):
-            precision_score(y_true = [0, 1, 1], y_pred = [1, 0])
+            precision_score(y_true=[0, 1, 1], y_pred=[1, 0])
 
         with pytest.raises(ValueError):
-            precision_score(
-                y_true = [1, 0, 1], 
-                y_pred = [1, 1, 1], 
-                sample_weight = [1, 1]
-            )
+            precision_score(y_true=[1, 0, 1], y_pred=[1, 1, 1], sample_weight=[1, 1])
 
     def test_precision_invalid_average_type(self):
         """
         Test precision_score with invalid average type.
         """
         with pytest.raises(ValueError):
-            precision_score(
-                y_true = [0, 1], 
-                y_pred = [0, 1], 
-                average = "invalid"
-            )
+            precision_score(y_true=[0, 1], y_pred=[0, 1], average="invalid")
 
     def test_precision_invalid_zero_division(self):
         """
         Test precision_score with invalid zero_division value.
         """
         with pytest.raises(ValueError):
-            precision_score(
-                y_true = [1, 0], 
-                y_pred = [0, 1], 
-                zero_division = "bad_value"
-            )
+            precision_score(y_true=[1, 0], y_pred=[0, 1], zero_division="bad_value")
+
 
 class TestRecallScore:
     def test_recall_score_basic(self):
@@ -393,10 +376,10 @@ class TestRecallScore:
         y_pred = [0, 1, 0, 1]
         expected_result = 2 / 3
 
-        result = recall_score(y_true = y_true, y_pred = y_pred, average = 'binary')
+        result = recall_score(y_true=y_true, y_pred=y_pred, average="binary")
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_recall_macro_average(self):
         """
@@ -406,10 +389,10 @@ class TestRecallScore:
         y_pred = [0, 2, 1, 0, 0, 1]
         expected_result = 0.3333333333333333
 
-        result = recall_score(y_true = y_true, y_pred = y_pred, average = 'macro')
+        result = recall_score(y_true=y_true, y_pred=y_pred, average="macro")
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_recall_with_labels_argument(self):
         """
@@ -418,12 +401,14 @@ class TestRecallScore:
         y_true = [0, 1, 2, 0, 1, 2]
         y_pred = [0, 2, 1, 0, 0, 1]
         labels = [0, 2]
-        expected_result = 0.5 
+        expected_result = 0.5
 
-        result = recall_score(y_true = y_true, y_pred = y_pred, labels = labels, average = 'macro')
+        result = recall_score(
+            y_true=y_true, y_pred=y_pred, labels=labels, average="macro"
+        )
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_recall_with_sample_weight(self):
         """
@@ -434,10 +419,10 @@ class TestRecallScore:
         weights = [1, 1, 4, 1]
         expected_result = 0.3333333333333333
 
-        result = recall_score(y_true = y_true, y_pred = y_pred, sample_weight = weights)
+        result = recall_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_recall_zero_division(self):
         """
@@ -446,10 +431,10 @@ class TestRecallScore:
         y_true = [0, 0, 0, 0]
         y_pred = [1, 1, 1, 1]
 
-        result = recall_score(y_true = y_true, y_pred = y_pred, zero_division = 0)
+        result = recall_score(y_true=y_true, y_pred=y_pred, zero_division=0)
         assert result == 0.0
 
-        result = recall_score(y_true = y_true, y_pred = y_pred, zero_division = 1)
+        result = recall_score(y_true=y_true, y_pred=y_pred, zero_division=1)
         assert result == 1.0
 
     def test_recall_invalid_types(self):
@@ -457,37 +442,38 @@ class TestRecallScore:
         Test recall_score with invalid input types.
         """
         with pytest.raises(TypeError):
-            recall_score(y_true = "invalid", y_pred = [0, 1])
+            recall_score(y_true="invalid", y_pred=[0, 1])
 
         with pytest.raises(TypeError):
-            recall_score(y_true = [1, 0], y_pred = [1, 0], pos_label = "wrong")
+            recall_score(y_true=[1, 0], y_pred=[1, 0], pos_label="wrong")
 
         with pytest.raises(TypeError):
-            recall_score(y_true = [0, 1], y_pred = [0, 1], labels = "not list")
+            recall_score(y_true=[0, 1], y_pred=[0, 1], labels="not list")
 
     def test_recall_shape_mismatch(self):
         """
         Test recall_score when y_true and y_pred have different lengths.
         """
         with pytest.raises(ValueError):
-            recall_score(y_true = [1, 0], y_pred = [1])
+            recall_score(y_true=[1, 0], y_pred=[1])
 
         with pytest.raises(ValueError):
-            recall_score(y_true = [1, 0, 1], y_pred = [1, 0, 1], sample_weight = [1, 1])
+            recall_score(y_true=[1, 0, 1], y_pred=[1, 0, 1], sample_weight=[1, 1])
 
     def test_recall_invalid_average_type(self):
         """
         Test recall_score with invalid average type.
         """
         with pytest.raises(ValueError):
-            recall_score(y_true = [0, 1], y_pred = [0, 1], average = "invalid")
+            recall_score(y_true=[0, 1], y_pred=[0, 1], average="invalid")
 
     def test_recall_invalid_zero_division(self):
         """
         Test recall_score with invalid zero_division value.
         """
         with pytest.raises(ValueError):
-            recall_score(y_true = [1, 0], y_pred = [0, 1], zero_division = "bad_value")
+            recall_score(y_true=[1, 0], y_pred=[0, 1], zero_division="bad_value")
+
 
 class TestF1Score:
     def test_f1_score_basic(self):
@@ -498,10 +484,10 @@ class TestF1Score:
         y_pred = [0, 1, 0, 1]
         expected_result = 0.8
 
-        result = f1_score(y_true = y_true, y_pred = y_pred, average = 'binary')
+        result = f1_score(y_true=y_true, y_pred=y_pred, average="binary")
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_f1_macro_average(self):
         """
@@ -511,10 +497,10 @@ class TestF1Score:
         y_pred = [0, 2, 1, 0, 0, 1]
         expected_result = 0.26666666666666666
 
-        result = f1_score(y_true = y_true, y_pred = y_pred, average = 'macro')
+        result = f1_score(y_true=y_true, y_pred=y_pred, average="macro")
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_f1_with_labels_argument(self):
         """
@@ -523,12 +509,12 @@ class TestF1Score:
         y_true = [0, 1, 2, 0, 1, 2]
         y_pred = [0, 2, 1, 0, 0, 1]
         labels = [0, 2]
-        expected_result = 0.4  
+        expected_result = 0.4
 
-        result = f1_score(y_true = y_true, y_pred = y_pred, labels = labels, average = 'macro')
+        result = f1_score(y_true=y_true, y_pred=y_pred, labels=labels, average="macro")
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_f1_with_sample_weight(self):
         """
@@ -539,10 +525,10 @@ class TestF1Score:
         weights = [1, 1, 5, 1]
         expected_result = 0.4444444444444444
 
-        result = f1_score(y_true = y_true, y_pred = y_pred, sample_weight = weights)
+        result = f1_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_f1_zero_division(self):
         """
@@ -551,10 +537,10 @@ class TestF1Score:
         y_true = [0, 0, 0, 0]
         y_pred = [0, 0, 0, 0]
 
-        result = f1_score(y_true = y_true, y_pred = y_pred, zero_division = 0)
+        result = f1_score(y_true=y_true, y_pred=y_pred, zero_division=0)
         assert result == 0.0
 
-        result = f1_score(y_true = y_true, y_pred = y_pred, zero_division = 1)
+        result = f1_score(y_true=y_true, y_pred=y_pred, zero_division=1)
         assert result == 1.0
 
     def test_f1_invalid_types(self):
@@ -562,37 +548,38 @@ class TestF1Score:
         Test f1_score with invalid input types.
         """
         with pytest.raises(TypeError):
-            f1_score(y_true = "invalid", y_pred = [0, 1])
+            f1_score(y_true="invalid", y_pred=[0, 1])
 
         with pytest.raises(TypeError):
-            f1_score(y_true = [1, 0], y_pred = [1, 0], pos_label = "wrong")
-        
+            f1_score(y_true=[1, 0], y_pred=[1, 0], pos_label="wrong")
+
         with pytest.raises(TypeError):
-            f1_score(y_true = [0, 1], y_pred = [0, 1], labels = "not list")
+            f1_score(y_true=[0, 1], y_pred=[0, 1], labels="not list")
 
     def test_f1_shape_mismatch(self):
         """
         Test f1_score when y_true and y_pred have different lengths.
         """
         with pytest.raises(ValueError):
-            f1_score(y_true = [1, 0], y_pred = [1])
+            f1_score(y_true=[1, 0], y_pred=[1])
 
         with pytest.raises(ValueError):
-            f1_score(y_true = [1, 0, 1], y_pred = [1, 0, 1], sample_weight = [1, 1])
+            f1_score(y_true=[1, 0, 1], y_pred=[1, 0, 1], sample_weight=[1, 1])
 
     def test_f1_invalid_average_type(self):
         """
         Test f1_score with invalid average type.
         """
         with pytest.raises(ValueError):
-            f1_score(y_true = [0, 1], y_pred = [0, 1], average = "invalid")
+            f1_score(y_true=[0, 1], y_pred=[0, 1], average="invalid")
 
     def test_f1_invalid_zero_division(self):
         """
         Test f1_score with invalid zero_division value.
         """
         with pytest.raises(ValueError):
-            f1_score(y_true = [1, 0], y_pred = [0, 1], zero_division = "bad_value")
+            f1_score(y_true=[1, 0], y_pred=[0, 1], zero_division="bad_value")
+
 
 class TestRocAucScore:
     def test_roc_auc_score_basic(self):
@@ -603,11 +590,11 @@ class TestRocAucScore:
         y_pred = [0.1, 0.4, 0.35, 0.8]
         expected = 0.75
 
-        result = roc_auc_score(y_true = y_true, y_pred = y_pred)
+        result = roc_auc_score(y_true=y_true, y_pred=y_pred)
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected, atol = 1e-6)
+        assert np.isclose(result, expected, atol=1e-6)
 
     def test_weighted_roc_auc(self):
         """
@@ -618,45 +605,32 @@ class TestRocAucScore:
         weights = [0.5, 0.5, 1, 1]
         expected_result = 0.75
 
-        result = roc_auc_score(
-            y_true = y_true,
-            y_pred = y_pred,
-            sample_weight = weights
-        )
+        result = roc_auc_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_multiclass_roc_auc_ovr(self):
         """
         Test roc_auc_score for multiclass with multi_class='ovr'.
         """
         y_true = [0, 1, 2, 2]
-        y_pred = [
-            [0.8, 0.1, 0.1],
-            [0.1, 0.7, 0.2],
-            [0.2, 0.2, 0.6],
-            [0.2, 0.6, 0.2]
-        ]
+        y_pred = [[0.8, 0.1, 0.1], [0.1, 0.7, 0.2], [0.2, 0.2, 0.6], [0.2, 0.6, 0.2]]
         expected_result = 0.9583333333333334
 
-        result = roc_auc_score(
-            y_true = y_true,
-            y_pred = y_pred,
-            multi_class = 'ovr'
-        )
+        result = roc_auc_score(y_true=y_true, y_pred=y_pred, multi_class="ovr")
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_invalid_y_pred_type(self):
         """
         Test roc_auc_score with invalid type for y_pred.
         """
         with pytest.raises(TypeError):
-            roc_auc_score(y_true = [0, 1], y_pred = "invalid")
+            roc_auc_score(y_true=[0, 1], y_pred="invalid")
 
     def test_invalid_average_type(self):
         """
@@ -666,28 +640,29 @@ class TestRocAucScore:
         y_pred = [0.1, 0.4, 0.35, 0.8]
 
         with pytest.raises(ValueError):
-            roc_auc_score(y_true = y_true, y_pred = y_pred, average = 123)
+            roc_auc_score(y_true=y_true, y_pred=y_pred, average=123)
 
     def test_mismatched_lengths(self):
         """
         Test roc_auc_score with different lengths for y_true and y_pred.
         """
         with pytest.raises(ValueError):
-            roc_auc_score(y_true = [0, 1], y_pred = [0.9])
+            roc_auc_score(y_true=[0, 1], y_pred=[0.9])
 
     def test_invalid_max_fpr(self):
         """
         Test roc_auc_score with invalid max_fpr value.
         """
         with pytest.raises(ValueError):
-            roc_auc_score(y_true = [0, 1], y_pred = [0.8, 0.9], max_fpr = 1.5)
+            roc_auc_score(y_true=[0, 1], y_pred=[0.8, 0.9], max_fpr=1.5)
 
     def test_invalid_multi_class(self):
         """
         Test roc_auc_score with invalid multi_class value.
         """
         with pytest.raises(ValueError):
-            roc_auc_score(y_true = [0, 1], y_pred = [0.8, 0.9], multi_class = 'invalid')
+            roc_auc_score(y_true=[0, 1], y_pred=[0.8, 0.9], multi_class="invalid")
+
 
 class TestExplainedVarianceScore:
     def test_basic_explained_variance(self):
@@ -698,11 +673,11 @@ class TestExplainedVarianceScore:
         y_pred = [2.5, 0.0, 2, 8]
         expected_result = 0.9571734475374732
 
-        result = explained_variance_score(y_true = y_true, y_pred = y_pred)
+        result = explained_variance_score(y_true=y_true, y_pred=y_pred)
 
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_explained_variance_with_sample_weight(self):
         """
@@ -714,11 +689,11 @@ class TestExplainedVarianceScore:
         expected_result = 0.9689988623435722
 
         result = explained_variance_score(
-            y_true = y_true, y_pred = y_pred, sample_weight = weights
+            y_true=y_true, y_pred=y_pred, sample_weight=weights
         )
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol = 1e-6)
+        assert np.isclose(result, expected_result, atol=1e-6)
 
     def test_multioutput_raw_values(self):
         """
@@ -726,23 +701,21 @@ class TestExplainedVarianceScore:
         """
         y_true = [[0.5, 1], [-1, 1], [7, -6]]
         y_pred = [[0, 2], [-1, 2], [8, -5]]
-        expected_result = np.array([0.96774194, 1.])
+        expected_result = np.array([0.96774194, 1.0])
 
         result = explained_variance_score(
-            y_true = y_true, y_pred = y_pred, multioutput = "raw_values"
+            y_true=y_true, y_pred=y_pred, multioutput="raw_values"
         )
 
         assert isinstance(result, np.ndarray)
-        assert np.allclose(result, expected_result, atol = 1e-6)
+        assert np.allclose(result, expected_result, atol=1e-6)
 
     def test_invalid_force_finite(self):
         """
         Test explained_variance_score with invalid force_finite type.
         """
         with pytest.raises(TypeError):
-            explained_variance_score(
-                y_true = [1, 2], y_pred = [1, 2], force_finite = "yes"
-            )
+            explained_variance_score(y_true=[1, 2], y_pred=[1, 2], force_finite="yes")
 
     def test_invalid_multioutput_value(self):
         """
@@ -750,7 +723,7 @@ class TestExplainedVarianceScore:
         """
         with pytest.raises(ValueError):
             explained_variance_score(
-                y_true = [1, 2], y_pred = [1, 2], multioutput = "invalid"
+                y_true=[1, 2], y_pred=[1, 2], multioutput="invalid"
             )
 
     def test_shape_mismatch(self):
@@ -758,9 +731,7 @@ class TestExplainedVarianceScore:
         Test explained_variance_score with mismatched y_true and y_pred lengths.
         """
         with pytest.raises(ValueError):
-            explained_variance_score(
-                y_true = [1, 2, 3], y_pred = [1, 2]
-            )
+            explained_variance_score(y_true=[1, 2, 3], y_pred=[1, 2])
 
     def test_sample_weight_mismatch(self):
         """
@@ -768,5 +739,5 @@ class TestExplainedVarianceScore:
         """
         with pytest.raises(ValueError):
             explained_variance_score(
-                y_true = [1, 2, 3], y_pred = [1, 2, 3], sample_weight = [1, 2]
+                y_true=[1, 2, 3], y_pred=[1, 2, 3], sample_weight=[1, 2]
             )

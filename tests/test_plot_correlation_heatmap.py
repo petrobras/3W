@@ -8,17 +8,18 @@ from ThreeWToolkit.data_visualization import PlotCorrelationHeatmap
 
 
 class TestPlotCorrelationHeatmap:
-
     def setup_method(self):
         """
         Setup method to create a DataFrame of time series.
         """
         np.random.seed(42)
-        self.data = pd.DataFrame({
-            "A": np.random.normal(0, 1, 10),
-            "B": np.random.normal(1, 2, 10),
-            "C": np.random.normal(-1, 1, 10),
-        })
+        self.data = pd.DataFrame(
+            {
+                "A": np.random.normal(0, 1, 10),
+                "B": np.random.normal(1, 2, 10),
+                "C": np.random.normal(-1, 1, 10),
+            }
+        )
 
     def test_correlation_heatmap_returns_figure(self):
         """
@@ -26,9 +27,7 @@ class TestPlotCorrelationHeatmap:
         """
         fig, ax = plt.subplots()
         fig = PlotCorrelationHeatmap.correlation_heatmap(
-            df_of_series=self.data,
-            ax=ax,
-            title="Test Heatmap"
+            df_of_series=self.data, ax=ax, title="Test Heatmap"
         )
 
         assert isinstance(fig, Figure)
@@ -39,8 +38,7 @@ class TestPlotCorrelationHeatmap:
         Test that correlation_heatmap works when no Axes is provided (ax=None).
         """
         fig = PlotCorrelationHeatmap.correlation_heatmap(
-            df_of_series=self.data,
-            title="No Ax Provided"
+            df_of_series=self.data, title="No Ax Provided"
         )
 
         assert isinstance(fig, Figure)
@@ -55,7 +53,7 @@ class TestPlotCorrelationHeatmap:
             title="With Annotations",
             annot=True,
             fmt=".1f",
-            cmap="coolwarm"
+            cmap="coolwarm",
         )
 
         assert isinstance(fig, Figure)
@@ -66,8 +64,7 @@ class TestPlotCorrelationHeatmap:
         """
         empty_df = pd.DataFrame()
         fig = PlotCorrelationHeatmap.correlation_heatmap(
-            df_of_series=empty_df,
-            title="Empty DataFrame"
+            df_of_series=empty_df, title="Empty DataFrame"
         )
 
         assert isinstance(fig, Figure)

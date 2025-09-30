@@ -1,18 +1,18 @@
 import pytest
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_frame_equal, assert_series_equal
 
 from ThreeWToolkit.feature_extraction.extract_wavelet_features import (
     ExtractWaveletFeatures,
     WaveletConfig,
 )
 
+
 # A mock for the windowing function is needed for the tests to run standalone
 def windowing(X, window_size, overlap):
     step = int(window_size * (1 - overlap))
     if step == 0:
-        return pd.DataFrame() # Return empty if stride would be 0
+        return pd.DataFrame()  # Return empty if stride would be 0
     windows = []
     for i in range(0, len(X) - window_size + 1, step):
         windows.append(X.iloc[i : i + window_size].values)
@@ -84,59 +84,76 @@ class TestExtractWaveletFeatures:
             WaveletConfig(level=1, overlap=1.0)
         with pytest.raises(ValueError, match="Offset must be a non-negative integer"):
             WaveletConfig(level=1, offset=-1)
-        with pytest.raises(ValueError, match="Wavelet level must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="Wavelet level must be a positive integer"
+        ):
             WaveletConfig(level=0)
-    
+
     def test_output_column_names(self, data_with_labels):
         """Tests that the output DataFrame has correctly formatted column names."""
         # Get the input data and its column names from the fixture
         tags, y = data_with_labels
         input_cols = tags.columns
-        
+
         config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
 
         X_out, _ = extractor(tags=tags, y=y)
 
         feature_names = extractor.feat_names
-        
-        expected_columns = [f"{col}_{feat}" for feat in feature_names for col in input_cols]
-        
+
+        expected_columns = [
+            f"{col}_{feat}" for feat in feature_names for col in input_cols
+        ]
+
         assert list(X_out.columns) == expected_columns
-    
-    def test_handles_empty_windows_from_toolkit_function(self, monkeypatch, data_with_labels):
+
+    def test_handles_empty_windows_from_toolkit_function(
+        self, monkeypatch, data_with_labels
+    ):
         """
         Tests the early-return path if the windowing function returns empty for all columns.
         """
+
         def mock_windowing(*args, **kwargs):
             return pd.DataFrame()
-        monkeypatch.setattr("ThreeWToolkit.feature_extraction.extract_wavelet_features.windowing", mock_windowing)
-        
+
+        monkeypatch.setattr(
+            "ThreeWToolkit.feature_extraction.extract_wavelet_features.windowing",
+            mock_windowing,
+        )
+
         tags, y = data_with_labels
-        
+
         config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
         X_out, y_out = extractor(tags=tags, y=y)
-        
+
         assert X_out.empty
         assert y_out.empty
 
     def test_handles_mixed_success_from_windowing(self, monkeypatch):
         """Tests the mixed scenario where one column succeeds and one fails."""
+
         def mock_windowing_mixed(X: pd.Series, *args, **kwargs):
             if X.name == "signal_ok":
                 return pd.DataFrame(np.random.rand(5, kwargs.get("window_size", 4)))
             else:
                 return pd.DataFrame()
-        
-        monkeypatch.setattr("ThreeWToolkit.feature_extraction.extract_wavelet_features.windowing", mock_windowing_mixed)
-        
-        tags = pd.DataFrame({"signal_ok": np.arange(20), "signal_fail": np.arange(20, 40)})
+
+        monkeypatch.setattr(
+            "ThreeWToolkit.feature_extraction.extract_wavelet_features.windowing",
+            mock_windowing_mixed,
+        )
+
+        tags = pd.DataFrame(
+            {"signal_ok": np.arange(20), "signal_fail": np.arange(20, 40)}
+        )
         y = pd.Series(np.arange(20))
         config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
         X_out, y_out = extractor(tags=tags, y=y)
-        
+
         assert not X_out.empty
         assert "signal_ok_A1" in X_out.columns
         assert "signal_fail_A1" not in X_out.columns

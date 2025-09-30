@@ -9,16 +9,9 @@ class TestRenameColumns:
         """
         Prepare example DataFrames used in the test cases.
         """
-        self.df_full = pd.DataFrame({
-            "A": [1, 2],
-            "B": [3, 4],
-            "C": [5, 6]
-        })
+        self.df_full = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
 
-        self.df_partial = pd.DataFrame({
-            "A": [10, 20],
-            "B": [30, 40]
-        })
+        self.df_partial = pd.DataFrame({"A": [10, 20], "B": [30, 40]})
 
         self.df_empty = pd.DataFrame(columns=["A", "B"])
 
@@ -40,8 +33,7 @@ class TestRenameColumns:
         """
         columns_map = {"Z": "W"}
         with pytest.raises(
-            ValueError,
-            match="Columns not found in DataFrame: \\['Z'\\]"
+            ValueError, match="Columns not found in DataFrame: \\['Z'\\]"
         ):
             rename_columns(self.df_partial, columns_map)
 
@@ -68,8 +60,7 @@ class TestRenameColumns:
         """
         columns_map = {"A": "X", "B": "X"}
         with pytest.raises(
-            ValueError,
-            match="Duplicate new column names are not allowed."
+            ValueError, match="Duplicate new column names are not allowed."
         ):
             rename_columns(self.df_partial, columns_map)
 
@@ -89,8 +80,6 @@ class TestRenameColumns:
         columns_map = {"A": "X"}
 
         with pytest.raises(
-            ValueError,
-            match="Duplicate column names found in DataFrame: \\['A'\\]"
+            ValueError, match="Duplicate column names found in DataFrame: \\['A'\\]"
         ):
             rename_columns(df_with_duplicates, columns_map)
-

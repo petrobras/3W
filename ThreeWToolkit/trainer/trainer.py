@@ -637,12 +637,16 @@ class ModelTrainer(BaseModelTrainer):
         if assessment_config is None:
             # Create default assessment configuration based on task type
             assessment_config = ModelAssessmentConfig(
-                metrics=["accuracy"]
-                if self._is_classification_task()
-                else ["explained_variance"],
-                task_type=TaskType.CLASSIFICATION
-                if self._is_classification_task()
-                else TaskType.REGRESSION,
+                metrics=(
+                    ["accuracy"]
+                    if self._is_classification_task()
+                    else ["explained_variance"]
+                ),
+                task_type=(
+                    TaskType.CLASSIFICATION
+                    if self._is_classification_task()
+                    else TaskType.REGRESSION
+                ),
             )
 
         assessor = ModelAssessment(assessment_config)

@@ -22,7 +22,6 @@ class SimpleTorchModel(nn.Module):
 
 
 class TestModelRecorderLoad:
-
     def setup_method(self):
         """
         Setup simple models for each supported framework.
@@ -54,8 +53,9 @@ class TestModelRecorderLoad:
             assert isinstance(loaded, SimpleTorchModel)
 
             # Compare parameters elementwise
-            for p_loaded, p_saved in zip(loaded.state_dict().values(),
-                                         self.torch_model.state_dict().values()):
+            for p_loaded, p_saved in zip(
+                loaded.state_dict().values(), self.torch_model.state_dict().values()
+            ):
                 assert torch.allclose(p_loaded, p_saved)
         finally:
             os.remove(path)
@@ -78,10 +78,12 @@ class TestModelRecorderLoad:
         """
         Simulate error inside torch.load to test exception handling.
         """
+
         def raise_error(*args, **kwargs):
             raise Exception("Simulated torch load error")
 
         import torch as torch_module
+
         monkeypatch.setattr(torch_module, "load", raise_error)
 
         path = self._save_torch_state_dict_to_tmp()
@@ -106,6 +108,7 @@ class TestModelRecorderLoad:
         """
         Simulate error inside pickle.load to test exception handling.
         """
+
         def raise_error(*args, **kwargs):
             raise Exception("Simulated pickle load error")
 
@@ -133,7 +136,7 @@ class TestModelRecorderLoad:
         filename = 98765
         with pytest.raises(
             TypeError,
-            match=f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object."
+            match=f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object.",
         ):
             ModelRecorder.load_model(filename)
 
@@ -144,7 +147,7 @@ class TestModelRecorderLoad:
         fake_file = BytesIO()
         with pytest.raises(
             ValueError,
-            match=f"Loading from file-like object '{fake_file}' is not supported. Please provide a valid file path."
+            match=f"Loading from file-like object '{fake_file}' is not supported. Please provide a valid file path.",
         ):
             ModelRecorder.load_model(fake_file)
 

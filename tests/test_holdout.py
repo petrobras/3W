@@ -8,10 +8,12 @@ class TestTimeSeriesHoldout:
         """
         Setup common test data.
         """
-        self.df = pd.DataFrame({
-            "date": pd.date_range("2024-01-01", periods=5, freq="D"),
-            "value": [10, 20, 30, 40, 50]
-        })
+        self.df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=5, freq="D"),
+                "value": [10, 20, 30, 40, 50],
+            }
+        )
         self.config = {}
 
     def test_train_test_split_default(self):
@@ -46,7 +48,9 @@ class TestTimeSeriesHoldout:
         """
         ts = TimeSeriesHoldout(data=self.df, pip_config=self.config)
 
-        with pytest.raises(TypeError, match="All inputs must be pandas Series or DataFrame."):
+        with pytest.raises(
+            TypeError, match="All inputs must be pandas Series or DataFrame."
+        ):
             ts.train_test_split([1, 2, 3], test_size=0.5)
 
     def test_train_test_split_raises_runtime_error(self, monkeypatch):
@@ -62,7 +66,9 @@ class TestTimeSeriesHoldout:
 
         ts = tts_module.TimeSeriesHoldout(data=self.df, pip_config=self.config)
 
-        with pytest.raises(RuntimeError, match="Failed to split time series data: simulated failure"):
+        with pytest.raises(
+            RuntimeError, match="Failed to split time series data: simulated failure"
+        ):
             ts.train_test_split(test_size=0.5)
 
     def test_train_test_split_test_size_gt_one(self):
@@ -101,17 +107,21 @@ class TestTimeSeriesHoldout:
         Test that stratified splitting raises error if shuffle is False.
         """
         ts = TimeSeriesHoldout(data=self.df, pip_config=self.config)
-        with pytest.raises(ValueError, match="Stratified splitting requires shuffle=True."):
+        with pytest.raises(
+            ValueError, match="Stratified splitting requires shuffle=True."
+        ):
             ts.train_test_split(test_size=0.2, stratify=self.df["value"], shuffle=False)
 
     def test_train_test_split_stratify_ok_if_shuffle_true(self):
         """
         Test that stratified splitting works correctly when shuffle is True.
         """
-        df = pd.DataFrame({
-            "date": pd.date_range("2024-01-01", periods=6, freq="D"),
-            "value": [1, 1, 2, 2, 3, 3]  # Each class must appear at least 2 times.
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=6, freq="D"),
+                "value": [1, 1, 2, 2, 3, 3],  # Each class must appear at least 2 times.
+            }
+        )
 
         config = {"shuffle": True, "stratify": df["value"], "test_size": 0.4}
         ts = TimeSeriesHoldout(data=df, pip_config=config)

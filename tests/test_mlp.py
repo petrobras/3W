@@ -13,7 +13,6 @@ from ThreeWToolkit.models.mlp import (
     ActivationFunctionEnum,
 )
 from ThreeWToolkit.trainer.trainer import ModelTrainer, TrainerConfig
-from ThreeWToolkit.metrics import explained_variance_score
 
 
 @pytest.fixture
@@ -52,7 +51,7 @@ def trainer_setup():
         "y_tensor": y_series,
         "config": config,
         "trainer": trainer,
-        "device": trainer.device
+        "device": trainer.device,
     }
 
 
@@ -154,6 +153,7 @@ class TestMLP:
                 random_seed=42,
             )
 
+
 class TestModelTrainer:
     def test_mlp_regression_else_branch(self, trainer_setup):
         # Use trainer_setup for regression (output_size=1, criterion=mse)
@@ -199,7 +199,7 @@ class TestModelTrainer:
         hist = trainer.history[0]
         if hist is not None:
             assert "train_loss" in hist and "val_loss" in hist
-        
+
     def test_trainer_initialization(self, trainer_setup):
         trainer = trainer_setup["trainer"]
         assert trainer.batch_size == 16

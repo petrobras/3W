@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
 import torch
-import pydantic
 
 from ThreeWToolkit.trainer.trainer import ModelTrainer, TrainerConfig
 from ThreeWToolkit.models.mlp import MLPConfig
@@ -157,6 +156,7 @@ def test_trainer_crossval_default_n_splits():
     )
     trainer = ModelTrainer(trainer_config)
     assert trainer.n_splits == 5
+
 
 def test_trainer_all_missing_branches(mlp_trainer_and_data):
     # Cover TrainerConfig batch_size validator (<=0)
@@ -378,6 +378,7 @@ def test_trainer_invalid_criterion(mlp_trainer_and_data):
     trainer.config.criterion = "not_a_criterion"
     with pytest.raises(ValueError):
         trainer._get_fn_cost(trainer.config.criterion)
+
 
 def test_trainer_train_with_val(mlp_trainer_and_data):
     trainer, x, y = mlp_trainer_and_data

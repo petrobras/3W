@@ -2,13 +2,11 @@
 import pytest
 import numpy as np
 import pandas as pd
-import torch
-from pydantic import BaseModel, field_validator
-from abc import ABC
 
 from ThreeWToolkit.feature_extraction.extract_exponential_statistics_features import (
     ExtractEWStatisticalFeatures,
-    EWStatisticalConfig)
+    EWStatisticalConfig,
+)
 
 
 class TestExtractEWStatisticalFeatures:
@@ -24,7 +22,7 @@ class TestExtractEWStatisticalFeatures:
     def test_y_alignment_and_basic_extraction(self, data_with_labels):
         """Tests that features (X) and labels (y) are correctly aligned."""
         tags, y = data_with_labels
-        config = EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5) # stride=5
+        config = EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5)  # stride=5
         extractor = ExtractEWStatisticalFeatures(config)
 
         X_out, y_out = extractor(tags=tags, y=y)
@@ -51,12 +49,12 @@ class TestExtractEWStatisticalFeatures:
     def test_multiple_columns(self, data_with_labels):
         """Tests the extractor works for a DataFrame with multiple columns."""
         tags, y = data_with_labels
-        tags["signal2"] = tags["signal"] * 2 # Add a second column
-        
+        tags["signal2"] = tags["signal"] * 2  # Add a second column
+
         config = EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.8)
         extractor = ExtractEWStatisticalFeatures(config)
         X_out, y_out = extractor(tags=tags, y=y)
-        
+
         assert "signal_ew_mean" in X_out.columns
         assert "signal2_ew_mean" in X_out.columns
         assert len(X_out) == len(y_out)
@@ -65,7 +63,7 @@ class TestExtractEWStatisticalFeatures:
         """Tests that for insufficient data, both returned X and y are empty."""
         tags = pd.DataFrame({"signal": np.arange(5.0)})
         y = pd.Series(np.arange(5), name="target")
-        
+
         config = EWStatisticalConfig(window_size=10, decay=0.9)
         extractor = ExtractEWStatisticalFeatures(config)
         X_out, y_out = extractor(tags=tags, y=y)
@@ -82,7 +80,7 @@ class TestExtractEWStatisticalFeatures:
 
         with pytest.raises(ValueError, match="The 'y' series .* must be provided"):
             extractor(tags=tags, y=None)
-            
+
     def test_invalid_config_raises_error(self):
         """Tests that Pydantic validators raise ValueErrors for invalid configs."""
         with pytest.raises(ValueError, match="Overlap must be in the range"):
@@ -97,32 +95,37 @@ class TestExtractEWStatisticalFeatures:
         input_cols = ["alpha", "beta"]
         tags = pd.DataFrame(np.random.rand(10, 2), columns=input_cols)
         y = pd.Series(np.arange(10))
-        
+
         config = EWStatisticalConfig(window_size=5, decay=0.9)
         extractor = ExtractEWStatisticalFeatures(config)
         X_out, _ = extractor(tags=tags, y=y)
-        
+
         feature_suffixes = ExtractEWStatisticalFeatures.FEATURES
-        expected_columns = [f"{col}_{feat}" for feat in feature_suffixes for col in input_cols]
+        expected_columns = [
+            f"{col}_{feat}" for feat in feature_suffixes for col in input_cols
+        ]
         assert list(X_out.columns) == expected_columns
 
     def test_handles_mixed_success_from_windowing(self, monkeypatch):
         """Tests the mixed scenario where one column succeeds and one fails."""
+
         def mock_windowing_mixed(X: pd.Series, *args, **kwargs):
             if X.name == "s1":
                 return pd.DataFrame(np.random.rand(3, kwargs.get("window_size", 10)))
             else:
                 return pd.DataFrame()
-        
-        monkeypatch.setattr("ThreeWToolkit.feature_extraction.extract_exponential_statistics_features.windowing",
-                            mock_windowing_mixed)
-        
+
+        monkeypatch.setattr(
+            "ThreeWToolkit.feature_extraction.extract_exponential_statistics_features.windowing",
+            mock_windowing_mixed,
+        )
+
         tags = pd.DataFrame({"s1": np.arange(20), "s2": np.arange(20, 40)})
         y = pd.Series(np.arange(20))
         config = EWStatisticalConfig(window_size=10, decay=0.9, overlap=0.5)
         extractor = ExtractEWStatisticalFeatures(config)
         X_out, y_out = extractor(tags=tags, y=y)
-        
+
         assert not X_out.empty
         assert "s1_ew_mean" in X_out.columns
         assert "s2_ew_mean" not in X_out.columns
