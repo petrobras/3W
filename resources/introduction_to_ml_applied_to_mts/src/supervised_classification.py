@@ -82,12 +82,12 @@ class SupervisedClassifier:
             tuple: (X_train, y_train, X_test, y_test) - prepared arrays
         """
         if self.verbose:
-            print("🔧 Preparing Data for Supervised Classification")
+            print("Preparing Data for Supervised Classification")
             print("=" * 55)
 
         # Extract class labels from windows
         if self.verbose:
-            print("🏷️ Processing class labels...", end=" ")
+            print("Processing class labels...", end=" ")
 
         def extract_window_classes(window_dfs, fallback_classes):
             """Extract class labels from windows or use fallback classes"""
@@ -103,11 +103,11 @@ class SupervisedClassifier:
 
         train_window_classes = extract_window_classes(train_dfs, train_classes)
         test_window_classes = extract_window_classes(test_dfs, test_classes)
-        print("✅")
+        
 
         # Map transient classes to their base classes
         if self.verbose:
-            print("🔄 Mapping transient classes to base classes...", end=" ")
+            print("Mapping transient classes to base classes...", end=" ")
 
         transient_mapping = {101: 1, 102: 2, 105: 5, 106: 6, 107: 7, 108: 8, 109: 9}
 
@@ -123,28 +123,28 @@ class SupervisedClassifier:
 
         train_mapped_classes = map_transient_classes(train_window_classes)
         test_mapped_classes = map_transient_classes(test_window_classes)
-        print("✅")
+        
 
         if self.verbose:
             print(
-                f"🏷️ Training class distribution: {dict(zip(*np.unique(train_mapped_classes, return_counts=True)))}"
+                f"Training class distribution: {dict(zip(*np.unique(train_mapped_classes, return_counts=True)))}"
             )
             print(
-                f"🏷️ Test class distribution: {dict(zip(*np.unique(test_mapped_classes, return_counts=True)))}"
+                f"Test class distribution: {dict(zip(*np.unique(test_mapped_classes, return_counts=True)))}"
             )
 
         # Balance classes using data augmentation
         if balance_classes:
             if self.verbose:
                 print(
-                    f"⚖️ Balancing classes using '{balance_strategy}' strategy...",
+                    f"Balancing classes using '{balance_strategy}' strategy...",
                     end=" ",
                 )
 
             train_balanced_dfs, train_balanced_classes = quick_balance_classes(
                 train_dfs, train_mapped_classes, strategy=balance_strategy
             )
-            print("✅")
+            
         else:
             train_balanced_dfs = train_dfs
             train_balanced_classes = train_mapped_classes
@@ -153,7 +153,7 @@ class SupervisedClassifier:
         if max_samples_per_class is not None:
             if self.verbose:
                 print(
-                    f"🎯 Limiting to max {max_samples_per_class} samples per class...",
+                    f"Limiting to max {max_samples_per_class} samples per class...",
                     end=" ",
                 )
 
@@ -163,49 +163,49 @@ class SupervisedClassifier:
             test_limited_dfs, test_limited_classes = self._limit_samples_per_class(
                 test_dfs, test_mapped_classes, max_samples_per_class // 3
             )
-            print("✅")
+            
         else:
             test_limited_dfs = test_dfs
             test_limited_classes = test_mapped_classes
 
         if self.verbose:
             print(
-                f"🏷️ Final training distribution: {dict(zip(*np.unique(train_balanced_classes, return_counts=True)))}"
+                f"Final training distribution: {dict(zip(*np.unique(train_balanced_classes, return_counts=True)))}"
             )
             print(
-                f"🏷️ Final test distribution: {dict(zip(*np.unique(test_limited_classes, return_counts=True)))}"
+                f"Final test distribution: {dict(zip(*np.unique(test_limited_classes, return_counts=True)))}"
             )
 
         # Flatten windows to feature vectors (data is already normalized)
         if self.verbose:
-            print("🔄 Flattening windows to feature vectors...", end=" ")
+            print("Flattening windows to feature vectors...", end=" ")
 
         X_train = self._flatten_windows(train_balanced_dfs)
         X_test = self._flatten_windows(test_limited_dfs)
         y_train = np.array(train_balanced_classes)
         y_test = np.array(test_limited_classes)
-        print("✅")
+        
 
         # Encode labels
         if self.verbose:
-            print("🏷️ Encoding labels...", end=" ")
+            print("Encoding labels...", end=" ")
 
         y_train_encoded = self.label_encoder.fit_transform(y_train)
         y_test_encoded = self.label_encoder.transform(y_test)
         self.class_names = self.label_encoder.classes_
-        print("✅")
+        
 
         if self.verbose:
-            print(f"\n✅ Data prepared successfully!")
+            print(f"\nData prepared successfully!")
             print(
-                f"🚂 Training set: {X_train.shape[0]} samples, {X_train.shape[1]} features"
+                f"Training set: {X_train.shape[0]} samples, {X_train.shape[1]} features"
             )
-            print(f"🧪 Test set: {X_test.shape[0]} samples, {X_test.shape[1]} features")
+            print(f"Test set: {X_test.shape[0]} samples, {X_test.shape[1]} features")
             print(
-                f"🏷️ Classes: {len(np.unique(y_train_encoded))} ({list(self.class_names)})"
+                f"Classes: {len(np.unique(y_train_encoded))} ({list(self.class_names)})"
             )
             print(
-                f"📊 Features per window: {X_train.shape[1]} (data already normalized)"
+                f"Features per window: {X_train.shape[1]} (data already normalized)"
             )
 
         return X_train, y_train_encoded, X_test, y_test_encoded
@@ -264,14 +264,14 @@ class SupervisedClassifier:
             dict: Results dictionary with model performance
         """
         if self.verbose:
-            print("🌳 Training Decision Trees and Random Forest")
+            print("Training Decision Trees and Random Forest")
             print("=" * 50)
 
         results = {}
 
         # 1. DECISION TREE
         if self.verbose:
-            print("🌲 Training Decision Tree...")
+            print("Training Decision Tree...")
 
         start_time = time.time()
         dt_classifier = DecisionTreeClassifier(
@@ -302,13 +302,13 @@ class SupervisedClassifier:
         }
 
         if self.verbose:
-            print(f"✅ Decision Tree trained in {dt_train_time:.3f}s")
+            print(f"Decision Tree trained in {dt_train_time:.3f}s")
             print(f"   • Training Accuracy: {dt_train_acc:.3f}")
             print(f"   • Test Accuracy: {dt_test_acc:.3f}")
 
         # 2. RANDOM FOREST
         if self.verbose:
-            print("\n🌲🌲🌲 Training Random Forest...")
+            print("\nTraining Random Forest...")
 
         start_time = time.time()
         rf_classifier = RandomForestClassifier(
@@ -342,12 +342,12 @@ class SupervisedClassifier:
         }
 
         if self.verbose:
-            print(f"✅ Random Forest trained in {rf_train_time:.3f}s")
+            print(f"Random Forest trained in {rf_train_time:.3f}s")
             print(f"   • Training Accuracy: {rf_train_acc:.3f}")
             print(f"   • Test Accuracy: {rf_test_acc:.3f}")
 
             # Show feature importance
-            print(f"\n📊 Top 10 Most Important Features:")
+            print(f"\nTop 10 Most Important Features:")
             feature_importance = rf_classifier.feature_importances_
             top_features_idx = np.argsort(feature_importance)[-10:][::-1]
 
@@ -393,14 +393,14 @@ class SupervisedClassifier:
 
         if self.verbose:
             print(
-                f"🎯 Using subset: {X_train_svm.shape[0]} train, {X_test_svm.shape[0]} test"
+                f"Using subset: {X_train_svm.shape[0]} train, {X_test_svm.shape[0]} test"
             )
 
         results = {}
 
         # 1. LINEAR SVM
         if self.verbose:
-            print(f"\n📏 Training Linear SVM...")
+            print(f"\nTraining Linear SVM...")
 
         start_time = time.time()
         linear_svm = SVC(kernel="linear", C=1.0, random_state=self.random_state)
@@ -425,13 +425,13 @@ class SupervisedClassifier:
         }
 
         if self.verbose:
-            print(f"✅ Linear SVM trained in {linear_train_time:.3f}s")
+            print(f"Linear SVM trained in {linear_train_time:.3f}s")
             print(f"   • Training Accuracy: {linear_train_acc:.3f}")
             print(f"   • Test Accuracy: {linear_test_acc:.3f}")
 
         # 2. RBF SVM
         if self.verbose:
-            print(f"\n🌀 Training RBF SVM...")
+            print(f"\nTraining RBF SVM...")
 
         start_time = time.time()
         rbf_svm = SVC(
@@ -458,7 +458,7 @@ class SupervisedClassifier:
         }
 
         if self.verbose:
-            print(f"✅ RBF SVM trained in {rbf_train_time:.3f}s")
+            print(f"RBF SVM trained in {rbf_train_time:.3f}s")
             print(f"   • Training Accuracy: {rbf_train_acc:.3f}")
             print(f"   • Test Accuracy: {rbf_test_acc:.3f}")
 
@@ -482,19 +482,19 @@ class SupervisedClassifier:
             dict: Results dictionary with model performance
         """
         if self.verbose:
-            print("🧠 Training Neural Networks")
+            print("Training Neural Networks")
             print("=" * 35)
             print(
-                f"📊 Training: {X_train.shape[0]} samples, {X_train.shape[1]} features"
+                f"Training: {X_train.shape[0]} samples, {X_train.shape[1]} features"
             )
-            print(f"🧪 Test: {X_test.shape[0]} samples")
-            print(f"🏷️ Classes: {len(np.unique(y_train))}")
+            print(f"Test: {X_test.shape[0]} samples")
+            print(f"Classes: {len(np.unique(y_train))}")
 
         results = {}
 
         # 1. SIMPLE NEURAL NETWORK
         if self.verbose:
-            print(f"\n🧠 Training Simple Neural Network...")
+            print(f"\nTraining Simple Neural Network...")
 
         start_time = time.time()
         simple_nn = MLPClassifier(
@@ -531,14 +531,14 @@ class SupervisedClassifier:
 
         if self.verbose:
             print(
-                f"✅ Simple NN trained in {simple_train_time:.3f}s ({simple_nn.n_iter_} iterations)"
+                f"Simple NN trained in {simple_train_time:.3f}s ({simple_nn.n_iter_} iterations)"
             )
             print(f"   • Training Accuracy: {simple_train_acc:.3f}")
             print(f"   • Test Accuracy: {simple_test_acc:.3f}")
 
         # 2. DEEP NEURAL NETWORK
         if self.verbose:
-            print(f"\n🧠🧠🧠 Training Deep Neural Network...")
+            print(f"\nTraining Deep Neural Network...")
 
         start_time = time.time()
         deep_nn = MLPClassifier(
@@ -575,14 +575,14 @@ class SupervisedClassifier:
 
         if self.verbose:
             print(
-                f"✅ Deep NN trained in {deep_train_time:.3f}s ({deep_nn.n_iter_} iterations)"
+                f"Deep NN trained in {deep_train_time:.3f}s ({deep_nn.n_iter_} iterations)"
             )
             print(f"   • Training Accuracy: {deep_train_acc:.3f}")
             print(f"   • Test Accuracy: {deep_test_acc:.3f}")
 
         # 3. REGULARIZED NEURAL NETWORK
         if self.verbose:
-            print(f"\n🧠🎯 Training Regularized Neural Network...")
+            print(f"\nTraining Regularized Neural Network...")
 
         start_time = time.time()
         regularized_nn = MLPClassifier(
@@ -620,7 +620,7 @@ class SupervisedClassifier:
 
         if self.verbose:
             print(
-                f"✅ Regularized NN trained in {reg_train_time:.3f}s ({regularized_nn.n_iter_} iterations)"
+                f"Regularized NN trained in {reg_train_time:.3f}s ({regularized_nn.n_iter_} iterations)"
             )
             print(f"   • Training Accuracy: {reg_train_acc:.3f}")
             print(f"   • Test Accuracy: {reg_test_acc:.3f}")
@@ -645,7 +645,7 @@ class SupervisedClassifier:
             list: List of all model results
         """
         if self.verbose:
-            print("🤖 Training All Classification Models")
+            print("Training All Classification Models")
             print("=" * 50)
 
         all_results = []
@@ -676,15 +676,15 @@ class SupervisedClassifier:
             y_test: True test labels
         """
         if self.verbose:
-            print("🏆 Final Model Comparison and Analysis")
+            print("Final Model Comparison and Analysis")
             print("=" * 45)
 
         if not results:
-            print("❌ No model results available.")
+            print(" No model results available.")
             return
 
         # Performance comparison table
-        print("📊 Complete Model Performance Comparison:")
+        print("Complete Model Performance Comparison:")
         print("=" * 80)
         print(
             f"{'Model':<25} {'Train Acc':<12} {'Test Acc':<12} {'Train Time':<12} {'Overfitting':<12}"
@@ -705,15 +705,15 @@ class SupervisedClassifier:
             results, key=lambda x: abs(x["train_accuracy"] - x["test_accuracy"])
         )
 
-        print(f"\n🏆 Model Rankings:")
+        print(f"\nModel Rankings:")
         print(
-            f"   🥇 Best Test Accuracy: {best_model['model_name']} ({best_model['test_accuracy']:.3f})"
+            f"   Best Test Accuracy: {best_model['model_name']} ({best_model['test_accuracy']:.3f})"
         )
         print(
             f"   ⚡ Fastest Training: {fastest_model['model_name']} ({fastest_model['training_time']:.3f}s)"
         )
         print(
-            f"   🎯 Least Overfitting: {least_overfitting['model_name']} "
+            f"   Least Overfitting: {least_overfitting['model_name']} "
             f"(gap: {abs(least_overfitting['train_accuracy'] - least_overfitting['test_accuracy']):.3f})"
         )
 
@@ -730,43 +730,8 @@ class SupervisedClassifier:
             )
         )
 
-        # Practical recommendations
-        print(f"\n💡 Practical Recommendations for Oil Well Fault Detection:")
-        print("=" * 65)
-
-        if best_model["model_name"] in ["Random Forest", "Decision Tree"]:
-            print(
-                f"🌳 Tree-based models (like {best_model['model_name']}) are recommended because:"
-            )
-            print(
-                f"   • High interpretability - you can see which sensors are most important"
-            )
-            print(f"   • Robust to outliers and noise common in industrial data")
-            print(f"   • Fast training and prediction")
-            print(f"   • Handle mixed data types well")
-
-        elif "Neural Network" in best_model["model_name"]:
-            print(
-                f"🧠 Neural networks (like {best_model['model_name']}) are recommended because:"
-            )
-            print(f"   • Can learn complex non-linear patterns in sensor data")
-            print(f"   • Automatic feature learning from raw time series")
-            print(f"   • Scale well with large amounts of data")
-            print(f"   • State-of-the-art performance on many tasks")
-
-        elif "SVM" in best_model["model_name"]:
-            print(f"⚡ SVM (like {best_model['model_name']}) is recommended because:")
-            print(f"   • Effective in high-dimensional spaces")
-            print(f"   • Good generalization with limited data")
-            print(f"   • Memory efficient")
-            print(f"   • Works well with properly scaled features")
-
-        print(f"\n🎯 Key Insights:")
-        print(f"   • Data was already normalized - no additional scaling needed")
-        print(f"   • Class balancing with augmentation improved model performance")
-        print(f"   • Use cross-validation to get more reliable performance estimates")
-        print(f"   • Consider ensemble methods for production systems")
-        print(f"   • Monitor for concept drift in industrial settings")
+        # Best model identification completed
+        pass
 
     def visualize_results(self, results: List[Dict[str, Any]]) -> None:
         """
@@ -776,7 +741,7 @@ class SupervisedClassifier:
             results: List of model results
         """
         if not results:
-            print("❌ No results to visualize.")
+            print(" No results to visualize.")
             return
 
         print(f"\n📈 Creating performance visualization...")
@@ -895,11 +860,11 @@ def analyze_fold_accuracy(
         classifier: Trained classifier
         fold_results: Dictionary with fold results {fold_name: {model_name: accuracy}}
     """
-    print("\n📊 Accuracy Analysis Per Fold")
+    print("\nAccuracy Analysis Per Fold")
     print("=" * 50)
 
     if not fold_results:
-        print("❌ No fold results available")
+        print(" No fold results available")
         return
 
     # Get all model names and fold names
@@ -945,7 +910,7 @@ def analyze_class_accuracy(
         y_true: True labels
         predictions_dict: Dictionary with model predictions {model_name: predictions}
     """
-    print("\n📊 Accuracy Analysis Per Class")
+    print("\nAccuracy Analysis Per Class")
     print("=" * 50)
 
     class_names = (
@@ -998,7 +963,7 @@ def analyze_accuracy_without_class0(
         predictions_dict: Dictionary with model predictions {model_name: predictions}
         selected_classes: List of classes that were selected for analysis (None = all except 0)
     """
-    print("\n📊 Class Selection Status")
+    print("\nClass Selection Status")
     print("=" * 35)
 
     # Check which classes are present in the data
@@ -1009,47 +974,39 @@ def analyze_accuracy_without_class0(
         has_class_0 = 0 in unique_classes
         if not has_class_0:
             print(
-                "✅ Class 0 (normal operation) successfully excluded from all analysis"
+                "Class 0 (normal operation) successfully excluded from all analysis"
             )
-            print(f"📊 Dataset contains only fault classes: {sorted(unique_classes)}")
+            print(f"Dataset contains only fault classes: {sorted(unique_classes)}")
 
-            print(f"\n🎯 Benefits of Class 0 Exclusion:")
-            print(f"   • Focus purely on fault type discrimination")
-            print(f"   • Avoid normal vs fault classification bias")
-            print(f"   • More relevant for fault diagnosis systems")
-            print(f"   • Cleaner evaluation of fault-specific performance")
+
         else:
-            print("⚠️ Class 0 still present in data - check filtering logic")
+            print("Warning: Class 0 still present in data - check filtering logic")
     else:
         # Custom class selection mode
-        print(f"✅ Custom class selection applied")
-        print(f"📊 Selected classes: {sorted(selected_classes)}")
-        print(f"📊 Dataset contains classes: {sorted(unique_classes)}")
+        print(f"Custom class selection applied")
+        print(f"Selected classes: {sorted(selected_classes)}")
+        print(f"Dataset contains classes: {sorted(unique_classes)}")
 
-        print(f"\n🎯 Benefits of Custom Class Selection:")
-        print(f"   • Focus on specific fault types of interest")
-        print(f"   • Targeted analysis for particular operational scenarios")
-        print(f"   • Simplified classification problem")
-        print(f"   • Faster training with fewer classes")
 
-    print(f"📊 Total samples in analysis: {len(y_true)}")
+
+    print(f"Total samples in analysis: {len(y_true)}")
 
     # Show class distribution
     unique_classes, counts = np.unique(y_true, return_counts=True)
-    print(f"\n📊 Class distribution in analysis:")
+    print(f"\nClass distribution in analysis:")
     for cls, count in zip(unique_classes, counts):
         class_name = (
             classifier.class_names[cls] if classifier.class_names is not None else cls
         )
         print(f"   Class {class_name}: {count} samples")
-        print(f"📊 Classes found: {sorted(unique_classes)}")
+        print(f"Classes found: {sorted(unique_classes)}")
 
         # Calculate accuracy excluding class 0 for comparison
         non_class0_mask = y_true != 0
         if np.any(non_class0_mask):
             y_true_filtered = y_true[non_class0_mask]
 
-            print(f"\n📊 Comparison with class 0 excluded:")
+            print(f"\nComparison with class 0 excluded:")
             print(f"   • Total samples: {len(y_true)}")
             print(f"   • Fault-only samples: {len(y_true_filtered)}")
 
@@ -1120,6 +1077,279 @@ def enhanced_fold_analysis(
     train_classes: List[str],
     test_dfs: List[pd.DataFrame],
     test_classes: List[str],
+    train_fold_info: List[str] = None,
+    test_fold_info: List[str] = None,
+    balance_classes: bool = True,
+    balance_strategy: str = "combined",
+    max_samples_per_class: int = 300,
+    balance_test: bool = False,
+    min_test_samples_per_class: int = 300,
+    selected_classes: List[str] = None,
+    verbose: bool = True,
+) -> SupervisedClassifier:
+    """
+    Enhanced supervised classification with proper cross-fold validation.
+    
+    This function performs true cross-fold validation by training models on specific folds
+    and testing on other folds, providing per-fold accuracy analysis.
+
+    Args:
+        train_dfs, train_classes: Training data
+        test_dfs, test_classes: Test data  
+        train_fold_info: List indicating which fold each training sample belongs to
+        test_fold_info: List indicating which fold each test sample belongs to
+        balance_classes: Whether to balance training classes
+        balance_strategy: Strategy for balancing ('combined', 'oversample', 'undersample')
+        max_samples_per_class: Max samples per class for training
+        balance_test: Whether to balance test classes (usually False for fold analysis)
+        min_test_samples_per_class: Minimum samples per class in test set
+        selected_classes: List of classes to include in analysis (None = all classes except 0)
+        verbose: Print details
+
+    Returns:
+        SupervisedClassifier: Trained classifier with enhanced fold-wise results
+    """
+    if verbose:
+        print("Enhanced Cross-Fold Classification Analysis")
+        print("=" * 50)
+    
+    # Check if we have fold information for proper cross-validation
+    if train_fold_info is None or test_fold_info is None:
+        if verbose:
+            print("Warning: Fold information missing - falling back to simple classification")
+        
+        # Fallback to original enhanced analysis without fold-wise training
+        return enhanced_fold_analysis_simple(
+            train_dfs, train_classes, test_dfs, test_classes,
+            fold_info=test_fold_info,
+            balance_classes=balance_classes,
+            balance_strategy=balance_strategy,
+            max_samples_per_class=max_samples_per_class,
+            balance_test=balance_test,
+            min_test_samples_per_class=min_test_samples_per_class,
+            selected_classes=selected_classes,
+            verbose=verbose
+        )
+    
+    # Validate fold information
+    if len(train_fold_info) != len(train_dfs):
+        raise ValueError(f"train_fold_info length ({len(train_fold_info)}) != train_dfs length ({len(train_dfs)})")
+    
+    if len(test_fold_info) != len(test_dfs):
+        raise ValueError(f"test_fold_info length ({len(test_fold_info)}) != test_dfs length ({len(test_dfs)})")
+    
+    # Get unique folds
+    train_folds = sorted(set(train_fold_info))
+    test_folds = sorted(set(test_fold_info))
+    all_folds = sorted(set(train_folds + test_folds))
+    
+    if verbose:
+        print(f"📁 Found folds - Train: {train_folds}, Test: {test_folds}")
+        print(f"📁 Will perform cross-validation across {len(all_folds)} folds: {all_folds}")
+    
+    # Filter data based on selected_classes parameter
+    if selected_classes is None:
+        filter_message = "Warning: Filtering out class 0 (normal operation) from all data..."
+        filter_condition = lambda cls: cls != 0 and cls != "0"
+    else:
+        selected_classes_str = [str(c) for c in selected_classes]
+        filter_message = f" Filtering to include only selected classes: {selected_classes}..."
+        filter_condition = lambda cls: str(cls) in selected_classes_str
+
+    if verbose:
+        print(filter_message)
+
+    # Filter training and test data based on class selection
+    filtered_train_data = []
+    filtered_test_data = []
+    
+    for i, (df, cls, fold) in enumerate(zip(train_dfs, train_classes, train_fold_info)):
+        if filter_condition(cls):
+            filtered_train_data.append((df, cls, fold, i))
+    
+    for i, (df, cls, fold) in enumerate(zip(test_dfs, test_classes, test_fold_info)):
+        if filter_condition(cls):
+            filtered_test_data.append((df, cls, fold, i))
+    
+    if verbose:
+        print(f"Class filtering completed:")
+        print(f"   • Training samples: {len(train_dfs)} → {len(filtered_train_data)}")
+        print(f"   • Test samples: {len(test_dfs)} → {len(filtered_test_data)}")
+    
+    if len(filtered_train_data) == 0 or len(filtered_test_data) == 0:
+        raise ValueError("No data remaining after class filtering")
+    
+    # Initialize classifier for consistent label encoding across folds
+    classifier = SupervisedClassifier(verbose=verbose)
+    
+    # Prepare all data once to establish consistent label encoding
+    all_train_dfs = [item[0] for item in filtered_train_data]
+    all_train_classes = [item[1] for item in filtered_train_data]
+    all_test_dfs = [item[0] for item in filtered_test_data]
+    all_test_classes = [item[1] for item in filtered_test_data]
+    
+    # Create label encoder with all classes
+    all_classes = list(set(all_train_classes + all_test_classes))
+    classifier.label_encoder.fit(all_classes)
+    classifier.class_names = classifier.label_encoder.classes_
+    
+    if verbose:
+        print(f"Established label encoding for classes: {sorted(all_classes)}")
+    
+    # Store results for each fold and model
+    fold_results = {}
+    model_names = ["Decision Tree", "Random Forest", "Linear SVM", "RBF SVM", 
+                  "Simple Neural Network", "Deep Neural Network", "Regularized Neural Network"]
+    
+    # Initialize fold results structure
+    for fold in all_folds:
+        fold_results[fold] = {}
+        for model_name in model_names:
+            fold_results[fold][model_name] = 0.0
+    
+    # Perform cross-fold validation
+    for test_fold in all_folds:
+        if verbose:
+            print(f"\nTraining on other folds, testing on fold {test_fold}")
+        
+        # Separate training and test data for this fold iteration
+        fold_train_dfs = []
+        fold_train_classes = []
+        fold_test_dfs = []
+        fold_test_classes = []
+        
+        # Collect training data (all folds except test_fold)
+        for df, cls, fold, _ in filtered_train_data:
+            if fold != test_fold:
+                fold_train_dfs.append(df)
+                fold_train_classes.append(cls)
+        
+        # Collect test data (only test_fold)
+        for df, cls, fold, _ in filtered_test_data:
+            if fold == test_fold:
+                fold_test_dfs.append(df)
+                fold_test_classes.append(cls)
+        
+        if len(fold_train_dfs) == 0:
+            if verbose:
+                print(f"Warning: No training data for test fold {test_fold}, skipping")
+            continue
+            
+        if len(fold_test_dfs) == 0:
+            if verbose:
+                print(f"Warning: No test data for fold {test_fold}, skipping")
+            continue
+        
+        if verbose:
+            print(f"   Training samples: {len(fold_train_dfs)}")
+            print(f"   Test samples: {len(fold_test_dfs)}")
+        
+        # Create a temporary classifier for this fold
+        temp_classifier = SupervisedClassifier(verbose=False)
+        temp_classifier.label_encoder = classifier.label_encoder  # Use consistent encoding
+        temp_classifier.class_names = classifier.class_names
+        
+        # Prepare data for this fold
+        try:
+            X_train, y_train, X_test, y_test = temp_classifier.prepare_data(
+                fold_train_dfs,
+                fold_train_classes,
+                fold_test_dfs,
+                fold_test_classes,
+                balance_classes=balance_classes,
+                balance_strategy=balance_strategy,
+                max_samples_per_class=max_samples_per_class,
+            )
+            
+            if verbose:
+                print(f"   Data prepared - Train: {X_train.shape[0]}, Test: {X_test.shape[0]}")
+            
+            # Train all models for this fold
+            fold_model_results = temp_classifier.train_all_models(X_train, y_train, X_test, y_test)
+            
+            # Extract test accuracies for this fold
+            for result in fold_model_results:
+                model_name = result['model_name']
+                test_accuracy = result['test_accuracy']
+                fold_results[test_fold][model_name] = test_accuracy
+                
+                if verbose:
+                    print(f"   {model_name}: {test_accuracy:.3f}")
+        
+        except Exception as e:
+            if verbose:
+                print(f"    Error processing fold {test_fold}: {str(e)}")
+            continue
+    
+    # Create final classifier with all data for visualization and comparison
+    if verbose:
+        print(f"\n Training final models on all data for comparison...")
+    
+    final_X_train, final_y_train, final_X_test, final_y_test = classifier.prepare_data(
+        all_train_dfs,
+        all_train_classes,
+        all_test_dfs,
+        all_test_classes,
+        balance_classes=balance_classes,
+        balance_strategy=balance_strategy,
+        max_samples_per_class=max_samples_per_class,
+    )
+    
+    # Train final models
+    final_results = classifier.train_all_models(final_X_train, final_y_train, final_X_test, final_y_test)
+    
+    # Store fold results in classifier for analysis
+    classifier.fold_results = fold_results
+    classifier.fold_names = all_folds
+    
+    if verbose:
+        print("\n" + "=" * 70)
+        print("CROSS-FOLD VALIDATION RESULTS")
+        print("=" * 70)
+        
+        # Display fold results table
+        print(f"{'Fold':<12}", end="")
+        for model_name in model_names:
+            print(f"{model_name[:12]:<15}", end="")
+        print()
+        print("-" * (12 + 15 * len(model_names)))
+        
+        for fold in all_folds:
+            print(f"{fold:<12}", end="")
+            for model_name in model_names:
+                accuracy = fold_results[fold].get(model_name, 0.0)
+                print(f"{accuracy:<15.3f}", end="")
+            print()
+        
+        # Calculate and display averages
+        print("-" * (12 + 15 * len(model_names)))
+        print(f"{'Average':<12}", end="")
+        for model_name in model_names:
+            accuracies = [fold_results[fold].get(model_name, 0.0) for fold in all_folds]
+            avg_accuracy = np.mean([acc for acc in accuracies if acc > 0])
+            print(f"{avg_accuracy:<15.3f}", end="")
+        print()
+        
+        # Show best performing model per fold
+        print(f"\nBest Model Per Fold:")
+        for fold in all_folds:
+            fold_accs = fold_results[fold]
+            if any(acc > 0 for acc in fold_accs.values()):
+                best_model = max(fold_accs.items(), key=lambda x: x[1])
+                print(f"   Fold {fold}: {best_model[0]} ({best_model[1]:.3f})")
+    
+    # Compare models and visualize (using final trained models)
+    classifier.compare_models(final_results, final_y_test)
+    # classifier.visualize_results(final_results)
+    
+    return classifier
+
+
+def enhanced_fold_analysis_simple(
+    train_dfs: List[pd.DataFrame],
+    train_classes: List[str],
+    test_dfs: List[pd.DataFrame],
+    test_classes: List[str],
     fold_info: List[str] = None,
     balance_classes: bool = True,
     balance_strategy: str = "combined",
@@ -1131,6 +1361,7 @@ def enhanced_fold_analysis(
 ) -> SupervisedClassifier:
     """
     Enhanced supervised classification with fold-wise analysis and class-specific metrics.
+    This is the original implementation that trains on all data at once.
 
     Args:
         train_dfs, train_classes: Training data
@@ -1150,13 +1381,13 @@ def enhanced_fold_analysis(
     classifier = SupervisedClassifier(verbose=verbose)
 
     if verbose:
-        print("🔄 Enhanced Classification with Test Balancing and Class 0 Exclusion")
+        print("Enhanced Classification with Test Balancing and Class 0 Exclusion")
         print("=" * 65)
 
     # Filter data based on selected_classes parameter
     if selected_classes is None:
         # Default behavior: exclude only class 0 (normal operation)
-        filter_message = "⚠️ Filtering out class 0 (normal operation) from all data..."
+        filter_message = "Warning: Filtering out class 0 (normal operation) from all data..."
         filter_condition = lambda cls: cls != 0 and cls != "0"
     else:
         # Custom class selection: include only specified classes
@@ -1164,7 +1395,7 @@ def enhanced_fold_analysis(
             str(c) for c in selected_classes
         ]  # Convert to strings for comparison
         filter_message = (
-            f"🎯 Filtering to include only selected classes: {selected_classes}..."
+            f" Filtering to include only selected classes: {selected_classes}..."
         )
         filter_condition = lambda cls: str(cls) in selected_classes_str
 
@@ -1198,9 +1429,9 @@ def enhanced_fold_analysis(
 
     if verbose:
         if selected_classes is None:
-            print(f"✅ Class 0 filtering completed:")
+            print(f"Class 0 filtering completed:")
         else:
-            print(f"✅ Class filtering completed:")
+            print(f"Class filtering completed:")
         print(
             f"   • Original training samples: {len(train_dfs)} → Filtered: {len(train_filtered_dfs)}"
         )
@@ -1246,7 +1477,7 @@ def enhanced_fold_analysis(
     if balance_test:
         if verbose:
             print(
-                f"⚖️ Balancing test data to ensure min {min_test_samples_per_class} samples per class..."
+                f"Balancing test data to ensure min {min_test_samples_per_class} samples per class..."
             )
 
         # Import the data augmentation function
@@ -1261,7 +1492,7 @@ def enhanced_fold_analysis(
         )
 
         if verbose:
-            print(f"✅ Test data balanced:")
+            print(f"Test data balanced:")
             print(f"   • Original test samples: {len(test_dfs)}")
             print(f"   • Balanced test samples: {len(balanced_test_dfs)}")
 
@@ -1281,7 +1512,7 @@ def enhanced_fold_analysis(
         # We'll skip per-fold analysis when test balancing is enabled
         if fold_info is not None and balance_test:
             if verbose:
-                print("⚠️ Per-fold analysis disabled when test balancing is enabled")
+                print("Warning: Per-fold analysis disabled when test balancing is enabled")
                 print(
                     "   (Fold information becomes inconsistent after test data augmentation)"
                 )
@@ -1304,7 +1535,7 @@ def enhanced_fold_analysis(
     # Double-check that class 0 is not in the final prepared data
     if 0 in y_train or 0 in y_test:
         if verbose:
-            print("⚠️ Warning: Class 0 detected in prepared data, removing...")
+            print("Warning: Class 0 detected in prepared data, removing...")
 
         # Remove class 0 from training data
         train_mask = y_train != 0
@@ -1318,28 +1549,34 @@ def enhanced_fold_analysis(
         test_filter_mask = test_mask  # Store the mask for fold_info filtering
 
         if verbose:
-            print(f"✅ Final class 0 removal completed:")
+            print(f"Final class 0 removal completed:")
             print(f"   • Training samples after final filter: {len(X_train)}")
             print(f"   • Test samples after final filter: {len(X_test)}")
             print(f"   • Final training classes: {sorted(np.unique(y_train))}")
             print(f"   • Final test classes: {sorted(np.unique(y_test))}")
 
-    # Filter fold_info to match the filtered test data
-    if fold_info is not None and test_filter_mask is not None:
-        # Filter fold_info to match the test data after class filtering
-        fold_info = np.array(fold_info)[test_filter_mask].tolist()
-        if verbose:
-            print(f"✅ Fold information filtered to match test data")
-            print(
-                f"   • Original fold_info length: {len(np.array(fold_info)[test_filter_mask]) + len(np.array(fold_info)[~test_filter_mask])}"
-            )
-            print(f"   • Filtered fold_info length: {len(fold_info)}")
-            print(f"   • Test data length: {len(y_test)}")
+    # Handle fold_info filtering based on test data size mismatch
+    if fold_info is not None:
+        original_fold_info_length = len(fold_info)
+        test_data_length = len(y_test)
+        
+        if original_fold_info_length != test_data_length:
+            if verbose:
+                print(f"Warning: fold_info length ({original_fold_info_length}) != test data length ({test_data_length})")
+                print(f"   This suggests test data was filtered during prepare_data()")
+                print(f"   Setting fold_info to None to avoid indexing errors")
+            
+            # Set fold_info to None rather than attempting to filter it
+            # This is safer than trying to guess which samples were filtered
+            fold_info = None
+        else:
+            if verbose:
+                print(f"Fold information matches test data length ({test_data_length})")
 
     # Verify fold_info consistency before proceeding
     if fold_info is not None and len(fold_info) != len(y_test):
         if verbose:
-            print(f"⚠️ Fold info length mismatch detected:")
+            print(f"Warning: Fold info length mismatch detected:")
             print(f"   • fold_info length: {len(fold_info)}")
             print(f"   • test data length: {len(y_test)}")
             print(f"   • Disabling per-fold analysis for safety")
@@ -1364,7 +1601,7 @@ def enhanced_fold_analysis(
         fold_results = {}
         unique_folds = sorted(set(fold_info))
 
-        print(f"\n📊 Found {len(unique_folds)} unique folds for analysis")
+        print(f"\nFound {len(unique_folds)} unique folds for analysis")
 
         for fold in unique_folds:
             fold_mask = np.array([fold_info[i] == fold for i in range(len(fold_info))])
@@ -1380,7 +1617,7 @@ def enhanced_fold_analysis(
 
         analyze_fold_accuracy(classifier, fold_results)
     else:
-        print("\n⚠️ Fold information not available - skipping per-fold analysis")
+        print("\nWarning: Fold information not available - skipping per-fold analysis")
 
     # Analysis 2: Accuracy per class (fault classes only)
     analyze_class_accuracy(classifier, y_test, predictions_dict)
