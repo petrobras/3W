@@ -29,16 +29,17 @@ class UnsupervisedDataPreprocessor:
         self.random_seed = random_seed
         random.seed(random_seed)
 
-    def sample_windows(self, normal_windows, anomaly_windows):
+    def sample_windows(self, normal_windows, anomaly_windows, anomaly_classes=None):
         """
-        Sample windows for training efficiency.
+        Sample windows for training efficiency with balanced class representation.
 
         Args:
             normal_windows (list): List of normal operation windows
             anomaly_windows (list): List of anomaly windows
+            anomaly_classes (list, optional): List of anomaly class labels for balanced sampling
 
         Returns:
-            tuple: (sampled_normal_windows, sampled_anomaly_windows)
+            tuple: (sampled_normal_windows, sampled_anomaly_windows, sampled_anomaly_classes)
         """
         print("⚡ Smart Data Sampling for Training Efficiency")
         print("=" * 50)
@@ -60,20 +61,55 @@ class UnsupervisedDataPreprocessor:
             print(f"📊 Using all {len(normal_windows)} normal windows...")
             sampled_normal_windows = normal_windows
 
-        # Sample anomaly data for testing
-        if len(anomaly_windows) > self.max_anomaly_samples:
-            print(
-                f"📊 Sampling {self.max_anomaly_samples} anomaly windows from {len(anomaly_windows)} available..."
-            )
-            sampled_indices = random.sample(
-                range(len(anomaly_windows)), self.max_anomaly_samples
-            )
+        # Handle anomaly data sampling with class balance
+        if anomaly_classes is not None and len(anomaly_windows) > self.max_anomaly_samples:
+            print(f"📊 Balanced sampling {self.max_anomaly_samples} anomaly windows from {len(anomaly_windows)} available...")
+            
+            # Group by class for balanced sampling
+            from collections import defaultdict
+            class_indices = defaultdict(list)
+            
+            for i, cls in enumerate(anomaly_classes):
+                class_indices[str(cls)].append(i)
+            
+            unique_classes = list(class_indices.keys())
+            samples_per_class = self.max_anomaly_samples // len(unique_classes)
+            
+            print(f"   • Target samples per class: {samples_per_class}")
+            
+            sampled_indices = []
+            sampled_anomaly_classes = []
+            
+            for cls in unique_classes:
+                cls_indices = class_indices[cls]
+                if len(cls_indices) > samples_per_class:
+                    cls_sampled = random.sample(cls_indices, samples_per_class)
+                else:
+                    cls_sampled = cls_indices
+                
+                sampled_indices.extend(cls_sampled)
+                sampled_anomaly_classes.extend([anomaly_classes[i] for i in cls_sampled])
+                
+                print(f"   • Class {cls}: {len(cls_sampled)} samples selected from {len(cls_indices)} available")
+            
             sampled_anomaly_windows = [anomaly_windows[i] for i in sampled_indices]
+            
         else:
             print(f"📊 Using all {len(anomaly_windows)} anomaly windows...")
             sampled_anomaly_windows = anomaly_windows
+            sampled_anomaly_classes = anomaly_classes if anomaly_classes is not None else [None] * len(anomaly_windows)
 
-        return sampled_normal_windows, sampled_anomaly_windows
+        print(f"\n✅ Sampling complete:")
+        print(f"   • Normal windows: {len(sampled_normal_windows)}")
+        print(f"   • Anomaly windows: {len(sampled_anomaly_windows)}")
+        
+        if anomaly_classes is not None:
+            # Show final class distribution
+            from collections import Counter
+            class_dist = Counter(str(cls) for cls in sampled_anomaly_classes)
+            print(f"   • Anomaly class distribution: {dict(class_dist)}")
+
+        return sampled_normal_windows, sampled_anomaly_windows, sampled_anomaly_classes
 
     def convert_windows_to_arrays(
         self, windows, window_type="normal", progress_step=200
@@ -214,23 +250,24 @@ class UnsupervisedDataPreprocessor:
 
         return normal_scaled, anomaly_scaled
 
-    def prepare_full_pipeline(self, normal_windows, anomaly_windows):
+    def prepare_full_pipeline(self, normal_windows, anomaly_windows, anomaly_classes=None):
         """
         Run the complete data preparation pipeline.
 
         Args:
             normal_windows (list): List of normal operation windows
             anomaly_windows (list): List of anomaly windows
+            anomaly_classes (list, optional): List of anomaly class labels
 
         Returns:
-            tuple: (normal_scaled, anomaly_scaled, data_info)
+            tuple: (normal_scaled, anomaly_scaled, data_info, sampled_anomaly_classes)
         """
         print("🔧 Complete Data Preparation Pipeline")
         print("=" * 50)
 
-        # Step 1: Sample windows
-        sampled_normal, sampled_anomaly = self.sample_windows(
-            normal_windows, anomaly_windows
+        # Step 1: Sample windows with balanced class representation
+        sampled_normal, sampled_anomaly, sampled_anomaly_classes = self.sample_windows(
+            normal_windows, anomaly_windows, anomaly_classes
         )
 
         # Step 2: Convert to arrays
@@ -264,4 +301,9 @@ class UnsupervisedDataPreprocessor:
         print(f"   • Time steps per window: {time_steps}")
         print(f"   • Features per time step: {n_features} (class column removed)")
 
-        return normal_scaled, anomaly_scaled, data_info
+        # Adjust anomaly classes to match the final array size
+        if sampled_anomaly_classes is not None and len(sampled_anomaly_classes) != anomaly_scaled.shape[0]:
+            print(f"   ⚠️ Adjusting anomaly classes length from {len(sampled_anomaly_classes)} to {anomaly_scaled.shape[0]}")
+            sampled_anomaly_classes = sampled_anomaly_classes[:anomaly_scaled.shape[0]]
+
+        return normal_scaled, anomaly_scaled, data_info, sampled_anomaly_classes
