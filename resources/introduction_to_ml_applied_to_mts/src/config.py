@@ -13,6 +13,11 @@ DEFAULT_SCALING_METHOD = "minmax"
 RANDOM_SEED = 42
 MIN_SAMPLES_THRESHOLD = 100
 
+# Data sampling settings
+ENABLE_DATA_SAMPLING = True  # Enable sampling to reduce data size
+SAMPLING_RATE = 5  # Sample every 5th row (1 line each 5)
+SAMPLING_METHOD = "uniform"  # Options: 'uniform', 'random'
+
 # Cross-validation settings
 N_FOLDS = 3
 CV_RANDOM_STATE = 42
@@ -21,7 +26,7 @@ FALLBACK_REAL_PROPORTION = 0.7  # For real/simulated data separation fallback
 
 # Time windowing settings
 WINDOW_SIZE = 300
-WINDOW_STRIDE = 300  # Non-overlapping windows
+WINDOW_STRIDE = WINDOW_SIZE // 2  # Overlapping windows (150), use WINDOW_SIZE for non-overlapping
 MIN_WINDOW_SIZE = 300  # Only keep full-size windows
 
 # Data analysis settings
