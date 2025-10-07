@@ -19,6 +19,13 @@ DEFAULT_SCALING_METHOD = "minmax"  # Options: 'standard', 'minmax', 'robust', 'n
 RANDOM_SEED = 42  # Range: any integer
 MIN_SAMPLES_THRESHOLD = 100  # Range: 50-500
 
+# Visualization settings
+VISUALIZATION_MAX_SAMPLES = 50  # Max samples per class for visualization (Range: 10-100)
+VISUALIZATION_RANDOM_SEED = 42  # For reproducible sampling
+VISUALIZATION_FIGURE_SIZE = (16, 12)  # Default figure size for plots
+VISUALIZATION_DPI = 100  # Plot resolution
+VISUALIZATION_STYLE = "default"  # Matplotlib style
+
 # Data sampling settings
 ENABLE_DATA_SAMPLING = True  # Enable sampling to reduce data size
 SAMPLING_RATE = 5  # Range: 1-10, Sample every nth row (1 line each n)
