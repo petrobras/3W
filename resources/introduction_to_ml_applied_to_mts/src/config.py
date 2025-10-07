@@ -1,5 +1,11 @@
 """
 Configuration settings for 3W Dataset Processing Toolkit
+
+Parameter Ranges and Validation:
+- SAMPLING_RATE: 1-10 (higher = more aggressive sampling)
+- WINDOW_SIZE: 100-1000 (depends on data frequency and analysis needs)
+- N_FOLDS: 2-10 (more folds = better CV but higher computation)
+- RANDOM_SEED: Any integer (for reproducibility)
 """
 
 # Dataset settings
@@ -9,25 +15,48 @@ RAW_DATA_DIR = "./processed_data/cv_splits/raw/"
 CLASS_COLUMN = "class"
 
 # Processing settings
-DEFAULT_SCALING_METHOD = "minmax"
-RANDOM_SEED = 42
-MIN_SAMPLES_THRESHOLD = 100
+DEFAULT_SCALING_METHOD = "minmax"  # Options: 'standard', 'minmax', 'robust', 'normalizer'
+RANDOM_SEED = 42  # Range: any integer
+MIN_SAMPLES_THRESHOLD = 100  # Range: 50-500
 
 # Data sampling settings
 ENABLE_DATA_SAMPLING = True  # Enable sampling to reduce data size
-SAMPLING_RATE = 5  # Sample every 5th row (1 line each 5)
+SAMPLING_RATE = 5  # Range: 1-10, Sample every nth row (1 line each n)
 SAMPLING_METHOD = "uniform"  # Options: 'uniform', 'random'
 
+def validate_config():
+    """Validate configuration parameters and provide warnings for invalid values."""
+    warnings = []
+    
+    # Validate sampling rate
+    if not (1 <= SAMPLING_RATE <= 10):
+        warnings.append(f"SAMPLING_RATE ({SAMPLING_RATE}) should be between 1-10")
+    
+    # Validate window size
+    if not (100 <= WINDOW_SIZE <= 1000):
+        warnings.append(f"WINDOW_SIZE ({WINDOW_SIZE}) should be between 100-1000")
+    
+    # Validate cross-validation folds
+    if not (2 <= N_FOLDS <= 10):
+        warnings.append(f"N_FOLDS ({N_FOLDS}) should be between 2-10")
+    
+    # Validate scaling method
+    valid_scaling = ['standard', 'minmax', 'robust', 'normalizer']
+    if DEFAULT_SCALING_METHOD not in valid_scaling:
+        warnings.append(f"DEFAULT_SCALING_METHOD ({DEFAULT_SCALING_METHOD}) should be one of {valid_scaling}")
+    
+    return warnings
+
 # Cross-validation settings
-N_FOLDS = 3
+N_FOLDS = 3  # Range: 2-10
 CV_RANDOM_STATE = 42
-CV_VERBOSE = True
-FALLBACK_REAL_PROPORTION = 0.7  # For real/simulated data separation fallback
+CV_VERBOSE = False  # Reduced verbosity
+FALLBACK_REAL_PROPORTION = 0.7  # Range: 0.5-0.9, For real/simulated data separation fallback
 
 # Time windowing settings
-WINDOW_SIZE = 300
-WINDOW_STRIDE = WINDOW_SIZE // 2  # Overlapping windows (150), use WINDOW_SIZE for non-overlapping
-MIN_WINDOW_SIZE = 300  # Only keep full-size windows
+WINDOW_SIZE = 300  # Range: 100-1000
+WINDOW_STRIDE = WINDOW_SIZE // 2  # Range: 1 to WINDOW_SIZE, Overlapping windows (150), use WINDOW_SIZE for non-overlapping
+MIN_WINDOW_SIZE = 300  # Range: 50 to WINDOW_SIZE, Only keep full-size windows
 
 # Data analysis settings
 SAMPLE_ANALYSIS_MIN_SAMPLES = 100
@@ -97,5 +126,12 @@ DEFAULT_FIGSIZE = (12, 8)
 
 # Display settings
 SEPARATOR_LENGTH = 50
-HEADER_SEPARATOR_LENGTH = 70
+HEADER_SEPARATOR_LENGTH = 60  # Reduced for more concise display
 PROGRESS_SEPARATOR_LENGTH = 60
+
+# Performance settings
+MEMORY_EFFICIENT = True  # Use memory-efficient operations when possible
+PROGRESS_BAR_DISABLE = False  # Set to True to disable progress bars entirely
+N_JOBS = 1  # Number of parallel jobs (-1 for all cores, 1 for single-threaded)
+CHUNK_SIZE = 1000  # For large dataset processing
+CACHE_ENABLED = True  # Enable caching for repeated operations
