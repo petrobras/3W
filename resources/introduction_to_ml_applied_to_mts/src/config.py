@@ -20,39 +20,31 @@ RANDOM_SEED = 42  # Range: any integer
 MIN_SAMPLES_THRESHOLD = 100  # Range: 50-500
 
 # Visualization settings
-VISUALIZATION_MAX_SAMPLES = 50  # Max samples per class for visualization (Range: 10-100)
+VISUALIZATION_MAX_SAMPLES = 100  # Max samples per class for visualization (Range: 10-100)
 VISUALIZATION_RANDOM_SEED = 42  # For reproducible sampling
 VISUALIZATION_FIGURE_SIZE = (16, 12)  # Default figure size for plots
 VISUALIZATION_DPI = 100  # Plot resolution
 VISUALIZATION_STYLE = "default"  # Matplotlib style
 
+# Dimensionality reduction settings
+TSNE_CONFIGS = [
+    {"perplexity": 30, "learning_rate": 200, "title": "Standard t-SNE"},
+    {"perplexity": 10, "learning_rate": 100, "title": "Low Perplexity (Local Focus)"},
+    {"perplexity": 50, "learning_rate": 300, "title": "High Perplexity (Global)"},
+    {"perplexity": 30, "learning_rate": 500, "title": "Fast Learning Rate"}
+]
+
+UMAP_CONFIGS = [
+    {"n_neighbors": 15, "min_dist": 0.1, "metric": "euclidean", "title": "Standard UMAP"},
+    {"n_neighbors": 5, "min_dist": 0.0, "metric": "euclidean", "title": "Tight Clusters"},
+    {"n_neighbors": 50, "min_dist": 0.5, "metric": "cosine", "title": "Global Structure"},
+    {"n_neighbors": 30, "min_dist": 0.25, "metric": "manhattan", "title": "Robust Config"}
+]
+
 # Data sampling settings
 ENABLE_DATA_SAMPLING = True  # Enable sampling to reduce data size
 SAMPLING_RATE = 5  # Range: 1-10, Sample every nth row (1 line each n)
 SAMPLING_METHOD = "uniform"  # Options: 'uniform', 'random'
-
-def validate_config():
-    """Validate configuration parameters and provide warnings for invalid values."""
-    warnings = []
-    
-    # Validate sampling rate
-    if not (1 <= SAMPLING_RATE <= 10):
-        warnings.append(f"SAMPLING_RATE ({SAMPLING_RATE}) should be between 1-10")
-    
-    # Validate window size
-    if not (100 <= WINDOW_SIZE <= 1000):
-        warnings.append(f"WINDOW_SIZE ({WINDOW_SIZE}) should be between 100-1000")
-    
-    # Validate cross-validation folds
-    if not (2 <= N_FOLDS <= 10):
-        warnings.append(f"N_FOLDS ({N_FOLDS}) should be between 2-10")
-    
-    # Validate scaling method
-    valid_scaling = ['standard', 'minmax', 'robust', 'normalizer']
-    if DEFAULT_SCALING_METHOD not in valid_scaling:
-        warnings.append(f"DEFAULT_SCALING_METHOD ({DEFAULT_SCALING_METHOD}) should be one of {valid_scaling}")
-    
-    return warnings
 
 # Cross-validation settings
 N_FOLDS = 3  # Range: 2-10
@@ -142,3 +134,26 @@ PROGRESS_BAR_DISABLE = False  # Set to True to disable progress bars entirely
 N_JOBS = 1  # Number of parallel jobs (-1 for all cores, 1 for single-threaded)
 CHUNK_SIZE = 1000  # For large dataset processing
 CACHE_ENABLED = True  # Enable caching for repeated operations
+
+def validate_config():
+    """Validate configuration parameters and provide warnings for invalid values."""
+    warnings = []
+    
+    # Validate sampling rate
+    if not (1 <= SAMPLING_RATE <= 10):
+        warnings.append(f"SAMPLING_RATE ({SAMPLING_RATE}) should be between 1-10")
+    
+    # Validate window size
+    if not (100 <= WINDOW_SIZE <= 1000):
+        warnings.append(f"WINDOW_SIZE ({WINDOW_SIZE}) should be between 100-1000")
+    
+    # Validate cross-validation folds
+    if not (2 <= N_FOLDS <= 10):
+        warnings.append(f"N_FOLDS ({N_FOLDS}) should be between 2-10")
+    
+    # Validate scaling method
+    valid_scaling = ['standard', 'minmax', 'robust', 'normalizer']
+    if DEFAULT_SCALING_METHOD not in valid_scaling:
+        warnings.append(f"DEFAULT_SCALING_METHOD ({DEFAULT_SCALING_METHOD}) should be one of {valid_scaling}")
+    
+    return warnings
