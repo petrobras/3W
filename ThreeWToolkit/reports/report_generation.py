@@ -1,26 +1,22 @@
+import matplotlib.pyplot as plt
 import pandas as pd
+import jinja2
 
 from pathlib import Path
-from typing import Any, List, Dict
+from typing import Any, Dict, Union
 
 from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
 from pylatex.package import Package
 
-from ThreeWToolkit.data_visualization.plot_series import DataVisualization
-
-from ..constants import LATEX_DIR, REPORTS_DIR
-from ..utils.latex_manager import latex_environment
-from ..metrics import (
-    accuracy_score,
-    balanced_accuracy_score,
-    recall_score,
-    precision_score,
-    f1_score,
-    roc_auc_score,
-    average_precision_score,
-    explained_variance_score,
+from ThreeWToolkit.data_visualization.plot_series import DataVisualization as PlotSeries
+from ThreeWToolkit.data_visualization.plot_multiple_series import PlotMultipleSeries
+from ThreeWToolkit.data_visualization.plot_correlation_heatmap import (
+    PlotCorrelationHeatmap,
 )
+
+from ..constants import LATEX_DIR, REPORTS_DIR, MD_TEMPLATES_DIR
+from ..utils.latex_manager import latex_environment
 
 
 class ReportGeneration:
@@ -35,9 +31,9 @@ class ReportGeneration:
         y_train: pd.Series,
         X_test: pd.Series,
         y_test: pd.Series,
-        metrics: List[str],
         predictions: pd.Series,
         calculated_metrics: dict,
+        plot_config: dict,
         title: str,
         author: str = "3W Toolkit Report",
         latex_dir: Path = LATEX_DIR,
@@ -49,26 +45,17 @@ class ReportGeneration:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
-        self.metrics = metrics
+        self.metrics = calculated_metrics
         self.predictions = predictions
         self.calculated_metrics = calculated_metrics
+        self.plot_config = plot_config
         self.title = title
         self.author = author
         self.latex_dir = latex_dir
-        self.reports_dir = reports_dir
-        self.save_report_after_generate = export_report_after_generate
 
-        # Default mapping (pode ser expandido ou sobrescrito depois)
-        self.metric_function_map = {
-            "accuracy": accuracy_score,
-            "balanced_accuracy": balanced_accuracy_score,
-            "recall": recall_score,
-            "precision": precision_score,
-            "f1": f1_score,
-            "roc_auc": roc_auc_score,
-            "average_precision": average_precision_score,
-            "get_explained_variance": explained_variance_score,
-        }
+        report_folder = f"report-{self.title}"
+        self.reports_dir = reports_dir / report_folder
+        self.save_report_after_generate = export_report_after_generate
 
     def _format_metric_name(self, method_name: str) -> str:
         if method_name == "f1":
@@ -77,7 +64,7 @@ class ReportGeneration:
             return "ROC AUC"
         return method_name.replace("get_", "").replace("_", " ").strip().title()
 
-    def generate_summary_report(self) -> Document:
+    def _generate_summary_report_latex(self) -> Document:
         """Generates a Beamer presentation summary report as a PyLaTeX Document."""
         print(f"Generating Beamer report: '{self.title}'...")
 
@@ -162,89 +149,88 @@ class ReportGeneration:
 
         # Slides 3+: Visualizations
         with doc.create(Section("Visualizations")):
-            # Plot 1: Predicted vs Actual
-            doc.append(NoEscape(r"\begin{frame}{Visualization: Predicted vs. Actual}"))
-            img_path = DataVisualization.plot_multiple_series(
-                [self.y_test, self.predictions],
-                ["Actual Signal", "Predicted Signal"],
-                "Signal_Prediction",
-                "Time Step",
-                "Amplitude",
-            )
-            doc.append(NoEscape(r"\begin{figure}\centering"))
-            doc.append(
-                NoEscape(f"\\includegraphics[width=0.9\\textwidth]{{{img_path}}}")
-            )
-            doc.append(NoEscape(r"\caption{Comparison of Actual vs Predicted Signals}"))
-            doc.append(NoEscape(r"\end{figure}"))
-            doc.append(NoEscape(r"\end{frame}"))
-
-            # Plot 2: FFT Analysis
-            doc.append(NoEscape(r"\begin{frame}{Signal Analysis: FFT}"))
-            fft_img_path = DataVisualization.plot_fft(self.y_test)
-            doc.append(NoEscape(r"\begin{figure}\centering"))
-            doc.append(
-                NoEscape(f"\\includegraphics[width=0.8\\textwidth]{{{fft_img_path}}}")
-            )
-            doc.append(NoEscape(r"\caption{FFT Analysis of the Signal}"))
-            doc.append(NoEscape(r"\end{figure}"))
-            doc.append(NoEscape(r"\end{frame}"))
-
-            # Plot 3: Seasonal Decomposition
-            doc.append(NoEscape(r"\begin{frame}{Signal Analysis: Decomposition}"))
-            decomp_img_path = DataVisualization.seasonal_decompose(
-                self.y_test, period=20
-            )  # Period matching one of the sine waves
-            doc.append(NoEscape(r"\begin{figure}\centering"))
-            doc.append(
-                NoEscape(
-                    f"\\includegraphics[width=0.45\\textwidth]{{{decomp_img_path}}}"
+            plot_data = self.get_visualization()
+            for _, details in plot_data.items():
+                img_path = details["img_path"]
+                title = details["title"]
+                alt = details["alt"]
+                doc.append(NoEscape(r"\begin{frame}{" + title + "}"))
+                doc.append(NoEscape(r"\begin{figure}\centering"))
+                doc.append(
+                    NoEscape(f"\\includegraphics[width=0.9\\textwidth]{{{img_path}}}")
                 )
-            )
-            doc.append(NoEscape(r"\caption{Seasonal Decomposition of the Signal}"))
-            doc.append(NoEscape(r"\end{figure}"))
-            doc.append(NoEscape(r"\end{frame}"))
-
-            # Plot 4: Correlation Heatmap
-            doc.append(NoEscape(r"\begin{frame}{Correlation Heatmap}"))
-            heatmap_df = pd.DataFrame(
-                {
-                    "Actual": self.y_test,
-                    "Predicted": self.predictions,
-                    "Residuals": self.y_test - self.predictions,
-                }
-            )
-            heatmap_img_path = DataVisualization.correlation_heatmap(heatmap_df)
-            doc.append(NoEscape(r"\begin{figure}\centering"))
-            doc.append(
-                NoEscape(
-                    f"\\includegraphics[width=0.5\\textwidth]{{{heatmap_img_path}}}"
-                )
-            )
-            doc.append(NoEscape(r"\caption{Correlation Heatmap}"))
-            doc.append(NoEscape(r"\end{figure}"))
-            doc.append(NoEscape(r"\end{frame}"))
-
-            # Plot 5: Wavelet Spectrogram (Mock)
-            doc.append(NoEscape(r"\begin{frame}{Wavelet Spectrogram}"))
-            wavelet_img_path = DataVisualization.plot_wavelet_spectrogram(self.y_test)
-            doc.append(NoEscape(r"\begin{figure}\centering"))
-            doc.append(
-                NoEscape(
-                    f"\\includegraphics[width=0.8\\textwidth]{{{wavelet_img_path}}}"
-                )
-            )
-            doc.append(NoEscape(r"\caption{Wavelet Spectrogram of the Signal}"))
-            doc.append(NoEscape(r"\end{figure}"))
-            doc.append(NoEscape(r"\end{frame}"))
+                doc.append(NoEscape(f"\\caption{{{alt}}}"))
+                doc.append(NoEscape(r"\end{figure}"))
+                doc.append(NoEscape(r"\end{frame}"))
 
         print("Beamer document generated successfully.")
         if self.save_report_after_generate:
-            self.save_report(doc=doc, filename=self.title)
+            self._save_report_latex(doc=doc, filename=self.title)
 
         return doc
 
-    def save_report(self, doc: Document, filename: str) -> None:
+    def get_visualization(self):
+        plots_dir = self.reports_dir / "plots"
+        plots_dir.mkdir(parents=True, exist_ok=True)
+
+        plot_paths = {}
+
+        self._check_plot_config(self.plot_config)
+
+        for plot, params in self.plot_config.items():
+            if plot == "PlotSeries":
+                fig = PlotSeries.plot_series(**params)
+            elif plot == "PlotMultipleSeries":
+                fig = PlotMultipleSeries.plot_multiple_series(**params)
+            elif plot == "PlotCorrelationHeatmap":
+                fig = PlotCorrelationHeatmap.correlation_heatmap(**params)
+            else:
+                raise ValueError(f"Invalid plot name '{plot}' in plot_config.")
+
+            img_path = plots_dir / f"{self.title}_{plot}.png"
+            fig.savefig(img_path, bbox_inches="tight")
+            plt.close(fig)
+            plot_paths[plot] = {
+                "title": params.get("title", "Time Series Plot"),
+                "alt": params.get("title", "Time Series Plot"),
+                "img_path": str(img_path),
+            }
+
+        return plot_paths
+
+    def _check_plot_config(self, plot_config: dict) -> None:
+        valid_plots = {
+            "PlotSeries": PlotSeries,
+            "PlotMultipleSeries": PlotMultipleSeries,
+            "PlotCorrelationHeatmap": PlotCorrelationHeatmap,
+        }
+
+        for plot_name, params in plot_config.items():
+            if plot_name not in valid_plots:
+                raise ValueError(
+                    f"Invalid plot name '{plot_name}'. Valid options are: {list(valid_plots.keys())}"
+                )
+
+            # Basic validation for required parameters
+            if plot_name == "PlotSeries":
+                if "series" not in params:
+                    raise ValueError("Missing 'series' parameter for PlotSeries.")
+            elif plot_name == "PlotMultipleSeries":
+                if "series_list" not in params or not isinstance(
+                    params["series_list"], list
+                ):
+                    raise ValueError(
+                        "Missing or invalid 'series_list' parameter for PlotMultipleSeries."
+                    )
+            elif plot_name == "PlotCorrelationHeatmap":
+                if "df_of_series" not in params or not isinstance(
+                    params["df_of_series"], pd.DataFrame
+                ):
+                    raise ValueError(
+                        "Missing or invalid 'df_of_series' parameter for PlotCorrelationHeatmap."
+                    )
+
+    def _save_report_latex(self, doc: Document, filename: str) -> None:
         """Compiles and saves a PyLaTeX Document to a PDF file using lualatex."""
         with latex_environment(self.latex_dir):
             report_folder = f"report-{filename}"
@@ -253,16 +239,91 @@ class ReportGeneration:
 
             report_path.mkdir(parents=True, exist_ok=True)
 
-            doc.generate_pdf(
-                filename,
-                clean=True,
-                clean_tex=True,
-                compiler="lualatex",
-                compiler_args=[f"--output-directory={report_path}"],
-                silent=False,
+            doc.generate_tex(filepath=str(report_path / filename))
+
+            print(f"Report saved successfully to '{filename}.tex'")
+
+    def _generate_summary_report_html(
+        self, template_name: str = "report_template.md"
+    ) -> str:
+        """
+        Generates a model evaluation report in Markdown format using a Jinja2 template.
+
+        Args:
+            template_name (str): The name of the template file located in the 'templates' directory.
+
+        Returns:
+            str: A string containing the complete report in Markdown format.
+        """
+        print(f"Generating Markdown report from template: '{template_name}'...")
+
+        # Set up Jinja2 environment
+        # This assumes your templates are in a 'templates' subdirectory.
+        # This pathing is robust and should work in most project structures.
+        try:
+            # Assumes the script is run as part of a module
+            template_dir = Path(MD_TEMPLATES_DIR)
+            if not template_dir.exists():
+                template_dir = Path.cwd() / "templates"
+
+            env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(template_dir),
+                autoescape=jinja2.select_autoescape(
+                    ["html", "xml"]
+                ),  # Good practice for security
+            )
+            template = env.get_template(template_name)
+        except jinja2.TemplateNotFound:
+            raise FileNotFoundError(
+                f"Template '{template_name}' not found. "
+                f"Ensure a 'templates' directory exists at '{template_dir}' "
+                "and contains the template file."
             )
 
-            print(f"Report saved successfully to '{filename}.pdf'")
+        plot_data = self.get_visualization()
+
+        context = {
+            "title": self.title,
+            "author": self.author,
+            "generation_date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "calculated_metrics": self.calculated_metrics,
+            "model_type": type(self.model).__name__,
+            "model_config": self.model.config.__dict__,
+            "train_samples": len(self.X_train),
+            "test_samples": len(self.X_test),
+            "plot_data": plot_data,
+        }
+
+        # --- 4. Render the template with the data ---
+        markdown_output = template.render(context)
+        print("Markdown report generated successfully.")
+
+        if self.save_report_after_generate:
+            self._save_report_html(
+                report_content=markdown_output, filename=f"report-{self.title}.html"
+            )
+
+        return markdown_output
+
+    def _save_report_html(self, report_content: str, filename: str) -> None:
+        """
+        Saves the HTML report content to a file.
+
+        Args:
+            report_content (str): The HTML string to be saved.
+            filename (str): The name of the file to save (e.g., 'report.md').
+        """
+        report_path = self.reports_dir / "html"
+        report_path.mkdir(parents=True, exist_ok=True)
+
+        file_path = report_path / filename
+        print(f"Saving markdown report to '{file_path}'...")
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(report_content)
+            print(f"Markdown report saved successfully to '{file_path}'")
+        except IOError as e:
+            print(f"Error saving markdown file: {e}")
 
     def export_results_to_csv(
         self, results: Dict[str, Any], filename: str
@@ -270,24 +331,79 @@ class ReportGeneration:
         """Exports results to CSV file."""
         print(f"Exporting results to '{filename}'...")
 
-        required_keys = ["X_test", "y_test", "prediction", "model_name", "metrics"]
+        self.reports_dir.mkdir(parents=True, exist_ok=True)
+
+        required_keys = [
+            "X_test",
+            "true_values",
+            "predictions",
+            "model_name",
+            "metrics",
+        ]
         if not all(key in results for key in required_keys):
             raise ValueError(
                 f"The 'results' dictionary must contain all keys: {required_keys}"
             )
 
-        df_export = pd.DataFrame(
-            {
-                "X_test": results["X_test"],
-                "y_test": results["y_test"],
-                "prediction": results["prediction"],
-            }
-        )
+        # Handle X_test which can be a 2D array (matrix)
+        if isinstance(results["X_test"], pd.DataFrame):
+            df_features = results["X_test"].copy()
+        else:
+            # Assuming it's a NumPy array
+            X_test_arr = results["X_test"]
+            if X_test_arr.ndim == 1:
+                X_test_arr = X_test_arr.reshape(-1, 1)
+
+            num_features = X_test_arr.shape[1]
+            df_features = pd.DataFrame(
+                X_test_arr,
+                columns=[f"feature_{i + 1}" for i in range(num_features)],
+            )
+
+        df_export = df_features.copy()
+        df_export["true_values"] = results["true_values"]
+        df_export["predictions"] = results["predictions"]
         df_export["model_name"] = results["model_name"]
 
         for metric_name, metric_value in results["metrics"].items():
             df_export[metric_name] = metric_value
 
-        df_export.to_csv(filename, index=True)
-        print(f"Successfully exported results to '{filename}'.")
+        df_export.to_csv(self.reports_dir / filename, index=True)
+        print(f"Successfully exported results to '{self.reports_dir / filename}'.")
         return df_export
+
+    def generate_summary_report(
+        self, format, template_name: str = "report_template.md"
+    ) -> Union[Document, str]:
+        """
+        Generates a model evaluation report in either LaTeX (PDF) or HTML format.
+
+        Args:
+            format (str): The format of the report to generate, either 'latex' or 'html'
+            template_name (str): The name of the template file for HTML reports.
+        Returns:
+            Union[Document, str]: A PyLaTeX Document for LaTeX reports or a string for HTML reports.
+        """
+        if self.save_report_after_generate:
+            print(f"Reports will be saved to directory: '{self.reports_dir}'")
+
+        if format == "latex":
+            return self._generate_summary_report_latex()
+        elif format == "html":
+            return self._generate_summary_report_html(template_name=template_name)
+        else:
+            raise ValueError("Format must be either 'latex' or 'html'.")
+
+    def save_report(
+        self, doc: Union[Document, str], filename: str, format: str
+    ) -> None:
+        """Saves the report in both LaTeX (PDF) and HTML formats."""
+        if format == "latex":
+            self._save_report_latex(doc, filename)
+            print("LaTeX report saved successfully")
+        elif format == "html":
+            self._save_report_html(doc, f"{filename}.html")
+            # Convert Markdown to HTML and then to PDF using WeasyPrint
+            print("HTML report saved successfully")
+        else:
+            raise ValueError("Format must be either 'latex' or 'html'.")
