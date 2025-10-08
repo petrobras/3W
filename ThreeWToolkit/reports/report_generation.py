@@ -104,7 +104,9 @@ class ReportGeneration:
                 doc.append(NoEscape(r"\begin{tabular}{l r}\toprule"))
                 doc.append(NoEscape(r"\textbf{Metric} & \textbf{Value} \\ \midrule"))
                 for name, value in self.calculated_metrics.items():
-                    doc.append(NoEscape(f"{name.replace('_', ' ').title()} & {value:.2f} \\\\"))
+                    doc.append(
+                        NoEscape(f"{name.replace('_', ' ').title()} & {value:.2f} \\\\")
+                    )
                 doc.append(NoEscape(r"\bottomrule \end{tabular}"))
             doc.append(NoEscape(r"\end{frame}"))
 
@@ -166,12 +168,16 @@ class ReportGeneration:
                 alt = details["alt"]
 
                 img_path = Path(img_path)
-                img_path = img_path.relative_to(self.reports_dir) # ensure relative path for LaTeX
+                img_path = img_path.relative_to(
+                    self.reports_dir
+                )  # ensure relative path for LaTeX
 
                 doc.append(NoEscape(r"\begin{frame}{" + title + "}"))
                 doc.append(NoEscape(r"\begin{figure}\centering"))
                 doc.append(
-                    NoEscape(f"\\includegraphics[width={width}\\textwidth]{{{str(img_path)}}}")
+                    NoEscape(
+                        f"\\includegraphics[width={width}\\textwidth]{{{str(img_path)}}}"
+                    )
                 )
                 doc.append(NoEscape(f"\\caption{{{alt}}}"))
                 doc.append(NoEscape(r"\end{figure}"))
@@ -239,7 +245,7 @@ class ReportGeneration:
 
     def _save_report_latex(self, doc: Document, filename: str) -> None:
         """Compiles and saves a PyLaTeX Document to a PDF file using lualatex."""
-    
+
         report_path = self.reports_dir
         print(f"Saving report to '{report_path}' folder'...")
 
@@ -402,7 +408,7 @@ class ReportGeneration:
         else:
             raise ValueError("Format must be either 'latex' or 'html'.")
 
-    def save_report(self, doc: Document | str, filename: str, format: str    ) -> None:
+    def save_report(self, doc: Document | str, filename: str, format: str) -> None:
         """Saves the report in both LaTeX (PDF) and HTML formats.
 
         Args:

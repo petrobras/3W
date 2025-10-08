@@ -1,88 +1,139 @@
-import os
-import pytest
-
-from ThreeWToolkit.utils.latex_manager import latex_environment
+from ThreeWToolkit.utils.latex_manager import copy_latex_support_files
+from pathlib import Path
 
 
-def test_set_and_restore_texinputs_when_none_exists(monkeypatch, tmp_path):
+def test_copy_all_files_successfully(tmp_path: Path):
     """
-    Tests that TEXINPUTS is set correctly when it doesn't exist initially
-    and is completely removed after the context exits.
+    Tests that .sty files and the assets directory are copied correctly
+    to an empty destination.
     """
-    # Ensure the environment variable is not set before the test
-    monkeypatch.delenv("TEXINPUTS", raising=False)
+    # 1. Setup: Create source and destination directories
+    latex_dir = tmp_path / "latex_src"
+    latex_dir.mkdir()
+    report_path = tmp_path / "report_dest"
+    report_path.mkdir()
 
-    search_path = tmp_path / "custom_lib"
-    search_path.mkdir()
+    # Create dummy source files
+    (latex_dir / "style1.sty").touch()
+    (latex_dir / "style2.sty").touch()
+    (latex_dir / "other_file.txt").touch()  # This should be ignored
 
-    assert "TEXINPUTS" not in os.environ
+    # Create source assets directory
+    assets_src = latex_dir / "assets"
+    assets_src.mkdir()
+    (assets_src / "logo.png").touch()
 
-    with latex_environment(search_path):
-        # Inside the context, check if the variable is set correctly
-        expected_path = f"{str(search_path)}{os.sep}{os.sep}{os.pathsep}"
-        assert os.environ.get("TEXINPUTS") == expected_path
+    # 2. Act: Call the function
+    copy_latex_support_files(latex_dir, report_path)
 
-    # After the context, ensure the variable has been removed
-    assert "TEXINPUTS" not in os.environ
+    # 3. Assert: Check if files and directories were copied correctly
+    assert (report_path / "style1.sty").exists()
+    assert (report_path / "style2.sty").exists()
+    assert not (
+        report_path / "other_file.txt"
+    ).exists()  # Ensure non-.sty files aren't copied
+
+    assets_dest = report_path / "assets"
+    assert assets_dest.is_dir()
+    assert (assets_dest / "logo.png").exists()
 
 
-def test_set_and_restore_texinputs_when_it_exists(monkeypatch, tmp_path):
+def test_copy_with_existing_assets_directory(tmp_path: Path):
     """
-    Tests that the new path is prepended to an existing TEXINPUTS variable
-    and that the original value is restored after the context exits.
+    Tests that an existing 'assets' directory in the destination is
+    correctly replaced.
     """
-    original_path = f"/usr/local/texlive/texmf-local{os.pathsep}"
-    monkeypatch.setenv("TEXINPUTS", original_path)
+    # 1. Setup
+    latex_dir = tmp_path / "latex_src"
+    latex_dir.mkdir()
+    report_path = tmp_path / "report_dest"
+    report_path.mkdir()
 
-    search_path = tmp_path / "project_pkg"
-    search_path.mkdir()
+    # Create source assets with a new file
+    assets_src = latex_dir / "assets"
+    assets_src.mkdir()
+    (assets_src / "new_logo.svg").touch()
 
-    assert os.environ.get("TEXINPUTS") == original_path
+    # Create a pre-existing assets directory in the destination with an old file
+    assets_dest = report_path / "assets"
+    assets_dest.mkdir()
+    (assets_dest / "old_logo.png").touch()
 
-    with latex_environment(search_path):
-        # Inside the context, check if the new path was prepended
-        new_part = f"{str(search_path)}{os.sep}{os.sep}{os.pathsep}"
-        expected_path = f"{new_part}{original_path}"
-        assert os.environ.get("TEXINPUTS") == expected_path
+    # 2. Act
+    copy_latex_support_files(latex_dir, report_path)
 
-    # After the context, ensure the original value is restored
-    assert os.environ.get("TEXINPUTS") == original_path
+    # 3. Assert
+    # The new assets directory should exist
+    assert (report_path / "assets").is_dir()
+    # The new file should be there
+    assert (report_path / "assets" / "new_logo.svg").exists()
+    # The old file should be gone
+    assert not (report_path / "assets" / "old_logo.png").exists()
 
 
-def test_recursive_search_path_format(monkeypatch, tmp_path):
+def test_no_sty_files_to_copy(tmp_path: Path):
     """
-    Verifies the special kpathsea path format is correctly constructed.
-    It should end with a double separator and a path separator.
+    Tests that the function runs without error when no .sty files are present.
     """
-    monkeypatch.delenv("TEXINPUTS", raising=False)
-    search_path = tmp_path / "another_dir"
-    search_path.mkdir()
+    # 1. Setup
+    latex_dir = tmp_path / "latex_src"
+    latex_dir.mkdir()
+    report_path = tmp_path / "report_dest"
+    report_path.mkdir()
 
-    with latex_environment(search_path):
-        texinputs = os.environ.get("TEXINPUTS")
-        # Check for the recursive search marker '//' or '\\'
-        assert texinputs.startswith(f"{str(search_path)}{os.sep}{os.sep}")
-        # Check for the trailing path separator to include default paths
-        assert texinputs.endswith(os.pathsep)
+    # Create only an assets directory
+    assets_src = latex_dir / "assets"
+    assets_src.mkdir()
+    (assets_src / "image.jpg").touch()
+
+    # 2. Act
+    copy_latex_support_files(latex_dir, report_path)
+
+    # 3. Assert
+    assert (report_path / "assets" / "image.jpg").exists()
+    # Check that no stray .sty files were created
+    assert not list(report_path.glob("*.sty"))
 
 
-def test_context_manager_handles_exceptions(monkeypatch, tmp_path):
+def test_no_assets_directory_to_copy(tmp_path: Path):
     """
-    Ensures that the environment variable is restored to its original state
-    even if an exception is raised within the 'with' block.
+    Tests that the function runs without error when no 'assets' directory is present.
     """
-    original_path = "some/initial/path:"
-    monkeypatch.setenv("TEXINPUTS", original_path)
+    # 1. Setup
+    latex_dir = tmp_path / "latex_src"
+    latex_dir.mkdir()
+    report_path = tmp_path / "report_dest"
+    report_path.mkdir()
 
-    search_path = tmp_path / "raises_error"
+    (latex_dir / "awesome.sty").touch()
 
-    with pytest.raises(ValueError, match="Test exception"):
-        with latex_environment(search_path):
-            # The environment should be updated here
-            assert os.environ.get("TEXINPUTS") != original_path
-            # Raise an exception to test the 'finally' block
-            raise ValueError("Test exception")
+    # 2. Act
+    copy_latex_support_files(latex_dir, report_path)
 
-    # After the exception is caught, the 'finally' block should have run.
-    # Check that the environment variable is restored.
-    assert os.environ.get("TEXINPUTS") == original_path
+    # 3. Assert
+    assert (report_path / "awesome.sty").exists()
+    assert not (report_path / "assets").exists()
+
+
+# -----------------------------------------------------------------------------
+# Test for exception handling
+# -----------------------------------------------------------------------------
+def test_source_directory_does_not_exist(tmp_path: Path, capsys):
+    """
+    Tests that the function handles a non-existent source directory gracefully
+    by catching the exception and printing a warning.
+    """
+    # 1. Setup
+    non_existent_dir = tmp_path / "non_existent"
+    report_path = tmp_path / "report_dest"
+    report_path.mkdir()
+
+    # 2. Act
+    copy_latex_support_files(non_existent_dir, report_path)
+
+    # 3. Assert
+    captured = capsys.readouterr()
+    # Check that the warning message was printed to stdout
+    assert "Warning: Could not copy LaTeX support files" in captured.out
+    # Check that the destination directory remains empty
+    assert not list(report_path.iterdir())
