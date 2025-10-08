@@ -117,11 +117,11 @@ def test_generate_summary_report_html(
     # Create a dummy template file
     template_dir = tmp_path / "templates"
     template_dir.mkdir()
-    template_file = template_dir / "report_template.md"
+    template_file = template_dir / "report_template.html"
 
     # Point the constant to our temporary directory for the test
     with patch(
-        "ThreeWToolkit.reports.report_generation.MD_TEMPLATES_DIR", template_dir
+        "ThreeWToolkit.reports.report_generation.HTML_TEMPLATES_DIR", template_dir
     ):
         # Mock get_visualization to return predictable data
         mock_get_viz.return_value = {
@@ -145,7 +145,7 @@ def test_generate_summary_report_html(
         )
 
         markdown_output = report_generator_instance._generate_summary_report_html(
-            template_name="report_template.md"
+            template_name="report_template.html"
         )
 
     # This assertion will now pass

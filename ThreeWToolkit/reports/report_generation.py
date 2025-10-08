@@ -11,8 +11,8 @@ from pylatex.package import Package
 
 from ThreeWToolkit.data_visualization import DataVisualization
 
-from ..constants import LATEX_DIR, REPORTS_DIR, MD_TEMPLATES_DIR
-from ..utils.latex_manager import latex_environment
+from ..constants import LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR
+from ..utils.latex_manager import copy_latex_support_files
 
 
 class ReportGeneration:
@@ -104,7 +104,7 @@ class ReportGeneration:
                 doc.append(NoEscape(r"\begin{tabular}{l r}\toprule"))
                 doc.append(NoEscape(r"\textbf{Metric} & \textbf{Value} \\ \midrule"))
                 for name, value in self.calculated_metrics.items():
-                    doc.append(NoEscape(f"{name} & {value} \\\\"))
+                    doc.append(NoEscape(f"{name.replace('_', ' ').title()} & {value:.2f} \\\\"))
                 doc.append(NoEscape(r"\bottomrule \end{tabular}"))
             doc.append(NoEscape(r"\end{frame}"))
 
@@ -155,14 +155,23 @@ class ReportGeneration:
         # Slides 3+: Visualizations
         with doc.create(Section("Visualizations")):
             plot_data = self.get_visualization()
-            for _, details in plot_data.items():
+            for plot, details in plot_data.items():
+                if plot == "PlotCorrelationHeatmap":
+                    width = 0.45
+                else:
+                    width = 0.7
+
                 img_path = details["img_path"]
                 title = details["title"]
                 alt = details["alt"]
+
+                img_path = Path(img_path)
+                img_path = img_path.relative_to(self.reports_dir) # ensure relative path for LaTeX
+
                 doc.append(NoEscape(r"\begin{frame}{" + title + "}"))
                 doc.append(NoEscape(r"\begin{figure}\centering"))
                 doc.append(
-                    NoEscape(f"\\includegraphics[width=0.9\\textwidth]{{{img_path}}}")
+                    NoEscape(f"\\includegraphics[width={width}\\textwidth]{{{str(img_path)}}}")
                 )
                 doc.append(NoEscape(f"\\caption{{{alt}}}"))
                 doc.append(NoEscape(r"\end{figure}"))
@@ -230,19 +239,20 @@ class ReportGeneration:
 
     def _save_report_latex(self, doc: Document, filename: str) -> None:
         """Compiles and saves a PyLaTeX Document to a PDF file using lualatex."""
-        with latex_environment(self.latex_dir):
-            report_folder = f"report-{filename}"
-            report_path = self.reports_dir / report_folder
-            print(f"Saving report to '{report_path}' folder'...")
+    
+        report_path = self.reports_dir
+        print(f"Saving report to '{report_path}' folder'...")
 
-            report_path.mkdir(parents=True, exist_ok=True)
+        report_path.mkdir(parents=True, exist_ok=True)
 
-            doc.generate_tex(filepath=str(report_path / filename))
+        doc.generate_tex(filepath=str(report_path / filename))
 
-            print(f"Report saved successfully to '{filename}.tex'")
+        print(f"Report saved successfully to '{filename}.tex'")
+
+        copy_latex_support_files(self.latex_dir, report_path)
 
     def _generate_summary_report_html(
-        self, template_name: str = "report_template.md"
+        self, template_name: str = "report_template.html"
     ) -> str:
         """
         Generates a model evaluation report in Markdown format using a Jinja2 template.
@@ -260,7 +270,7 @@ class ReportGeneration:
         # This pathing is robust and should work in most project structures.
         try:
             # Assumes the script is run as part of a module
-            template_dir = Path(MD_TEMPLATES_DIR)
+            template_dir = Path(HTML_TEMPLATES_DIR)
             if not template_dir.exists():
                 template_dir = Path.cwd() / "templates"
 
@@ -371,7 +381,7 @@ class ReportGeneration:
         return df_export
 
     def generate_summary_report(
-        self, format, template_name: str = "report_template.md"
+        self, format, template_name: str = "report_template.html"
     ) -> Union[Document, str]:
         """
         Generates a model evaluation report in either LaTeX (PDF) or HTML format.
@@ -393,13 +403,13 @@ class ReportGeneration:
             raise ValueError("Format must be either 'latex' or 'html'.")
 
     def save_report(self, doc: Document | str, filename: str, format: str    ) -> None:
-    """Saves the report in both LaTeX (PDF) and HTML formats.
+        """Saves the report in both LaTeX (PDF) and HTML formats.
 
-    Args:
-        doc (Document | str): The report content to save. Can be a `Document` object or a raw string containing the report text.
-        filename (str): The base name (without extension) of the output file.
-        format (str): The output format to use, such as "pdf" or "html".
-    """
+        Args:
+            doc (Document | str): The report content to save. Can be a `Document` object or a raw string containing the report text.
+            filename (str): The base name (without extension) of the output file.
+            format (str): The output format to use, such as "pdf" or "html".
+        """
         if format == "latex":
             self._save_report_latex(doc, filename)
             print("LaTeX report saved successfully")

@@ -11,7 +11,7 @@ REPORTS_DIR = OUTPUT_DIR / "reports"  # Directory for generated PDFs
 # Define the path to the mock visualization objects plot folder
 PLOTS_DIR = OUTPUT_DIR / "3w_plots"
 
-# Define the path to the LaTeX and Markdown template documents directory
+# Define the path to the LaTeX and HTML template documents directory
 LATEX_DIR = PROJECT_ROOT / "docs" / "latex"
-MD_TEMPLATES_DIR = PROJECT_ROOT / "docs" / "markdown"
-CSS_PATH = PROJECT_ROOT / "docs" / "markdown" / "petro.css"
+HTML_TEMPLATES_DIR = PROJECT_ROOT / "docs" / "html"
+CSS_PATH = PROJECT_ROOT / "docs" / "html" / "petro.css"

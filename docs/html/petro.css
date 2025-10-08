@@ -10,7 +10,6 @@
 
 body {
   font-family: "DejaVu Sans", "Liberation Sans", "Arial", sans-serif;
-  /* font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; */
   color: #262626;
   background-color: #fafafa;
   line-height: 1.6;
@@ -68,11 +67,12 @@ code {
 
 /* The header "tag" on the left */
 .info-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 1rem;
   font-weight: bold;
   text-align: center;
-  writing-mode: vertical-lr; /* Rotates the text vertically */
-transform: rotate(180deg); /* Corrects the text orientation */
   text-transform: uppercase;
   font-size: 0.8em;
   letter-spacing: 1px;
@@ -94,43 +94,43 @@ transform: rotate(180deg); /* Corrects the text orientation */
 
 /* --- Color Variations --- */
 
-/* Style for the "PRINCÍPIO" box */
-.info-box.principio .info-box-header {
+/* Style for the beginning box */
+.info-box.beginning .info-box-header {
   background-color: var(--petro-green);
   color: white;
 }
 
-.info-box.principio ol {
+.info-box.beginning ol {
   list-style: none;
   padding-left: 0;
   margin: 0;
 }
 
 /* Style each list item */
-.info-box.principio ol li {
+.info-box.beginning ol li {
   margin-bottom: 0.5rem;
 }
 
 /* Style the links within the TOC */
-.info-box.principio ol li a {
+.info-box.beginning ol li a {
   text-decoration: none;
   font-weight: normal;
   transition: color 0.2s;
 }
 
-/* Style for the "PRÁTICA RECOMENDADA" and "ADOTADA" boxes */
-.info-box.pratica .info-box-header {
+/* Style for the feature boxes */
+.info-box.feat .info-box-header {
   background-color: #e9ecef;
   color: var(--text-color);
 }
 
-/* Style for the "EXPLICAÇÃO" box */
-.info-box.explicacao {
+/* Style for the details box */
+.info-box.details {
     flex-direction: column; /* Stacks header on top of content */
     border: none;
     background-color: transparent;
 }
-.info-box.explicacao .info-box-header {
+.info-box.details .info-box-header {
     writing-mode: horizontal-tb; /* Resets text to horizontal */
     transform: none; /* Resets rotation */
     background-color: var(--petro-green);
@@ -140,8 +140,30 @@ transform: rotate(180deg); /* Corrects the text orientation */
     font-size: 1.5em;
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
+    cursor: pointer; /* Changes the mouse to a pointer on hover */
+    list-style: none; /* Removes the default arrow in some browsers */
+    justify-content: flex-start;
 }
-.info-box.explicacao .info-box-content {
+
+/* Hides the default marker/arrow in Webkit browsers (Chrome, Safari) */
+.info-box.details .info-box-header::-webkit-details-marker {
+    display: none;
+}
+
+/* Create the arrow using a pseudo-element */
+.info-box.details .info-box-header::before {
+    content: '▶'; /* Right-pointing triangle for the "closed" state */
+    margin-right: 1rem; /* Space between arrow and text */
+    font-size: 0.8em;
+    transition: transform 0.2s ease-in-out; /* Smooth rotation animation */
+}
+
+/* Rotate the arrow when the <details> element is open */
+.info-box.details[open] > .info-box-header::before {
+    transform: rotate(90deg); /* Points the arrow down for the "open" state */
+}
+
+.info-box.details .info-box-content {
     border: 1px solid #e9ecef;
     border-top: none; /* Remove top border to merge with header */
     border-bottom-left-radius: 4px;
@@ -150,53 +172,53 @@ transform: rotate(180deg); /* Corrects the text orientation */
     justify-content: center;
 }
 
-/* Alvo principal: a tabela dentro do conteúdo do info-box */
+/* Main target: the table inside info-box */
 .info-box-content table {
   width: 100%;
-  border: none; /* Remove a borda externa da tabela */
+  border: none; /* Removes external table border */
   border-spacing: 0;
-  margin-top: 0.5rem; /* Adiciona um pequeno espaço no topo */
+  margin-top: 0.5rem; /* Adds a small space at the top */
 }
 
-/* Remove o fundo de linhas alternadas para um visual mais limpo */
+/* Remove alternating row background for a cleaner look */
 .info-box-content tr:nth-of-type(even) {
   background-color: transparent;
 }
 
-/* Mantém o cabeçalho com o estilo da marca */
+/* Keeps the header with brand styling */
 .info-box-content thead th {
   background-color: var(--header-color);
   color: white;
 }
 
-/* Células do cabeçalho e do corpo da tabela */
+/* Header and body cells of the table */
 .info-box-content th,
 .info-box-content td {
   text-align: left;
   padding: 0.75rem;
-  /* Remove as bordas verticais e mantém apenas as horizontais */
+  /* Remove vertical borders and keep only horizontal ones */
   border-left: none;
   border-right: none;
   border-top: none;
   border-bottom: 1px solid var(--border-color);
 }
 
-/* Remove a borda inferior da última linha para um acabamento limpo */
+/* Remove bottom border of last row for a clean finish */
 .info-box-content tr:last-child td {
   border-bottom: none;
 }
 
 
-/* Estilo para a Grade de Visualizações == */
+/* Style for the Visualization Grid == */
 
-/* O contêiner da grade */
+/* The grid container */
 .visualization-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Cria uma grade responsiva */
-  gap: 1.5rem; /* Espaçamento entre os cards */
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Creates a responsive grid */
+  gap: 1.5rem; /* Space between cards */
 }
 
-/* O card individual para cada gráfico */
+/* The individual card for each plot */
 .viz-card {
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -204,10 +226,10 @@ transform: rotate(180deg); /* Corrects the text orientation */
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Garante que a imagem não ultrapasse as bordas arredondadas */
+  overflow: hidden; /* Ensures the image doesn't exceed the rounded borders */
 }
 
-/* O cabeçalho do card */
+/* The card header */
 .viz-card .card-header {
   padding: 0.75rem 1rem;
   background-color: #f8f9fa;
@@ -220,7 +242,7 @@ transform: rotate(180deg); /* Corrects the text orientation */
   color: var(--text-color);
 }
 
-/* O corpo do card, onde a imagem fica */
+/* The card body, where the image resides */
 .viz-card .card-body {
   padding: 1rem;
   flex-grow: 1;
@@ -234,59 +256,59 @@ transform: rotate(180deg); /* Corrects the text orientation */
 
 
 
-/* == NOVO: Estilo para o Cabeçalho do Relatório == */
+/* Style for the Report Header == */
 
-/* O contêiner principal do cabeçalho */
+/* The main container for the header */
 .report-header {
-  position: relative; /* Necessário para posicionar o conteúdo na frente */
+  position: relative; /* Necessary to position the content in front */
   padding: 5rem 3rem;
-  color: white; /* Cor do texto que ficará sobre a imagem */
+  color: white; /* Text color that will be on top of the image */
   text-align: center;
-  
-  /* --- A imagem de fundo é definida aqui --- */
+
+  /* The background image is defined here */
   background-image: url('/home/pedro/Workspace/UFRJ/3W/3WToolkit/docs/figures/bg-petro.png');
-  background-size: cover; /* Faz a imagem cobrir todo o espaço */
-  background-position: center center; /* Centraliza a imagem */
+  background-size: cover; /* Makes the image cover the entire space */
+  background-position: center center; /* Centers the image */
   margin-left: -52px;
   margin-right: -52px;
   margin-top: -34px;
 }
 
-/* Camada escura semi-transparente sobre a imagem de fundo */
-/* Isso garante que o texto branco seja legível */
+/* Dark and semi-transparent overlay on the background image */
+/* This ensures the white text is readable */
 .report-header .header-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.35); /* Preto com 60% de opacidade */
+  background-color: rgba(0, 0, 0, 0.35); /* Black with 60% opacity */
   z-index: 1;
 }
 
-/* O conteúdo do cabeçalho (logo, título, etc.) */
+/* The content of the header (logo, title, etc.) */
 .report-header .header-content {
-  position: relative; /* Posiciona o conteúdo na frente da camada escura */
+  position: relative; /* Positions the content in front of the dark layer */
   z-index: 2;
   max-width: 800px;
   margin: 0 auto;
 }
 
-/* Estilo para a logo */
+/* Style for the logo */
 .report-header .header-logo {
-  max-height: 80px; /* Defina a altura máxima da sua logo */
+  max-height: 80px; /* Set the maximum height of your logo */
   margin-bottom: 1.5rem;
 }
 
-/* Estilo para o título principal */
+/* Style for the main title */
 .report-header h1 {
   color: white;
   margin: 0;
   font-size: 3rem;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra no texto para legibilidade */
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Shadow on text for readability */
 }
 
-/* Estilo para a linha de autor e data */
+/* Style for the author and date line */
 .report-header .author-info {
   margin-top: 1rem;
   font-size: 0.9rem;

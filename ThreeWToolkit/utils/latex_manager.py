@@ -2,59 +2,36 @@ import os
 from pathlib import Path
 import contextlib
 import subprocess
+import shutil
 
 
-@contextlib.contextmanager
-def latex_environment(search_path: Path):
+def copy_latex_support_files(latex_dir: Path, report_path: Path):
     """
-    A context manager to temporarily set the TEXINPUTS environment variable.
-
-    This allows the LaTeX compiler to find custom class files, packages, or
-    images located in the specified search_path. The environment is
-    safely restored upon exiting the context.
+    Copies necessary .sty files and asset files for compilation from a source
+    directory to a report directory.
 
     Args:
-        search_path: The Path object for the directory to add to TEXINPUTS.
+        latex_dir: The source directory containing .sty files and an 'assets' subdirectory.
+        report_path: The destination directory for the report.
     """
-    original_texinputs = os.environ.get("TEXINPUTS")
-
-    # CRITICAL: Do not change this path construction to use pathlib.
-    # The kpathsea library (used by TeX) has two non-standard syntax requirements
-    # that are being handled here:
-    #
-    # 1. Recursive Search: A trailing double separator ('//' on POSIX, '\\' on Windows)
-    #    instructs kpathsea to search the given path and all its subdirectories.
-    #    `pathlib` would normalize this special marker away.
-    #
-    # 2. Default Path Inclusion: The trailing `os.pathsep` (':' or ';') is essential.
-    #    It acts as a placeholder that tells kpathsea to append the default system-wide
-    #    TeX paths after our custom ones. Omitting it would cause the build to fail
-    #    as it couldn't find standard packages like 'beamer.cls'.
-    tex_path = f"{str(search_path)}{os.sep}{os.sep}"
-    new_texinputs = f"{tex_path}{os.pathsep}"
-    if original_texinputs:
-        new_texinputs = f"{new_texinputs}{original_texinputs}"
-
     try:
-        # Set the environment variable
-        os.environ["TEXINPUTS"] = new_texinputs
-        print(f"Temporarily setting TEXINPUTS to: {os.environ['TEXINPUTS']}")
-        yield
-    except subprocess.CalledProcessError as e:
-        # Handle LaTeX compilation errors
-        # sometimes LaTeX returns non-zero exit codes for warnings
-        print(f"LaTeX compilation returned non-zero exit status: {e}")
+        # Copy necessary .sty and asset files for compilation
+        sty_files = list(latex_dir.glob("*.sty"))
+        assets_dir_src = latex_dir / "assets"
+
+        for sty_file in sty_files:
+            shutil.copy(sty_file, report_path)
+
+        if assets_dir_src.is_dir():
+            assets_dir_dest = report_path / "assets"
+            if assets_dir_dest.exists():
+                shutil.rmtree(assets_dir_dest)
+            shutil.copytree(assets_dir_src, assets_dir_dest)
+
         print(
-            "Sometimes this is due to warnings, please check the generated .log file for details."
+            "Copied .sty files and assets to the report directory to facilitate user compilation."
         )
-        print("Check if the pdf was generated correctly despite the error.")
-    finally:
-        # This block executes after the 'with' block, even if errors occurred
-        if original_texinputs is not None:
-            # Restore the original value if it existed
-            os.environ["TEXINPUTS"] = original_texinputs
-        else:
-            # If it didn't exist before, remove it completely
-            if "TEXINPUTS" in os.environ:
-                del os.environ["TEXINPUTS"]
-        print("Restored original TEXINPUTS environment.")
+
+    except Exception as e:
+        print(f"Warning: Could not copy LaTeX support files: {e}")
+
