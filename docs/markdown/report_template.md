@@ -24,15 +24,6 @@
     </div>
   </div>
 
-<!-- <div class="toc">
-  <h2>Table of Contents</h2>
-  <ol>
-    <li><a href="#performance-evaluation">Performance Evaluation</a></li>
-    <li><a href="#model-overview">Model Overview</a></li>
-    <li><a href="#visualizations">Visualizations</a></li>
-  </ol>
-</div> -->
-
 <details open class="info-box explicacao">
 <summary class="info-box-header">
   Performance Evaluation
