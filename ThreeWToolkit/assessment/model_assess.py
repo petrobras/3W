@@ -563,9 +563,6 @@ class ModelAssessment(BaseStep):
             or f"Model Assessment Report - {self.results['model_name']}"
         )
 
-        # Map metrics to legacy format
-        # report_metrics = self._map_metrics_for_report()
-
         plot_config = {
             "PlotSeries": {
                 "series": y_test_series,
