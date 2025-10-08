@@ -2,9 +2,10 @@ import torch
 import numpy as np
 import pandas as pd
 
-from typing import Any, Optional, Union
+from typing import Any, Callable, Union
 from torch.utils.data import DataLoader, TensorDataset
 
+from ..core.base_step import BaseStep
 from ..core.base_assessment import ModelAssessmentConfig
 from ..core.enums import TaskType
 from ..metrics import (
@@ -23,7 +24,7 @@ from ..models.sklearn_models import SklearnModels
 from pylatex import Document
 
 
-class ModelAssessment:
+class ModelAssessment(BaseStep):
     """Comprehensive model evaluation class for both PyTorch and scikit-learn models.
 
     This class provides a unified interface for evaluating machine learning models
@@ -84,8 +85,7 @@ class ModelAssessment:
         """
         self.config = config
         self.results: dict[str, Any] = {}
-        self.report_doc: Optional[Document] = None
-        self._setup_metrics()
+        self.report_doc: Document | None = None
 
         # Create output directory for results and reports
         self.config.output_dir.mkdir(parents=True, exist_ok=True)
@@ -101,6 +101,114 @@ class ModelAssessment:
                     "Warning: ReportGeneration class not available. Report generation disabled."
                 )
                 self.config.generate_report = False
+
+        self.metric_functions: dict[str, Callable] | None = None
+
+    def pre_process(self, data: Any) -> dict[str, Any]:
+        """Standardizes the input of the step.
+
+        Validates and standardizes the input data format for model assessment.
+
+        Args:
+            data: Input data that should contain trained model and test data.
+                  Can be a dict or any structure containing the required assessment data.
+
+        Returns:
+            dict[str, Any]: Standardized data dictionary with required keys.
+
+        Raises:
+            ValueError: If required assessment data is missing.
+        """
+        if isinstance(data, dict):
+            processed_data = data.copy()
+        else:
+            # If data is not a dict, assume it's a tuple/list with (model, x_test, y_test, ...)
+            if hasattr(data, "__iter__") and len(data) >= 3:
+                processed_data = {
+                    "model": data[0],
+                    "x_test": data[1],
+                    "y_test": data[2],
+                }
+                if len(data) >= 4:
+                    processed_data["kwargs"] = data[3]
+            else:
+                raise ValueError(
+                    "Input data must be a dict or iterable with at least (model, x_test, y_test)"
+                )
+
+        # Validate required keys
+        required_keys = ["model", "x_test", "y_test"]
+        missing_keys = [key for key in required_keys if key not in processed_data]
+        if missing_keys:
+            raise ValueError(f"Missing required keys in input data: {missing_keys}")
+
+        # Ensure optional keys exist with defaults
+        if "kwargs" not in processed_data:
+            processed_data["kwargs"] = {}
+
+        # Validate that model exists and is not None
+        if processed_data["model"] is None:
+            raise ValueError("Model cannot be None for assessment")
+
+        return processed_data
+
+    def run(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Main logic of the step.
+
+        Performs the actual model assessment using the provided data.
+
+        Args:
+            data (dict[str, Any]): Preprocessed data containing model and test data.
+
+        Returns:
+            dict[str, Any]: Data with assessment results added.
+        """
+        # Extract assessment parameters
+        model = data["model"]
+        x_test = data["x_test"]
+        y_test = data["y_test"]
+        kwargs = data.get("kwargs", {})
+
+        self._setup_metrics()
+        # Perform evaluation
+        assessment_results = self.evaluate(model, x_test, y_test, **kwargs)
+
+        # Add assessment results to data
+        data["assessment_results"] = assessment_results
+        data["metrics"] = assessment_results["metrics"]
+        data["predictions"] = assessment_results["predictions"]
+        data["assessor"] = self
+
+        return data
+
+    def post_process(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Standardizes the output of the step.
+
+        Performs any final processing and ensures output format consistency.
+
+        Args:
+            data (dict[str, Any]): Data with assessment results.
+
+        Returns:
+            dict[str, Any]: Final processed data ready for next pipeline step.
+        """
+        # Ensure all expected outputs are present
+        expected_outputs = ["assessment_results", "metrics", "predictions", "assessor"]
+        for key in expected_outputs:
+            if key not in data:
+                raise RuntimeError(
+                    f"Assessment step failed to produce expected output: {key}"
+                )
+
+        # Add metadata about the assessment step
+        data["assessment_completed"] = True
+        data["task_type"] = self.config.task_type
+        data["assessment_timestamp"] = pd.Timestamp.now().isoformat()
+
+        # Add summary for easy access
+        data["assessment_summary"] = self.summary()
+
+        return data
 
     def _setup_metrics(self):
         """Configure metric functions based on the task type.
@@ -130,11 +238,11 @@ class ModelAssessment:
                 "f1": lambda y_true, y_pred: f1_score(
                     y_true, y_pred, average="weighted", zero_division=0
                 ),
-                "average_precision": lambda y_true, y_pred: average_precision_score(
-                    y_true, y_pred, average="weighted"
-                )
-                if len(np.unique(y_true)) > 1
-                else 0.0,
+                "average_precision": lambda y_true, y_pred: (
+                    average_precision_score(y_true, y_pred, average="weighted")
+                    if len(np.unique(y_true)) > 1
+                    else 0.0
+                ),
             }
         else:  # TaskType.REGRESSION
             self.metric_functions = {
@@ -201,6 +309,8 @@ class ModelAssessment:
         predictions = self._get_predictions(model, X_test_array, **kwargs)
 
         # Calculate all requested metrics
+        if self.metric_functions is None:
+            self._setup_metrics()
         metrics_results = self._calculate_metrics(y_test_array, predictions)
 
         # Store comprehensive results
@@ -222,6 +332,8 @@ class ModelAssessment:
         # Export results to CSV files if enabled
         if self.config.export_results:
             self._export_results()
+
+        print(self.summary())
 
         return self.results
 
@@ -313,7 +425,7 @@ class ModelAssessment:
         metrics_results = {}
 
         for metric_name in self.config.metrics:
-            if metric_name in self.metric_functions:
+            if self.metric_functions and metric_name in self.metric_functions.keys():
                 try:
                     metric_value = self.metric_functions[metric_name](y_true, y_pred)
                     metrics_results[metric_name] = float(metric_value)

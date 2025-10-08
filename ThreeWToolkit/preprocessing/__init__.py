@@ -1,3 +1,13 @@
-from ._data_processing import impute_missing_data, normalize, windowing, rename_columns
+from ._data_processing import (
+    ImputeMissing,
+    Normalize,
+    RenameColumns,
+    Windowing,
+)
 
-__all__ = ["impute_missing_data", "normalize", "windowing", "rename_columns"]
+__all__ = [
+    "ImputeMissing",
+    "Normalize",
+    "RenameColumns",
+    "Windowing",
+]

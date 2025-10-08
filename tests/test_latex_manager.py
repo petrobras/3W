@@ -1,9 +1,8 @@
 import os
 import pytest
-from pathlib import Path
-import contextlib
 
 from ThreeWToolkit.utils.latex_manager import latex_environment
+
 
 def test_set_and_restore_texinputs_when_none_exists(monkeypatch, tmp_path):
     """
@@ -12,7 +11,7 @@ def test_set_and_restore_texinputs_when_none_exists(monkeypatch, tmp_path):
     """
     # Ensure the environment variable is not set before the test
     monkeypatch.delenv("TEXINPUTS", raising=False)
-    
+
     search_path = tmp_path / "custom_lib"
     search_path.mkdir()
 
@@ -37,7 +36,7 @@ def test_set_and_restore_texinputs_when_it_exists(monkeypatch, tmp_path):
 
     search_path = tmp_path / "project_pkg"
     search_path.mkdir()
-    
+
     assert os.environ.get("TEXINPUTS") == original_path
 
     with latex_environment(search_path):
@@ -58,7 +57,7 @@ def test_recursive_search_path_format(monkeypatch, tmp_path):
     monkeypatch.delenv("TEXINPUTS", raising=False)
     search_path = tmp_path / "another_dir"
     search_path.mkdir()
-    
+
     with latex_environment(search_path):
         texinputs = os.environ.get("TEXINPUTS")
         # Check for the recursive search marker '//' or '\\'
@@ -76,15 +75,14 @@ def test_context_manager_handles_exceptions(monkeypatch, tmp_path):
     monkeypatch.setenv("TEXINPUTS", original_path)
 
     search_path = tmp_path / "raises_error"
-    
+
     with pytest.raises(ValueError, match="Test exception"):
         with latex_environment(search_path):
             # The environment should be updated here
             assert os.environ.get("TEXINPUTS") != original_path
             # Raise an exception to test the 'finally' block
             raise ValueError("Test exception")
-            
+
     # After the exception is caught, the 'finally' block should have run.
     # Check that the environment variable is restored.
     assert os.environ.get("TEXINPUTS") == original_path
-

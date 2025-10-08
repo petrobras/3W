@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal
+from typing import Literal
 from pathlib import Path
 
 from .enums import EventPrefixEnum
@@ -16,29 +16,30 @@ class ParquetDatasetConfig(BaseModel):
         default=None,
         description="Dataset split to load. If None, load all available files.",
     )
-    file_list: Optional[list[str] | list[Path]] = Field(
+    file_list: (list[str] | list[Path]) | None = Field(
         default=None,
         description='List of files to load if split=="list". Must be explicitly provided.',
     )
-    event_type: Optional[list[EventPrefixEnum]] = Field(
+    event_type: list[EventPrefixEnum] | None = Field(
         default=None,
         description="Event types to include. (e.g., simulated, real, ...)",
     )
-    target_class: Optional[list[int]] = Field(
+    target_class: list[int] | None = Field(
         default=None,
-        description="Event classes to include. (e.g., 0, 1, 2, ...)",
+        description="Event classes to include. (e.g., 0, 1, 2, ...). Loads all classes if `None`.",
     )
-    columns: Optional[list[str]] = Field(
+    columns: list[str] | None = Field(
         default=None,
-        description="Specific data columns to load. Loads all columns if None.",
+        description="Specific data columns to load. Loads all columns if `None`.",
     )
-    target_column: Optional[str] = Field(
+    target_column: str | None = Field(
         default="class",
         description="Target column used for supervised tasks.",
     )
-    download: bool = Field(
+    force_download: bool = Field(
         default=False,
-        description="If True, attempt to download the dataset if not present locally.",
+        description="If True, dataset is downloaded even if it already exists. In this case, \
+            existing files will be overwritten.",
     )
     files_per_batch: int = Field(
         default=10,
@@ -55,6 +56,10 @@ class ParquetDatasetConfig(BaseModel):
     seed: int = Field(
         default=2025,
         description="Random seed for reproducibility in shuffling and splits.",
+    )
+    version: str = Field(
+        default="2.0.0",
+        description="Dataset version to load. (e.g., 2.0.0, 2.0.1, ...)",
     )
 
     @field_validator("file_list")

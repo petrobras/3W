@@ -8,7 +8,6 @@ from ThreeWToolkit.data_visualization import DataVisualization
 
 
 class TestPlotSeries:
-
     def setup_method(self):
         """
         Setup method to create a default time series.
@@ -23,13 +22,13 @@ class TestPlotSeries:
         Test if plot_series returns a matplotlib Figure with given Axes.
         """
         fig, ax = plt.subplots()
-        fig = DataVisualization.plot_series(
+        fig, _ = DataVisualization.plot_series(
             series=self.series,
             title="Test Plot",
             xlabel="Date",
             ylabel="Value",
             overlay_events=False,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)
@@ -40,12 +39,12 @@ class TestPlotSeries:
         """
         Test that plot_series works when no Axes is provided (ax=None).
         """
-        fig = DataVisualization.plot_series(
+        fig, _ = DataVisualization.plot_series(
             series=self.series,
             title="No Ax Provided",
             xlabel="Date",
             ylabel="Value",
-            overlay_events=False
+            overlay_events=False,
         )
 
         assert isinstance(fig, Figure)
@@ -59,13 +58,13 @@ class TestPlotSeries:
         series_with_nan.iloc[3] = np.nan
 
         fig, ax = plt.subplots()
-        fig = DataVisualization.plot_series(
+        fig, _ = DataVisualization.plot_series(
             series=series_with_nan,
             title="Series with NaN",
             xlabel="Date",
             ylabel="Value",
             overlay_events=True,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)
@@ -77,13 +76,13 @@ class TestPlotSeries:
         Test if plot renders correctly without overlay.
         """
         fig, ax = plt.subplots()
-        fig = DataVisualization.plot_series(
+        fig, _ = DataVisualization.plot_series(
             series=self.series,
             title="Without Overlay",
             xlabel="Date",
             ylabel="Value",
             overlay_events=False,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)
@@ -97,13 +96,13 @@ class TestPlotSeries:
         empty_series = pd.Series(dtype=float)
 
         fig, ax = plt.subplots()
-        fig = DataVisualization.plot_series(
+        fig, _ = DataVisualization.plot_series(
             series=empty_series,
             title="Empty Series",
             xlabel="Date",
             ylabel="Value",
             overlay_events=False,
-            ax=ax
+            ax=ax,
         )
 
         assert isinstance(fig, Figure)

@@ -9,11 +9,7 @@ from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
 from pylatex.package import Package
 
-from ThreeWToolkit.data_visualization.plot_series import DataVisualization as PlotSeries
-from ThreeWToolkit.data_visualization.plot_multiple_series import PlotMultipleSeries
-from ThreeWToolkit.data_visualization.plot_correlation_heatmap import (
-    PlotCorrelationHeatmap,
-)
+from ThreeWToolkit.data_visualization import DataVisualization
 
 from ..constants import LATEX_DIR, REPORTS_DIR, MD_TEMPLATES_DIR
 from ..utils.latex_manager import latex_environment
@@ -56,6 +52,15 @@ class ReportGeneration:
         report_folder = f"report-{self.title}"
         self.reports_dir = reports_dir / report_folder
         self.save_report_after_generate = export_report_after_generate
+
+        self.valid_plots = {
+            "PlotSeries": DataVisualization.plot_series,
+            "PlotMultipleSeries": DataVisualization.plot_multiple_series,
+            "PlotCorrelationHeatmap": DataVisualization.correlation_heatmap,
+            "PlotFFT": DataVisualization.plot_fft,
+            "SeasonalDecompose": DataVisualization.seasonal_decompose,
+            "PlotWaveletSpectrogram": DataVisualization.plot_wavelet_spectrogram,
+        }
 
     def _format_metric_name(self, method_name: str) -> str:
         if method_name == "f1":
@@ -178,15 +183,12 @@ class ReportGeneration:
         self._check_plot_config(self.plot_config)
 
         for plot, params in self.plot_config.items():
-            if plot == "PlotSeries":
-                fig = PlotSeries.plot_series(**params)
-            elif plot == "PlotMultipleSeries":
-                fig = PlotMultipleSeries.plot_multiple_series(**params)
-            elif plot == "PlotCorrelationHeatmap":
-                fig = PlotCorrelationHeatmap.correlation_heatmap(**params)
-            else:
-                raise ValueError(f"Invalid plot name '{plot}' in plot_config.")
+            plot_func = self.valid_plots.get(plot)
+            if not plot_func:
+                raise ValueError(f"Plot function for '{plot}' not found.")
+            fig, _ = plot_func(**params)
 
+            # figures will be saved with report files to ease inclusion in LaTeX/HTML and external compiling tools
             img_path = plots_dir / f"{self.title}_{plot}.png"
             fig.savefig(img_path, bbox_inches="tight")
             plt.close(fig)
@@ -199,16 +201,12 @@ class ReportGeneration:
         return plot_paths
 
     def _check_plot_config(self, plot_config: dict) -> None:
-        valid_plots = {
-            "PlotSeries": PlotSeries,
-            "PlotMultipleSeries": PlotMultipleSeries,
-            "PlotCorrelationHeatmap": PlotCorrelationHeatmap,
-        }
+        """Validates the plot configuration dictionary."""
 
         for plot_name, params in plot_config.items():
-            if plot_name not in valid_plots:
+            if plot_name not in self.valid_plots:
                 raise ValueError(
-                    f"Invalid plot name '{plot_name}'. Valid options are: {list(valid_plots.keys())}"
+                    f"Invalid plot name '{plot_name}'. Valid options are: {list(self.valid_plots.keys())}"
                 )
 
             # Basic validation for required parameters

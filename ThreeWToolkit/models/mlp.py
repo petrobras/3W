@@ -2,10 +2,11 @@ import numpy as np
 import torch.nn as nn
 import torch
 from torch.utils.data import DataLoader
+
+from tqdm.auto import tqdm
 from ..core.base_models import ModelsConfig, BaseModels
 from ..core.enums import ModelTypeEnum, ActivationFunctionEnum
 from typing import Iterable, Any, TypeAlias, Union, Callable
-from tqdm import tqdm
 from pydantic import Field, field_validator
 
 # Type alias for PyTorch model parameters
@@ -21,9 +22,13 @@ class MLPConfig(ModelsConfig):
     needed to configure an MLP neural network. It extends the base ModelsConfig
     with MLP-specific parameters and validation rules.
 
+    The input_size parameter can now be `None` to enable automatic inference
+    from the first batch of input data during the forward pass.
+
     Args:
         model_type (ModelTypeEnum, optional): Type of model, automatically set to MLP.
-        input_size (int): Number of input features. Must be greater than 0.
+        input_size (int | None): Number of input features. Must be greater than `0`
+            if specified, or None for automatic inference from input data.
         hidden_sizes (tuple[int, ...]): Tuple specifying the size of each hidden layer.
             Must contain at least one positive integer.
         output_size (int): Number of output neurons. Must be greater than 0.
@@ -37,9 +42,17 @@ class MLPConfig(ModelsConfig):
             non-positive values, or if any size parameter is not positive.
 
     Example:
-        Basic MLP configuration:
+        MLP with explicit input size:
         >>> config = MLPConfig(
         ...     input_size=784,
+        ...     hidden_sizes=(128, 64),
+        ...     output_size=10,
+        ...     activation_function="relu"
+        ... )
+
+        MLP with automatic input size inference:
+        >>> config = MLPConfig(
+        ...     input_size=None,  # Will be inferred from data
         ...     hidden_sizes=(128, 64),
         ...     output_size=10,
         ...     activation_function="relu"
@@ -55,17 +68,20 @@ class MLPConfig(ModelsConfig):
         ... )
 
     Note:
-        - The model automatically adds activation functions between hidden layers
-        - No activation is applied to the output layer (handled by loss function)
-        - Input and output sizes must match your data dimensions
+        - When input_size is `None`, the model will infer it from the first forward pass;
+        - The model automatically adds activation functions between hidden layers;
+        - No activation is applied to the output layer (handled by loss function);
+        - Input and output sizes must match your data dimensions;
+        - After inference, the input_size field will be updated with the actual value.
     """
 
     model_type: ModelTypeEnum = Field(
         default=ModelTypeEnum.MLP,
         description="Type of model (automatically set to MLP).",
     )
-    input_size: int = Field(
-        ..., gt=0, description="Number of input features (must be > 0)."
+    input_size: int | None = Field(
+        default=None,
+        description="Number of input features (must be > 0 if specified, or `None` for automatic inference).",
     )
     hidden_sizes: tuple[int, ...] = Field(
         ...,
@@ -83,6 +99,24 @@ class MLPConfig(ModelsConfig):
         ge=0,
         description="L2 regularization parameter (>=0 or None for no regularization).",
     )
+
+    @field_validator("input_size")
+    @classmethod
+    def check_input_size(cls, v):
+        """Validate that `input_size` is positive if specified.
+
+        Args:
+            v (int | None): The input size to validate.
+
+        Returns:
+            int | None: The validated input size.
+
+        Raises:
+            ValueError: If `input_size` is specified but not positive.
+        """
+        if v is not None and v <= 0:
+            raise ValueError("`input_size` must be > 0 when specified")
+        return v
 
     @field_validator("activation_function")
     @classmethod
@@ -125,14 +159,45 @@ class MLPConfig(ModelsConfig):
             raise ValueError("hidden_sizes must be a tuple of positive integers")
         return v
 
+    def is_input_size_dynamic(self) -> bool:
+        """Check if input size will be inferred dynamically.
+
+        Returns:
+            bool: True if input_size is None (dynamic inference), False otherwise.
+        """
+        return self.input_size is None
+
+    def set_inferred_input_size(self, input_size: int) -> None:
+        """Set the input size after it has been inferred from data.
+
+        This method is typically called by the model during the first forward pass
+        when input_size was originally None.
+
+        Args:
+            input_size (int): The inferred input size from the data.
+
+        Raises:
+            ValueError: If input_size is not positive.
+        """
+        if input_size <= 0:
+            raise ValueError("Inferred input_size must be > 0")
+
+        # Use object.__setattr__ to bypass pydantic's frozen model restriction
+        # if the model is frozen, or direct assignment if mutable
+        try:
+            self.input_size = input_size
+        except (AttributeError, ValueError):
+            # Handle frozen models
+            object.__setattr__(self, "input_size", input_size)
+
 
 class MLP(BaseModels, nn.Module):
     """Multi-Layer Perceptron (MLP) implementation using PyTorch.
 
     A flexible MLP neural network that supports multiple hidden layers,
     various activation functions, and automatic task type detection based
-    on output dimensions. The model is designed for both classification
-    and regression tasks.
+    on output dimensions. The model automatically infers input size from
+    the first batch of data during forward pass.
 
     This implementation focuses on training efficiency and integrates with
     the broader model ecosystem through the BaseModels interface while
@@ -140,23 +205,26 @@ class MLP(BaseModels, nn.Module):
 
     Args:
         config (MLPConfig): Configuration object containing model architecture
-            and hyperparameter specifications.
+            and hyperparameter specifications. input_size can be None for
+            automatic inference.
 
     Attributes:
-        model (nn.Sequential): The sequential neural network layers.
+        model (nn.Sequential | None): The sequential neural network layers.
         activation_func (nn.Module): The activation function module used
             between hidden layers.
         config (MLPConfig): The configuration used to build this model.
+        _layers_built (bool): Flag indicating if layers have been built.
 
     Example:
-        Basic usage:
+        Basic usage with automatic input size:
         >>> config = MLPConfig(
-        ...     input_size=784,
+        ...     input_size=None,  # Will be inferred automatically
         ...     hidden_sizes=(128, 64),
         ...     output_size=10
         ... )
         >>> model = MLP(config)
-        >>> model.to('cuda')
+        >>> # Input size will be inferred on first forward pass
+        >>> output = model(torch.randn(32, 784))  # input_size becomes 784
 
         Training example:
         >>> optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -168,61 +236,87 @@ class MLP(BaseModels, nn.Module):
         ...     criterion=criterion,
         ...     val_loader=val_loader
         ... )
-
-        Prediction example:
-        >>> predictions = model.predict(test_loader, device='cuda')
-
-    Note:
-        - The model automatically detects task type during training and prediction
-        - Supports multiclass classification, binary classification, and regression
-        - No activation function is applied to the final output layer
-        - Integrates with both PyTorch optimizers and the broader training framework
     """
+
+    # Explicitly type the config attribute
+    config: MLPConfig
 
     def __init__(self, config: MLPConfig) -> None:
         """Initialize the MLP model with the given configuration.
 
-        Builds the neural network architecture by creating a sequence of
-        linear layers with activation functions between them.
+        If input_size is None in `config`, the model will build layers
+        dynamically on the first forward pass.
 
         Args:
             config (MLPConfig): Configuration object specifying the model
-                architecture and hyperparameters.
+                architecture and hyperparameters. `input_size` can be None.
         """
         # Initialize both parent classes
-        nn.Module.__init__(self)
-        BaseModels.__init__(self, config)
+        super().__init__(config=config)
 
-        # Build the network layers
-        layers: list[nn.Module] = []
+        # Explicitly assign config with correct type
+        self.config = config
+
         self.activation_func = self._get_activation_function(config.activation_function)
+        self._layers_built = False
+        self.model: nn.Sequential | None = None
+
+        # If input_size is provided, build layers immediately
+        if config.input_size is not None:
+            self._build_layers(config.input_size)
+            self._layers_built = True
+
+    def _build_layers(self, input_size: int) -> None:
+        """Build the network layers with the given input size.
+
+        Args:
+            input_size (int): The size of the input features.
+        """
+        layers: list[nn.Module] = []
 
         # Create hidden layers with activation functions
-        in_size = config.input_size
-        for h in config.hidden_sizes:
+        in_size = input_size
+        for h in self.config.hidden_sizes:
             layers.append(nn.Linear(in_size, h))
             layers.append(self.activation_func)
             in_size = h
 
         # Add final output layer (no activation - handled by loss function)
-        layers.append(nn.Linear(in_size, config.output_size))
+        layers.append(nn.Linear(in_size, self.config.output_size))
         self.model = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the neural network.
+        # Update config with the inferred input size using the safe method
+        if self.config.is_input_size_dynamic():
+            self.config.set_inferred_input_size(input_size)
 
-        Computes the forward propagation of input through all network layers.
+    def _ensure_model_built(self, x: torch.Tensor) -> None:
+        """Ensure the model layers are built, building them if necessary.
+
+        Args:
+            x (torch.Tensor): Input tensor to infer dimensions from if needed.
+        """
+        if not self._layers_built:
+            input_size = x.shape[-1]
+            self._build_layers(input_size)
+            self._layers_built = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the network.
+
+        If layers haven't been built yet, they will be built based on
+        the input tensor's last dimension.
 
         Args:
             x (torch.Tensor): Input tensor with shape (batch_size, input_size).
 
         Returns:
-            torch.Tensor: Output tensor with shape (batch_size, output_size).
-
-        Note:
-            This method is called automatically during training and prediction.
-            For manual forward passes, you can also call model(x) directly.
+            torch.Tensor: Output tensor of shape (batch_size, output_size).
         """
+        # Ensure layers are built
+        self._ensure_model_built(x)
+
+        # Model is guaranteed to be non-None after _ensure_model_built
+        assert self.model is not None, "Model should be built at this point"
         return self.model(x)
 
     def _get_activation_function(self, activation: str) -> nn.Module:
@@ -257,7 +351,10 @@ class MLP(BaseModels, nn.Module):
         """Return model parameters for optimization.
 
         Provides access to all trainable parameters in the model for use
-        with PyTorch optimizers.
+        with PyTorch optimizers. If the model hasn't been built yet,
+        creates a dummy parameter to avoid empty parameter list errors.
+        The real parameters will be added to the optimizer's param_groups
+        once the model is built.
 
         Returns:
             ParamsT: Iterator over model parameters that can be passed
@@ -267,7 +364,32 @@ class MLP(BaseModels, nn.Module):
             >>> model = MLP(config)
             >>> optimizer = torch.optim.Adam(model.get_params(), lr=0.001)
         """
+        if self.model is None:
+            # Create a dummy parameter to avoid empty parameter list
+            # This will be replaced with real parameters once the model is built
+            if not hasattr(self, "_dummy_param"):
+                self._dummy_param = nn.Parameter(torch.tensor(0.0, requires_grad=True))
+            return [self._dummy_param]
         return self.model.parameters()
+
+    def _update_optimizer_params(self, optimizer: torch.optim.Optimizer) -> None:
+        """Update optimizer with actual model parameters after model is built.
+
+        This method should be called after the model is built to replace
+        any dummy parameters in the optimizer with the actual model parameters.
+
+        Args:
+            optimizer (torch.optim.Optimizer): The optimizer to update.
+        """
+        if self.model is not None and hasattr(self, "_dummy_param"):
+            # Clear existing parameter groups
+            optimizer.param_groups.clear()
+
+            # Add real model parameters
+            optimizer.add_param_group({"params": list(self.model.parameters())})
+
+            # Remove dummy parameter reference
+            delattr(self, "_dummy_param")
 
     def _train_epoch(
         self,
@@ -397,6 +519,18 @@ class MLP(BaseModels, nn.Module):
             - Validation loss is computed without gradient tracking for efficiency
             - Loss values are averaged per epoch for consistent comparison
         """
+        # Ensure model is built by doing a forward pass on the first batch
+        if not self._layers_built:
+            first_batch = next(iter(train_loader))
+            x_first, _ = first_batch
+            self._ensure_model_built(x_first)
+
+            # Update optimizer with real parameters after model is built
+            self._update_optimizer_params(optimizer)
+
+        # Model is guaranteed to be non-None at this point
+        assert self.model is not None, "Model should be built before training"
+
         # Move model to specified device
         self.model.to(device)
 
@@ -407,40 +541,33 @@ class MLP(BaseModels, nn.Module):
         if val_loader is not None:
             loss_dict["val_loss"] = []
 
-        # Training loop with progress bar
-        with tqdm(
-            range(epochs), desc="Training", unit="epoch", leave=False
-        ) as progress_bar:
-            for epoch_idx in progress_bar:
-                progress_bar.set_description(f"Epoch {epoch_idx + 1}/{epochs}")
+        pbar = tqdm(
+            range(epochs), desc="[Pipeline] Training", unit="epoch", colour="#00b4d8"
+        )
 
-                # Execute one training epoch
-                avg_epoch_train_loss = self._train_epoch(
-                    model=self.model,
-                    train_loader=train_loader,
-                    criterion=criterion,
-                    optimizer=optimizer,
-                    device=device,
+        for epoch_idx in pbar:
+            # Execute one training epoch
+            avg_epoch_train_loss = self._train_epoch(
+                model=self.model,
+                train_loader=train_loader,
+                criterion=criterion,
+                optimizer=optimizer,
+                device=device,
+            )
+            loss_dict["train_loss"].append(avg_epoch_train_loss)
+
+            # Calculate validation loss if validation data provided
+            if val_loader is not None:
+                val_loss = self._calculate_val_loss(val_loader, criterion, device)
+                loss_dict["val_loss"].append(val_loss)
+
+                pbar.set_description_str(
+                    f"[Pipeline] Training | train_loss: {avg_epoch_train_loss:.4f}, val_loss: {val_loss:.4f}"
                 )
-                loss_dict["train_loss"].append(avg_epoch_train_loss)
-
-                # Calculate validation loss if validation data provided
-                if val_loader is not None:
-                    val_loss = self._calculate_val_loss(val_loader, criterion, device)
-                    loss_dict["val_loss"].append(val_loss)
-
-                    # Update progress bar with both losses
-                    progress_bar.set_postfix(
-                        {
-                            "train_loss": f"{avg_epoch_train_loss:.4f}",
-                            "val_loss": f"{val_loss:.4f}",
-                        }
-                    )
-                else:
-                    # Update progress bar with training loss only
-                    progress_bar.set_postfix(
-                        {"train_loss": f"{avg_epoch_train_loss:.4f}"}
-                    )
+            else:
+                pbar.set_description_str(
+                    f"[Pipeline] Training | train_loss: {avg_epoch_train_loss:.4f}"
+                )
 
         return loss_dict
 
@@ -465,6 +592,9 @@ class MLP(BaseModels, nn.Module):
             - No gradients are computed for efficiency
             - Uses same task detection as training for consistency
         """
+        if self.model is None:
+            raise ValueError("Model should be built before validation")
+
         self.model.eval()  # Set model to evaluation mode
         running_loss = 0.0
 
@@ -529,6 +659,9 @@ class MLP(BaseModels, nn.Module):
             - Task type is automatically detected from output dimensions
             - Predictions are converted to numpy arrays for compatibility
         """
+        if self.model is None:
+            raise ValueError("Model should be built before prediction")
+
         self.model.eval()  # Set model to evaluation mode
         y_pred: list[Any] = []
 

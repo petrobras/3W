@@ -8,8 +8,11 @@ from typing import Callable, Any
 from torch.utils.data import DataLoader
 from pydantic import field_validator
 
+from tqdm.auto import tqdm
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from ..core.base_model_trainer import BaseModelTrainer, ModelTrainerConfig
+
+from ..core.base_step import BaseStep
+from ..core.base_model_trainer import ModelTrainerConfig
 from ..core.enums import OptimizersEnum, CriterionEnum, TaskType
 from ..models.mlp import MLPConfig, MLP
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
@@ -47,6 +50,10 @@ class TrainerConfig(ModelTrainerConfig):
             cross-validation during training. Defaults to None (disabled).
         n_splits (int, optional): Number of folds for cross-validation.
             Only used when cross_validation is True. Defaults to 5.
+        test_size (float, optional): Proportion of dataset reserved for testing.
+            Defaults to 0.2.
+        val_size (float, optional): Proportion of training data used for validation.
+            Defaults to 0.3.
         shuffle_train (bool, optional): Whether to shuffle training data
             before each epoch. Defaults to True.
 
@@ -76,6 +83,8 @@ class TrainerConfig(ModelTrainerConfig):
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     cross_validation: bool | None = None
     n_splits: int = 5
+    test_size: float = 0.2
+    val_size: float = 0.3
     shuffle_train: bool = True
 
     @field_validator("batch_size")
@@ -214,7 +223,7 @@ class TrainerConfig(ModelTrainerConfig):
         return v
 
 
-class ModelTrainer(BaseModelTrainer):
+class ModelTrainer(BaseStep):
     """Simplified model trainer focused on training with delegated evaluation.
 
     This class handles the training process for both PyTorch neural networks (MLP)
@@ -283,6 +292,12 @@ class ModelTrainer(BaseModelTrainer):
             config (TrainerConfig): Configuration object containing all
                 training parameters and model settings.
         """
+        """Initialize the ModelTrainer with the given configuration.
+
+        Args:
+            config (TrainerConfig): Configuration object containing all
+                training parameters and model settings.
+        """
         self.config = config
         self.lr = config.learning_rate
         self.device = config.device
@@ -290,8 +305,12 @@ class ModelTrainer(BaseModelTrainer):
 
         # Only create optimizer and criterion for PyTorch models
         if isinstance(self.model, MLP):
-            self.optimizer = self._get_optimizer(self.config.optimizer)
-            self.criterion = self._get_fn_cost(self.config.criterion)
+            self.optimizer: torch.optim.Optimizer | None = self._get_optimizer(
+                self.config.optimizer
+            )
+            self.criterion: Callable[..., Any] | None = self._get_fn_cost(
+                self.config.criterion
+            )
         else:
             self.optimizer = None
             self.criterion = None
@@ -302,7 +321,108 @@ class ModelTrainer(BaseModelTrainer):
         self.batch_size = config.batch_size
         self.epochs = config.epochs
         self.seed = config.seed
+        self.test_size = config.test_size
+        self.val_size = config.val_size
         self.shuffle_train = config.shuffle_train
+        self.history: list = []
+
+    def pre_process(self, data: Any) -> dict[str, Any]:
+        """Standardizes the input of the step.
+
+        Validates and standardizes the input data format for training.
+
+        Args:
+            data: Input data that should contain training data and optionally validation data.
+                  Can be a dict or any structure containing the required training data.
+
+        Returns:
+            dict[str, Any]: Standardized data dictionary with required keys.
+
+        Raises:
+            ValueError: If required training data is missing.
+        """
+        if isinstance(data, dict):
+            processed_data = data.copy()
+        else:
+            # If data is not a dict, assume it's a tuple/list with (x_train, y_train, ...)
+            if hasattr(data, "__iter__") and len(data) >= 2:
+                processed_data = {"x_train": data[0], "y_train": data[1]}
+                if len(data) >= 4:
+                    processed_data.update({"x_val": data[2], "y_val": data[3]})
+                if len(data) >= 5:
+                    processed_data["kwargs"] = data[4]
+            else:
+                raise ValueError(
+                    "Input data must be a dict or iterable with at least (x_train, y_train)"
+                )
+
+        # Validate required keys
+        required_keys = ["x_train", "y_train"]
+        missing_keys = [key for key in required_keys if key not in processed_data]
+        if missing_keys:
+            raise ValueError(f"Missing required keys in input data: {missing_keys}")
+
+        # Ensure optional keys exist with None defaults
+        optional_keys = ["x_val", "y_val", "kwargs"]
+        for key in optional_keys:
+            if key not in processed_data:
+                processed_data[key] = None if key != "kwargs" else {}
+
+        return processed_data
+
+    def run(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Main logic of the step.
+
+        Performs the actual model training using the provided data.
+
+        Args:
+            data (dict[str, Any]): Preprocessed data containing training information.
+
+        Returns:
+            dict[str, Any]: Data with training results added.
+        """
+        # Extract training parameters
+        x_train = data["x_train"]
+        y_train = data["y_train"]
+        x_val = data.get("x_val")
+        y_val = data.get("y_val")
+        kwargs = data.get("kwargs", {})
+
+        # Perform training
+        self.train(x_train, y_train, x_val, y_val, **kwargs)
+
+        # Add training results to data
+        data["model"] = self.model
+        data["history"] = self.history
+        data["trainer"] = self
+
+        return data
+
+    def post_process(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Standardizes the output of the step.
+
+        Performs any final processing and ensures output format consistency.
+
+        Args:
+            data (dict[str, Any]): Data with training results.
+
+        Returns:
+            dict[str, Any]: Final processed data ready for next pipeline step.
+        """
+        # Ensure all expected outputs are present
+        expected_outputs = ["model", "history", "trainer"]
+        for key in expected_outputs:
+            if key not in data:
+                raise RuntimeError(
+                    f"Training step failed to produce expected output: {key}"
+                )
+
+        # Add metadata about the training step
+        data["training_completed"] = True
+        data["model_type"] = type(self.model).__name__
+        data["config"] = self.config
+
+        return data
 
     def _get_model(
         self, config_model: MLPConfig | SklearnModelsConfig
@@ -437,24 +557,37 @@ class ModelTrainer(BaseModelTrainer):
             - For cross-validation, x_val and y_val are ignored
             - Model state is reset between cross-validation folds for PyTorch models
             - Training history is stored as a list of fold histories (cross-validation)
-              or a single-element list (regular training)
+            or a single-element list (regular training)
         """
         if self.cross_validation:
-            # Store initial model state for cross-validation reset
-            initial_state_dict = (
-                self.model.state_dict() if isinstance(self.model, MLP) else None
-            )
             self.history = []
 
-            # Perform stratified k-fold cross-validation
-            for fold, (train_idx, val_idx) in enumerate(
-                StratifiedKFold(n_splits=self.n_splits).split(x_train, y_train)
-            ):
-                print(f"Training fold {fold + 1}/{self.n_splits}")
+            # Create stratified k-fold splits
+            skf = StratifiedKFold(
+                n_splits=self.n_splits, shuffle=True, random_state=self.seed
+            )
+            splits = list(skf.split(x_train, y_train))
 
-                # Reset model state for each fold (PyTorch models only)
-                if isinstance(self.model, MLP) and initial_state_dict is not None:
-                    self.model.load_state_dict(initial_state_dict)
+            # Store initial model configuration for resetting between folds
+            initial_config = self.config.config_model
+
+            # Perform stratified k-fold cross-validation with progress bar
+            pbar = tqdm(
+                enumerate(splits),
+                total=self.n_splits,
+                desc="[Pipeline] Training Fold 1",
+                unit="fold",
+                colour="#0a2c53",
+            )
+            for fold, (train_idx, val_idx) in pbar:
+                # Updates the bar description for the current fold
+                pbar.set_description_str(f"[Pipeline] Training Fold {fold + 1}")
+
+                # Reinitialize model for each fold (fresh start)
+                if isinstance(self.model, MLP):
+                    self.model = self._get_model(initial_config)
+                    # Reinitialize optimizer with new model parameters
+                    self.optimizer = self._get_optimizer(self.config.optimizer)
 
                 # Split data for current fold
                 x_train_fold = self._select_rows(x_train, train_idx)
@@ -479,12 +612,35 @@ class ModelTrainer(BaseModelTrainer):
             ]
         else:
             # Automatically split training data for validation
-            x_train, x_val, y_train, y_val = train_test_split(
-                x_train, y_train, test_size=0.2, shuffle=self.shuffle_train
-            )
+            x_train, y_train, x_val, y_val = self.holdout(x_train, y_train)
             self.history = [
                 self.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val, **kwargs)
             ]
+
+    def holdout(self, X, Y, test_size=None):
+        """
+        Split any dataset into two subsets using holdout.
+
+        Args:
+            X (array-like): Features.
+            Y (array-like): Targets.
+            test_size (float, optional): Fraction of data for the second split.
+                If None, uses self.val_size. Should be between 0 and 1.
+
+        Returns:
+            Tuple: (X_train, Y_train, X_holdout, Y_holdout)
+        """
+        if test_size is None:
+            test_size = self.val_size
+
+        X_train, X_holdout, Y_train, Y_holdout = train_test_split(
+            X,
+            Y,
+            test_size=test_size,
+            shuffle=self.shuffle_train,
+            random_state=self.seed,
+        )
+        return X_train, Y_train, X_holdout, Y_holdout
 
     def _select_rows(self, data, idx):
         """Select rows from data using provided indices.
@@ -637,15 +793,20 @@ class ModelTrainer(BaseModelTrainer):
         if assessment_config is None:
             # Create default assessment configuration based on task type
             assessment_config = ModelAssessmentConfig(
-                metrics=["accuracy"]
-                if self._is_classification_task()
-                else ["explained_variance"],
-                task_type=TaskType.CLASSIFICATION
-                if self._is_classification_task()
-                else TaskType.REGRESSION,
+                metrics=(
+                    ["accuracy"]
+                    if self._is_classification_task()
+                    else ["explained_variance"]
+                ),
+                task_type=(
+                    TaskType.CLASSIFICATION
+                    if self._is_classification_task()
+                    else TaskType.REGRESSION
+                ),
             )
 
         assessor = ModelAssessment(assessment_config)
+        assessor._setup_metrics()
         return assessor.evaluate(self.model, x_test, y_test, **kwargs)
 
     def _is_classification_task(self) -> bool:

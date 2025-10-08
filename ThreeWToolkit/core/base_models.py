@@ -13,7 +13,6 @@ class ModelsConfig(BaseModel):
     def check_model_type(cls, v, info):
         if v not in {
             ModelTypeEnum.MLP,
-            ModelTypeEnum.LGBM,
             ModelTypeEnum.LOGISTIC_REGRESSION,
             ModelTypeEnum.RANDOM_FOREST,
             ModelTypeEnum.DECISION_TREE,
@@ -37,4 +36,5 @@ class BaseModels(ABC):
         Args:
             config (ModelsConfig): Configuration object with model parameters.
         """
+        super().__init__()
         self.config = config

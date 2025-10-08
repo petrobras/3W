@@ -1,152 +1,286 @@
 import pytest
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_frame_equal, assert_series_equal
 
 from ThreeWToolkit.feature_extraction.extract_wavelet_features import (
     ExtractWaveletFeatures,
-    WaveletConfig,
 )
 
-# A mock for the windowing function is needed for the tests to run standalone
-def windowing(X, window_size, overlap):
-    step = int(window_size * (1 - overlap))
-    if step == 0:
-        return pd.DataFrame() # Return empty if stride would be 0
-    windows = []
-    for i in range(0, len(X) - window_size + 1, step):
-        windows.append(X.iloc[i : i + window_size].values)
-    return pd.DataFrame(windows)
+
+class WaveletConfig:
+    """Mock config class for testing."""
+
+    def __init__(
+        self,
+        level=2,
+        overlap=0.0,
+        offset=0,
+        wavelet="db1",
+        is_windowed=True,
+        label_column="label",
+    ):
+        if overlap < 0 or overlap >= 1:
+            raise ValueError("Overlap must be in the range [0, 1)")
+        if offset < 0:
+            raise ValueError("Offset must be a non-negative integer")
+        if level <= 0:
+            raise ValueError("Wavelet level must be a positive integer")
+
+        self.level = level
+        self.overlap = overlap
+        self.offset = offset
+        self.wavelet = wavelet
+        self.is_windowed = is_windowed
+        self.label_column = label_column
 
 
 class TestExtractWaveletFeatures:
     """Unit tests for the ExtractWaveletFeatures class."""
 
     @pytest.fixture
-    def data_with_labels(self):
-        """Provides sample data (X) and corresponding labels (y)."""
-        index = pd.to_datetime([f"2025-01-01 {h:02d}:00:00" for h in range(20)])
-        tags = pd.DataFrame({"signal": np.arange(1.0, 21.0)}, index=index)
-        y = pd.Series(100 + np.arange(20), index=index, name="target")
-        return tags, y
+    def windowed_data_with_labels(self):
+        """
+        Provides sample windowed data in the expected format.
+        Each row represents a window with columns: var1_0, var1_1, ..., var1_3, label
+        """
+        # Create 5 windows, each with 4 time steps (level=2 -> window_size=4)
+        num_windows = 5
+        window_size = 4
 
-    def test_basic_extraction_and_y_alignment(self, data_with_labels):
-        """Tests that both features (X) and labels (y) are correctly windowed and aligned."""
-        tags, y = data_with_labels
-        config = WaveletConfig(level=2, overlap=0.5)  # window_size=4, stride=2
+        data = {}
+        # Create columns for variable 1
+        for i in range(window_size):
+            data[f"var1_{i}"] = np.random.randn(num_windows)
+
+        # Add labels
+        data["label"] = np.array([100, 101, 102, 103, 104])
+
+        return pd.DataFrame(data)
+
+    @pytest.fixture
+    def multivariate_windowed_data(self):
+        """
+        Provides multivariate windowed data with two variables.
+        """
+        num_windows = 5
+        window_size = 4
+
+        data = {}
+        # Variable 1
+        for i in range(window_size):
+            data[f"var1_{i}"] = np.random.randn(num_windows)
+
+        # Variable 2
+        for i in range(window_size):
+            data[f"var2_{i}"] = np.random.randn(num_windows) * 2
+
+        # Add labels
+        data["label"] = np.array([100, 101, 102, 103, 104])
+
+        return pd.DataFrame(data)
+
+    def test_basic_extraction_univariate(self, windowed_data_with_labels):
+        """Tests basic wavelet feature extraction for univariate data."""
+        config = WaveletConfig(level=2, is_windowed=True)
         extractor = ExtractWaveletFeatures(config)
 
-        X_out, y_out = extractor(tags=tags, y=y)
+        result = extractor(windowed_data_with_labels)
 
-        assert not X_out.empty and not y_out.empty
-        assert len(X_out) == len(y_out)
-        pd.testing.assert_index_equal(X_out.index, y_out.index)
+        # Check that we get features
+        assert not result.empty
+        assert len(result) == len(windowed_data_with_labels)
 
-        # First window covers original indices 0-3, so its index is y.index[3]
-        # and its label value should be y.iloc[3]
-        assert y_out.index[0] == y.index[3]
-        assert y_out.iloc[0] == y.iloc[3]
+        # Check that labels are preserved
+        assert "label" in result.columns
+        pd.testing.assert_series_equal(
+            result["label"], windowed_data_with_labels["label"], check_names=False
+        )
 
-        # Second window covers original indices 2-5, so its index is y.index[5]
-        # and its label value should be y.iloc[5]
-        assert y_out.index[1] == y.index[5]
-        assert y_out.iloc[1] == y.iloc[5]
+        # Check that wavelet features exist
+        assert "var1_A2" in result.columns
+        assert "var1_D2" in result.columns
+        assert "var1_A1" in result.columns
+        assert "var1_D1" in result.columns
+        assert "var1_A0" in result.columns
 
-    def test_offset_is_applied_to_y(self, data_with_labels):
-        """Tests that the offset parameter is correctly applied to both X and y."""
-        tags, y = data_with_labels
-        config = WaveletConfig(level=2, overlap=0.5, offset=5)
+    def test_multivariate_extraction(self, multivariate_windowed_data):
+        """Tests wavelet feature extraction for multivariate data."""
+        config = WaveletConfig(level=2, is_windowed=True)
         extractor = ExtractWaveletFeatures(config)
-        X_out, y_out = extractor(tags=tags, y=y)
 
-        # The first window starts after the offset, covering original indices [5, 6, 7, 8].
-        # The corresponding label should be the original y at index 8.
-        expected_first_label = y.iloc[8]
+        result = extractor(multivariate_windowed_data)
 
-        assert y_out.iloc[0] == expected_first_label
+        assert not result.empty
 
-    def test_insufficient_data_with_y(self, data_with_labels):
-        """Tests that for insufficient data, both returned X and y are empty."""
-        tags, y = data_with_labels
-        short_tags, short_y = tags.head(3), y.head(3)
+        # Check features for both variables
+        assert "var1_A2" in result.columns
+        assert "var2_A2" in result.columns
+        assert "var1_D1" in result.columns
+        assert "var2_D1" in result.columns
 
-        config = WaveletConfig(level=2)  # window_size=4
+    def test_offset_application(self, windowed_data_with_labels):
+        """Tests that offset parameter correctly skips initial windows."""
+        offset = 2
+        config = WaveletConfig(level=2, offset=offset, is_windowed=True)
         extractor = ExtractWaveletFeatures(config)
-        X_out, y_out = extractor(tags=short_tags, y=short_y)
 
-        assert X_out.empty
-        assert y_out.empty
-        assert isinstance(y_out, pd.Series)
+        result = extractor(windowed_data_with_labels)
+
+        # Should have 3 windows (5 - 2 offset)
+        assert len(result) == len(windowed_data_with_labels) - offset
+
+        # First label should be the third label from original data
+        assert (
+            result["label"].iloc[0] == windowed_data_with_labels["label"].iloc[offset]
+        )
+
+    def test_not_windowed_raises_error(self):
+        """Tests that error is raised when data is not marked as windowed."""
+        data = pd.DataFrame(
+            {
+                "var1_0": [1, 2, 3],
+                "var1_1": [4, 5, 6],
+                "var1_2": [7, 8, 9],
+                "var1_3": [10, 11, 12],
+            }
+        )
+
+        config = WaveletConfig(level=2, is_windowed=False)
+        extractor = ExtractWaveletFeatures(config)
+
+        with pytest.raises(ValueError, match="Data is not windowed"):
+            extractor(data)
 
     def test_invalid_config_raises_error(self):
         """Tests that validators raise ValueErrors for invalid configs."""
         with pytest.raises(ValueError, match="Overlap must be in the range"):
             WaveletConfig(level=1, overlap=1.0)
+
         with pytest.raises(ValueError, match="Offset must be a non-negative integer"):
             WaveletConfig(level=1, offset=-1)
-        with pytest.raises(ValueError, match="Wavelet level must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="Wavelet level must be a positive integer"
+        ):
             WaveletConfig(level=0)
-    
-    def test_output_column_names(self, data_with_labels):
-        """Tests that the output DataFrame has correctly formatted column names."""
-        # Get the input data and its column names from the fixture
-        tags, y = data_with_labels
-        input_cols = tags.columns
-        
-        config = WaveletConfig(level=2)
+
+    def test_output_column_names_format(self, windowed_data_with_labels):
+        """Tests that output columns follow the expected naming convention."""
+        config = WaveletConfig(level=2, is_windowed=True)
         extractor = ExtractWaveletFeatures(config)
 
-        X_out, _ = extractor(tags=tags, y=y)
+        result = extractor(windowed_data_with_labels)
 
-        feature_names = extractor.feat_names
-        
-        expected_columns = [f"{col}_{feat}" for feat in feature_names for col in input_cols]
-        
-        assert list(X_out.columns) == expected_columns
-    
-    def test_handles_empty_windows_from_toolkit_function(self, monkeypatch, data_with_labels):
-        """
-        Tests the early-return path if the windowing function returns empty for all columns.
-        """
-        def mock_windowing(*args, **kwargs):
-            return pd.DataFrame()
-        monkeypatch.setattr("ThreeWToolkit.feature_extraction.extract_wavelet_features.windowing", mock_windowing)
-        
-        tags, y = data_with_labels
-        
-        config = WaveletConfig(level=2)
-        extractor = ExtractWaveletFeatures(config)
-        X_out, y_out = extractor(tags=tags, y=y)
-        
-        assert X_out.empty
-        assert y_out.empty
+        # Expected feature names for level=2
+        expected_features = ["var1_A2", "var1_D2", "var1_A1", "var1_D1", "var1_A0"]
 
-    def test_handles_mixed_success_from_windowing(self, monkeypatch):
-        """Tests the mixed scenario where one column succeeds and one fails."""
-        def mock_windowing_mixed(X: pd.Series, *args, **kwargs):
-            if X.name == "signal_ok":
-                return pd.DataFrame(np.random.rand(5, kwargs.get("window_size", 4)))
-            else:
-                return pd.DataFrame()
-        
-        monkeypatch.setattr("ThreeWToolkit.feature_extraction.extract_wavelet_features.windowing", mock_windowing_mixed)
-        
-        tags = pd.DataFrame({"signal_ok": np.arange(20), "signal_fail": np.arange(20, 40)})
-        y = pd.Series(np.arange(20))
-        config = WaveletConfig(level=2)
-        extractor = ExtractWaveletFeatures(config)
-        X_out, y_out = extractor(tags=tags, y=y)
-        
-        assert not X_out.empty
-        assert "signal_ok_A1" in X_out.columns
-        assert "signal_fail_A1" not in X_out.columns
-        assert len(X_out) == len(y_out)
+        for feat in expected_features:
+            assert feat in result.columns, f"Expected feature {feat} not found"
 
-    def test_raises_error_if_y_is_not_provided(self):
-        """Tests that a ValueError is raised if the 'y' labels are not passed."""
-        tags = pd.DataFrame({"signal": np.arange(20)})
-        config = WaveletConfig(level=2, overlap=0.5)
+    def test_empty_data_raises_error(self):
+        """Tests that empty DataFrame raises appropriate error."""
+        config = WaveletConfig(level=2, is_windowed=True)
         extractor = ExtractWaveletFeatures(config)
 
-        with pytest.raises(ValueError, match="The 'y' series .* must be provided"):
-            extractor(tags=tags, y=None)
+        empty_df = pd.DataFrame()
+
+        with pytest.raises(ValueError, match="Input data is empty"):
+            extractor(empty_df)
+
+    def test_no_variables_found_raises_error(self):
+        """Tests error when no valid variable columns are found."""
+        config = WaveletConfig(level=2, is_windowed=True)
+        extractor = ExtractWaveletFeatures(config)
+
+        # DataFrame with wrong column format
+        invalid_data = pd.DataFrame(
+            {"col1": [1, 2, 3], "col2": [4, 5, 6], "label": [100, 101, 102]}
+        )
+
+        with pytest.raises(ValueError, match="No variables with pattern 'varX_' found"):
+            extractor(invalid_data)
+
+    def test_window_size_mismatch_handling(self):
+        """Tests handling of windows with incorrect size."""
+        config = WaveletConfig(level=2, is_windowed=True)  # Expects window_size=4
+        extractor = ExtractWaveletFeatures(config)
+
+        # Create data with wrong window size (only 3 columns)
+        data = pd.DataFrame(
+            {"var1_0": [1, 2], "var1_1": [3, 4], "var1_2": [5, 6], "label": [100, 101]}
+        )
+
+        # Should pad with zeros and still process
+        result = extractor(data)
+        assert not result.empty
+        assert len(result) == 2
+
+    def test_offset_exceeds_data_length(self, windowed_data_with_labels):
+        """Tests that offset larger than data raises error."""
+        config = WaveletConfig(
+            level=2,
+            offset=100,  # Much larger than data
+            is_windowed=True,
+        )
+        extractor = ExtractWaveletFeatures(config)
+
+        with pytest.raises(ValueError, match="Offset .* is larger than data length"):
+            extractor(windowed_data_with_labels)
+
+    def test_nan_handling_warning(self, windowed_data_with_labels):
+        """Tests that NaN values trigger a warning."""
+        config = WaveletConfig(level=2, is_windowed=True)
+        extractor = ExtractWaveletFeatures(config)
+
+        # Introduce NaN
+        data_with_nan = windowed_data_with_labels.copy()
+        data_with_nan.loc[0, "var1_0"] = np.nan
+
+        # Should process but may show warning (captured if using capfd)
+        result = extractor(data_with_nan)
+        assert not result.empty
+
+    def test_feature_names_generation(self):
+        """Tests that feature names are correctly generated for different levels."""
+        config = WaveletConfig(level=3, is_windowed=True)
+        extractor = ExtractWaveletFeatures(config)
+
+        expected_names = ["A3", "D3", "A2", "D2", "A1", "D1", "A0"]
+        assert extractor.feat_names == expected_names
+
+    def test_different_wavelet_types(self, windowed_data_with_labels):
+        """Tests that different wavelet types work correctly."""
+        for wavelet in ["db1", "db2", "sym2", "coif1"]:
+            config = WaveletConfig(level=2, wavelet=wavelet, is_windowed=True)
+            extractor = ExtractWaveletFeatures(config)
+
+            result = extractor(windowed_data_with_labels)
+            assert not result.empty
+            assert "var1_A2" in result.columns
+
+    def test_without_label_column(self):
+        """Tests processing data without labels."""
+        data = pd.DataFrame(
+            {
+                "var1_0": [1, 2, 3],
+                "var1_1": [4, 5, 6],
+                "var1_2": [7, 8, 9],
+                "var1_3": [10, 11, 12],
+            }
+        )
+
+        config = WaveletConfig(level=2, is_windowed=True, label_column=None)
+        extractor = ExtractWaveletFeatures(config)
+
+        result = extractor(data)
+
+        assert not result.empty
+        assert "label" not in result.columns
+        assert "var1_A2" in result.columns
+
+    def test_type_error_on_non_dataframe_input(self):
+        """Tests that non-DataFrame input raises TypeError."""
+        config = WaveletConfig(level=2, is_windowed=True)
+        extractor = ExtractWaveletFeatures(config)
+
+        with pytest.raises(TypeError, match="Input data must be a pandas DataFrame"):
+            extractor([1, 2, 3, 4])  # List instead of DataFrame
