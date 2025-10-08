@@ -257,7 +257,7 @@ def test_export_with_numpy_xtest(report_generator_instance, sample_results_dict)
     assert "feature_1" in df_1d.columns
     assert df_1d["feature_1"].tolist() == [1.1, 2.2, 3.3, 4.4, 5.5]
 
-    # --- Case 2: 2D NumPy array ---
+    # Checking 2D NumPy array
     sample_results_dict["X_test"] = np.array(
         [[1, 10], [2, 20], [3, 30], [4, 40], [5, 50]]
     )
