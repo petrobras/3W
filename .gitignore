@@ -13,6 +13,7 @@ output/
 # Distribution / packaging
 .Python
 build/
+data/
 develop-eggs/
 dist/
 downloads/
@@ -191,3 +192,5 @@ cython_debug/
 .VolumeIcon.icns
 # Apple macOS Temporary files
 .TemporaryItems
+
+output/

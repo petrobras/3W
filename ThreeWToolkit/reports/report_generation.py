@@ -7,7 +7,7 @@ from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
 from pylatex.package import Package
 
-from ThreeWToolkit.data_visualization.plot_series import DataVisualization
+from ThreeWToolkit.data_visualization.plots import DataVisualization
 
 from ..constants import LATEX_DIR, REPORTS_DIR
 from ..utils.latex_manager import latex_environment
@@ -164,7 +164,7 @@ class ReportGeneration:
         with doc.create(Section("Visualizations")):
             # Plot 1: Predicted vs Actual
             doc.append(NoEscape(r"\begin{frame}{Visualization: Predicted vs. Actual}"))
-            img_path = DataVisualization.plot_multiple_series(
+            _, img_path = DataVisualization.plot_multiple_series(
                 [self.y_test, self.predictions],
                 ["Actual Signal", "Predicted Signal"],
                 "Signal_Prediction",
@@ -181,7 +181,7 @@ class ReportGeneration:
 
             # Plot 2: FFT Analysis
             doc.append(NoEscape(r"\begin{frame}{Signal Analysis: FFT}"))
-            fft_img_path = DataVisualization.plot_fft(self.y_test)
+            _, fft_img_path = DataVisualization.plot_fft(self.y_test)
             doc.append(NoEscape(r"\begin{figure}\centering"))
             doc.append(
                 NoEscape(f"\\includegraphics[width=0.8\\textwidth]{{{fft_img_path}}}")
@@ -192,7 +192,7 @@ class ReportGeneration:
 
             # Plot 3: Seasonal Decomposition
             doc.append(NoEscape(r"\begin{frame}{Signal Analysis: Decomposition}"))
-            decomp_img_path = DataVisualization.seasonal_decompose(
+            _, decomp_img_path = DataVisualization.seasonal_decompose(
                 self.y_test, period=20
             )  # Period matching one of the sine waves
             doc.append(NoEscape(r"\begin{figure}\centering"))
@@ -214,7 +214,7 @@ class ReportGeneration:
                     "Residuals": self.y_test - self.predictions,
                 }
             )
-            heatmap_img_path = DataVisualization.correlation_heatmap(heatmap_df)
+            _, heatmap_img_path = DataVisualization.correlation_heatmap(heatmap_df)
             doc.append(NoEscape(r"\begin{figure}\centering"))
             doc.append(
                 NoEscape(
@@ -227,7 +227,9 @@ class ReportGeneration:
 
             # Plot 5: Wavelet Spectrogram (Mock)
             doc.append(NoEscape(r"\begin{frame}{Wavelet Spectrogram}"))
-            wavelet_img_path = DataVisualization.plot_wavelet_spectrogram(self.y_test)
+            _, wavelet_img_path = DataVisualization.plot_wavelet_spectrogram(
+                self.y_test
+            )
             doc.append(NoEscape(r"\begin{figure}\centering"))
             doc.append(
                 NoEscape(

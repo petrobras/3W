@@ -1,144 +1,297 @@
 import numpy as np
 import pandas as pd
-import torch
-from pydantic import field_validator
 
-from ..core.base_feature_extractor import BaseFeatureExtractor, FeatureExtractorConfig
-from ..preprocessing._data_processing import windowing
-
-
-class StatisticalConfig(FeatureExtractorConfig):
-    """Configuration now uses overlap to match the windowing function."""
-
-    window_size: int = 100
-    overlap: float = 0.0
-    offset: int = 0
-    eps: float = 1e-6
-
-    @field_validator("overlap")
-    def check_overlap_range(cls, v):
-        """Validates that overlap is in the [0, 1) range."""
-        if not 0 <= v < 1:
-            raise ValueError("Overlap must be in the range [0, 1)")
-        return v
-
-    @field_validator("offset")
-    def check_offset_value(cls, v):
-        """Validates that offset is not negative."""
-        if v < 0:
-            raise ValueError("Offset must be a non-negative integer.")
-        return v
-
-    @field_validator("eps")
-    def check_eps_value(cls, v):
-        """Validates that epsilon is a small, positive number."""
-        if v <= 0:
-            raise ValueError("Epsilon (eps) must be positive.")
-        return v
+from scipy import stats
+from ..core.base_feature_extractor import StatisticalConfig
+from ..core.base_step import BaseStep
 
 
-class ExtractStatisticalFeatures(BaseFeatureExtractor):
+class ExtractStatisticalFeatures(BaseStep):
     """
-    Extracts statistical features out of windows from given dataframe.
+    Extracts statistical features from windowed time series data.
+
+    Supports both univariate and multivariate analysis.
+
+    IMPORTANT: Data must be already windowed. Each row should represent a window.
+    If data is not windowed, use the Windowing class first.
+
+    Input format: DataFrame with windowed data where each row is a window
+    Output format:
+    - Univariate: [var1_feature1, var1_feature2, ..., label]
+    - Multivariate: [var1_feature1, var2_feature1, ..., var1_feature2, var2_feature2, ..., label]
     """
 
     FEATURES = ["mean", "std", "skew", "kurt", "min", "1qrt", "med", "3qrt", "max"]
 
     def __init__(self, config: StatisticalConfig):
-        super().__init__(config)
+        """
+        Initialize the feature extractor.
+
+        Args:
+            config: Configuration object with feature extraction parameters
+        """
+        super().__init__()
+
         self.window_size = config.window_size
         self.overlap = config.overlap
         self.offset = config.offset
         self.eps = config.eps
 
-    def __call__(self, tags: pd.DataFrame, y: pd.Series | None = None, event_type=None):
-        original_index_name = tags.index.name
+        self.selected_features = (
+            config.selected_features if config.selected_features else self.FEATURES
+        )
+        self.multivariate = getattr(config, "multivariate", True)
+        self.is_windowed = getattr(config, "is_windowed", False)
+        self.label_column = getattr(config, "label_column", None)
 
-        if y is None:
-            raise ValueError(
-                "The 'y' series (labels) must be provided for feature extraction."
-            )
+    def _identify_variables(self, data: pd.DataFrame) -> dict:
+        """Identifies variables in the data based on naming pattern."""
+        columns = data.columns.tolist()
+        has_label = self.label_column is not None and self.label_column in columns
 
+        # Remove label from columns if it exists
+        if has_label:
+            columns = [col for col in columns if col != self.label_column]
+
+        if not columns:
+            raise ValueError("No variable columns found in the data")
+
+        # Extract variable numbers using string manipulation
+        var_numbers = set()
+
+        for col in columns:
+            if col.startswith("var") and "_" in col:
+                # Extract the part between "var" and "_"
+                try:
+                    var_part = col[3:]  # Remove "var"
+                    underscore_pos = var_part.find("_")
+                    if underscore_pos > 0:
+                        var_number_str = var_part[:underscore_pos]
+                        if var_number_str.isdigit():
+                            var_numbers.add(int(var_number_str))
+                except (ValueError, IndexError):
+                    continue  # Ignore columns with invalid format
+
+        if not var_numbers:
+            raise ValueError("No variables with pattern 'varX_' found in columns")
+
+        # Organize variables by number
+        variables = {}
+        for var_num in sorted(var_numbers):
+            var_cols = [col for col in columns if col.startswith(f"var{var_num}_")]
+            if var_cols:  # Only add if there are columns for this variable
+                variables[var_num] = var_cols
+
+        return variables
+
+    def _calculate_statistics(self, data_array: np.ndarray) -> dict:
+        """
+        Calculate statistics using numpy/scipy in an optimized way.
+
+        Args:
+            data_array: 2D array where each row is a window
+
+        Returns:
+            Dictionary with calculated statistics
+        """
+        if data_array.size == 0:
+            return {}
+
+        # If 1D, convert to 2D (1 window)
+        if data_array.ndim == 1:
+            data_array = data_array.reshape(1, -1)
+
+        stats_dict = {}
+
+        # Basic statistics - vectorized
+        if "mean" in self.selected_features:
+            stats_dict["mean"] = np.mean(data_array, axis=1)
+
+        if "std" in self.selected_features:
+            stats_dict["std"] = np.std(data_array, axis=1, ddof=0)
+
+        # For skew and kurtosis, we need to handle special cases
+        std_values = (
+            np.std(data_array, axis=1, ddof=0)
+            if "skew" in self.selected_features or "kurt" in self.selected_features
+            else None
+        )
+
+        # For skew and kurtosis, we need to handle special cases
+        if "skew" in self.selected_features or "kurt" in self.selected_features:
+            std_values = np.std(data_array, axis=1, ddof=0)
+
+            if "skew" in self.selected_features:
+                skew_values = np.full(data_array.shape[0], 0.0)
+                valid_mask = std_values > self.eps  # Use eps to avoid division by zero
+                if np.any(valid_mask):
+                    valid_data = data_array[valid_mask]
+                    skew_values[valid_mask] = stats.skew(valid_data, axis=1)
+                stats_dict["skew"] = skew_values
+
+            if "kurt" in self.selected_features:
+                kurt_values = np.full(data_array.shape[0], 0.0)
+                valid_mask = std_values > self.eps
+                if np.any(valid_mask):
+                    valid_data = data_array[valid_mask]
+                    kurt_values[valid_mask] = stats.kurtosis(valid_data, axis=1)
+                stats_dict["kurt"] = kurt_values
+
+        # Quantiles - all vectorized
+        if "min" in self.selected_features:
+            stats_dict["min"] = np.min(data_array, axis=1)
+
+        if "1qrt" in self.selected_features:
+            stats_dict["1qrt"] = np.percentile(data_array, 25, axis=1)
+
+        if "med" in self.selected_features:
+            stats_dict["med"] = np.median(data_array, axis=1)
+
+        if "3qrt" in self.selected_features:
+            stats_dict["3qrt"] = np.percentile(data_array, 75, axis=1)
+
+        if "max" in self.selected_features:
+            stats_dict["max"] = np.max(data_array, axis=1)
+
+        return stats_dict
+
+    def _extract_features_from_array(
+        self, data_array: np.ndarray, var_idx: int
+    ) -> dict:
+        """
+        Extract statistical features from a window array.
+
+        Args:
+            data_array: Array with variable data
+            var_idx: Variable index
+
+        Returns:
+            Dictionary with extracted features
+        """
+        if data_array.size == 0:
+            return {}
+
+        # Calculate statistics
+        stats_dict = self._calculate_statistics(data_array)
+
+        # Format with variable name
+        features_dict = {}
+        for stat_name, values in stats_dict.items():
+            col_name = f"var{var_idx}_{stat_name}"
+            # Ensure values are 1D arrays
+            if isinstance(values, np.ndarray):
+                features_dict[col_name] = values
+            else:
+                features_dict[col_name] = np.array([values])
+
+        return features_dict
+
+    def pre_process(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply initial preprocessing.
+
+        Args:
+            data: Input DataFrame
+
+        Returns:
+            Processed DataFrame
+        """
+        if not isinstance(data, pd.DataFrame):
+            raise TypeError("Input data must be a pandas DataFrame")
+
+        if data.empty:
+            raise ValueError("Input data is empty")
+
+        # Apply offset if specified
+        data_size = len(data)
         if self.offset > 0:
-            tags = tags.iloc[self.offset :]
-            y = y.iloc[self.offset :]
+            if self.offset >= data_size:
+                raise ValueError(
+                    f"Offset ({self.offset}) is larger than data length ({data_size})"
+                )
+            data = data.iloc[self.offset :].copy()
 
-        processed_columns = []
-        all_column_features = []
+        return data
 
-        for col_name in tags.columns:
-            if len(tags[col_name]) < self.window_size:
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Main step logic - statistical feature extraction.
+
+        Args:
+            data: DataFrame with windowed data
+
+        Returns:
+            DataFrame with extracted features
+        """
+        # Check if data is windowed
+        if not self.is_windowed:
+            raise ValueError(
+                "Data is not windowed. Please use the Windowing class to window your data first, "
+                "then set is_windowed=True in the config when initializing ExtractStatisticalFeatures."
+            )
+
+        # Identify variables
+        variables = self._identify_variables(data)
+
+        if not variables:
+            raise ValueError("No variables found in the data")
+
+        # Extract labels if they exist
+        labels = None
+        if self.label_column and self.label_column in data.columns:
+            labels = data[self.label_column].values
+
+        # Extract features for each variable
+        all_features = {}
+
+        for var_idx, var_columns in variables.items():
+            if not var_columns:
                 continue
 
-            windows_df = windowing(
-                X=tags[col_name],
-                window="boxcar",
-                window_size=self.window_size,
-                overlap=self.overlap,
+            # Get variable data
+            var_data = data[var_columns].values
+
+            # Extract features
+            var_features = self._extract_features_from_array(var_data, var_idx)
+
+            # Add to result
+            all_features.update(var_features)
+
+        if not all_features:
+            raise ValueError("No features were extracted")
+
+        # Create result DataFrame
+        result_df = pd.DataFrame(all_features)
+
+        # Add labels if they existA
+        if labels is not None:
+            result_df["label"] = labels
+
+        return result_df
+
+    def post_process(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Post-process the data.
+
+        Args:
+            data: DataFrame with extracted features
+
+        Returns:
+            Final DataFrame
+        """
+        if data.empty:
+            raise ValueError("No data to post-process")
+
+        # Check for NaN or infinite values
+        if data.select_dtypes(include=[np.number]).isnull().any().any():
+            print("Warning: NaN values detected in extracted features")
+
+        if np.isinf(data.select_dtypes(include=[np.number]).values).any():
+            print("Warning: Infinite values detected in extracted features")
+            # Replace infinities with finite extreme values
+            numeric_cols = data.select_dtypes(include=[np.number]).columns
+            data[numeric_cols] = data[numeric_cols].replace(
+                [np.inf, -np.inf], [np.finfo(np.float64).max, np.finfo(np.float64).min]
             )
 
-            if windows_df.empty:
-                continue
-
-            processed_columns.append(col_name)
-
-            if windows_df.shape[1] > self.window_size:
-                windows_df = windows_df.iloc[:, : self.window_size]
-
-            windows_tensor = torch.Tensor(windows_df.values).double()
-
-            std, mean = torch.std_mean(windows_tensor, dim=-1, unbiased=False)
-            cstags = (windows_tensor - mean.unsqueeze(-1)) / (
-                std.unsqueeze(-1) + self.eps
-            )
-            skew = cstags.pow(3).mean(dim=-1)
-            kurt = cstags.pow(4).mean(dim=-1)
-            quantiles_tensor = torch.tensor([0.00, 0.25, 0.50, 0.75, 1.00]).double()
-            q = windows_tensor.quantile(quantiles_tensor, dim=-1)
-
-            records = {
-                f"{col_name}_mean": mean,
-                f"{col_name}_std": std,
-                f"{col_name}_skew": skew,
-                f"{col_name}_kurt": kurt,
-                f"{col_name}_min": q[0],
-                f"{col_name}_1qrt": q[1],
-                f"{col_name}_med": q[2],
-                f"{col_name}_3qrt": q[3],
-                f"{col_name}_max": q[4],
-            }
-            all_column_features.append(pd.DataFrame(records))
-
-        if not all_column_features:
-            out_columns = [f"{t}_{f}" for f in self.FEATURES for t in tags.columns]
-            empty_index = pd.Index([], name=original_index_name)
-            X = pd.DataFrame(columns=out_columns, dtype=np.float64, index=empty_index)
-            y_out = (
-                pd.Series([], dtype=np.float64, index=empty_index)
-                if y is not None
-                else None
-            )
-            return X, y_out
-
-        out_columns_final = [
-            f"{t}_{f}" for f in self.FEATURES for t in processed_columns
-        ]
-
-        stride = int(self.window_size * (1 - self.overlap))
-
-        if stride == 0:
-            stride = 1
-
-        output_index = tags.index[self.window_size - 1 :: stride]
-        num_windows = len(all_column_features[0])
-        output_index = output_index[:num_windows]
-
-        X = pd.concat(all_column_features, axis=1)
-        X.index = output_index
-        X.index.name = original_index_name
-        X = X.reindex(columns=out_columns_final)
-
-        # Align y with the new windowed index
-        y_out = y.loc[output_index]
-
-        return X, y_out
+        return data

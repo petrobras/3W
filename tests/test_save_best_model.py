@@ -1,12 +1,12 @@
 import os
 import tempfile
 import pickle
-from io import BytesIO
-
 import pytest
 import torch
 import torch.nn as nn
 import sklearn.linear_model
+
+from io import BytesIO
 
 from ThreeWToolkit.utils import ModelRecorder
 

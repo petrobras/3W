@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
-from ThreeWToolkit.data_visualization import PlotCorrelationHeatmap
+from ThreeWToolkit.data_visualization.plots import DataVisualization
 
 
 class TestPlotCorrelationHeatmap:
@@ -26,7 +26,7 @@ class TestPlotCorrelationHeatmap:
         Test if correlation_heatmap returns a matplotlib Figure with given Axes.
         """
         fig, ax = plt.subplots()
-        fig = PlotCorrelationHeatmap.correlation_heatmap(
+        fig, _ = DataVisualization.correlation_heatmap(
             df_of_series=self.data, ax=ax, title="Test Heatmap"
         )
 
@@ -37,7 +37,7 @@ class TestPlotCorrelationHeatmap:
         """
         Test that correlation_heatmap works when no Axes is provided (ax=None).
         """
-        fig = PlotCorrelationHeatmap.correlation_heatmap(
+        fig, _ = DataVisualization.correlation_heatmap(
             df_of_series=self.data, title="No Ax Provided"
         )
 
@@ -48,7 +48,7 @@ class TestPlotCorrelationHeatmap:
         """
         Test that correlation_heatmap accepts and applies extra kwargs (e.g., annot=True).
         """
-        fig = PlotCorrelationHeatmap.correlation_heatmap(
+        fig, _ = DataVisualization.correlation_heatmap(
             df_of_series=self.data,
             title="With Annotations",
             annot=True,
@@ -63,7 +63,7 @@ class TestPlotCorrelationHeatmap:
         Test that correlation_heatmap handles an empty DataFrame gracefully.
         """
         empty_df = pd.DataFrame()
-        fig = PlotCorrelationHeatmap.correlation_heatmap(
+        fig, _ = DataVisualization.correlation_heatmap(
             df_of_series=empty_df, title="Empty DataFrame"
         )
 

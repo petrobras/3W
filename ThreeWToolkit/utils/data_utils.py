@@ -2,17 +2,17 @@ import numpy as np
 import pandas as pd
 
 
-""" Signals in dataset but with few samples (or no samples at all). """
+"""Signals in dataset with few samples (or no samples at all)."""
 UNUSED_TAGS = [
     "P-JUS-BS",  # zero instances
     "P-MON-SDV-P",  # zero instances
     "PT-P",  # zero instances
     "QBS",  # zero instances
-    "P-MON-CKGL",  # only two events have this tag non-NA.
+    "P-MON-CKGL",  # only two events have this tag non-NA
     "state",
 ]
 
-""" Faulty sensors may give wrong readings. Values outside this range should be discarded. """
+"""Faulty sensors may give wrong readings. Values outside this range should be discarded."""
 VALID_RANGE = {
     # choke states are between 0 and 100
     "ABER-CKGL": (0, 100),  # Gas-lift choke value
@@ -32,20 +32,20 @@ VALID_RANGE = {
     "P-JUS-CKGL": (
         -1e7,
         10e7,
-    ),  # highest reliable reading is 4.52e+07, TODO: check negatives.
+    ),  # highest reliable reading is 4.52e+07, TODO: check negatives
     "P-JUS-CKP": (0, 10e7),  # highest reliable reading is 1.01e+07
     "P-PDG": (0, 10e7),  # highest reliable reading is 4.91e+07
     "P-TPT": (0, 10e7),  # highest reliable reading is 8.17e+07
     # temperature readings
     "T-JUS-CKP": (-15, 150),  # from data analysis
     "T-MON-CKP": (-10, 150),
-    "T-PDG": (0, 300),  # highest reliable reading is 2.76e2.
+    "T-PDG": (0, 300),  # highest reliable reading is 2.76e2
     "T-TPT": (-5, 150),
 }
 
 
-""" Faulty sensors may give frozen readings inside the valid range. If sensor variation is below threshold,
-    we should discard the data. """
+"""Faulty sensors may give frozen readings inside the valid range. If sensor variation is below threshold,
+   we should discard the data."""
 DEVIATION_THRESHOLD = {
     # unclear what to do with state variables
     # pressure readings
@@ -61,11 +61,11 @@ DEVIATION_THRESHOLD = {
     "T-TPT": 1e-7,
 }
 
-""" Averages and standard deviations taken from cleaned up data.
-    Cleaned up data means (in order):
-        * tags in UNUSED_TAGS are removed from the dataset.
-        * all values outside the ranges `VALID_RANGE` are removed
-        * all values within an event where the sensor appears frozen (standard deviation below threshold) are removed.
+"""Averages and standard deviations taken from cleaned up data.
+   Cleaned up data means (in order):
+       * tags in UNUSED_TAGS are removed from the dataset
+       * all values outside the ranges `VALID_RANGE` are removed
+       * all values within an event where the sensor appears frozen (standard deviation below threshold) are removed
 """
 GLOBAL_AVERAGES = {  # computed from cleaned up data
     "ABER-CKGL": 1.931843e01,
@@ -122,10 +122,26 @@ def default_data_cleanup(
     data: pd.DataFrame, target_column: str | None = None, *args, **kwargs
 ) -> pd.DataFrame:
     """Apply default cleanup for signal dataframes.
-    Removes unused tags, frozen sensors and out of range sensors.
+
+    Removes unused tags, frozen sensors and out-of-range sensor readings.
+
+    Args:
+        data (pd.DataFrame): Raw signal data to be cleaned.
+        target_column (str | None, optional): Name of the target column to exclude
+            from cleanup. Defaults to None.
+        *args: Additional positional arguments (unused).
+        **kwargs: Additional keyword arguments (unused).
+
+    Returns:
+        pd.DataFrame: Cleaned dataframe with invalid readings replaced by NaN.
+
+    Notes:
+        - Drops columns listed in UNUSED_TAGS
+        - Replaces frozen sensor readings (std < threshold) with NaN
+        - Replaces out-of-range values with NaN based on VALID_RANGE
     """
 
-    # drop unused columns
+    # Drop unused columns
     columns_to_drop = UNUSED_TAGS.copy()
     if target_column is not None:
         columns_to_drop += [target_column]
@@ -135,14 +151,14 @@ def default_data_cleanup(
 
     data = data.drop(columns_to_drop, axis=1)
 
-    # per-column cleanup
+    # Per-column cleanup
     for tag in data.columns:
-        # clean stuck sensors
+        # Clean stuck sensors
         if tag in DEVIATION_THRESHOLD:
             if data[tag].std() < DEVIATION_THRESHOLD[tag]:
                 data[tag] = np.nan
 
-        # remove values outside valid range
+        # Remove values outside valid range
         if tag in VALID_RANGE:
             lower, upper = VALID_RANGE[tag]
             data[tag] = data[tag].where(data[tag].between(lower, upper), other=np.nan)
@@ -154,7 +170,24 @@ def default_data_normalization(
     data: pd.DataFrame, target_column: str | None = None, *args, **kwargs
 ) -> pd.DataFrame:
     """Apply default scaling on data.
-    Global averages and standard deviations are computed from the canon cleaned values.
+
+    Uses global averages and standard deviations computed from canonical cleaned values
+    to perform z-score normalization.
+
+    Args:
+        data (pd.DataFrame): Data to be normalized.
+        target_column (str | None, optional): Name of the target column to exclude
+            from normalization. Defaults to None.
+        *args: Additional positional arguments (unused).
+        **kwargs: Additional keyword arguments (unused).
+
+    Returns:
+        pd.DataFrame: Normalized dataframe with z-score scaling applied.
+
+    Notes:
+        - Uses (data - mean) / std normalization
+        - Global statistics are pre-computed from cleaned training data
+        - Target column is excluded from normalization if specified
     """
 
     # Filter loaded signals
@@ -163,6 +196,9 @@ def default_data_normalization(
     # Remove target column
     if target_column is not None:
         selected_columns = [col for col in selected_columns if col != target_column]
+
+    # Remove "class" column from normalization calculations
+    selected_columns = [col for col in selected_columns if col != "class"]
 
     avg = pd.Series({tag: GLOBAL_AVERAGES[tag] for tag in selected_columns})
     std = pd.Series({tag: GLOBAL_STDS[tag] for tag in selected_columns})
@@ -177,16 +213,41 @@ def default_data_processing(
     *args,
     **kwargs,
 ) -> pd.DataFrame:
-    """Apply default cleaning and scaling on data, while filling missing values with 0 (the default average)."""
+    """Apply default cleaning and scaling on data, while filling missing values with 0 (the default average).
 
-    # signal
+    Performs a complete data processing pipeline including cleanup, normalization,
+    and missing value imputation.
+
+    Args:
+        data (dict[str, pd.DataFrame]): Dictionary containing 'signal' and 'label' dataframes.
+        fillna (bool, optional): Whether to fill missing values with 0. Defaults to True.
+        target_column (str | None, optional): Name of the target column. Defaults to None.
+        fill_target_value (int | None, optional): Value to fill in the target class column.
+            Defaults to None.
+        *args: Additional positional arguments.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        pd.DataFrame: Processed data dictionary with cleaned and normalized signals.
+
+    Notes:
+        - Applies cleanup to remove invalid sensor readings
+        - Applies z-score normalization using global statistics
+        - Fills missing values with 0 (which corresponds to the global mean after normalization)
+        - TODO: Implement normalization for labels in regression tasks
+    """
+
+    # Signal processing
     data["signal"] = default_data_cleanup(data["signal"], target_column)
     data["signal"] = default_data_normalization(data["signal"], target_column)
     if fillna:
         data["signal"] = data["signal"].fillna(0)
 
-    # label
-    # TODO: Implement normalization labels for regression tasks
-    if target_column is not None:
+    # Label processing
+    # Obs: When target_column is None, "label" is not in data
+    if "label" in data:
         data["label"]["class"] = fill_target_value
+
+    # TODO: Implement normalization labels for regression tasks
+
     return data

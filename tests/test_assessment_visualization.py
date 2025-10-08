@@ -1,4 +1,5 @@
 import pytest
+import pydantic
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -6,13 +7,11 @@ import matplotlib.pyplot as plt
 
 matplotlib.use("Agg")  # Use non-interactive backend for tests
 from matplotlib.figure import Figure
-import pydantic
-
-from ThreeWToolkit.assessment.assessment_visualizations import AssessmentVisualization
 
 from ThreeWToolkit.core.base_assessment_visualization import (
     AssessmentVisualizationConfig,
 )
+from ThreeWToolkit.assessment.assessment_visualizations import AssessmentVisualization
 
 
 class TestAssessmentVisualization:
@@ -129,7 +128,7 @@ class TestAssessmentVisualization:
             viz.feature_visualization(feature_importances, feature_names)
 
 
-class TestBaseAssessmentVisualizationConfig:
+class TestAssessmentVisualizationConfig:
     def test_accepts_none(self):
         cfg = AssessmentVisualizationConfig(class_names=None)
         assert cfg.class_names is None

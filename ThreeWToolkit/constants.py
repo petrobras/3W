@@ -9,7 +9,7 @@ OUTPUT_DIR = PROJECT_ROOT / "output"
 REPORTS_DIR = OUTPUT_DIR / "reports"  # Directory for generated PDFs
 
 # Define the path to the mock visualization objects plot folder
-PLOTS_DIR = Path("/tmp/3w_plots")
+PLOTS_DIR = OUTPUT_DIR / "3w_plots"
 
 # Define the path to the LaTeX documents directory
 LATEX_DIR = PROJECT_ROOT / "docs" / "latex"
