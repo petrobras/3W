@@ -1,73 +1,84 @@
 import pytest
 import pandas as pd
 import numpy as np
-import os
+from ThreeWToolkit.reports.report_generation import ReportGeneration
 
-@pytest.fixture
-def mock_plots_dir(tmp_path, monkeypatch):
-    """
-    Fixture to create a temporary directory for plots and monkeypatch
-    the os functions to use it, preventing plot file creation during tests.
-    """
-    plots_dir = tmp_path / "plots"
-    plots_dir.mkdir()
-    
-    # Monkeypatch the path creation to point to our temp dir
-    monkeypatch.setattr(os.path, 'abspath', lambda x: str(tmp_path))
-    # We will also mock plt.savefig directly in tests to avoid actual plotting
-    return plots_dir
+# A helper class to create an object from a dictionary
+class MockConfig:
+    def __init__(self, config_dict: dict):
+        """
+        Populates the instance's __dict__ from the passed dictionary.
+        This makes attributes like self.parameter_alpha directly accessible.
+        """
+        self.__dict__.update(config_dict)
 
-@pytest.fixture
-def mock_time_series_data():
-    """
-    Fixture to generate consistent time series data with a prolonged anomaly
-    in the test set.
-    """
-    # Use a seed for reproducible random noise
-    np.random.seed(42)
-    
-    time = np.arange(0, 50, 1)
-    signal = np.sin(2 * np.pi * time / 10) + np.random.normal(0, 0.1, len(time))
-    series = pd.Series(signal, index=time, name="test_signal")
-    
-    # --- CHANGES START HERE ---
+    def __iter__(self):
+        """
+        Makes the object iterable for loops like `for key, val in obj:`.
+        It yields key-value pairs, mimicking the behavior of `dict.items()`.
+        """
+        yield from self.__dict__.items()
 
-    # 1. Create the ground truth labels (0 for normal, 1 for anomaly)
-    y_labels = pd.Series(0, index=series.index, name="is_anomaly")
-    
-    # 2. Inject a prolonged anomaly into the test section of the data
-    # This event lasts for 3 time steps (from index 42 to 44)
-    series.iloc[42:45] += 3.0
-    y_labels.iloc[42:45] = 1 # Mark these indices as anomalies in the labels
+class MockModel:
+    def __init__(self):
+        config_dict = {
+            "parameter_alpha": 0.1,
+            "some_list": [1, 2, 3],
+            "learning_rate": "auto"
+        }
+        # The 'config' attribute isan instance of our special MockConfig class
+        self.config = MockConfig(config_dict)
 
-    # 3. The returned dictionary now uses the signal for X and labels for Y
-    data = {
-        "X_train": series.iloc[:40],
-        "y_train": y_labels.iloc[:40], # y_train contains only normal points
-        "X_test": series.iloc[40:],
-        "y_test": y_labels.iloc[40:]   # y_test contains the anomaly
-    }
-    # --- CHANGES END HERE ---
-    
-    return data
 
 @pytest.fixture
 def mock_model():
-    """
-    Fixture to create a mock model that performs simple anomaly detection.
-    """
-    class MockModel:
-        def get_params(self):
-            # Parameters now reflect the anomaly detection method
-            return {"method": "rolling_threshold", "window": 3, "threshold": 1.5}
-
-        def predict(self, X_data):
-            # A simple anomaly detection logic:
-            # 1. Calculate the rolling mean (the "expected" value)
-            smoothed_signal = X_data.rolling(window=3, center=True).mean().bfill().ffill()
-            # 2. Find the deviation from the mean
-            residual = (X_data - smoothed_signal).abs()
-            # 3. If deviation is above a threshold, it's an anomaly (1), else normal (0)
-            return (residual > 1.5).astype(int)
-
+    """Provides a mock model instance for tests."""
     return MockModel()
+
+@pytest.fixture
+def sample_data():
+    """Provides sample pandas Series for testing."""
+    return {
+        "X_train": pd.Series(np.random.rand(50), name="feature_1"),
+        "y_train": pd.Series(np.random.randint(0, 2, 50), name="target"),
+        "X_test": pd.Series(np.random.rand(20), name="feature_1"),
+        "y_test": pd.Series(np.random.randint(0, 2, 20), name="target"),
+        "predictions": pd.Series(np.random.randint(0, 2, 20), name="preds"),
+    }
+
+@pytest.fixture
+def report_generator_instance(tmp_path, mock_model, sample_data):
+    """Creates a ReportGeneration instance using a temporary directory."""
+    plot_config = {
+        "PlotSeries": {"series": sample_data["y_test"], "title": "Test Series Plot"},
+        "PlotMultipleSeries": {
+            "series_list": [sample_data["y_test"], sample_data["predictions"]],
+            "title": "Multiple Series Plot"
+        }
+    }
+    
+    instance = ReportGeneration(
+        model=mock_model,
+        **sample_data,
+        calculated_metrics={"Accuracy": 0.95, "F1 Score": 0.92},
+        plot_config=plot_config,
+        title="Test_Report",
+        latex_dir=tmp_path / "latex",
+        reports_dir=tmp_path / "reports",
+        export_report_after_generate=False # Keep this False for most tests
+    )
+    return instance
+
+@pytest.fixture
+def sample_results_dict():
+    """Provides a valid sample 'results' dictionary for CSV export."""
+    return {
+        "X_test": pd.DataFrame({
+            'feature_A': [1, 2, 3, 4, 5],
+            'feature_B': [10, 20, 30, 40, 50],
+        }),
+        "true_values": [1, 0, 1, 0, 1],
+        "predictions": [1, 1, 1, 0, 0],
+        "model_name": "MyAwesomeModel",
+        "metrics": {"Accuracy": 0.6, "F1 Score": 0.667}
+    }
