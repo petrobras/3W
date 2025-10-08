@@ -392,10 +392,14 @@ class ReportGeneration:
         else:
             raise ValueError("Format must be either 'latex' or 'html'.")
 
-    def save_report(
-        self, doc: Union[Document, str], filename: str, format: str
-    ) -> None:
-        """Saves the report in both LaTeX (PDF) and HTML formats."""
+    def save_report(self, doc: Document | str, filename: str, format: str    ) -> None:
+    """Saves the report in both LaTeX (PDF) and HTML formats.
+
+    Args:
+        doc (Document | str): The report content to save. Can be a `Document` object or a raw string containing the report text.
+        filename (str): The base name (without extension) of the output file.
+        format (str): The output format to use, such as "pdf" or "html".
+    """
         if format == "latex":
             self._save_report_latex(doc, filename)
             print("LaTeX report saved successfully")
