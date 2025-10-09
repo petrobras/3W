@@ -254,7 +254,7 @@ def test_export_with_dataframe_xtest(report_generator_instance, sample_results_d
 
 def test_export_with_numpy_xtest(report_generator_instance, sample_results_dict):
     """Tests the logic path where X_test is a 1D and 2D NumPy array."""
-    # --- Case 1: 1D NumPy array ---
+    # Checking 1D NumPy array
     sample_results_dict["X_test"] = np.array([1.1, 2.2, 3.3, 4.4, 5.5])
     df_1d = report_generator_instance.export_results_to_csv(
         sample_results_dict, "report_1d.csv"
