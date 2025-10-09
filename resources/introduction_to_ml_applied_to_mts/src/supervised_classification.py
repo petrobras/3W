@@ -9,6 +9,7 @@ for the 3W oil well fault detection dataset including:
 - Model comparison and evaluation
 - Feature engineering for time series data
 - Class balancing using data augmentation
+- Utility functions for student-friendly analysis
 
 The module integrates with the existing data augmentation utilities for handling
 class imbalance and provides a unified interface for training and evaluating
@@ -32,6 +33,178 @@ import matplotlib.pyplot as plt
 
 # Local imports
 from .data_augmentation import quick_balance_classes
+
+
+# ============================================================
+# UTILITY FUNCTIONS FOR STUDENT NOTEBOOKS
+# ============================================================
+
+def load_3w_data(config, verbose=True):
+    """
+    Load 3W dataset for classification analysis.
+    
+    Args:
+        config: Configuration module
+        verbose: Whether to print loading information
+        
+    Returns:
+        tuple: (train_dfs, train_classes, train_fold_info, test_dfs, test_classes, test_fold_info)
+    """
+    from .data_persistence import DataPersistence
+    import os
+    
+    if verbose:
+        print("Loading 3W Dataset for Classification")
+        print("=" * 40)
+
+    try:
+        # Initialize data persistence
+        persistence = DataPersistence(base_dir=config.PROCESSED_DATA_DIR, verbose=False)
+        windowed_dir = os.path.join(persistence.cv_splits_dir, "windowed")
+        
+        if not os.path.exists(windowed_dir):
+            raise FileNotFoundError("Run Data Treatment notebook first!")
+        
+        # Find fold directories
+        fold_dirs = [d for d in os.listdir(windowed_dir) 
+                    if d.startswith("fold_") and os.path.isdir(os.path.join(windowed_dir, d))]
+        fold_dirs.sort()
+        
+        if verbose:
+            print(f"Found {len(fold_dirs)} folds")
+        
+        # Load all data
+        all_train_windows, all_train_classes, all_train_fold_info = [], [], []
+        all_test_windows, all_test_classes, all_test_fold_info = [], [], []
+
+        for fold_name in fold_dirs:
+            fold_path = os.path.join(windowed_dir, fold_name)
+            
+            # Load training data
+            train_file = os.path.join(fold_path, f"train_windowed.{config.SAVE_FORMAT}")
+            if os.path.exists(train_file):
+                fold_train_dfs, fold_train_classes = persistence._load_dataframes(train_file, config.SAVE_FORMAT)
+                all_train_windows.extend(fold_train_dfs)
+                all_train_classes.extend(fold_train_classes)
+                all_train_fold_info.extend([fold_name] * len(fold_train_dfs))
+
+            # Load test data
+            test_file = os.path.join(fold_path, f"test_windowed.{config.SAVE_FORMAT}")
+            if os.path.exists(test_file):
+                fold_test_dfs, fold_test_classes = persistence._load_dataframes(test_file, config.SAVE_FORMAT)
+                all_test_windows.extend(fold_test_dfs)
+                all_test_classes.extend(fold_test_classes)
+                all_test_fold_info.extend([fold_name] * len(fold_test_dfs))
+
+        if verbose:
+            print(f"✅ Data loaded successfully!")
+            print(f"   Training windows: {len(all_train_windows)}")
+            print(f"   Test windows: {len(all_test_windows)}")
+            if all_train_windows:
+                print(f"   Window shape: {all_train_windows[0].shape}")
+
+        return (all_train_windows, all_train_classes, all_train_fold_info,
+                all_test_windows, all_test_classes, all_test_fold_info)
+
+    except Exception as e:
+        if verbose:
+            print(f"❌ Error: {e}")
+        return [], [], [], [], [], []
+
+
+def validate_configuration(selected_classes, test_classes, verbose=True):
+    """
+    Validate classification configuration.
+    
+    Args:
+        selected_classes: List of classes to analyze
+        test_classes: Available test classes
+        verbose: Whether to print validation info
+        
+    Returns:
+        bool: True if configuration is valid
+    """
+    if verbose:
+        print(f"Selected classes: {selected_classes}")
+    
+    # Check if selected classes exist
+    test_classes_array = np.array(test_classes)
+    unique_test_classes = np.unique(test_classes_array)
+    available_selected = [cls for cls in selected_classes if cls in unique_test_classes]
+    
+    if len(available_selected) == len(selected_classes):
+        if verbose:
+            print(f"✅ All selected classes found in data")
+        return True
+    else:
+        if verbose:
+            print(f"⚠️ Missing classes: {set(selected_classes) - set(available_selected)}")
+        return False
+
+
+def analyze_results_by_category(results, verbose=True):
+    """
+    Analyze results by algorithm category.
+    
+    Args:
+        results: List of result dictionaries
+        verbose: Whether to print analysis
+        
+    Returns:
+        dict: Analysis by category with best algorithm and accuracy for each category
+    """
+    # Categorize models
+    tree_models = [r for r in results if "Tree" in r["model_name"] or "Forest" in r["model_name"]]
+    svm_models = [r for r in results if "SVM" in r["model_name"]]
+    nn_models = [r for r in results if "Neural Network" in r["model_name"]]
+
+    # Create analysis with best performers
+    analysis = {}
+    
+    if tree_models:
+        best_tree = max(tree_models, key=lambda x: x["test_accuracy"])
+        analysis['Tree-Based'] = {
+            'best_algorithm': best_tree['model_name'],
+            'best_accuracy': best_tree['test_accuracy'],
+            'count': len(tree_models)
+        }
+    
+    if svm_models:
+        best_svm = max(svm_models, key=lambda x: x["test_accuracy"])
+        analysis['Support Vector Machines'] = {
+            'best_algorithm': best_svm['model_name'],
+            'best_accuracy': best_svm['test_accuracy'],
+            'count': len(svm_models)
+        }
+    
+    if nn_models:
+        best_nn = max(nn_models, key=lambda x: x["test_accuracy"])
+        analysis['Neural Networks'] = {
+            'best_algorithm': best_nn['model_name'],
+            'best_accuracy': best_nn['test_accuracy'],
+            'count': len(nn_models)
+        }
+
+    if verbose:
+        print(f"🔧 Algorithm Analysis:")
+        print(f"   • Tree-Based: {len(tree_models)} models")
+        print(f"   • Support Vector Machines: {len(svm_models)} models")
+        print(f"   • Neural Networks: {len(nn_models)} models")
+
+        # Best performers by category
+        if tree_models:
+            best_tree = max(tree_models, key=lambda x: x["test_accuracy"])
+            print(f"\n🌳 Best Tree: {best_tree['model_name']} ({best_tree['test_accuracy']:.3f})")
+
+        if svm_models:
+            best_svm = max(svm_models, key=lambda x: x["test_accuracy"])
+            print(f"⚡ Best SVM: {best_svm['model_name']} ({best_svm['test_accuracy']:.3f})")
+
+        if nn_models:
+            best_nn = max(nn_models, key=lambda x: x["test_accuracy"])
+            print(f"🧠 Best NN: {best_nn['model_name']} ({best_nn['test_accuracy']:.3f})")
+
+    return analysis
 
 
 class SupervisedClassifier:
@@ -65,6 +238,7 @@ class SupervisedClassifier:
         balance_classes: bool = True,
         balance_strategy: str = "combined",
         max_samples_per_class: int = 300,
+        selected_classes: List = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Prepare data for supervised classification.
@@ -77,6 +251,7 @@ class SupervisedClassifier:
             balance_classes (bool): Whether to balance classes using augmentation
             balance_strategy (str): Strategy for class balancing ('combined', 'oversample', 'undersample')
             max_samples_per_class (int): Maximum samples per class after balancing
+            selected_classes (List): List of classes to include (None = all classes)
 
         Returns:
             tuple: (X_train, y_train, X_test, y_test) - prepared arrays
@@ -123,6 +298,36 @@ class SupervisedClassifier:
 
         train_mapped_classes = map_transient_classes(train_window_classes)
         test_mapped_classes = map_transient_classes(test_window_classes)
+        
+        # Apply class filtering after extraction and mapping
+        if selected_classes is not None:
+            if self.verbose:
+                print(f"Filtering to selected classes {selected_classes}...", end=" ")
+            
+            # Filter training data
+            filtered_train_dfs = []
+            filtered_train_classes = []
+            for i, cls in enumerate(train_mapped_classes):
+                if cls in selected_classes:
+                    filtered_train_dfs.append(train_dfs[i])
+                    filtered_train_classes.append(cls)
+            
+            # Filter test data  
+            filtered_test_dfs = []
+            filtered_test_classes = []
+            for i, cls in enumerate(test_mapped_classes):
+                if cls in selected_classes:
+                    filtered_test_dfs.append(test_dfs[i])
+                    filtered_test_classes.append(cls)
+            
+            # Update the data
+            train_dfs = filtered_train_dfs
+            train_mapped_classes = filtered_train_classes
+            test_dfs = filtered_test_dfs
+            test_mapped_classes = filtered_test_classes
+            
+            if self.verbose:
+                print(f"✅ Train: {len(train_dfs)}, Test: {len(test_dfs)}")
         
 
         if self.verbose:
@@ -1259,6 +1464,7 @@ def enhanced_fold_analysis(
                 balance_classes=balance_classes,
                 balance_strategy=balance_strategy,
                 max_samples_per_class=max_samples_per_class,
+                selected_classes=selected_classes,  # Pass selected_classes to prepare_data
             )
             
             if verbose:
