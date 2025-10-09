@@ -200,7 +200,6 @@ class ReportGeneration:
         plots_dir = self.reports_dir / format / "plots"
         plots_dir.mkdir(parents=True, exist_ok=True)
 
-
         plot_paths = {}
 
         self._check_plot_config(self.plot_config)

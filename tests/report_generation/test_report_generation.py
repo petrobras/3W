@@ -92,7 +92,6 @@ def test_get_visualization(
 def test_generate_summary_report_latex(mock_get_viz, report_generator_instance):
     """Test LaTeX report generation logic without file I/O."""
 
-    report_dir = report_generator_instance.reports_dir
     mock_get_viz.return_value = {
         "plot1": {
             "img_path": Path("plots") / "plot1.png",
@@ -131,7 +130,7 @@ def test_generate_summary_report_html(
         # Mock get_visualization to return predictable data
         mock_get_viz.return_value = {
             "plot1": {
-                "img_path":  Path("plots") / "plot1.png",
+                "img_path": Path("plots") / "plot1.png",
                 "title": "Plot One",
                 "alt": "Plot Alt Text",
             }
