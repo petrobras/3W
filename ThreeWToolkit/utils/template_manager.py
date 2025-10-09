@@ -63,7 +63,5 @@ def copy_latex_support_files(latex_dir: Path, report_path: Path):
                 shutil.rmtree(assets_dir_dest)
             shutil.copytree(assets_dir_src, assets_dir_dest)
 
-        # print("Copied .sty files and assets to the report directory to facilitate user compilation.")
-
     except Exception as e:
         print(f"Warning: Could not copy LaTeX support files: {e}")
