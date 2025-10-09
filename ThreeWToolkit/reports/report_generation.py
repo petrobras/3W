@@ -3,7 +3,7 @@ import pandas as pd
 import jinja2
 
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Callable
 
 from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
@@ -11,8 +11,8 @@ from pylatex.package import Package
 
 from ThreeWToolkit.data_visualization import DataVisualization
 
-from ..constants import LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR
-from ..utils.latex_manager import copy_latex_support_files
+from ..constants import FIGURES_DIR, LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR
+from ..utils.template_manager import copy_html_support_files, copy_latex_support_files
 
 
 class ReportGeneration:
@@ -53,7 +53,7 @@ class ReportGeneration:
         self.reports_dir = reports_dir / report_folder
         self.save_report_after_generate = export_report_after_generate
 
-        self.valid_plots = {
+        self.valid_plots: Dict[str, Callable] = {
             "PlotSeries": DataVisualization.plot_series,
             "PlotMultipleSeries": DataVisualization.plot_multiple_series,
             "PlotCorrelationHeatmap": DataVisualization.correlation_heatmap,
@@ -156,7 +156,7 @@ class ReportGeneration:
 
         # Slides 3+: Visualizations
         with doc.create(Section("Visualizations")):
-            plot_data = self.get_visualization()
+            plot_data = self.get_visualization("latex")
             for plot, details in plot_data.items():
                 if plot == "PlotCorrelationHeatmap":
                     width = 0.45
@@ -166,11 +166,6 @@ class ReportGeneration:
                 img_path = details["img_path"]
                 title = details["title"]
                 alt = details["alt"]
-
-                img_path = Path(img_path)
-                img_path = img_path.relative_to(
-                    self.reports_dir
-                )  # ensure relative path for LaTeX
 
                 doc.append(NoEscape(r"\begin{frame}{" + title + "}"))
                 doc.append(NoEscape(r"\begin{figure}\centering"))
@@ -189,9 +184,22 @@ class ReportGeneration:
 
         return doc
 
-    def get_visualization(self):
-        plots_dir = self.reports_dir / "plots"
+    def get_visualization(self, format: str):
+        """Generates and saves plots based on the provided plot configuration.
+
+        Args:
+            format (str): The format of the report, either 'latex' or 'html'.
+
+        Returns:
+            dict: A dictionary with plot metadata for inclusion in reports.
+        """
+
+        if format not in ["latex", "html"]:
+            raise ValueError("Format must be either 'latex' or 'html'.")
+
+        plots_dir = self.reports_dir / format / "plots"
         plots_dir.mkdir(parents=True, exist_ok=True)
+
 
         plot_paths = {}
 
@@ -207,6 +215,12 @@ class ReportGeneration:
             img_path = plots_dir / f"{self.title}_{plot}.png"
             fig.savefig(img_path, bbox_inches="tight")
             plt.close(fig)
+
+            img_path = Path(img_path)
+            img_path = img_path.relative_to(
+                self.reports_dir / format
+            )  # ensure relative paths for portability
+
             plot_paths[plot] = {
                 "title": params.get("title", "Time Series Plot"),
                 "alt": params.get("title", "Time Series Plot"),
@@ -246,7 +260,7 @@ class ReportGeneration:
     def _save_report_latex(self, doc: Document, filename: str) -> None:
         """Compiles and saves a PyLaTeX Document to a PDF file using lualatex."""
 
-        report_path = self.reports_dir
+        report_path = self.reports_dir / "latex"
         print(f"Saving report to '{report_path}' folder'...")
 
         report_path.mkdir(parents=True, exist_ok=True)
@@ -294,7 +308,7 @@ class ReportGeneration:
                 "and contains the template file."
             )
 
-        plot_data = self.get_visualization()
+        plot_data = self.get_visualization("html")
 
         context = {
             "title": self.title,
@@ -331,13 +345,15 @@ class ReportGeneration:
         report_path.mkdir(parents=True, exist_ok=True)
 
         file_path = report_path / filename
-        print(f"Saving markdown report to '{file_path}'...")
+        print(f"Saving HTML report to '{file_path}'...")
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(report_content)
-            print(f"Markdown report saved successfully to '{file_path}'")
+            print(f"HTML report saved successfully to '{file_path}'")
         except IOError as e:
-            print(f"Error saving markdown file: {e}")
+            print(f"Error saving HTML file: {e}")
+
+        copy_html_support_files(HTML_TEMPLATES_DIR, FIGURES_DIR, report_path)
 
     def export_results_to_csv(
         self, results: Dict[str, Any], filename: str

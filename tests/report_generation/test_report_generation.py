@@ -74,7 +74,8 @@ def test_get_visualization(
     mock_plot_series.return_value = mock_fig
     mock_plot_multiple.return_value = mock_fig
 
-    result = report_generator_instance.get_visualization()
+    result = report_generator_instance.get_visualization("html")
+    result = report_generator_instance.get_visualization("latex")  # Run both formats
 
     # Assert that the output dictionary has the correct structure
     assert "PlotSeries" in result
@@ -82,15 +83,19 @@ def test_get_visualization(
     assert Path(result["PlotSeries"]["img_path"]).name == "Test_Report_PlotSeries.png"
 
     # Assert that plt.close was called to free memory
-    assert mock_plt.close.call_count == 2
+    assert (
+        mock_plt.close.call_count == 2 * 2
+    )  # Called for each plot in both format calls
 
 
 @patch("ThreeWToolkit.reports.report_generation.ReportGeneration.get_visualization")
 def test_generate_summary_report_latex(mock_get_viz, report_generator_instance):
     """Test LaTeX report generation logic without file I/O."""
+
+    report_dir = report_generator_instance.reports_dir
     mock_get_viz.return_value = {
         "plot1": {
-            "img_path": "path/to/plot1.png",
+            "img_path": Path("plots") / "plot1.png",
             "title": "Plot One",
             "alt": "Alt One",
         }
@@ -106,7 +111,7 @@ def test_generate_summary_report_latex(mock_get_viz, report_generator_instance):
     assert "3W Toolkit Report" in latex_str
     assert "Accuracy & 0.95" in latex_str  # Check if metrics are there
     assert "Parameter Alpha: 0.1" in latex_str  # Check if model params are there
-    assert "path/to/plot1.png" in latex_str  # Check if image path is included
+    assert "plots/plot1.png" in latex_str  # Check if image path is included
 
 
 @patch("ThreeWToolkit.reports.report_generation.ReportGeneration.get_visualization")
@@ -126,7 +131,7 @@ def test_generate_summary_report_html(
         # Mock get_visualization to return predictable data
         mock_get_viz.return_value = {
             "plot1": {
-                "img_path": "path/to/plot.png",
+                "img_path":  Path("plots") / "plot1.png",
                 "title": "Plot One",
                 "alt": "Plot Alt Text",
             }
@@ -152,10 +157,11 @@ def test_generate_summary_report_html(
     assert "# Test_Report" in markdown_output
     assert "- Metric: 0.95" in markdown_output
     assert "- Model: MockModel" in markdown_output
-    assert "![Plot Alt Text](path/to/plot.png)" in markdown_output
+    assert "![Plot Alt Text](plots/plot1.png)" in markdown_output
 
 
-def test_save_report_html(report_generator_instance, tmp_path):
+@patch("ThreeWToolkit.reports.report_generation.copy_html_support_files")
+def test_save_report_html(mock_copy_files, report_generator_instance, tmp_path):
     """Test saving a string content to an HTML file."""
     content = "<h1>Test Content</h1>"
     filename = "test_output.html"
@@ -165,13 +171,15 @@ def test_save_report_html(report_generator_instance, tmp_path):
 
     report_generator_instance._save_report_html(content, filename)
 
+    mock_copy_files.assert_called_once()
+
     output_file = tmp_path / "html" / filename
     assert output_file.exists()
     assert output_file.read_text() == content
 
 
-@patch("ThreeWToolkit.reports.report_generation.latex_environment")
-def test_save_report_latex(mock_latex_env, report_generator_instance, tmp_path):
+@patch("ThreeWToolkit.reports.report_generation.copy_latex_support_files")
+def test_save_report_latex(mock_copy_files, report_generator_instance, tmp_path):
     """Test that the LaTeX saving logic calls generate_tex correctly."""
     mock_doc = MagicMock(spec=Document)
     report_generator_instance.reports_dir = tmp_path  # Simplify path
@@ -179,10 +187,10 @@ def test_save_report_latex(mock_latex_env, report_generator_instance, tmp_path):
     report_generator_instance._save_report_latex(mock_doc, "MyLatexReport")
 
     # Check that the latex_environment context manager was used
-    mock_latex_env.assert_called_once()
+    mock_copy_files.assert_called_once()
 
     # Check that the file generation was called with the correct path
-    expected_path = str(tmp_path / "report-MyLatexReport" / "MyLatexReport")
+    expected_path = str(tmp_path / "latex" / "MyLatexReport")
     mock_doc.generate_tex.assert_called_once_with(filepath=expected_path)
 
 
