@@ -266,7 +266,7 @@ code {
   text-align: center;
 
   /* The background image is defined here */
-  background-image: url('/home/pedro/Workspace/UFRJ/3W/3WToolkit/docs/figures/bg-petro.png');
+  background-image: url('figures/bg-petro.png');
   background-size: cover; /* Makes the image cover the entire space */
   background-position: center center; /* Centers the image */
   margin-left: -52px;
