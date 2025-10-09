@@ -1,4 +1,5 @@
 import random
+import shutil
 import zipfile
 import pandas as pd
 
@@ -12,6 +13,10 @@ from ..core.base_dataset import ParquetDatasetConfig
 from ..utils.downloader import get_figshare_data
 from ..utils.data_utils import default_data_processing
 
+DATASET_VALIDATION_RULES = {
+    "2.0.0": {"total_parquet_files": 2228},
+}
+
 
 class ParquetDataset(BaseStep):
     """
@@ -24,12 +29,31 @@ class ParquetDataset(BaseStep):
     def __init__(self, config: ParquetDatasetConfig):
         self.config = config
 
+        # Check if dataset version is valid
+        if self.config.version not in DATASET_VALIDATION_RULES:
+            raise ValueError(
+                f"Dataset version {self.config.version} is not valid. \
+                Supported versions are: {list(DATASET_VALIDATION_RULES.keys())}"
+            )
+
         # TODO: Implement dataset splitting for train, val, test
         if self.config.split not in [None, "list"]:
             raise ValueError("Dataset splitting not implemented.")
 
+        # Check if download is forced
+        if self.config.force_download:
+            print(
+                f"`force_download` is True. Deleting existing dataset at {self.config.path}."
+            )
+            # Delete existing dataset
+            if Path(self.config.path).exists():
+                shutil.rmtree(self.config.path)
+
+        # If dataset is not extracted, we must download it
+        should_download_dataset = not self.is_dataset_extracted_correctly()
+
         # Download dataset if required
-        if self.config.download:
+        if should_download_dataset:
             dl_path = Path(config.path) / "download"
             dl_path.mkdir(exist_ok=True, parents=True)
 
@@ -41,21 +65,32 @@ class ParquetDataset(BaseStep):
             else:
                 print("[ParquetDataset] Downloading dataset...")
                 downloaded = get_figshare_data(
-                    path=dl_path, version="2.0.0", chunk_size=1024 * 1024
+                    path=dl_path, version=self.config.version, chunk_size=1024 * 1024
                 )
                 zip_path = Path(downloaded[0])
 
-            # Check if already extracted
-            extracted_files = list(Path(config.path).rglob("*.parquet"))
-            if extracted_files:
+            # Check if all files were extracted correctly
+            if self.is_dataset_extracted_correctly():
                 print(f"[ParquetDataset] Dataset already extracted at {config.path}.")
             else:
                 print(f"[ParquetDataset] Extracting dataset from {zip_path}...")
                 with zipfile.ZipFile(zip_path, "r") as zip_file:
                     zip_file.extractall(config.path)
+        else:
+            print(f"[ParquetDataset] Dataset found at {config.path}")
 
         # Collect parquet files
         root = Path(self.config.path)
+
+        # Check if dataset
+        print("[ParquetDataset] Validating dataset integrity...")
+        pass_validation, error_messages = self.validate_dataset_integrity()
+        if not pass_validation:
+            msg = "\n".join(error_messages)
+            raise FileNotFoundError(f"Dataset validation failed: {msg}")
+        else:
+            print("[ParquetDataset] Dataset integrity check passed!")
+
         all_events_files = [e.relative_to(root) for e in root.rglob("*.parquet")]
 
         # Filter files by event type and class
@@ -64,6 +99,11 @@ class ParquetDataset(BaseStep):
         if self.config.file_list is None:
             self.files_events = found_events
         else:
+            # Cleans the config file list so that only parquet files are left
+            self.config.file_list = [
+                Path(p) for p in self.config.file_list if Path(p).suffix == ".parquet"
+            ]
+
             not_found = set(Path(p) for p in self.config.file_list) - set(found_events)
             if not_found:
                 raise RuntimeError(
@@ -105,6 +145,38 @@ class ParquetDataset(BaseStep):
             for e in events
             if self._check_event_type(e) and self._check_event_class(e)
         ]
+
+    def is_dataset_extracted_correctly(self):
+        """
+        Check if the dataset is already extracted by checking the number of parquet files.
+        """
+        extracted_files = list(Path(self.config.path).rglob("*.parquet"))
+        total_expected_files = DATASET_VALIDATION_RULES[self.config.version][
+            "total_parquet_files"
+        ]
+
+        return len(extracted_files) == total_expected_files
+
+    def validate_dataset_integrity(self) -> tuple[bool, list[str]]:
+        """
+        Verifies the integrity and consistency of a local dataset directory by \
+        checking its existence, expected structure, required files, and optional \
+        checksums.
+
+        Returns:
+            tuple[bool, list[str]]: True if the dataset is consistent, False otherwise.
+            List of error messages.
+        """
+
+        error_messages = []
+        pass_validation = True
+
+        # Check if dataset path exists
+        if not Path(self.config.path).exists():
+            error_messages.append(f"Dataset directory not found: {self.config.path}.")
+            pass_validation = False
+
+        return pass_validation, error_messages
 
     def iterbatches(self):
         """
@@ -171,7 +243,7 @@ class ParquetDataset(BaseStep):
 
     def run(self, data: Any = None) -> Any:
         """
-        Run the dataset step.
+        Run the dataset step. Only checks are performed.
 
         If the pipeline calls `.run()` directly, return a DataLoader.
         Otherwise, this could return (X_tensor, y_tensor) and let `post_process`

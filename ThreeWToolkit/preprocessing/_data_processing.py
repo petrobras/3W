@@ -1,214 +1,493 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from typing import Literal, Optional, Union
-
-from ..utils.general_utils import GeneralUtils
-from ._preprocessing_validators import (
-    ImputeMissingArgsValidator,
-    NormalizeArgsValidator,
-    WindowingArgsValidator,
-    RenameColumnsArgsValidator,
-)
-
+from typing import Union
 from sklearn.preprocessing import normalize as sk_normalize
 from scipy.signal import get_window
 
+from ..core.base_step import BaseStep
+from ..core.base_preprocessing import (
+    ImputeMissingConfig,
+    NormalizeConfig,
+    RenameColumnsConfig,
+    WindowingConfig,
+)
 
-@GeneralUtils.validate_func_args_with_pydantic(ImputeMissingArgsValidator)
-def impute_missing_data(
-    data: Union[pd.DataFrame, pd.Series],
-    strategy: Literal["mean", "median", "constant"],
-    fill_value: Optional[Union[int, float]] = None,
-    columns: Optional[list[str]] = None,
-) -> Union[pd.DataFrame, pd.Series]:
+
+class ImputeMissing(BaseStep):
     """
-    Imputes missing values (NaNs) in specified columns of a DataFrame or Series
-    using the given strategy.
+    A data processing step that handles missing values in numeric columns using various imputation strategies.
 
-    Args:
-        data (pd.DataFrame | pd.Series): Input data containing missing values to impute.
-        strategy (str): Imputation strategy. Must be one of 'mean', 'median', or 'constant'.
-        fill_value (int | float, optional): Constant value to use if strategy is 'constant'.
-            Must be provided in that case. Default is None.
-        columns (list[str], optional): List of columns to impute. If None, all columns are imputed.
-            Applicable only if `data` is a DataFrame.
+    This class supports different imputation methods including mean, median, and constant value filling.
+    It can work with both pandas Series and DataFrame inputs, automatically handling the conversion
+    and restoration of the original data format.
 
-    Returns:
-        pd.DataFrame | pd.Series: Data with missing values imputed according to the strategy.
-            Returns a Series if input was a Series; otherwise, returns a DataFrame.
-
-    Raises:
-        ValueError: If any column in `columns` does not exist in the DataFrame.
-        TypeError: If any target column is not numeric.
-        ValueError: If strategy is 'constant' and `fill_value` is not provided.
+    Attributes:
+        config (ImputeMissingConfig): Configuration object containing imputation parameters
+        is_series (bool): Flag to track if input was originally a Series
     """
 
-    is_series = isinstance(data, pd.Series)
-    if is_series:
-        data = data.to_frame(name="__temp__")
+    def __init__(
+        self,
+        config: ImputeMissingConfig,
+    ):
+        """
+        Initialize the ImputeMissing step with the provided configuration.
 
-    cols_to_impute = columns if columns is not None else data.columns.tolist()
+        Args:
+            config (ImputeMissingConfig): Configuration containing strategy, columns, and fill_value
+        """
+        self.config = config
 
-    missing = [col for col in cols_to_impute if col not in data.columns]
-    if missing:
-        raise ValueError(f"Columns not found: {missing}")
+    def pre_process(self, data: pd.DataFrame | pd.Series) -> pd.Series | pd.DataFrame:
+        """
+        Standardize Series input to DataFrame format for consistent processing.
 
-    non_numeric = [
-        col for col in cols_to_impute if not pd.api.types.is_numeric_dtype(data[col])
-    ]
-    if non_numeric:
-        raise TypeError(
-            f"Only numeric columns can be imputed. Non-numeric columns: {non_numeric}"
+        This method converts pandas Series to a single-column DataFrame with a temporary
+        column name to enable uniform processing in the run method.
+
+        Args:
+            data (pd.DataFrame | pd.Series): Input data to be processed
+
+        Returns:
+            pd.DataFrame: Data in DataFrame format (original DataFrame or converted Series)
+        """
+        self.is_series = isinstance(data, pd.Series)
+        return data.to_frame(name="__temp__") if self.is_series else data
+
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Execute the missing value imputation on the specified columns.
+
+        This method performs the core imputation logic, applying the configured strategy
+        to fill missing values. It validates column existence, checks for numeric data types,
+        and applies the appropriate imputation method.
+
+        Args:
+            data (pd.DataFrame): Input DataFrame with potential missing values
+
+        Returns:
+            pd.DataFrame: DataFrame with imputed missing values
+
+        Raises:
+            TypeError: If non-numeric columns are specified for imputation
+            ValueError: If strategy is 'constant' but no fill_value is provided
+        """
+        # Determine which columns to impute (all columns if none specified)
+        cols_to_impute = (
+            self.config.columns
+            if self.config.columns is not None
+            else data.columns.tolist()
         )
 
-    data_copy = data.copy()
-    for col in cols_to_impute:
-        if strategy == "mean":
-            data_copy[col] = data_copy[col].fillna(data_copy[col].mean())
-        elif strategy == "median":
-            data_copy[col] = data_copy[col].fillna(data_copy[col].median())
-        else:
-            data_copy[col] = data_copy[col].fillna(fill_value)
+        # Check if any specified columns exist in the data
+        all_missing = all([col not in data.columns for col in cols_to_impute])
+        if all_missing:
+            print(f"No column was found to be imputed: {all_missing}")
+            return data
 
-    return data_copy["__temp__"] if is_series else data_copy
+        # Filter to only valid columns that exist in the DataFrame
+        only_valid_cols_to_impute = [
+            col for col in cols_to_impute if col in data.columns
+        ]
+        if len(only_valid_cols_to_impute) == 0:
+            return data
 
+        # Validate that all columns to impute are numeric
+        non_numeric = [
+            col
+            for col in only_valid_cols_to_impute
+            if not pd.api.types.is_numeric_dtype(data[col])
+        ]
+        if non_numeric:
+            raise TypeError(
+                f"Only numeric columns can be imputed. Non-numeric columns: {non_numeric}"
+            )
 
-@GeneralUtils.validate_func_args_with_pydantic(NormalizeArgsValidator)
-def normalize(
-    X: Union[pd.DataFrame, pd.Series],
-    norm: Literal["l1", "l2", "max"] = "l2",
-    axis: Optional[Literal[0, 1]] = 1,
-    copy_values: Optional[bool] = True,
-    return_norm_values: Optional[bool] = False,
-) -> Union[pd.DataFrame, pd.Series, tuple]:
-    """
-    Normalize input data using L1, L2 or max norm.
-
-    Args:
-        X (pd.DataFrame | pd.Series): Input data to normalize.
-        norm (str): Norm to use ('l1', 'l2', or 'max').
-        axis (int): Axis along which to normalize (0 = columns, 1 = rows).
-        copy_values (bool): If True, perform normalization on a copy of the input data `X`.
-        return_norm_values (bool): If True, also return the computed norm values.
-
-    Returns:
-        pd.DataFrame | pd.Series | tuple: Normalized data. If `return_norm_values=True`,
-        returns a tuple with normalized data and norms.
-    """
-
-    is_series = isinstance(X, pd.Series)
-    X_array = X.values.reshape(-1, 1) if is_series else X.values
-
-    normalized = sk_normalize(X_array, norm=norm, axis=axis, copy=copy_values)
-    norms = np.linalg.norm(
-        X_array, ord={"l1": 1, "l2": 2, "max": np.inf}[norm], axis=axis, keepdims=True
-    )
-
-    if is_series:
-        normalized = pd.Series(normalized.flatten(), index=X.index, name=X.name)
-    else:
-        normalized = pd.DataFrame(normalized, index=X.index, columns=X.columns)
-
-    if return_norm_values:
-        return normalized, norms
-    return normalized
-
-
-@GeneralUtils.validate_func_args_with_pydantic(WindowingArgsValidator)
-def windowing(
-    X: pd.Series,
-    window: Union[str, tuple] = "hann",
-    window_size: int = 4,
-    overlap: float = 0.0,
-    normalize: bool = False,
-    fftbins: bool = True,
-    pad_last_window: bool = False,
-    pad_value: float = 0.0,
-) -> pd.DataFrame:
-    """
-    Segment a 1D time-series into overlapping windows and apply a specified windowing function.
-
-    This function divides a 1D signal into segments (windows) of a fixed size,
-    applies a window function (e.g., Hann, Hamming), optionally normalizes it,
-    and returns the windowed segments in a structured DataFrame format.
-
-    Args:
-        X (pd.Series): Input 1D signal to be segmented.
-        window (str | tuple): A string for standard window names (e.g., "hann", "hamming") or a tuple like ("kaiser", beta) for parametrized windows. Defaults to `hann`.
-        window_size (int): Number of samples in each window. Defaults to 4.
-        overlap (float): Overlap ratio between consecutive windows. Must be in [0, 1). Defaults to 0.0.
-        normalize (bool): Whether to normalize the window function to have unit area. Defaults to `False`.
-        fftbins (bool): Whether to generate the window in FFT-compatible form. Defaults to `True`.
-        pad_last_window (bool): If True, pads the last window to include all remaining samples. Defaults to `False`.
-        pad_value (float): Value used to pad the final window if `pad_last_window` is True. Defaults to `0.0`.
-
-    Returns:
-        pd.DataFrame: A DataFrame where each row is a windowed segment of the original signal,
-                      columns are named as 'val_1', ..., 'val_N', and an additional column 'win'
-                      indicates the window index.
-    """
-    # Convert Series to NumPy array
-    values = X.to_numpy()
-    n_samples = len(values)
-
-    # Calculate step size between windows
-    step = int(window_size * (1 - overlap))
-
-    # Create the desired window function using scipy.signal.get_window
-    win = get_window(window, window_size, fftbins=fftbins)
-    # Optionally normalize the window to sum to 1
-    if normalize:
-        win = win / win.sum()
-
-    windows = []  # List to store each windowed segment
-    win_id = 1  # Counter to label window index
-
-    # Slide through the signal with step size, extract window-sized chunks
-    for start in range(0, n_samples, step):
-        end = start + window_size
-        window_vals = values[start:end]
-
-        # If the segment is smaller than window size (last part)
-        if len(window_vals) < window_size:
-            if pad_last_window:
-                # Pad with constant value if requested
-                pad = np.full(window_size - len(window_vals), pad_value)
-                window_vals = np.concatenate([window_vals, pad])
+        # Create a copy to avoid modifying the original data
+        data_copy = data.copy()
+        # Apply the imputation strategy to each valid column
+        for col in only_valid_cols_to_impute:
+            if self.config.strategy == "mean":
+                # Fill missing values with column mean
+                data_copy[col] = data_copy[col].fillna(data_copy[col].mean())
+            elif self.config.strategy == "median":
+                # Fill missing values with column median
+                data_copy[col] = data_copy[col].fillna(data_copy[col].median())
             else:
-                break  # Discard incomplete window if no padding allowe
+                # Fill missing values with constant value
+                if self.config.fill_value is None:
+                    raise ValueError(
+                        "You must provide `fill_value` when strategy='constant'"
+                    )
+                data_copy[col] = data_copy[col].fillna(self.config.fill_value)
 
-        # Apply the window function (element-wise multiplication)
-        windowed = window_vals * win
-        # Append the result along with the window index
-        windows.append(np.append(windowed, win_id))
-        win_id += 1
+        return data_copy
 
-    # Define column names: val_1, val_2, ..., val_N, and 'win'
-    col_names = [f"val_{i + 1}" for i in range(window_size)] + ["win"]
-    # Create DataFrame from all windows
-    _temp = pd.DataFrame(windows, columns=col_names)
-    # Ensure window index is of integer type
-    _temp["win"] = _temp["win"].astype(int)
+    def post_process(self, data: pd.DataFrame) -> Union[pd.DataFrame, pd.Series]:
+        """
+        Restore the original data format (Series or DataFrame).
 
-    return _temp
+        If the input was originally a Series, this method extracts the temporary column
+        and returns it as a Series with the original structure.
+
+        Args:
+            data (pd.DataFrame): Processed DataFrame
+
+        Returns:
+            Union[pd.DataFrame, pd.Series]: Data in its original format
+        """
+        return data["__temp__"] if self.is_series else data
 
 
-@GeneralUtils.validate_func_args_with_pydantic(RenameColumnsArgsValidator)
-def rename_columns(data: pd.DataFrame, columns_map: dict[str, str]) -> pd.DataFrame:
+class Normalize(BaseStep):
     """
-    Rename columns of a DataFrame using a mapping dictionary.
+    A data processing step that normalizes data using different normalization strategies.
 
-    This function receives a DataFrame and a dictionary that maps
-    existing column names to new names. Only the specified columns
-    will be renamed; others will remain unchanged.
+    This class applies sklearn's normalize function to scale data according to specified norms
+    (l1, l2, or max). It preserves the original pandas structure and can optionally return
+    the computed norms along with the normalized data.
 
-    Args:
-        data (pd.DataFrame): The DataFrame whose columns are to be renamed.
-        columns_map (dict[str, str]): A dictionary where keys are current
-            column names and values are the desired new column names.
-
-    Returns:
-        pd.DataFrame: A new DataFrame with updated column names.
+    Attributes:
+        config (NormalizeConfig): Configuration object containing normalization parameters
+        is_series (bool): Flag to track if input was originally a Series
+        index (pd.Index): Original index for data reconstruction
+        columns (list): Original column names for data reconstruction
     """
-    return data.rename(columns=columns_map)
+
+    def __init__(
+        self,
+        config: NormalizeConfig,
+    ):
+        """
+        Initialize the Normalize step with the provided configuration.
+
+        Args:
+            config (NormalizeConfig): Configuration containing norm type, axis, and other parameters
+        """
+        self.config = config
+
+    def pre_process(self, data: pd.DataFrame | pd.Series) -> np.ndarray:
+        """
+        Convert pandas data to numpy array format and store metadata for reconstruction.
+
+        This method extracts the underlying numpy array from pandas objects while preserving
+        the necessary metadata (index, columns) to reconstruct the original structure later.
+
+        Args:
+            data (pd.DataFrame | pd.Series): Input data to be normalized
+
+        Returns:
+            np.ndarray: Numpy array ready for normalization (2D for DataFrame, reshaped for Series)
+        """
+        self.is_series = isinstance(data, pd.Series)
+        self.index = data.index
+        self.columns = data.columns if isinstance(data, pd.DataFrame) else [data.name]
+
+        if self.is_series:
+            if not pd.api.types.is_numeric_dtype(data):
+                raise TypeError("Series must be numeric")
+            return data.values.reshape(-1, 1)
+
+        non_numeric_cols = [
+            col for col in data.columns if not pd.api.types.is_numeric_dtype(data[col])
+        ]
+        if non_numeric_cols:
+            raise TypeError("Non-numeric columns")
+
+        return data.values
+
+    def run(self, X_array: np.ndarray) -> tuple:
+        """
+        Apply normalization to the input array and compute norms.
+
+        This method uses sklearn's normalize function to scale the data according to the
+        specified norm and axis. It also computes the norms of the original data for
+        potential later use or analysis.
+
+        Args:
+            X_array (np.ndarray): Input array to be normalized
+
+        Returns:
+            tuple: (normalized_array, norms_array) containing the normalized data and computed norms
+        """
+        # Apply sklearn normalization
+        normalized = sk_normalize(
+            X_array,
+            norm=self.config.norm,
+            axis=self.config.axis,
+            copy=self.config.copy_values,
+        )
+        # Compute norms of the original data
+        norms = np.linalg.norm(
+            X_array,
+            ord={"l1": 1, "l2": 2, "max": np.inf}[self.config.norm],
+            axis=self.config.axis,
+            keepdims=True,
+        )
+
+        return normalized, norms
+
+    def post_process(self, result: tuple) -> pd.DataFrame | pd.Series | tuple:
+        """
+        Reconstruct pandas objects from numpy arrays and return results based on configuration.
+
+        This method converts the normalized numpy arrays back to the original pandas format
+        (Series or DataFrame) using the stored metadata. It can return either just the
+        normalized data or a tuple including the computed norms.
+
+        Args:
+            result (tuple): Tuple containing (normalized_array, norms_array)
+
+        Returns:
+            pd.DataFrame | pd.Series | tuple: Normalized data in original format,
+                                                   optionally with norms if configured
+        """
+        normalized, norms = result
+
+        if self.is_series:
+            # Reconstruct Series from flattened array
+            normalized = pd.Series(
+                normalized.flatten(), index=self.index, name=self.columns[0]
+            )
+        else:
+            # Reconstruct DataFrame with original structure
+            normalized = pd.DataFrame(
+                normalized, index=self.index, columns=self.columns
+            )
+
+        # Return normalized data only, or tuple with norms based on configuration
+        return (normalized, norms) if self.config.return_norm_values else normalized
+
+
+class Windowing(BaseStep):
+    """
+    A data processing step that applies windowing techniques to time series data.
+
+    This class creates overlapping or non-overlapping windows from time series data,
+    applying window functions for signal processing. It supports multiple variables
+    and various window types from scipy.signal.
+
+    Attributes:
+        config (WindowingConfig): Configuration object containing windowing parameters
+    """
+
+    def __init__(
+        self,
+        config: WindowingConfig,
+    ):
+        """
+        Initialize the Windowing step with the provided configuration.
+
+        Args:
+            config (WindowingConfig): Configuration containing window parameters like size,
+                                    overlap, type, and padding options
+        """
+        self.config = config
+
+    def pre_process(self, x: pd.DataFrame | pd.Series) -> np.ndarray:
+        """
+        Convert input data to numpy array format for windowing operations.
+
+        This method standardizes the input format by converting pandas objects to numpy arrays.
+        Series are reshaped to column vectors, while DataFrames maintain their 2D structure.
+
+        Args:
+            x (pd.DataFrame | pd.Series): Input time series data
+
+        Returns:
+            np.ndarray: 2D array with shape (samples, variables)
+
+        Raises:
+            ValueError: If input is neither pandas Series nor DataFrame
+        """
+        if isinstance(x, pd.Series):
+            return x.to_numpy().reshape(-1, 1)
+        elif isinstance(x, pd.DataFrame):
+            return x.to_numpy()
+        else:
+            raise ValueError("Input must be either pandas Series or DataFrame")
+
+    def _check_window_size_vs_data(self, values: np.ndarray):
+        """
+        Validate that the window size is appropriate for the data length.
+
+        This private method ensures that the configured window size does not exceed
+        the available data length, which would make windowing impossible.
+
+        Args:
+            values (np.ndarray): Input data array
+
+        Raises:
+            ValueError: If window_size exceeds the number of samples in the data
+        """
+        n_samples = values.shape[0]
+        if self.config.window_size > n_samples:
+            raise ValueError(
+                "`window_size` must be smaller than or equal to the length of X."
+            )
+
+    def run(self, values: np.ndarray) -> pd.DataFrame:
+        """
+        Apply windowing to the input data and create a structured DataFrame output.
+
+        This method performs the core windowing operation by:
+        1. Validating window size against data length
+        2. Creating window function from scipy.signal
+        3. Extracting overlapping windows with specified step size
+        4. Applying window function to each extracted window
+        5. Flattening multivariate windows and adding window IDs
+
+        Args:
+            values (np.ndarray): Input time series data (samples x variables)
+
+        Returns:
+            pd.DataFrame: DataFrame with columns for each time step of each variable
+                         plus a 'win' column containing window IDs
+        """
+        self._check_window_size_vs_data(values)
+
+        # Ensure data is 2D (samples x variables)
+        if values.ndim == 1:
+            values = values.reshape(-1, 1)
+
+        n_samples, n_variables = values.shape
+        # Calculate step size based on overlap configuration
+        step = int(self.config.window_size * (1 - self.config.overlap))
+
+        ## Create window function using scipy.signal
+        win = get_window(
+            self.config.window, self.config.window_size, fftbins=self.config.fftbins
+        )
+        # Normalize window if requested
+        if self.config.normalize:
+            win = win / win.sum()
+
+        windows = []
+        win_id = 1
+
+        # Extract windows with specified step size
+        for start in range(0, n_samples, step):
+            end = start + self.config.window_size
+            window_vals = values[start:end]  # Shape: (window_size, n_variables)
+
+            # Handle the last window if it's shorter than window_size
+            if len(window_vals) < self.config.window_size:
+                if self.config.pad_last_window:
+                    # Pad the last window to maintain consistent size
+                    pad_size = self.config.window_size - len(window_vals)
+                    pad = np.full(
+                        (pad_size, n_variables),
+                        self.config.pad_value,
+                    )
+                    window_vals = np.concatenate([window_vals, pad], axis=0)
+                else:
+                    # Skip incomplete windows if padding is disabled
+                    break
+
+            # Apply window function to all variables (broadcasting)
+            windowed = window_vals * win.reshape(-1, 1)
+            # Flatten windowed data: [var1_t0, var1_t1, ..., var2_t0, var2_t1, ...]
+            # Transpose to get variables as rows, then flatten for desired column order
+            windowed_flat = (
+                windowed.T.flatten()
+            )  # Transpose and flatten to obtain the desired order
+
+            # Add window ID to the flattened data
+            window_row = np.append(windowed_flat, win_id)
+            windows.append(window_row)
+            win_id += 1
+
+        # Generate column names for the output DataFrame
+        col_names = []
+        for var_idx in range(n_variables):
+            var_name = f"var{var_idx + 1}"
+            for t in range(self.config.window_size):
+                col_names.append(f"{var_name}_t{t}")
+        col_names.append("win")  # Window ID column
+
+        return pd.DataFrame(windows, columns=col_names)
+
+    def post_process(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply final formatting to the windowed DataFrame.
+
+        This method ensures that the window ID column has the correct integer data type
+        for proper indexing and analysis.
+
+        Args:
+            df (pd.DataFrame): DataFrame with windowed data
+
+        Returns:
+            pd.DataFrame: DataFrame with properly formatted window IDs
+        """
+        df["win"] = df["win"].astype(int)
+        return df
+
+
+class RenameColumns(BaseStep):
+    """
+    A simple data processing step that renames DataFrame columns according to a mapping.
+
+    This class provides a clean interface for renaming columns in a pandas DataFrame
+    using a dictionary mapping from old names to new names.
+
+    Attributes:
+        config (RenameColumnsConfig): Configuration object containing the column mapping
+    """
+
+    def __init__(self, config: RenameColumnsConfig):
+        """
+        Initialize the RenameColumns step with the provided configuration.
+
+        Args:
+            config (RenameColumnsConfig): Configuration containing the columns_map dictionary
+        """
+        self.config = config
+
+    def pre_process(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Create a copy of the input DataFrame to avoid modifying the original.
+
+        Args:
+            data (pd.DataFrame): Input DataFrame to be processed
+
+        Returns:
+            pd.DataFrame: Copy of the input DataFrame
+        """
+        return data.copy()
+
+    def run(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Rename columns according to the configured mapping.
+
+        This method applies the column renaming using pandas' rename method with the
+        mapping provided in the configuration.
+
+        Args:
+            df (pd.DataFrame): DataFrame with columns to be renamed
+
+        Returns:
+            pd.DataFrame: DataFrame with renamed columns
+        """
+        if df.columns.duplicated().any():
+            duplicated = df.columns[df.columns.duplicated()].unique().tolist()
+            raise ValueError(f"Duplicate column names found in DataFrame: {duplicated}")
+
+        missing = [col for col in self.config.columns_map if col not in df.columns]
+        if missing:
+            raise ValueError(f"Columns not found in DataFrame: {missing}")
+
+        return df.rename(columns=self.config.columns_map)
+
+    def post_process(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Return the processed DataFrame without additional modifications.
+
+        Args:
+            df (pd.DataFrame): DataFrame with renamed columns
+
+        Returns:
+            pd.DataFrame: The same DataFrame (no additional processing needed)
+        """
+        return df

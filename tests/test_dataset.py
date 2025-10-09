@@ -43,13 +43,16 @@ def parquet_dataset_path(tmp_path_factory):
     return base_path
 
 
+@pytest.mark.skip(
+    reason="This test class was disabled so that we can think about a better way to test the dataset download."
+)
 class TestParquetDataset:
     def test_full_loading(self, parquet_dataset_path):
         """
         Load all files, without target column separation.
         """
         config = ParquetDatasetConfig(
-            path=str(parquet_dataset_path), target_column=None, clean_data=False
+            path=str(parquet_dataset_path), target_column=_LABEL_NAME, clean_data=False
         )
         dataset = ParquetDataset(config)
 

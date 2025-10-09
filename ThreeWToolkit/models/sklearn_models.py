@@ -1,6 +1,8 @@
-from typing import Dict, Any, List, Callable, Optional, Iterable
-from pydantic import Field
 import numpy as np
+import pandas as pd
+
+from typing import Dict, Any, Callable, Iterable
+from pydantic import Field
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -58,19 +60,49 @@ class SklearnModels(BaseModels):
             params["random_state"] = config.random_seed
         self.model = model_class(**params)
 
-    def fit(self, x: Any, y: Any = None, **kwargs) -> None:
+    def _ensure_dataframe(self, x: Any) -> Any:
+        """
+        Ensures input is in the correct format (DataFrame if possible).
+        Preserves DataFrame structure to avoid feature name warnings.
+
+        Args:
+            x: Input data (can be DataFrame, Series, or array-like)
+
+        Returns:
+            The input data, converted to DataFrame if it was originally a DataFrame
+        """
+        if isinstance(x, pd.DataFrame):
+            return x
+        elif isinstance(x, pd.Series):
+            return x.to_frame() if x.ndim == 1 else x
+        elif isinstance(x, np.ndarray) and hasattr(self, "_feature_names"):
+            # If we stored feature names during fit, recreate DataFrame
+            return pd.DataFrame(x, columns=self._feature_names)
+        return x
+
+    def fit(self, x: Any, y: Any = None, **kwargs):
         """Trains the model on the given data."""
-        self.model.fit(x, y, **kwargs)
+        # Store feature names if x is a DataFrame
+        if isinstance(x, pd.DataFrame):
+            self._feature_names = x.columns.tolist()
+
+        return self.model.fit(x, y, **kwargs)
 
     def predict(self, x: Any) -> Any:
         """Makes predictions using the chosen sklearn model."""
+        # Ensure consistent format with training data
+        x = self._ensure_dataframe(x)
         return self.model.predict(x)
 
-    def evaluate(self, x: Any, y: Any, metrics: List[Callable]):
+    def evaluate(self, x: Any, y: Any, metrics: list[Callable]):
         """
         Evaluates the model using a provided list of metric functions.
         """
-        results: Dict[str, Optional[float]] = {}
+        results: dict[str, float | None] = {}
+
+        # Ensure consistent format
+        x = self._ensure_dataframe(x)
+
         # Get standard class predictions first
         predictions = self.predict(x)
 
@@ -123,6 +155,9 @@ class SklearnModels(BaseModels):
             raise NotImplementedError(
                 f"{self.model.__class__.__name__} does not support probability predictions."
             )
+
+        # Ensure consistent format
+        X = self._ensure_dataframe(X)
         return self.model.predict_proba(X)
 
     def save(self, filepath: str):

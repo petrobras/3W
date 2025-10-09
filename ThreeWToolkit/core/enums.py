@@ -2,12 +2,7 @@ from enum import Enum
 
 
 class ModelTypeEnum(str, Enum):
-    LGBM = "LGBM"
     MLP = "MLP"
-    LSTM = "LSTM"
-    CNN_LSTM = "CNN_LSTM"
-    TRANSFORMER = "Transformer"
-    INCEPTION_TIME = "InceptionTime"
     LOGISTIC_REGRESSION = "LogisticRegression"
     RANDOM_FOREST = "RandomForest"
     GRADIENT_BOOSTING = "GradientBoosting"
@@ -21,6 +16,17 @@ class EventPrefixEnum(str, Enum):
     REAL = "WELL"
     SIMULATED = "SIMULATED"
     DRAWN = "DRAWN"
+
+
+class TaskType(str, Enum):
+    CLASSIFICATION = "classification"
+    REGRESSION = "regression"
+
+
+class DataSplit(str, Enum):
+    TRAIN = "train"
+    VALIDATION = "validation"
+    TEST = "test"
 
 
 class ActivationFunctionEnum(Enum):
@@ -41,8 +47,3 @@ class CriterionEnum(Enum):
     BINARY_CROSS_ENTROPY = "binary_cross_entropy"
     MSE = "mse"
     MAE = "mae"
-
-
-class TaskType(Enum):
-    CLASSIFICATION = "classification"
-    REGRESSION = "regression"

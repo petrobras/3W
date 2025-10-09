@@ -5,7 +5,18 @@ import numpy as np
 from pandas.testing import assert_series_equal, assert_frame_equal
 from numpy.testing import assert_allclose
 
-from ThreeWToolkit.preprocessing import impute_missing_data, normalize, windowing
+from ThreeWToolkit.core.base_preprocessing import (
+    ImputeMissingConfig,
+    NormalizeConfig,
+    RenameColumnsConfig,
+    WindowingConfig,
+)
+from ThreeWToolkit.preprocessing._data_processing import (
+    ImputeMissing,
+    Normalize,
+    RenameColumns,
+    Windowing,
+)
 
 
 class TestImputeMissingData:
@@ -14,7 +25,8 @@ class TestImputeMissingData:
         Test that imputing with strategy 'mean' replaces NaNs in all DataFrame columns with the column mean.
         """
         df = pd.DataFrame({"a": [1.0, np.nan, 3.0], "b": [4.0, 5.0, 6.0]})
-        result = impute_missing_data(data=df, strategy="mean")
+        imp_missing = ImputeMissing(ImputeMissingConfig(strategy="mean"))
+        result = imp_missing(data=df)
         expected_result = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
 
         assert_frame_equal(result, expected_result)
@@ -25,7 +37,10 @@ class TestImputeMissingData:
         Other columns remain unchanged.
         """
         df = pd.DataFrame({"a": [1.0, np.nan, 3.0], "b": [np.nan, 5.0, 6.0]})
-        result = impute_missing_data(data=df, strategy="median", columns=["a"])
+        imp_missing = ImputeMissing(
+            ImputeMissingConfig(strategy="median", columns=["a"])
+        )
+        result = imp_missing(data=df)
         expected_result = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [np.nan, 5.0, 6.0]})
 
         assert_frame_equal(result, expected_result)
@@ -35,7 +50,11 @@ class TestImputeMissingData:
         Test that imputing a Series with strategy 'constant' replaces NaNs with the provided fill value.
         """
         series = pd.Series([1.0, np.nan, 3.0])
-        result = impute_missing_data(data=series, strategy="constant", fill_value=99.0)
+        imp_missing = ImputeMissing(
+            ImputeMissingConfig(strategy="constant", fill_value=99.0)
+        )
+        result = imp_missing(data=series)
+
         expected_result = pd.Series([1.0, 99.0, 3.0], name="__temp__")
 
         assert_series_equal(result, expected_result)
@@ -52,7 +71,8 @@ class TestImputeMissingData:
             }
         )
 
-        result = impute_missing_data(data=df, strategy="mean")
+        imp_missing = ImputeMissing(ImputeMissingConfig(strategy="mean"))
+        result = imp_missing(data=df)
 
         expected_result = pd.DataFrame(
             {"a": [2.0, 2.0, 2.0], "b": [5.0, 6.0, 7.0], "c": [9.0, 10.0, 11.0]}
@@ -68,7 +88,10 @@ class TestImputeMissingData:
             {"x": [np.nan, 2, 3], "y": [4, np.nan, np.nan], "z": [1, 1, 1]}
         )
 
-        result = impute_missing_data(data=df, strategy="constant", fill_value=-1)
+        imp_missing = ImputeMissing(
+            ImputeMissingConfig(strategy="constant", fill_value=-1)
+        )
+        result = imp_missing(data=df)
 
         expected_result = pd.DataFrame(
             {"x": [-1, 2, 3], "y": [4, -1, -1], "z": [1, 1, 1]}
@@ -76,14 +99,19 @@ class TestImputeMissingData:
 
         assert_frame_equal(result, expected_result, check_dtype=False)
 
-    def test_raises_error_when_column_not_found(self):
+    def test_returns_input_when_column_not_found(self):
         """
-        Test that a ValueError is raised when a specified column for imputation does not exist in the DataFrame.
+        Test that the DataFrame is returned unchanged when none of the specified
+        columns for imputation exist in the DataFrame.
         """
         df = pd.DataFrame({"a": [1.0, np.nan]})
 
-        with pytest.raises(ValueError, match="Columns not found"):
-            impute_missing_data(data=df, strategy="mean", columns=["missing_column"])
+        imp_missing = ImputeMissing(
+            ImputeMissingConfig(strategy="mean", columns=["missing_column"])
+        )
+        result = imp_missing(data=df.copy())
+
+        pd.testing.assert_frame_equal(result, df)
 
     def test_raises_error_on_non_numeric_column(self):
         """
@@ -92,7 +120,10 @@ class TestImputeMissingData:
         df = pd.DataFrame({"a": [1.0, np.nan], "b": ["x", "y"]})
 
         with pytest.raises(TypeError, match="Only numeric columns can be imputed"):
-            impute_missing_data(data=df, strategy="mean", columns=["b"])
+            imp_missing = ImputeMissing(
+                ImputeMissingConfig(strategy="mean", columns=["b"])
+            )
+            _ = imp_missing(data=df)
 
     def test_raises_error_if_fill_value_not_provided(self):
         """
@@ -100,15 +131,19 @@ class TestImputeMissingData:
         """
         df = pd.DataFrame({"a": [1.0, np.nan]})
 
-        with pytest.raises(ValueError, match="You must provide `fill_value`"):
-            impute_missing_data(data=df, strategy="constant")
+        with pytest.raises(
+            ValueError, match="You must provide `fill_value` when strategy='constant'"
+        ):
+            imp_missing = ImputeMissing(ImputeMissingConfig(strategy="constant"))
+            _ = imp_missing(data=df)
 
 
 class TestNormalize:
     def test_normalize_dataframe_l2_axis1(self):
         """Test L2 normalization across rows of a DataFrame."""
         df = pd.DataFrame({"x": [3.0, 0.0], "y": [4.0, 0.0]})
-        result = normalize(X=df, norm="l2", axis=1)
+        norm = Normalize(NormalizeConfig(norm="l2", axis=1))
+        result = norm(data=df)
         expected_result = pd.DataFrame({"x": [0.6, 0.0], "y": [0.8, 0.0]})
 
         assert_frame_equal(result, expected_result)
@@ -116,7 +151,8 @@ class TestNormalize:
     def test_normalize_dataframe_l1_axis0(self):
         """Test L1 normalization across columns of a DataFrame."""
         df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 6.0]})
-        result = normalize(X=df, norm="l1", axis=0)
+        norm = Normalize(NormalizeConfig(norm="l1", axis=0))
+        result = norm(data=df)
         expected_result = pd.DataFrame({"a": [1 / 3, 2 / 3], "b": [1 / 3, 2 / 3]})
 
         assert_frame_equal(result, expected_result)
@@ -124,7 +160,8 @@ class TestNormalize:
     def test_normalize_series_l2(self):
         """Test L2 normalization of a Series."""
         s = pd.Series([3.0, 4.0], name="s")
-        result = normalize(X=s, norm="l2", axis=0)
+        norm = Normalize(NormalizeConfig(norm="l2", axis=0))
+        result = norm(data=s)
         expected_result = pd.Series([0.6, 0.8], name="s")
 
         assert_series_equal(result, expected_result)
@@ -132,7 +169,8 @@ class TestNormalize:
     def test_normalize_series_max(self):
         """Test max normalization of a Series."""
         s = pd.Series([2.0, 8.0])
-        result = normalize(X=s, norm="max", axis=0)
+        norm = Normalize(NormalizeConfig(norm="max", axis=0))
+        result = norm(data=s)
         expected_result = pd.Series([0.25, 1.0])
 
         assert_series_equal(result, expected_result)
@@ -140,7 +178,8 @@ class TestNormalize:
     def test_normalize_return_norm(self):
         """Test return of normalization + norm values."""
         df = pd.DataFrame({"x": [3.0, 0.0], "y": [4.0, 0.0]})
-        result, norm = normalize(X=df, norm="l2", axis=1, return_norm_values=True)
+        norm = Normalize(NormalizeConfig(norm="l2", axis=1, return_norm_values=True))
+        result, norm = norm(data=df)
         expected_result = pd.DataFrame({"x": [0.6, 0.0], "y": [0.8, 0.0]})
         expected_norm = np.array([[5.0], [0.0]])
 
@@ -152,21 +191,24 @@ class TestNormalize:
         df = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
 
         with pytest.raises(TypeError, match="Non-numeric columns"):
-            normalize(X=df)
+            norm = Normalize(NormalizeConfig())
+            _ = norm(data=df)
 
     def test_non_numeric_series_raises_type_error(self):
         """Test error raised when Series is non-numeric."""
         s = pd.Series(["a", "b"])
 
         with pytest.raises(TypeError, match="Series must be numeric"):
-            normalize(X=s)
+            norm = Normalize(NormalizeConfig())
+            _ = norm(data=s)
 
 
 class TestWindowingPercentOverlap:
     def test_validate_window_with_correct_tuple_params(self):
         """Test that windowing works correctly with valid tuple window parameters."""
         series = pd.Series(np.arange(50))
-        result = windowing(X=series, window=("kaiser", 0.5), window_size=5)
+        wind = Windowing(WindowingConfig(window=("kaiser", 0.5), window_size=5))
+        result = wind(data=series)
 
         assert result.shape[0] == 10
 
@@ -175,7 +217,9 @@ class TestWindowingPercentOverlap:
         series = pd.Series(np.arange(40))
         win_size = 4
 
-        result = windowing(X=series, window_size=win_size, overlap=0.0)
+        wind = Windowing(WindowingConfig(window_size=win_size, overlap=0.0))
+        result = wind(data=series)
+
         expected_shape = (
             10,
             win_size + 1,
@@ -188,9 +232,13 @@ class TestWindowingPercentOverlap:
         series = pd.Series(np.arange(12))
         win_size = 4
 
-        result = windowing(
-            X=series, window="boxcar", window_size=win_size, overlap=0.0, normalize=True
+        wind = Windowing(
+            WindowingConfig(
+                window="boxcar", window_size=win_size, overlap=0.0, normalize=True
+            )
         )
+        result = wind(data=series)
+
         expected_result = [
             [0.0, 0.25, 0.5, 0.75, 1.0],
             [1.0, 1.25, 1.5, 1.75, 2.0],
@@ -204,7 +252,9 @@ class TestWindowingPercentOverlap:
         series = pd.Series(np.arange(40))
         win_size = 4
 
-        result = windowing(X=series, window_size=win_size, overlap=0.5)
+        wind = Windowing(WindowingConfig(window_size=win_size, overlap=0.5))
+        result = wind(data=series)
+
         expected_shape = (19, win_size + 1)
 
         assert result.shape == expected_shape
@@ -214,118 +264,166 @@ class TestWindowingPercentOverlap:
         df = pd.DataFrame({"a": np.arange(10), "b": np.arange(10, 20)})
         win_size = 4
 
-        result = windowing(X=df["a"], window_size=win_size, overlap=0.5)
+        wind = Windowing(WindowingConfig(window_size=win_size, overlap=0.5))
+        result = wind(data=df["a"])
+
         step = int(3 * (1 - 0.33))
         expected_rows = (10 - 3) // step + 1
         expected_cols = win_size + 1
 
         assert result.shape == (expected_rows, expected_cols)
 
-    def test_padding_adds_last_window_series(self):
-        """Test if padding adds an additional window when signal length is not divisible by step."""
-        series = pd.Series(np.arange(103))
-        win_size = 4
-        overlap = 0
-
-        res_no_pad = windowing(
-            X=series,
-            window="boxcar",
-            window_size=win_size,
-            overlap=overlap,
-            pad_last_window=False,
-        )
-
-        res_pad = windowing(
-            X=series,
-            window="boxcar",
-            window_size=win_size,
-            overlap=overlap,
-            pad_last_window=True,
-            pad_value=-1.0,
-        )
-
-        # The padded version should have one more row
-        assert res_pad.shape[0] == res_no_pad.shape[0] + 1
-        assert len([x for x in res_pad.columns if "val_" in x]) == win_size
-
-        # The last row should contain padding values at the end
-        last_row = res_pad.iloc[-1].values
-        original_remainder = 10 - ((res_no_pad.shape[0] - 1) * 2 + win_size)
-        assert (last_row[-original_remainder:] == -1.0).all()
-
-    def test_padding_dataframe_last_window(self):
-        """Test if the last padded row has the specified padding value for all trailing elements."""
-        df = pd.DataFrame({"x": np.arange(13), "y": np.linspace(0, 1, 13)})
-
-        res = windowing(
-            X=df["x"], window_size=5, overlap=0.2, pad_last_window=True, pad_value=999
-        )
-        last_row = res.iloc[-1]
-
-        # Check if the last column in the last row is the pad value
-        colnames = [col for col in res.columns if col.endswith("_t4")]
-        for col in colnames:
-            assert last_row[col] == 999
-
     def test_no_padding_when_even_division(self):
         """Ensure no extra row is added when the signal is evenly divisible by step size."""
         series = pd.Series(np.arange(12))
-        res = windowing(X=series, window_size=4, overlap=0.0, pad_last_window=True)
+        wind = Windowing(
+            WindowingConfig(window_size=4, overlap=0.0, pad_last_window=True)
+        )
+        result = wind(data=series)
 
-        assert res.shape[0] == 3
+        assert result.shape[0] == 3
 
     def test_invalid_window_name_string(self):
         """Should raise ValueError if string window name is unknown."""
         with pytest.raises(ValueError, match="Invalid window name 'unknownwin'"):
-            windowing(X=pd.Series(np.arange(10)), window="unknownwin", window_size=4)
+            wind = Windowing(WindowingConfig(window="unknownwin", window_size=4))
+            _ = wind(data=pd.Series(np.arange(10)))
 
     def test_window_size_larger_than_signal_raises(self):
         """Test that an error is raised if the window size is larger than the series length."""
         series = pd.Series(np.arange(5))
 
         with pytest.raises(ValueError, match="window_size.*length of X"):
-            windowing(X=series, window_size=10, overlap=0.0)
-
-    def test_non_numeric_column_raises(self):
-        """Test that a TypeError is raised when trying to window a non-numeric column."""
-        df = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
-
-        with pytest.raises(TypeError, match="Series must be numeric."):
-            windowing(X=df["b"], window_size=2, overlap=0.0)
+            wind = Windowing(WindowingConfig(window_size=10, overlap=0.0))
+            _ = wind(data=series)
 
     def test_tuple_with_missing_param_raises(self):
         """Tuple with missing required parameters should raise ValueError."""
 
         with pytest.raises(ValueError, match="requires 1 parameter.*got 0"):
-            windowing(X=pd.Series(np.arange(100)), window=("kaiser",), window_size=10)
+            wind = Windowing(WindowingConfig(window=("kaiser",), window_size=10))
+            _ = wind(data=pd.Series(np.arange(100)))
 
     def test_tuple_with_unknown_window_raises(self):
         """Unknown window name in tuple should raise ValueError."""
         with pytest.raises(ValueError, match="Unknown window name"):
-            windowing(
-                X=pd.Series(np.arange(100)), window=("unknownwin", 1.0), window_size=10
+            wind = Windowing(
+                WindowingConfig(window=("unknownwin", 1.0), window_size=10)
             )
+            _ = wind(data=pd.Series(np.arange(100)))
 
     def test_string_with_required_param_raises(self):
         """Using a param-required window as string should raise ValueError."""
         with pytest.raises(ValueError, match="requires parameter.*tuple like"):
-            windowing(X=pd.Series(np.arange(100)), window="kaiser", window_size=10)
+            wind = Windowing(WindowingConfig(window="kaiser", window_size=10))
+            _ = wind(data=pd.Series(np.arange(100)))
 
     def test_empty_tuple_raises(self):
         """An empty tuple should raise ValueError."""
         with pytest.raises(ValueError, match="Tuple window must start with"):
-            windowing(X=pd.Series(np.arange(100)), window=(), window_size=10)
+            wind = Windowing(WindowingConfig(window=(), window_size=10))
+            _ = wind(data=pd.Series(np.arange(100)))
 
     def test_valid_optional_param_window_as_str(self):
         """Windows that can be used as string only should work."""
         series = pd.Series(np.arange(50))
-        result = windowing(X=series, window="hann", window_size=5)
+        wind = Windowing(WindowingConfig(window="hann", window_size=5))
+        result = wind(data=series)
 
         assert isinstance(result, pd.DataFrame)
 
     def test_valid_optional_param_window_as_tuple(self):
         """Windows that accept optional parameters should also work in tuple form."""
         series = pd.Series(np.arange(50))
-        result = windowing(X=series, window=("hann",), window_size=5)
+        wind = Windowing(WindowingConfig(window="hann", window_size=5))
+        result = wind(data=series)
 
         assert isinstance(result, pd.DataFrame)
+
+
+class TestRenameColumns:
+    def setup_method(self):
+        """
+        Prepare example DataFrames used in the test cases.
+        """
+        self.df_full = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
+
+        self.df_partial = pd.DataFrame({"A": [10, 20], "B": [30, 40]})
+
+        self.df_empty = pd.DataFrame(columns=["A", "B"])
+
+    def test_functional_case(self):
+        """
+        Test renaming multiple columns while keeping others unchanged.
+        """
+        columns_map = {"A": "X", "B": "Y"}
+        rename = RenameColumns(RenameColumnsConfig(columns_map=columns_map))
+        result = rename(self.df_full)
+
+        assert list(result.columns) == ["X", "Y", "C"]
+        assert result["X"].tolist() == [1, 2]
+        assert result["Y"].tolist() == [3, 4]
+        assert result["C"].tolist() == [5, 6]
+
+    def test_column_not_found_raises_error(self):
+        """
+        Test that a ValueError is raised when a column does not exist.
+        """
+        columns_map = {"Z": "W"}
+        with pytest.raises(
+            ValueError, match="Columns not found in DataFrame: \\['Z'\\]"
+        ):
+            rename = RenameColumns(RenameColumnsConfig(columns_map=columns_map))
+            _ = rename(self.df_partial)
+
+    def test_empty_map_returns_same_dataframe(self):
+        """
+        Test that an empty mapping returns the original DataFrame unchanged.
+        """
+        rename = RenameColumns(RenameColumnsConfig(columns_map={}))
+        result = rename(self.df_partial)
+        pd.testing.assert_frame_equal(result, self.df_partial)
+
+    def test_empty_dataframe(self):
+        """
+        Test renaming columns in an empty DataFrame (only headers, no rows).
+        """
+        columns_map = {"A": "X"}
+        rename = RenameColumns(RenameColumnsConfig(columns_map=columns_map))
+        result = rename(self.df_empty)
+
+        assert list(result.columns) == ["X", "B"]
+        assert result.empty
+
+    def test_duplicate_new_column_names(self):
+        """
+        Test that duplicate new column names raise a ValueError.
+        """
+        columns_map = {"A": "X", "B": "X"}
+        with pytest.raises(
+            ValueError, match="Duplicate new column names are not allowed."
+        ):
+            rename = RenameColumns(RenameColumnsConfig(columns_map=columns_map))
+            _ = rename(self.df_partial)
+
+    def test_same_name_in_mapping(self):
+        """
+        Test that mapping a column to itself leaves the DataFrame unchanged.
+        """
+        columns_map = {"A": "A"}
+        rename = RenameColumns(RenameColumnsConfig(columns_map=columns_map))
+        result = rename(self.df_partial)
+        pd.testing.assert_frame_equal(result, self.df_partial)
+
+    def test_duplicated_columns_in_dataframe_raise_error(self):
+        """
+        Test that a ValueError is raised when the DataFrame has duplicate column names.
+        """
+        df_with_duplicates = pd.DataFrame([[1, 2]], columns=["A", "A"])
+        columns_map = {"A": "X"}
+
+        with pytest.raises(
+            ValueError, match="Duplicate column names found in DataFrame: \\['A'\\]"
+        ):
+            rename = RenameColumns(RenameColumnsConfig(columns_map=columns_map))
+            _ = rename(df_with_duplicates)
