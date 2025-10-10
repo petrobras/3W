@@ -174,13 +174,13 @@ git clone git@github.com:petrobras/3W.git
 You can install directly using:
 
 ```bash
-pip install -e toolkit/
+pip install -e .
 ```
 
 3. **Install with uv:**
 
 ```bash
-uv pip install -e toolkit/
+uv pip install -e .
 ```
 
 Note: *Authentication is required*.

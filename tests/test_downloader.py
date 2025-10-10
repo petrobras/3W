@@ -1,6 +1,6 @@
 import json
 import pytest
-import requests
+import requests  # type: ignore
 
 from ThreeWToolkit.utils.downloader import FIGSHARE_BASE_URL, FIGSHARE_VERSION_IDS
 

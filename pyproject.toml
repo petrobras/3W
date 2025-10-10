@@ -2,16 +2,13 @@
 name = "ThreeWToolkit"
 version = "0.0.1"
 description = ""
-readme = "README.md"
+readme = "toolkit/README.md"
 license = { text = "GPL-3.0" }
-authors = [
-  { name = "Mathtzt", email = "matheus.santo@lps.ufrj.br" }
-]
 requires-python = "==3.10.11"
 dynamic = ["dependencies"]
 
 [tool.poetry]
-packages = [{ include = "ThreeWToolkit" }]
+packages = [{ include = "ThreeWToolkit", from = "toolkit" }]
 
 [tool.poetry.dependencies]
 python = "==3.10.11"
@@ -52,6 +49,18 @@ ruff = "*"
 uv = "*"
 types-requests = "2.32.4.20250611"
 
+[project.optional-dependencies]
+dev = [
+  "black",
+  "mypy",
+  "flake8",
+  "jupyter",
+  "ruff",
+  "uv",
+  "types-requests==2.32.4.20250611",
+]
+
+
 [tool.poetry.group.docs.dependencies]
 mkdocs = "*"
 mkdocstrings = { extras = ["python"], version = "*" }
@@ -62,7 +71,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.coverage.run]
-source = ["ThreeWToolkit"]
+source = ["toolkit/"]
 branch = true
 omit = ["*/__init__.py"]
 
@@ -77,5 +86,5 @@ quote-style = "double"
 
 [tool.mypy]
 python_version = "3.10"
-mypy_path = "ThreeWToolkit"
+mypy_path = "toolkit/"
 ignore_missing_imports = true
