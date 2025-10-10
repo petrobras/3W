@@ -492,3 +492,215 @@ class ClusteringEvaluator:
             return "Severe Faults", "Critical operational issues requiring immediate attention"
         else:
             return "Mixed Operation", "Multiple operational states represented"
+
+
+class AdvancedClusteringSuite:
+    """Advanced clustering implementation with multiple algorithms and optimizations"""
+    
+    def __init__(self):
+        self.results = {}
+    
+    def run_advanced_clustering_suite(self, X_data, y_true=None, max_k=10):
+        """
+        Run advanced clustering suite with multiple algorithms and optimizations
+        
+        Parameters:
+        -----------
+        X_data : array-like
+            Data to cluster
+        y_true : array-like, optional
+            True labels for evaluation
+        max_k : int
+            Maximum number of clusters to test
+            
+        Returns:
+        --------
+        dict : Results from all clustering methods
+        """
+        from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
+        from sklearn.mixture import GaussianMixture
+        from sklearn.neighbors import NearestNeighbors
+        from sklearn.metrics import silhouette_score, calinski_harabasz_score
+        import time
+        
+        results = {}
+        
+        print("🔬 Advanced Clustering Suite")
+        print("=" * 40)
+        
+        # 1. OPTIMIZED K-MEANS WITH MULTIPLE INITIALIZATIONS
+        print("1. Enhanced K-means with K-means++")
+        best_kmeans = self._run_enhanced_kmeans(X_data, max_k)
+        results['enhanced_kmeans'] = best_kmeans
+        if best_kmeans:
+            print(f"   ✓ Best K: {best_kmeans['k']}, Silhouette: {best_kmeans['silhouette']:.3f}")
+        
+        # 2. GAUSSIAN MIXTURE MODELS
+        print("2. Gaussian Mixture Models (GMM)")
+        best_gmm = self._run_gaussian_mixture(X_data, max_k)
+        results['gmm'] = best_gmm
+        if best_gmm:
+            print(f"   ✓ Best Components: {best_gmm['n_components']}, Silhouette: {best_gmm['silhouette']:.3f}")
+        
+        # 3. HIERARCHICAL CLUSTERING WITH LINKAGE COMPARISON
+        print("3. Hierarchical Clustering (Multiple Linkages)")
+        best_hierarchical = self._run_hierarchical_clustering(X_data, max_k)
+        results['hierarchical'] = best_hierarchical
+        if best_hierarchical:
+            print(f"   ✓ Best: {best_hierarchical['n_clusters']} clusters, {best_hierarchical['linkage']} linkage")
+            print(f"     Silhouette: {best_hierarchical['silhouette']:.3f}")
+        
+        # 4. OPTIMIZED DBSCAN WITH PARAMETER GRID SEARCH
+        print("4. Optimized DBSCAN with Grid Search")
+        best_dbscan = self._run_optimized_dbscan(X_data)
+        results['optimized_dbscan'] = best_dbscan
+        if best_dbscan:
+            print(f"   ✓ Best: eps={best_dbscan['eps']:.3f}, min_samples={best_dbscan['min_samples']}")
+            print(f"     Clusters: {best_dbscan['n_clusters']}, Noise: {best_dbscan['n_noise']}")
+            print(f"     Silhouette: {best_dbscan['silhouette']:.3f}")
+        else:
+            print("   ⚠️ No suitable DBSCAN parameters found")
+        
+        print(f"\n🏆 Advanced Clustering Complete!")
+        return results
+    
+    def _run_enhanced_kmeans(self, X_data, max_k):
+        """Run enhanced K-means with multiple initializations"""
+        from sklearn.cluster import KMeans
+        from sklearn.metrics import silhouette_score, calinski_harabasz_score
+        import time
+        
+        best_kmeans = None
+        best_kmeans_score = -1
+        
+        for k in range(2, max_k+1):
+            start = time.time()
+            # Multiple random initializations for robustness
+            kmeans = KMeans(n_clusters=k, init='k-means++', n_init=20, random_state=42, max_iter=300)
+            labels = kmeans.fit_predict(X_data)
+            
+            if len(np.unique(labels)) > 1:
+                silhouette = silhouette_score(X_data, labels)
+                calinski = calinski_harabasz_score(X_data, labels)
+                
+                if silhouette > best_kmeans_score:
+                    best_kmeans_score = silhouette
+                    best_kmeans = {
+                        'k': k, 'labels': labels, 'model': kmeans, 
+                        'silhouette': silhouette, 'calinski': calinski,
+                        'time': time.time() - start
+                    }
+        
+        return best_kmeans
+    
+    def _run_gaussian_mixture(self, X_data, max_k):
+        """Run Gaussian Mixture Models"""
+        from sklearn.mixture import GaussianMixture
+        from sklearn.metrics import silhouette_score
+        import time
+        
+        best_gmm = None
+        best_gmm_score = -1
+        
+        for n_components in range(2, max_k+1):
+            start = time.time()
+            try:
+                gmm = GaussianMixture(n_components=n_components, random_state=42, max_iter=100)
+                labels = gmm.fit_predict(X_data)
+                
+                if len(np.unique(labels)) > 1:
+                    silhouette = silhouette_score(X_data, labels)
+                    bic = gmm.bic(X_data)
+                    aic = gmm.aic(X_data)
+                    
+                    if silhouette > best_gmm_score:
+                        best_gmm_score = silhouette
+                        best_gmm = {
+                            'n_components': n_components, 'labels': labels, 'model': gmm,
+                            'silhouette': silhouette, 'bic': bic, 'aic': aic,
+                            'time': time.time() - start
+                        }
+            except Exception as e:
+                continue
+        
+        return best_gmm
+    
+    def _run_hierarchical_clustering(self, X_data, max_k):
+        """Run hierarchical clustering with multiple linkages"""
+        from sklearn.cluster import AgglomerativeClustering
+        from sklearn.metrics import silhouette_score
+        import time
+        
+        linkages = ['ward', 'complete', 'average']
+        best_hierarchical = None
+        best_hier_score = -1
+        
+        for linkage in linkages:
+            for n_clusters in range(2, min(max_k+1, 8)):  # Limit for computational efficiency
+                start = time.time()
+                try:
+                    hierarchical = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage)
+                    labels = hierarchical.fit_predict(X_data)
+                    
+                    if len(np.unique(labels)) > 1:
+                        silhouette = silhouette_score(X_data, labels)
+                        
+                        if silhouette > best_hier_score:
+                            best_hier_score = silhouette
+                            best_hierarchical = {
+                                'n_clusters': n_clusters, 'labels': labels, 
+                                'linkage': linkage, 'silhouette': silhouette,
+                                'time': time.time() - start
+                            }
+                except Exception as e:
+                    continue
+        
+        return best_hierarchical
+    
+    def _run_optimized_dbscan(self, X_data):
+        """Run DBSCAN with optimized parameters"""
+        from sklearn.cluster import DBSCAN
+        from sklearn.neighbors import NearestNeighbors
+        from sklearn.metrics import silhouette_score
+        import time
+        
+        # Calculate optimal eps using k-distance
+        k = 4  # MinPts - 1
+        neighbors = NearestNeighbors(n_neighbors=k)
+        neighbors_fit = neighbors.fit(X_data)
+        distances, indices = neighbors_fit.kneighbors(X_data)
+        distances = np.sort(distances[:, k-1], axis=0)
+        
+        # Find knee point (simplified approach)
+        knee_idx = int(len(distances) * 0.95)  # 95th percentile as heuristic
+        optimal_eps = distances[knee_idx]
+        
+        eps_range = np.linspace(optimal_eps * 0.5, optimal_eps * 2, 10)
+        min_samples_range = [3, 4, 5, 6, 8, 10]
+        
+        best_dbscan = None
+        best_dbscan_score = -1
+        
+        for eps in eps_range:
+            for min_samples in min_samples_range:
+                start = time.time()
+                try:
+                    dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric='euclidean')
+                    labels = dbscan.fit_predict(X_data)
+                    
+                    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+                    n_noise = list(labels).count(-1)
+                    
+                    if n_clusters > 1 and n_noise < len(X_data) * 0.9:  # Avoid too much noise
+                        silhouette = silhouette_score(X_data, labels)
+                        if silhouette > best_dbscan_score:
+                            best_dbscan_score = silhouette
+                            best_dbscan = {
+                                'eps': eps, 'min_samples': min_samples, 'labels': labels,
+                                'n_clusters': n_clusters, 'n_noise': n_noise,
+                                'silhouette': silhouette, 'time': time.time() - start
+                            }
+                except Exception as e:
+                    continue
+        
+        return best_dbscan

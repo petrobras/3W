@@ -418,3 +418,240 @@ class ClusteringVisualizer:
         
         plt.tight_layout()
         plt.show()
+
+
+class AdvancedClusteringVisualizer:
+    """Create advanced visualizations for clustering analysis"""
+    
+    def __init__(self, figsize=(18, 12)):
+        self.figsize = figsize
+        plt.style.use('default')
+    
+    def create_advanced_visualizations(self, clustering_data, advanced_results, original_results=None):
+        """
+        Create enhanced interactive visualizations for clustering analysis
+        
+        Parameters:
+        -----------
+        clustering_data : dict
+            Dictionary containing clustering data including X_pca_2d, y_labels, pca_model
+        advanced_results : dict
+            Results from advanced clustering suite
+        original_results : dict, optional
+            Original clustering results for comparison
+        """
+        print("🎨 Creating Advanced Visualizations")
+        print("=" * 40)
+        
+        # Set style for better plots
+        sns.set_palette("husl")
+        
+        # Create visualizations
+        self._plot_multi_algorithm_comparison(clustering_data, advanced_results)
+        
+        print(f"\n🎨 Advanced Visualizations Complete!")
+    
+    def _plot_multi_algorithm_comparison(self, clustering_data, advanced_results):
+        """Create multi-algorithm comparison dashboard"""
+        print("1. Multi-Algorithm Comparison Dashboard")
+        
+        # Prepare data
+        X_pca_2d = clustering_data['X_pca_2d']
+        y_true = clustering_data['y_labels']
+        
+        # Create subplots for comparison
+        fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+        fig.suptitle('Advanced Clustering Methods Comparison', fontsize=16, fontweight='bold')
+        
+        algorithms = ['enhanced_kmeans', 'gmm', 'hierarchical', 'optimized_dbscan']
+        algorithm_names = ['Enhanced K-means', 'Gaussian Mixture', 'Hierarchical', 'Optimized DBSCAN']
+        
+        plot_idx = 0
+        for alg, name in zip(algorithms, algorithm_names):
+            if alg in advanced_results and advanced_results[alg] is not None:
+                row, col = plot_idx // 3, plot_idx % 3
+                labels = advanced_results[alg]['labels']
+                
+                # Convert labels to numeric for matplotlib color mapping
+                labels_numeric = np.array([int(str(label)) if isinstance(label, (str, np.str_)) else label for label in labels])
+                
+                # Create scatter plot
+                scatter = axes[row, col].scatter(X_pca_2d[:, 0], X_pca_2d[:, 1], 
+                                               c=labels_numeric, cmap='tab10', alpha=0.7, s=30)
+                axes[row, col].set_title(f'{name}\n(Silhouette: {advanced_results[alg]["silhouette"]:.3f})')
+                axes[row, col].set_xlabel('PCA Component 1')
+                axes[row, col].set_ylabel('PCA Component 2')
+                axes[row, col].grid(True, alpha=0.3)
+                
+                # Add cluster centers for all centroid-based methods
+                if 'model' in advanced_results[alg]:
+                    model = advanced_results[alg]['model']
+                    if hasattr(model, 'cluster_centers_'):
+                        # Centroids are in 50D PCA space, take first 2 components for visualization
+                        centroids_2d = model.cluster_centers_[:, :2]
+                        axes[row, col].scatter(centroids_2d[:, 0], centroids_2d[:, 1], 
+                                             c='red', marker='x', s=200, linewidths=3, label='Centroids')
+                    elif hasattr(model, 'means_'):
+                        # For GMM models, use means instead of cluster_centers_
+                        centroids_2d = model.means_[:, :2]
+                        axes[row, col].scatter(centroids_2d[:, 0], centroids_2d[:, 1], 
+                                             c='red', marker='x', s=200, linewidths=3, label='Centroids')
+                    elif hasattr(model, 'children_'):
+                        # For hierarchical clustering, calculate cluster centers manually
+                        unique_labels = np.unique(labels_numeric)
+                        centroids_2d = []
+                        for label in unique_labels:
+                            if label >= 0:  # Exclude noise points
+                                mask = labels_numeric == label
+                                center = np.mean(X_pca_2d[mask], axis=0)
+                                centroids_2d.append(center)
+                        if centroids_2d:
+                            centroids_2d = np.array(centroids_2d)
+                            axes[row, col].scatter(centroids_2d[:, 0], centroids_2d[:, 1], 
+                                                 c='red', marker='x', s=200, linewidths=3, label='Centroids')
+                    
+                    # Add legend if centroids were plotted
+                    if len(axes[row, col].collections) > 1:
+                        axes[row, col].legend()
+                
+                plot_idx += 1
+        
+        # Ground truth comparison
+        if plot_idx < 6:
+            row, col = plot_idx // 3, plot_idx % 3
+            # Convert y_true to numeric for matplotlib color mapping
+            y_true_numeric = np.array([int(str(label)) if isinstance(label, (str, np.str_)) else label for label in y_true])
+            scatter = axes[row, col].scatter(X_pca_2d[:, 0], X_pca_2d[:, 1], 
+                                           c=y_true_numeric, cmap='tab10', alpha=0.7, s=30)
+            axes[row, col].set_title('Ground Truth Classes')
+            axes[row, col].set_xlabel('PCA Component 1')
+            axes[row, col].set_ylabel('PCA Component 2')
+            axes[row, col].grid(True, alpha=0.3)
+            plot_idx += 1
+        
+        # Hide unused subplots
+        for i in range(plot_idx, 6):
+            row, col = i // 3, i % 3
+            axes[row, col].axis('off')
+        
+        plt.tight_layout()
+        plt.show()
+    
+    def _plot_performance_radar_chart(self, clustering_data, advanced_results):
+        """Create performance metrics radar chart"""
+        print("2. Algorithm Performance Radar Chart")
+        
+        y_true = clustering_data['y_labels']
+        
+        # Collect metrics
+        metrics_data = []
+        algorithm_labels = []
+        
+        algorithms = ['enhanced_kmeans', 'gmm', 'hierarchical', 'optimized_dbscan']
+        algorithm_names = ['Enhanced K-means', 'Gaussian Mixture', 'Hierarchical', 'Optimized DBSCAN']
+        
+        for alg, name in zip(algorithms, algorithm_names):
+            if alg in advanced_results and advanced_results[alg] is not None:
+                result = advanced_results[alg]
+                
+                # Normalize metrics to 0-1 scale
+                silhouette_norm = (result['silhouette'] + 1) / 2  # -1 to 1 → 0 to 1
+                
+                # Calculate speed score (inverse of time)
+                time_score = max(0, 1 - result['time'] / 10)  # Assume 10s is very slow
+                
+                # Calculate cluster count score (penalty for too many/few clusters)
+                ideal_clusters = len(np.unique(y_true))
+                if alg == 'optimized_dbscan':
+                    actual_clusters = result['n_clusters']
+                else:
+                    actual_clusters = result.get('k', result.get('n_components', result.get('n_clusters', 3)))
+                
+                cluster_score = 1 - abs(actual_clusters - ideal_clusters) / max(ideal_clusters, actual_clusters)
+                cluster_score = max(0, cluster_score)
+                
+                metrics_data.append([silhouette_norm, time_score, cluster_score])
+                algorithm_labels.append(name)
+        
+        if metrics_data:
+            # Create radar chart
+            fig, ax = plt.subplots(figsize=(10, 8), subplot_kw=dict(projection='polar'))
+            
+            metrics_names = ['Silhouette Quality', 'Speed', 'Cluster Count Fit']
+            angles = np.linspace(0, 2 * np.pi, len(metrics_names), endpoint=False).tolist()
+            angles += angles[:1]  # Complete the circle
+            
+            colors = plt.cm.tab10(np.linspace(0, 1, len(algorithm_labels)))
+            
+            for i, (metrics, label, color) in enumerate(zip(metrics_data, algorithm_labels, colors)):
+                values = metrics + metrics[:1]  # Complete the circle
+                ax.plot(angles, values, 'o-', linewidth=2, label=label, color=color)
+                ax.fill(angles, values, alpha=0.25, color=color)
+            
+            ax.set_xticks(angles[:-1])
+            ax.set_xticklabels(metrics_names)
+            ax.set_ylim(0, 1)
+            ax.set_title('Clustering Algorithm Performance Comparison', fontweight='bold', pad=20)
+            ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0))
+            ax.grid(True)
+            
+            plt.tight_layout()
+            plt.show()
+    
+    def _plot_stability_analysis(self, clustering_data, advanced_results):
+        """Create cluster stability analysis plots"""
+        print("3. Cluster Stability Analysis")
+        
+        if 'enhanced_kmeans' in advanced_results and advanced_results['enhanced_kmeans'] is not None:
+            # Run K-means multiple times with different initializations
+            from sklearn.cluster import KMeans
+            from sklearn.metrics import adjusted_rand_score
+            
+            best_k = advanced_results['enhanced_kmeans']['k']
+            stability_scores = []
+            n_runs = 10
+            
+            base_labels = advanced_results['enhanced_kmeans']['labels']
+            
+            for i in range(n_runs):
+                kmeans = KMeans(n_clusters=best_k, random_state=i, n_init=10)
+                labels = kmeans.fit_predict(clustering_data['X_pca_50'])
+                ari = adjusted_rand_score(base_labels, labels)
+                stability_scores.append(ari)
+            
+            # Plot stability
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+            
+            # Stability over runs
+            ax1.plot(range(1, n_runs+1), stability_scores, 'o-', linewidth=2, markersize=8)
+            ax1.axhline(y=np.mean(stability_scores), color='red', linestyle='--', 
+                       label=f'Mean: {np.mean(stability_scores):.3f}')
+            ax1.set_xlabel('Run Number')
+            ax1.set_ylabel('ARI with Base Clustering')
+            ax1.set_title('K-means Stability Across Runs')
+            ax1.legend()
+            ax1.grid(True, alpha=0.3)
+            
+            # Stability distribution
+            ax2.hist(stability_scores, bins=8, alpha=0.7, edgecolor='black')
+            ax2.axvline(x=np.mean(stability_scores), color='red', linestyle='--', 
+                       label=f'Mean: {np.mean(stability_scores):.3f}')
+            ax2.set_xlabel('ARI Score')
+            ax2.set_ylabel('Frequency')
+            ax2.set_title('Stability Score Distribution')
+            ax2.legend()
+            ax2.grid(True, alpha=0.3)
+            
+            plt.suptitle(f'Clustering Stability Analysis (K={best_k})', fontweight='bold')
+            plt.tight_layout()
+            plt.show()
+            
+            stability_mean = np.mean(stability_scores)
+            stability_std = np.std(stability_scores)
+            print(f"   ✓ Stability: {stability_mean:.3f} ± {stability_std:.3f}")
+            if stability_mean > 0.8:
+                print("   ✅ High stability - results are reliable")
+            elif stability_mean > 0.6:
+                print("   ⚠️ Moderate stability - results somewhat reliable")
+            else:
+                print("   ❌ Low stability - results may vary significantly")
