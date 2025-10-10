@@ -563,8 +563,22 @@ class ModelAssessment(BaseStep):
             or f"Model Assessment Report - {self.results['model_name']}"
         )
 
-        # Map metrics to legacy format
-        report_metrics = self._map_metrics_for_report()
+        plot_config = {
+            "PlotSeries": {
+                "series": y_test_series,
+                "title": "True Values",
+                "xlabel": "Sample Index",
+                "ylabel": "Value",
+            },
+            "PlotMultipleSeries": {
+                "series_list": [y_test_series, pd.Series(self.results["predictions"])],
+                "title": "True vs Predicted Values",
+                "xlabel": "Sample Index",
+                "ylabel": "Value",
+                "legend": ["True Values", "Predictions"],
+            },
+            # Additional plots can be added here
+        }
 
         # Create ReportGeneration instance with legacy constructor
         report_generator = self._report_generation_class(
@@ -573,7 +587,6 @@ class ModelAssessment(BaseStep):
             y_train=y_train_series,
             X_test=X_test_series,
             y_test=y_test_series,
-            metrics=report_metrics,
             title=report_title,
             author=self.config.report_author,
             reports_dir=self.config.output_dir,
@@ -581,10 +594,11 @@ class ModelAssessment(BaseStep):
             # Pass pre-calculated values to avoid recomputation
             predictions=pd.Series(self.results["predictions"]),
             calculated_metrics=self.results["metrics"],
+            plot_config=plot_config,
         )
 
         # Generate the comprehensive report
-        self.report_doc = report_generator.generate_summary_report()
+        self.report_doc = report_generator.generate_summary_report(format="latex")
 
     def _map_metrics_for_report(self) -> list[str]:
         """Map assessment metrics to ReportGeneration format.
