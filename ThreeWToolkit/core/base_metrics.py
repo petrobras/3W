@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from typing import Optional 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 
@@ -65,7 +66,7 @@ class PosLabelValidator(BaseModel):
 
 
 class AverageValidator(BaseModel):
-    average: str = "binary"
+    average: Optional[str] = "binary"
 
     @field_validator("average", mode="before")
     @classmethod
