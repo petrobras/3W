@@ -34,11 +34,14 @@ jobs:
       - name: Make helper scripts executable
         run: chmod +x bin/lint bin/test
 
+      - name: Create venv
+        run: uv venv .venv
+
       - name: Install package with dev extras
         run: uv pip install -e .[dev]
 
-      - name: Lint
+      - name: Lint checking
         run: uv run ./bin/lint
 
-      - name: Test
+      - name: Testing
         run: uv run ./bin/test
