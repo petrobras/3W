@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from typing import Optional 
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 
