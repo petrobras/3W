@@ -1,0 +1,316 @@
+/* Petrobras Theme for Standard Markdown Elements */
+:root {
+  --petro-green: #009f4d;
+  --petro-yellow: #fedd00;
+  --text-color: #262626;
+  --bg-color: #fafafa;
+  --border-color: #e9ecef;
+  --header-color: #00552B; /* Darker Green for H1 */
+}
+
+body {
+  font-family: "DejaVu Sans", "Liberation Sans", "Arial", sans-serif;
+  color: #262626;
+  background-color: #fafafa;
+  line-height: 1.6;
+  margin: 20px auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--header-color);
+}
+
+h2, h3, h4, h5, h6 {
+    color: var(--petro-green);
+}
+
+main {
+max-width: 800px;
+  margin: 20px auto;
+  padding: 0 10px;
+
+}
+
+
+
+a {
+  color: var(--petro-green);
+  font-weight: bold;
+}
+
+blockquote {
+  border-left: 4px solid var(--petro-yellow);
+  padding-left: 1rem;
+  margin-left: 0;
+  color: #6c757d;
+  font-style: italic;
+}
+
+code {
+  background-color: #e9ecef;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+
+
+
+/* The main container for the styled box */
+.info-box {
+  display: flex; /* Aligns the header tag and content side-by-side */
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  margin: 1.5rem 0;
+  overflow: hidden; /* Ensures the border-radius affects children */
+}
+
+/* The header "tag" on the left */
+.info-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 1px;
+}
+
+/* The main content area on the right */
+.info-box-content {
+  padding: 0.5rem 1.5rem;
+  flex-grow: 1; /* Allows the content area to take up remaining space */
+  border-left: 1px solid #e9ecef;
+}
+
+.info-box-content h3 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.2em;
+    color: var(--text-color);
+}
+
+/* --- Color Variations --- */
+
+/* Style for the beginning box */
+.info-box.beginning .info-box-header {
+  background-color: var(--petro-green);
+  color: white;
+}
+
+.info-box.beginning ol {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+/* Style each list item */
+.info-box.beginning ol li {
+  margin-bottom: 0.5rem;
+}
+
+/* Style the links within the TOC */
+.info-box.beginning ol li a {
+  text-decoration: none;
+  font-weight: normal;
+  transition: color 0.2s;
+}
+
+/* Style for the feature boxes */
+.info-box.feat .info-box-header {
+  background-color: #e9ecef;
+  color: var(--text-color);
+}
+
+/* Style for the details box */
+.info-box.details {
+    flex-direction: column; /* Stacks header on top of content */
+    border: none;
+    background-color: transparent;
+}
+.info-box.details .info-box-header {
+    writing-mode: horizontal-tb; /* Resets text to horizontal */
+    transform: none; /* Resets rotation */
+    background-color: var(--petro-green);
+    color: white;
+    text-align: left;
+    padding: 0.5rem 1.5rem;
+    font-size: 1.5em;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    cursor: pointer; /* Changes the mouse to a pointer on hover */
+    list-style: none; /* Removes the default arrow in some browsers */
+    justify-content: flex-start;
+}
+
+/* Hides the default marker/arrow in Webkit browsers (Chrome, Safari) */
+.info-box.details .info-box-header::-webkit-details-marker {
+    display: none;
+}
+
+/* Create the arrow using a pseudo-element */
+.info-box.details .info-box-header::before {
+    content: '▶'; /* Right-pointing triangle for the "closed" state */
+    margin-right: 1rem; /* Space between arrow and text */
+    font-size: 0.8em;
+    transition: transform 0.2s ease-in-out; /* Smooth rotation animation */
+}
+
+/* Rotate the arrow when the <details> element is open */
+.info-box.details[open] > .info-box-header::before {
+    transform: rotate(90deg); /* Points the arrow down for the "open" state */
+}
+
+.info-box.details .info-box-content {
+    border: 1px solid #e9ecef;
+    border-top: none; /* Remove top border to merge with header */
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    background-color: #f8f9fa;
+    justify-content: center;
+}
+
+/* Main target: the table inside info-box */
+.info-box-content table {
+  width: 100%;
+  border: none; /* Removes external table border */
+  border-spacing: 0;
+  margin-top: 0.5rem; /* Adds a small space at the top */
+}
+
+/* Remove alternating row background for a cleaner look */
+.info-box-content tr:nth-of-type(even) {
+  background-color: transparent;
+}
+
+/* Keeps the header with brand styling */
+.info-box-content thead th {
+  background-color: var(--header-color);
+  color: white;
+}
+
+/* Header and body cells of the table */
+.info-box-content th,
+.info-box-content td {
+  text-align: left;
+  padding: 0.75rem;
+  /* Remove vertical borders and keep only horizontal ones */
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Remove bottom border of last row for a clean finish */
+.info-box-content tr:last-child td {
+  border-bottom: none;
+}
+
+
+/* Style for the Visualization Grid == */
+
+/* The grid container */
+.visualization-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Creates a responsive grid */
+  gap: 1.5rem; /* Space between cards */
+}
+
+/* The individual card for each plot */
+.viz-card {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Ensures the image doesn't exceed the rounded borders */
+}
+
+/* The card header */
+.viz-card .card-header {
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.viz-card .card-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+/* The card body, where the image resides */
+.viz-card .card-body {
+  padding: 1rem;
+  flex-grow: 1;
+}
+
+.viz-card .card-body img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+
+
+/* Style for the Report Header == */
+
+/* The main container for the header */
+.report-header {
+  position: relative; /* Necessary to position the content in front */
+  padding: 5rem 3rem;
+  color: white; /* Text color that will be on top of the image */
+  text-align: center;
+
+  /* The background image is defined here */
+  background-image: url('figures/bg-petro.png');
+  background-size: cover; /* Makes the image cover the entire space */
+  background-position: center center; /* Centers the image */
+  margin-left: -52px;
+  margin-right: -52px;
+  margin-top: -34px;
+}
+
+/* Dark and semi-transparent overlay on the background image */
+/* This ensures the white text is readable */
+.report-header .header-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.35); /* Black with 60% opacity */
+  z-index: 1;
+}
+
+/* The content of the header (logo, title, etc.) */
+.report-header .header-content {
+  position: relative; /* Positions the content in front of the dark layer */
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Style for the logo */
+.report-header .header-logo {
+  max-height: 80px; /* Set the maximum height of your logo */
+  margin-bottom: 1.5rem;
+}
+
+/* Style for the main title */
+.report-header h1 {
+  color: white;
+  margin: 0;
+  font-size: 3rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Shadow on text for readability */
+}
+
+/* Style for the author and date line */
+.report-header .author-info {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
