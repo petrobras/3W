@@ -58,16 +58,16 @@ graph TB
         Input: Windowed data<br/>
         Output: Plots + embeddings<br/>
         Methods: t-SNE, UMAP"]
-        
-        G["📓 3_introduction_to_supervised_learning.ipynb<br/>
-        Input: Windowed data<br/>
-        Output: Models + metrics<br/>
-        Methods: RF, SVM, NN"]
-        
-        H["📓 4_introduction_to_unsupervised_learning.ipynb<br/>
+
+        G["📓 3_introduction_to_unsupervised_learning.ipynb<br/>
         Input: Windowed data (class 0 only)<br/>
         Output: Autoencoder + thresholds<br/>
         Methods: LSTM autoencoder"]
+        
+        H["📓 4_introduction_to_supervised_learning.ipynb<br/>
+        Input: Windowed data<br/>
+        Output: Models + metrics<br/>
+        Methods: RF, SVM, NN"]
         
         I["📓 5_clustering_methods.ipynb<br/>
         Input: Raw data (resized to 500pts)<br/>
@@ -326,19 +326,7 @@ graph TB
   - Feature correlation analysis across time series
   - Class separability insights in reduced space
 
-### 3️⃣ **Supervised Learning** (`3_introduction_to_supervised_learning.ipynb`)
-**Purpose**: Multi-class fault classification in multivariate time series
-- **Input**: Windowed data from `processed_data/cv_splits/windowed/`
-- **Processing**:
-  - Classification algorithms adapted for time series (Random Forest, SVM, Neural Networks)
-  - Cross-validation evaluation with temporal considerations
-  - Performance metrics and comparison for MTS classification
-- **Output**:
-  - Trained classification models for fault detection
-  - Performance benchmarks for multivariate time series
-  - Feature importance analysis across sensors and time
-
-### 4️⃣ **Unsupervised Learning** (`4_introduction_to_unsupervised_learning.ipynb`)
+### 4️⃣ **Unsupervised Learning** (`3_introduction_to_unsupervised_learning.ipynb`)
 **Purpose**: Novelty detection and anomaly identification in MTS
 - **Input**: Windowed data from `processed_data/cv_splits/windowed/`
 - **Processing**:
@@ -350,6 +338,18 @@ graph TB
   - Anomaly scores and thresholds for temporal deviations
   - Detection performance metrics for MTS anomalies
 
+### 3️⃣ **Supervised Learning** (`4_introduction_to_supervised_learning.ipynb`)
+**Purpose**: Multi-class fault classification in multivariate time series
+- **Input**: Windowed data from `processed_data/cv_splits/windowed/`
+- **Processing**:
+  - Classification algorithms adapted for time series (Random Forest, SVM, Neural Networks)
+  - Cross-validation evaluation with temporal considerations
+  - Performance metrics and comparison for MTS classification
+- **Output**:
+  - Trained classification models for fault detection
+  - Performance benchmarks for multivariate time series
+  - Feature importance analysis across sensors and time
+  
 ### 5️⃣ **Clustering Methods** (`5_clustering_methods.ipynb`)
 **Purpose**: Pattern discovery and operational insights in multivariate time series
 - **Input**: Raw data from `processed_data/cv_splits/raw/`
