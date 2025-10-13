@@ -124,6 +124,7 @@ class DataAugmentor:
         classes: List[str],
         target_class_counts: Optional[Dict[str, int]] = None,
         strategy: str = "auto",
+        internal_verbose: bool = False
     ) -> Tuple[List[pd.DataFrame], List[str]]:
         """
         Perform random undersampling to reduce majority classes.
@@ -136,13 +137,12 @@ class DataAugmentor:
 
         Returns:
             tuple: (undersampled_dfs, undersampled_classes)
-        """
-        if self.verbose:
-            print(f"📉 Random Undersampling (strategy: {strategy})")
+        """            
 
         class_counts = Counter(classes)
-        if self.verbose:
+        if internal_verbose:
             print(f"   • Original class distribution: {dict(class_counts)}")
+            print(f"📉 Random Undersampling (strategy: {strategy})")
 
         if target_class_counts is None:
             if strategy == "auto":
@@ -181,7 +181,7 @@ class DataAugmentor:
         undersampled_dfs = [dfs[i] for i in undersampled_indices]
         undersampled_classes = [classes[i] for i in undersampled_indices]
 
-        if self.verbose:
+        if internal_verbose:
             final_counts = Counter(undersampled_classes)
             print(f"   • Target class counts: {target_class_counts}")
             print(f"   • Final class distribution: {dict(final_counts)}")
@@ -195,6 +195,7 @@ class DataAugmentor:
         classes: List[str],
         target_class_counts: Optional[Dict[str, int]] = None,
         strategy: str = "auto",
+        internal_verbose: bool = False
     ) -> Tuple[List[pd.DataFrame], List[str]]:
         """
         Perform random oversampling to increase minority classes.
@@ -208,11 +209,11 @@ class DataAugmentor:
         Returns:
             tuple: (oversampled_dfs, oversampled_classes)
         """
-        if self.verbose:
+        if internal_verbose:
             print(f"📈 Random Oversampling (strategy: {strategy})")
 
         class_counts = Counter(classes)
-        if self.verbose:
+        if internal_verbose:
             print(f"   • Original class distribution: {dict(class_counts)}")
 
         if target_class_counts is None:
@@ -263,7 +264,7 @@ class DataAugmentor:
                         oversampled_dfs.append(df)
                         oversampled_classes.append(class_label)
 
-        if self.verbose:
+        if internal_verbose:
             final_counts = Counter(oversampled_classes)
             print(f"   • Target class counts: {target_class_counts}")
             print(f"   • Final class distribution: {dict(final_counts)}")
@@ -376,6 +377,7 @@ class DataAugmentor:
         classes: List[str],
         strategy: str = "combined",
         target_samples_per_class: Optional[int] = None,
+        internal_verbose: bool = False,
     ) -> Tuple[List[pd.DataFrame], List[str]]:
         """
         Balance classes using combined over/undersampling strategy.
@@ -389,11 +391,11 @@ class DataAugmentor:
         Returns:
             tuple: (balanced_dfs, balanced_classes)
         """
-        if self.verbose:
+        if internal_verbose:
             print(f"⚖️ Class Balancing Strategy: {strategy}")
 
         class_counts = Counter(classes)
-        if self.verbose:
+        if internal_verbose:
             print(f"   • Original class distribution: {dict(class_counts)}")
 
         if target_samples_per_class is None:
@@ -407,9 +409,9 @@ class DataAugmentor:
         target_counts = {cls: target_samples_per_class for cls in class_counts.keys()}
 
         if strategy == "undersample":
-            return self.random_undersample(dfs, classes, target_counts, "auto")
+            return self.random_undersample(dfs, classes, target_counts, "auto", internal_verbose)
         elif strategy == "oversample":
-            return self.random_oversample(dfs, classes, target_counts, "auto")
+            return self.random_oversample(dfs, classes, target_counts, "auto", internal_verbose)
         elif strategy == "smote":
             return self.smote_like_oversample(
                 dfs, classes, target_class_counts=target_counts
@@ -417,11 +419,11 @@ class DataAugmentor:
         elif strategy == "combined":
             # First undersample majority classes
             balanced_dfs, balanced_classes = self.random_undersample(
-                dfs, classes, target_counts, "auto"
+                dfs, classes, target_counts, "auto", internal_verbose
             )
             # Then oversample minority classes
             return self.random_oversample(
-                balanced_dfs, balanced_classes, target_counts, "auto"
+                balanced_dfs, balanced_classes, target_counts, "auto", internal_verbose
             )
 
         return dfs, classes
@@ -495,6 +497,7 @@ def quick_balance_classes(
     classes: List[str],
     strategy: str = "combined",
     min_samples_per_class: Optional[int] = None,
+    internal_verbose: bool = False,
 ) -> Tuple[List[pd.DataFrame], List[str]]:
     """
     Quick class balancing with default settings.
@@ -510,5 +513,5 @@ def quick_balance_classes(
     """
     augmentor = DataAugmentor(verbose=True)
     return augmentor.balance_classes(
-        dfs, classes, strategy=strategy, target_samples_per_class=min_samples_per_class
+        dfs, classes, strategy=strategy, target_samples_per_class=min_samples_per_class, internal_verbose=internal_verbose
     )
