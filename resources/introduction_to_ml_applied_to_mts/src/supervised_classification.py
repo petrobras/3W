@@ -39,20 +39,21 @@ from .data_augmentation import quick_balance_classes
 # UTILITY FUNCTIONS FOR STUDENT NOTEBOOKS
 # ============================================================
 
+
 def load_3w_data(config, verbose=True):
     """
     Load 3W dataset for classification analysis.
-    
+
     Args:
         config: Configuration module
         verbose: Whether to print loading information
-        
+
     Returns:
         tuple: (train_dfs, train_classes, train_fold_info, test_dfs, test_classes, test_fold_info)
     """
     from .data_persistence import DataPersistence
     import os
-    
+
     if verbose:
         print("Loading 3W Dataset for Classification")
         print("=" * 40)
@@ -61,29 +62,34 @@ def load_3w_data(config, verbose=True):
         # Initialize data persistence
         persistence = DataPersistence(base_dir=config.PROCESSED_DATA_DIR, verbose=False)
         windowed_dir = os.path.join(persistence.cv_splits_dir, "windowed")
-        
+
         if not os.path.exists(windowed_dir):
             raise FileNotFoundError("Run Data Treatment notebook first!")
-        
+
         # Find fold directories
-        fold_dirs = [d for d in os.listdir(windowed_dir) 
-                    if d.startswith("fold_") and os.path.isdir(os.path.join(windowed_dir, d))]
+        fold_dirs = [
+            d
+            for d in os.listdir(windowed_dir)
+            if d.startswith("fold_") and os.path.isdir(os.path.join(windowed_dir, d))
+        ]
         fold_dirs.sort()
-        
+
         if verbose:
             print(f"Found {len(fold_dirs)} folds")
-        
+
         # Load all data
         all_train_windows, all_train_classes, all_train_fold_info = [], [], []
         all_test_windows, all_test_classes, all_test_fold_info = [], [], []
 
         for fold_name in fold_dirs:
             fold_path = os.path.join(windowed_dir, fold_name)
-            
+
             # Load training data
             train_file = os.path.join(fold_path, f"train_windowed.{config.SAVE_FORMAT}")
             if os.path.exists(train_file):
-                fold_train_dfs, fold_train_classes = persistence._load_dataframes(train_file, config.SAVE_FORMAT)
+                fold_train_dfs, fold_train_classes = persistence._load_dataframes(
+                    train_file, config.SAVE_FORMAT
+                )
                 all_train_windows.extend(fold_train_dfs)
                 all_train_classes.extend(fold_train_classes)
                 all_train_fold_info.extend([fold_name] * len(fold_train_dfs))
@@ -91,7 +97,9 @@ def load_3w_data(config, verbose=True):
             # Load test data
             test_file = os.path.join(fold_path, f"test_windowed.{config.SAVE_FORMAT}")
             if os.path.exists(test_file):
-                fold_test_dfs, fold_test_classes = persistence._load_dataframes(test_file, config.SAVE_FORMAT)
+                fold_test_dfs, fold_test_classes = persistence._load_dataframes(
+                    test_file, config.SAVE_FORMAT
+                )
                 all_test_windows.extend(fold_test_dfs)
                 all_test_classes.extend(fold_test_classes)
                 all_test_fold_info.extend([fold_name] * len(fold_test_dfs))
@@ -103,8 +111,14 @@ def load_3w_data(config, verbose=True):
             if all_train_windows:
                 print(f"   Window shape: {all_train_windows[0].shape}")
 
-        return (all_train_windows, all_train_classes, all_train_fold_info,
-                all_test_windows, all_test_classes, all_test_fold_info)
+        return (
+            all_train_windows,
+            all_train_classes,
+            all_train_fold_info,
+            all_test_windows,
+            all_test_classes,
+            all_test_fold_info,
+        )
 
     except Exception as e:
         if verbose:
@@ -115,23 +129,23 @@ def load_3w_data(config, verbose=True):
 def validate_configuration(selected_classes, test_classes, verbose=True):
     """
     Validate classification configuration.
-    
+
     Args:
         selected_classes: List of classes to analyze
         test_classes: Available test classes
         verbose: Whether to print validation info
-        
+
     Returns:
         bool: True if configuration is valid
     """
     if verbose:
         print(f"Selected classes: {selected_classes}")
-    
+
     # Check if selected classes exist
     test_classes_array = np.array(test_classes)
     unique_test_classes = np.unique(test_classes_array)
     available_selected = [cls for cls in selected_classes if cls in unique_test_classes]
-    
+
     if len(available_selected) == len(selected_classes):
         if verbose:
             print(f"✅ All selected classes found in data")
@@ -143,44 +157,46 @@ def validate_configuration(selected_classes, test_classes, verbose=True):
 def analyze_results_by_category(results, verbose=True):
     """
     Analyze results by algorithm category.
-    
+
     Args:
         results: List of result dictionaries
         verbose: Whether to print analysis
-        
+
     Returns:
         dict: Analysis by category with best algorithm and accuracy for each category
     """
     # Categorize models
-    tree_models = [r for r in results if "Tree" in r["model_name"] or "Forest" in r["model_name"]]
+    tree_models = [
+        r for r in results if "Tree" in r["model_name"] or "Forest" in r["model_name"]
+    ]
     svm_models = [r for r in results if "SVM" in r["model_name"]]
     nn_models = [r for r in results if "Neural Network" in r["model_name"]]
 
     # Create analysis with best performers
     analysis = {}
-    
+
     if tree_models:
         best_tree = max(tree_models, key=lambda x: x["test_accuracy"])
-        analysis['Tree-Based'] = {
-            'best_algorithm': best_tree['model_name'],
-            'best_accuracy': best_tree['test_accuracy'],
-            'count': len(tree_models)
+        analysis["Tree-Based"] = {
+            "best_algorithm": best_tree["model_name"],
+            "best_accuracy": best_tree["test_accuracy"],
+            "count": len(tree_models),
         }
-    
+
     if svm_models:
         best_svm = max(svm_models, key=lambda x: x["test_accuracy"])
-        analysis['Support Vector Machines'] = {
-            'best_algorithm': best_svm['model_name'],
-            'best_accuracy': best_svm['test_accuracy'],
-            'count': len(svm_models)
+        analysis["Support Vector Machines"] = {
+            "best_algorithm": best_svm["model_name"],
+            "best_accuracy": best_svm["test_accuracy"],
+            "count": len(svm_models),
         }
-    
+
     if nn_models:
         best_nn = max(nn_models, key=lambda x: x["test_accuracy"])
-        analysis['Neural Networks'] = {
-            'best_algorithm': best_nn['model_name'],
-            'best_accuracy': best_nn['test_accuracy'],
-            'count': len(nn_models)
+        analysis["Neural Networks"] = {
+            "best_algorithm": best_nn["model_name"],
+            "best_accuracy": best_nn["test_accuracy"],
+            "count": len(nn_models),
         }
 
     if verbose:
@@ -192,15 +208,21 @@ def analyze_results_by_category(results, verbose=True):
         # Best performers by category
         if tree_models:
             best_tree = max(tree_models, key=lambda x: x["test_accuracy"])
-            print(f"\n🌳 Best Tree: {best_tree['model_name']} ({best_tree['test_accuracy']:.3f})")
+            print(
+                f"\n🌳 Best Tree: {best_tree['model_name']} ({best_tree['test_accuracy']:.3f})"
+            )
 
         if svm_models:
             best_svm = max(svm_models, key=lambda x: x["test_accuracy"])
-            print(f"⚡ Best SVM: {best_svm['model_name']} ({best_svm['test_accuracy']:.3f})")
+            print(
+                f"⚡ Best SVM: {best_svm['model_name']} ({best_svm['test_accuracy']:.3f})"
+            )
 
         if nn_models:
             best_nn = max(nn_models, key=lambda x: x["test_accuracy"])
-            print(f"🧠 Best NN: {best_nn['model_name']} ({best_nn['test_accuracy']:.3f})")
+            print(
+                f"🧠 Best NN: {best_nn['model_name']} ({best_nn['test_accuracy']:.3f})"
+            )
 
     return analysis
 
@@ -277,7 +299,6 @@ class SupervisedClassifier:
 
         train_window_classes = extract_window_classes(train_dfs, train_classes)
         test_window_classes = extract_window_classes(test_dfs, test_classes)
-        
 
         # Map transient classes to their base classes
         if self.verbose:
@@ -297,12 +318,12 @@ class SupervisedClassifier:
 
         train_mapped_classes = map_transient_classes(train_window_classes)
         test_mapped_classes = map_transient_classes(test_window_classes)
-        
+
         # Apply class filtering after extraction and mapping
         if selected_classes is not None:
             if self.verbose:
                 print(f"Filtering to selected classes {selected_classes}...", end=" ")
-            
+
             # Filter training data
             filtered_train_dfs = []
             filtered_train_classes = []
@@ -310,24 +331,23 @@ class SupervisedClassifier:
                 if cls in selected_classes:
                     filtered_train_dfs.append(train_dfs[i])
                     filtered_train_classes.append(cls)
-            
-            # Filter test data  
+
+            # Filter test data
             filtered_test_dfs = []
             filtered_test_classes = []
             for i, cls in enumerate(test_mapped_classes):
                 if cls in selected_classes:
                     filtered_test_dfs.append(test_dfs[i])
                     filtered_test_classes.append(cls)
-            
+
             # Update the data
             train_dfs = filtered_train_dfs
             train_mapped_classes = filtered_train_classes
             test_dfs = filtered_test_dfs
             test_mapped_classes = filtered_test_classes
-            
+
             if self.verbose:
                 print(f"✅ Train: {len(train_dfs)}, Test: {len(test_dfs)}")
-        
 
         if internal_verbose:
             print(
@@ -346,9 +366,12 @@ class SupervisedClassifier:
                 )
 
             train_balanced_dfs, train_balanced_classes = quick_balance_classes(
-                train_dfs, train_mapped_classes, strategy=balance_strategy, internal_verbose=internal_verbose
+                train_dfs,
+                train_mapped_classes,
+                strategy=balance_strategy,
+                internal_verbose=internal_verbose,
             )
-            
+
         else:
             train_balanced_dfs = train_dfs
             train_balanced_classes = train_mapped_classes
@@ -367,7 +390,7 @@ class SupervisedClassifier:
             test_limited_dfs, test_limited_classes = self._limit_samples_per_class(
                 test_dfs, test_mapped_classes, max_samples_per_class // 3
             )
-            
+
         else:
             test_limited_dfs = test_dfs
             test_limited_classes = test_mapped_classes
@@ -388,7 +411,6 @@ class SupervisedClassifier:
         X_test = self._flatten_windows(test_limited_dfs)
         y_train = np.array(train_balanced_classes)
         y_test = np.array(test_limited_classes)
-        
 
         # Encode labels
         y_train_encoded = self.label_encoder.fit_transform(y_train)
@@ -671,9 +693,7 @@ class SupervisedClassifier:
         if self.verbose:
             print("Training Neural Networks")
             print("=" * 35)
-            print(
-                f"Training: {X_train.shape[0]} samples, {X_train.shape[1]} features"
-            )
+            print(f"Training: {X_train.shape[0]} samples, {X_train.shape[1]} features")
             print(f"Test: {X_test.shape[0]} samples")
             print(f"Classes: {len(np.unique(y_train))}")
 
@@ -907,6 +927,7 @@ class SupervisedClassifier:
         # Best model identification completed
         pass
 
+
 def enhanced_fold_analysis(
     train_dfs: List[pd.DataFrame],
     train_classes: List[str],
@@ -924,13 +945,13 @@ def enhanced_fold_analysis(
 ) -> SupervisedClassifier:
     """
     Enhanced supervised classification with proper cross-fold validation.
-    
+
     This function performs true cross-fold validation by training models on specific folds
     and testing on other folds, providing per-fold accuracy analysis.
 
     Args:
         train_dfs, train_classes: Training data
-        test_dfs, test_classes: Test data  
+        test_dfs, test_classes: Test data
         train_fold_info: List indicating which fold each training sample belongs to
         test_fold_info: List indicating which fold each test sample belongs to
         balance_classes: Whether to balance training classes
@@ -944,19 +965,23 @@ def enhanced_fold_analysis(
     Returns:
         SupervisedClassifier: Trained classifier with enhanced fold-wise results
     """
-    
+
     # Validate fold information
     if len(train_fold_info) != len(train_dfs):
-        raise ValueError(f"train_fold_info length ({len(train_fold_info)}) != train_dfs length ({len(train_dfs)})")
-    
+        raise ValueError(
+            f"train_fold_info length ({len(train_fold_info)}) != train_dfs length ({len(train_dfs)})"
+        )
+
     if len(test_fold_info) != len(test_dfs):
-        raise ValueError(f"test_fold_info length ({len(test_fold_info)}) != test_dfs length ({len(test_dfs)})")
-    
+        raise ValueError(
+            f"test_fold_info length ({len(test_fold_info)}) != test_dfs length ({len(test_dfs)})"
+        )
+
     # Get unique folds
     train_folds = sorted(set(train_fold_info))
     test_folds = sorted(set(test_fold_info))
     all_folds = sorted(set(train_folds + test_folds))
-    
+
     # Filter data based on selected_classes parameter
     if selected_classes is None:
         filter_condition = lambda cls: cls != 0 and cls != "0"
@@ -967,67 +992,75 @@ def enhanced_fold_analysis(
     # Filter training and test data based on class selection
     filtered_train_data = []
     filtered_test_data = []
-    
+
     for i, (df, cls, fold) in enumerate(zip(train_dfs, train_classes, train_fold_info)):
         if filter_condition(cls):
             filtered_train_data.append((df, cls, fold, i))
-    
+
     for i, (df, cls, fold) in enumerate(zip(test_dfs, test_classes, test_fold_info)):
         if filter_condition(cls):
             filtered_test_data.append((df, cls, fold, i))
-    
+
     if len(filtered_train_data) == 0 or len(filtered_test_data) == 0:
         raise ValueError("No data remaining after class filtering")
-    
+
     # Initialize classifier for consistent label encoding across folds
     classifier = SupervisedClassifier(verbose=verbose)
-    
+
     # Prepare all data once to establish consistent label encoding
     all_train_classes = [item[1] for item in filtered_train_data]
     all_test_classes = [item[1] for item in filtered_test_data]
-    
+
     # Create label encoder with all classes
     all_classes = list(set(all_train_classes + all_test_classes))
     classifier.label_encoder.fit(all_classes)
     classifier.class_names = classifier.label_encoder.classes_
-    
+
     # Store results for each fold and model
     fold_results = {}
-    model_names = ["Decision Tree", "Random Forest", "Linear SVM", "RBF SVM", 
-                  "Simple Neural Network", "Deep Neural Network", "Regularized Neural Network"]
-    
+    model_names = [
+        "Decision Tree",
+        "Random Forest",
+        "Linear SVM",
+        "RBF SVM",
+        "Simple Neural Network",
+        "Deep Neural Network",
+        "Regularized Neural Network",
+    ]
+
     # Initialize fold results structure
     for fold in all_folds:
         fold_results[fold] = {}
         for model_name in model_names:
             fold_results[fold][model_name] = 0.0
-    
+
     # Perform cross-fold validation
-    for test_fold in all_folds:        
+    for test_fold in all_folds:
         # Separate training and test data for this fold iteration
         fold_train_dfs = []
         fold_train_classes = []
         fold_test_dfs = []
         fold_test_classes = []
-        
+
         # Collect training data (all folds except test_fold)
         for df, cls, fold, _ in filtered_train_data:
             if fold == test_fold:
                 fold_train_dfs.append(df)
                 fold_train_classes.append(cls)
-        
+
         # Collect test data (only test_fold)
         for df, cls, fold, _ in filtered_test_data:
             if fold == test_fold:
                 fold_test_dfs.append(df)
                 fold_test_classes.append(cls)
-            
 
         # Create a temporary classifier for this fold
         temp_classifier = SupervisedClassifier(verbose=False)
-        temp_classifier.label_encoder = classifier.label_encoder  # Use consistent encoding
+        temp_classifier.label_encoder = (
+            classifier.label_encoder
+        )  # Use consistent encoding
         temp_classifier.class_names = classifier.class_names
-        
+
         # Prepare data for this fold
         try:
             X_train, y_train, X_test, y_test = temp_classifier.prepare_data(
@@ -1039,55 +1072,62 @@ def enhanced_fold_analysis(
                 balance_strategy=balance_strategy,
                 max_samples_per_class=max_samples_per_class,
                 selected_classes=selected_classes,  # Pass selected_classes to prepare_data
-                internal_verbose=False
+                internal_verbose=False,
             )
-            
+
             if verbose:
-                print(f"   Data prepared - Train: {X_train.shape[0]}, Test: {X_test.shape[0]}")
-            
+                print(
+                    f"   Data prepared - Train: {X_train.shape[0]}, Test: {X_test.shape[0]}"
+                )
+
             # Train all models for this fold
-            fold_model_results = temp_classifier.train_all_models(X_train, y_train, X_test, y_test)
-            
+            fold_model_results = temp_classifier.train_all_models(
+                X_train, y_train, X_test, y_test
+            )
+
             # Extract test accuracies for this fold
             for result in fold_model_results:
-                model_name = result['model_name']
-                test_accuracy = result['test_accuracy']
+                model_name = result["model_name"]
+                test_accuracy = result["test_accuracy"]
                 fold_results[test_fold][model_name] = test_accuracy
-                
+
                 if verbose:
                     print(f"   {model_name}: {test_accuracy:.3f}")
-        
+
         except Exception as e:
             if verbose:
                 print(f"    Error processing fold {test_fold}: {str(e)}")
             continue
 
-    
     # Prepare data for the last fold to return some results
     X_train, y_train, X_test, y_test = classifier.prepare_data(
-                fold_train_dfs,
-                fold_train_classes,
-                fold_test_dfs,
-                fold_test_classes,
-                balance_classes=balance_classes,
-                balance_strategy=balance_strategy,
-                max_samples_per_class=max_samples_per_class,
-                selected_classes=selected_classes,  # Pass selected_classes to prepare_data
-                internal_verbose=True
-            )
-            
+        fold_train_dfs,
+        fold_train_classes,
+        fold_test_dfs,
+        fold_test_classes,
+        balance_classes=balance_classes,
+        balance_strategy=balance_strategy,
+        max_samples_per_class=max_samples_per_class,
+        selected_classes=selected_classes,  # Pass selected_classes to prepare_data
+        internal_verbose=True,
+    )
+
     # Train all models for this fold
-    last_fold_model_results = classifier.train_all_models(X_train, y_train, X_test, y_test)
-     # Store fold results in classifier for analysis
+    last_fold_model_results = classifier.train_all_models(
+        X_train, y_train, X_test, y_test
+    )
+    # Store fold results in classifier for analysis
     classifier.fold_results = fold_results
     classifier.fold_names = all_folds
     classifier.compare_models(last_fold_model_results, y_test)
 
     return classifier
 
+
 # ============================================================
 # 🧠 NEURAL NETWORK ARCHITECTURES VISUALIZATION
 # ============================================================
+
 
 def print_neural_network_architectures():
     """
@@ -1096,12 +1136,12 @@ def print_neural_network_architectures():
     """
     print("🧠 NEURAL NETWORK ARCHITECTURES USED IN EXPERIMENTS")
     print("=" * 65)
-    
+
     print("\n📊 ARCHITECTURE OVERVIEW:")
     print("├─ Simple Neural Network: Single hidden layer (basic)")
     print("├─ Deep Neural Network: Three hidden layers (complex)")
     print("└─ Regularized Neural Network: Two layers + strong regularization")
-    
+
     print("\n" + "=" * 65)
     print("🔹 1. SIMPLE NEURAL NETWORK")
     print("=" * 30)
@@ -1112,7 +1152,7 @@ def print_neural_network_architectures():
     print("Parameters:")
     print("  • hidden_layer_sizes: (100,)")
     print("  • activation: 'relu'")
-    print("  • solver: 'adam'") 
+    print("  • solver: 'adam'")
     print("  • alpha (L2 penalty): 0.0001 (low regularization)")
     print("  • max_iter: 200")
     print("  • early_stopping: True")
@@ -1122,7 +1162,7 @@ def print_neural_network_architectures():
     print("  ✓ Good baseline performance")
     print("  ✓ Low computational cost")
     print("  ⚠ Limited complexity")
-    
+
     print("\n" + "=" * 65)
     print("🔹 2. DEEP NEURAL NETWORK")
     print("=" * 25)
@@ -1143,7 +1183,7 @@ def print_neural_network_architectures():
     print("  ✓ Can learn complex patterns")
     print("  ⚠ Prone to overfitting")
     print("  ⚠ Longer training time")
-    
+
     print("\n" + "=" * 65)
     print("🔹 3. REGULARIZED NEURAL NETWORK")
     print("=" * 33)
@@ -1166,23 +1206,23 @@ def print_neural_network_architectures():
     print("  ✓ Resistant to overfitting")
     print("  ✓ Adaptive learning rate")
     print("  ⚠ Slower convergence")
-    
+
     print("\n" + "=" * 65)
     print("📈 ARCHITECTURE COMPARISON TABLE")
     print("=" * 35)
-    
+
     # Create comparison table
     table_data = [
         ["Model", "Layers", "Neurons", "Regularization", "Complexity"],
         ["-" * 18, "-" * 8, "-" * 12, "-" * 14, "-" * 10],
         ["Simple NN", "1 hidden", "100", "Low (0.0001)", "Basic"],
         ["Deep NN", "3 hidden", "200+100+50", "Low (0.0001)", "High"],
-        ["Regularized NN", "2 hidden", "150+100", "High (0.001)", "Medium"]
+        ["Regularized NN", "2 hidden", "150+100", "High (0.001)", "Medium"],
     ]
-    
+
     for row in table_data:
         print(f"{row[0]:<18} {row[1]:<8} {row[2]:<12} {row[3]:<14} {row[4]:<10}")
-    
+
     print("\n💡 ARCHITECTURE DESIGN PRINCIPLES:")
     print("   • Simple NN: Fast baseline with single hidden layer")
     print("   • Deep NN: Maximum expressiveness with depth")
@@ -1190,7 +1230,7 @@ def print_neural_network_architectures():
     print("   • All use ReLU activation for non-linearity")
     print("   • Adam optimizer for adaptive learning")
     print("   • Early stopping to prevent overfitting")
-    
+
     print("\n🎯 EDUCATIONAL INSIGHTS:")
     print("   • More layers ≠ always better performance")
     print("   • Regularization is crucial for generalization")

@@ -27,13 +27,15 @@ class UnsupervisedDataLoader:
         self.config = config
         self.windowed_dir = os.path.join(persistence.cv_splits_dir, "windowed")
 
-    def load_unsupervised_data(self, 
-                             use_single_fold=False, 
-                             target_fold="fold_1",
-                             max_normal_samples=2000,
-                             max_anomaly_samples=1000,
-                             selected_anomaly_classes=[3, 4, 8],
-                             enable_sampling=True):
+    def load_unsupervised_data(
+        self,
+        use_single_fold=False,
+        target_fold="fold_1",
+        max_normal_samples=2000,
+        max_anomaly_samples=1000,
+        selected_anomaly_classes=[3, 4, 8],
+        enable_sampling=True,
+    ):
         """
         Load and organize data for unsupervised anomaly detection.
 
@@ -60,8 +62,10 @@ class UnsupervisedDataLoader:
 
         # Find available folds
         fold_dirs = [
-            d for d in os.listdir(self.windowed_dir)
-            if d.startswith("fold_") and os.path.isdir(os.path.join(self.windowed_dir, d))
+            d
+            for d in os.listdir(self.windowed_dir)
+            if d.startswith("fold_")
+            and os.path.isdir(os.path.join(self.windowed_dir, d))
         ]
         fold_dirs.sort()
 
@@ -82,21 +86,32 @@ class UnsupervisedDataLoader:
             print(f"   • Max anomaly samples: {max_anomaly_samples}")
 
         # Load and organize data
-        normal_windows, normal_classes, anomaly_windows, anomaly_classes = self._load_and_organize_data(
-            process_folds, selected_anomaly_classes, enable_sampling, 
-            max_normal_samples, max_anomaly_samples
+        normal_windows, normal_classes, anomaly_windows, anomaly_classes = (
+            self._load_and_organize_data(
+                process_folds,
+                selected_anomaly_classes,
+                enable_sampling,
+                max_normal_samples,
+                max_anomaly_samples,
+            )
         )
 
         # Prepare load information
         load_info = {
-            'folds_processed': process_folds,
-            'selected_anomaly_classes': selected_anomaly_classes,
-            'normal_count': len(normal_windows),
-            'anomaly_count': len(anomaly_windows),
-            'sampling_enabled': enable_sampling
+            "folds_processed": process_folds,
+            "selected_anomaly_classes": selected_anomaly_classes,
+            "normal_count": len(normal_windows),
+            "anomaly_count": len(anomaly_windows),
+            "sampling_enabled": enable_sampling,
         }
 
-        return normal_windows, normal_classes, anomaly_windows, anomaly_classes, load_info
+        return (
+            normal_windows,
+            normal_classes,
+            anomaly_windows,
+            anomaly_classes,
+            load_info,
+        )
 
     def _determine_folds_to_process(self, fold_dirs, use_single_fold, target_fold):
         """Determine which folds to process based on configuration."""
@@ -106,21 +121,29 @@ class UnsupervisedDataLoader:
                 print(f"Using single fold: {target_fold}")
             else:
                 process_folds = [fold_dirs[0]]
-                print(f"⚠️ Target fold '{target_fold}' not found, using: {process_folds[0]}")
+                print(
+                    f"⚠️ Target fold '{target_fold}' not found, using: {process_folds[0]}"
+                )
         else:
             process_folds = fold_dirs
             print(f"Using all {len(fold_dirs)} folds for better class coverage")
 
         return process_folds
 
-    def _load_and_organize_data(self, process_folds, selected_anomaly_classes, 
-                               enable_sampling, max_normal_samples, max_anomaly_samples):
+    def _load_and_organize_data(
+        self,
+        process_folds,
+        selected_anomaly_classes,
+        enable_sampling,
+        max_normal_samples,
+        max_anomaly_samples,
+    ):
         """Load and organize data from folds."""
         normal_windows, normal_classes = [], []
         anomaly_windows, anomaly_classes = [], []
-        
+
         class_counts = {str(cls): 0 for cls in selected_anomaly_classes}
-        class_counts['0'] = 0
+        class_counts["0"] = 0
 
         load_start = time.time()
         total_files_processed = 0
@@ -131,20 +154,32 @@ class UnsupervisedDataLoader:
 
             # Load both train and test data for each fold
             all_fold_dfs, all_fold_classes = self._load_fold_data(fold_path, fold_name)
-            
+
             # Separate by class
             self._separate_by_class(
-                all_fold_dfs, all_fold_classes, selected_anomaly_classes,
-                normal_windows, normal_classes, anomaly_windows, anomaly_classes,
-                class_counts, enable_sampling, max_normal_samples, max_anomaly_samples
+                all_fold_dfs,
+                all_fold_classes,
+                selected_anomaly_classes,
+                normal_windows,
+                normal_classes,
+                anomaly_windows,
+                anomaly_classes,
+                class_counts,
+                enable_sampling,
+                max_normal_samples,
+                max_anomaly_samples,
             )
 
             total_files_processed += 2  # train + test
 
         load_time = time.time() - load_start
         self._print_loading_summary(
-            normal_windows, anomaly_windows, anomaly_classes, 
-            selected_anomaly_classes, load_time, total_files_processed
+            normal_windows,
+            anomaly_windows,
+            anomaly_classes,
+            selected_anomaly_classes,
+            load_time,
+            total_files_processed,
         )
 
         return normal_windows, normal_classes, anomaly_windows, anomaly_classes
@@ -152,15 +187,19 @@ class UnsupervisedDataLoader:
     def _load_fold_data(self, fold_path, fold_name):
         """Load train and test data from a single fold."""
         all_fold_dfs, all_fold_classes = [], []
-        
+
         print(f"   Loading and merging train+test data...", end=" ")
 
         for data_type in ["train", "test"]:
-            pickle_file = os.path.join(fold_path, f"{data_type}_windowed.{self.config.SAVE_FORMAT}")
+            pickle_file = os.path.join(
+                fold_path, f"{data_type}_windowed.{self.config.SAVE_FORMAT}"
+            )
             parquet_file = os.path.join(fold_path, f"{data_type}_windowed.parquet")
 
-            fold_dfs, fold_classes = self._try_load_file(pickle_file, parquet_file, data_type)
-            
+            fold_dfs, fold_classes = self._try_load_file(
+                pickle_file, parquet_file, data_type
+            )
+
             all_fold_dfs.extend(fold_dfs)
             all_fold_classes.extend(fold_classes)
 
@@ -181,13 +220,17 @@ class UnsupervisedDataLoader:
                 print(f"  {data_type}(pickle error)", end="")
                 if os.path.exists(parquet_file):
                     try:
-                        fold_dfs, fold_classes = self.persistence._load_from_parquet(parquet_file)
+                        fold_dfs, fold_classes = self.persistence._load_from_parquet(
+                            parquet_file
+                        )
                         print(f"  {data_type}({len(fold_dfs)} parquet)", end="")
                     except Exception:
                         print(f"  {data_type}(failed)", end="")
         elif os.path.exists(parquet_file):
             try:
-                fold_dfs, fold_classes = self.persistence._load_from_parquet(parquet_file)
+                fold_dfs, fold_classes = self.persistence._load_from_parquet(
+                    parquet_file
+                )
                 print(f"  {data_type}({len(fold_dfs)})", end="")
             except Exception:
                 print(f"  {data_type}(error)", end="")
@@ -196,29 +239,47 @@ class UnsupervisedDataLoader:
 
         return fold_dfs, fold_classes
 
-    def _separate_by_class(self, all_fold_dfs, all_fold_classes, selected_anomaly_classes,
-                          normal_windows, normal_classes, anomaly_windows, anomaly_classes,
-                          class_counts, enable_sampling, max_normal_samples, max_anomaly_samples):
+    def _separate_by_class(
+        self,
+        all_fold_dfs,
+        all_fold_classes,
+        selected_anomaly_classes,
+        normal_windows,
+        normal_classes,
+        anomaly_windows,
+        anomaly_classes,
+        class_counts,
+        enable_sampling,
+        max_normal_samples,
+        max_anomaly_samples,
+    ):
         """Separate data by class (normal vs selected anomalies)."""
         for df, cls in zip(all_fold_dfs, all_fold_classes):
             cls_str = str(cls)
-            
+
             if cls_str == "0":  # Normal operation
                 if not enable_sampling or len(normal_windows) < max_normal_samples:
                     normal_windows.append(df)
                     normal_classes.append(cls)
-                    class_counts['0'] += 1
+                    class_counts["0"] += 1
             elif int(cls) in selected_anomaly_classes:  # Selected fault classes
                 current_class_count = class_counts.get(cls_str, 0)
                 max_per_class = max_anomaly_samples // len(selected_anomaly_classes)
-                
+
                 if not enable_sampling or current_class_count < max_per_class:
                     anomaly_windows.append(df)
                     anomaly_classes.append(cls)
                     class_counts[cls_str] += 1
 
-    def _print_loading_summary(self, normal_windows, anomaly_windows, anomaly_classes,
-                              selected_anomaly_classes, load_time, total_files_processed):
+    def _print_loading_summary(
+        self,
+        normal_windows,
+        anomaly_windows,
+        anomaly_classes,
+        selected_anomaly_classes,
+        load_time,
+        total_files_processed,
+    ):
         """Print loading summary and validation."""
         if normal_windows and anomaly_windows:
             print(f"\n✅ Data loading completed successfully!")
@@ -228,7 +289,9 @@ class UnsupervisedDataLoader:
             print(f"   • Files processed: {total_files_processed}")
 
             # Show class distribution
-            anomaly_unique, anomaly_counts = np.unique(anomaly_classes, return_counts=True)
+            anomaly_unique, anomaly_counts = np.unique(
+                anomaly_classes, return_counts=True
+            )
             print(f"\nAnomaly Class Distribution:")
             for cls, count in zip(anomaly_unique, anomaly_counts):
                 print(f"   • Class {cls}: {count} windows")
@@ -237,9 +300,11 @@ class UnsupervisedDataLoader:
             expected_classes = set(str(cls) for cls in selected_anomaly_classes)
             found_classes = set(str(cls) for cls in anomaly_unique)
             missing_classes = expected_classes - found_classes
-            
+
             if missing_classes:
-                print(f"\n⚠️ Warning: Missing classes from loaded data: {sorted(missing_classes)}")
+                print(
+                    f"\n⚠️ Warning: Missing classes from loaded data: {sorted(missing_classes)}"
+                )
                 print(f"   • Consider using more folds or increasing sample limits")
             else:
                 print(f"\n✅ All expected anomaly classes found in the data!")
@@ -308,50 +373,65 @@ class UnsupervisedDataPreprocessor:
             sampled_normal_windows = normal_windows
 
         # Handle anomaly data sampling with class balance
-        if anomaly_classes is not None and len(anomaly_windows) > self.max_anomaly_samples:
-            print(f"📊 Balanced sampling {self.max_anomaly_samples} anomaly windows from {len(anomaly_windows)} available...")
-            
+        if (
+            anomaly_classes is not None
+            and len(anomaly_windows) > self.max_anomaly_samples
+        ):
+            print(
+                f"📊 Balanced sampling {self.max_anomaly_samples} anomaly windows from {len(anomaly_windows)} available..."
+            )
+
             # Group by class for balanced sampling
             from collections import defaultdict
+
             class_indices = defaultdict(list)
-            
+
             for i, cls in enumerate(anomaly_classes):
                 class_indices[str(cls)].append(i)
-            
+
             unique_classes = list(class_indices.keys())
             samples_per_class = self.max_anomaly_samples // len(unique_classes)
-            
+
             print(f"   • Target samples per class: {samples_per_class}")
-            
+
             sampled_indices = []
             sampled_anomaly_classes = []
-            
+
             for cls in unique_classes:
                 cls_indices = class_indices[cls]
                 if len(cls_indices) > samples_per_class:
                     cls_sampled = random.sample(cls_indices, samples_per_class)
                 else:
                     cls_sampled = cls_indices
-                
+
                 sampled_indices.extend(cls_sampled)
-                sampled_anomaly_classes.extend([anomaly_classes[i] for i in cls_sampled])
-                
-                print(f"   • Class {cls}: {len(cls_sampled)} samples selected from {len(cls_indices)} available")
-            
+                sampled_anomaly_classes.extend(
+                    [anomaly_classes[i] for i in cls_sampled]
+                )
+
+                print(
+                    f"   • Class {cls}: {len(cls_sampled)} samples selected from {len(cls_indices)} available"
+                )
+
             sampled_anomaly_windows = [anomaly_windows[i] for i in sampled_indices]
-            
+
         else:
             print(f"📊 Using all {len(anomaly_windows)} anomaly windows...")
             sampled_anomaly_windows = anomaly_windows
-            sampled_anomaly_classes = anomaly_classes if anomaly_classes is not None else [None] * len(anomaly_windows)
+            sampled_anomaly_classes = (
+                anomaly_classes
+                if anomaly_classes is not None
+                else [None] * len(anomaly_windows)
+            )
 
         print(f"\n✅ Sampling complete:")
         print(f"   • Normal windows: {len(sampled_normal_windows)}")
         print(f"   • Anomaly windows: {len(sampled_anomaly_windows)}")
-        
+
         if anomaly_classes is not None:
             # Show final class distribution
             from collections import Counter
+
             class_dist = Counter(str(cls) for cls in sampled_anomaly_classes)
             print(f"   • Anomaly class distribution: {dict(class_dist)}")
 
@@ -496,7 +576,9 @@ class UnsupervisedDataPreprocessor:
 
         return normal_scaled, anomaly_scaled
 
-    def prepare_full_pipeline(self, normal_windows, anomaly_windows, anomaly_classes=None):
+    def prepare_full_pipeline(
+        self, normal_windows, anomaly_windows, anomaly_classes=None
+    ):
         """
         Run the complete data preparation pipeline.
 
@@ -548,8 +630,13 @@ class UnsupervisedDataPreprocessor:
         print(f"   • Features per time step: {n_features} (class column removed)")
 
         # Adjust anomaly classes to match the final array size
-        if sampled_anomaly_classes is not None and len(sampled_anomaly_classes) != anomaly_scaled.shape[0]:
-            print(f"   ⚠️ Adjusting anomaly classes length from {len(sampled_anomaly_classes)} to {anomaly_scaled.shape[0]}")
-            sampled_anomaly_classes = sampled_anomaly_classes[:anomaly_scaled.shape[0]]
+        if (
+            sampled_anomaly_classes is not None
+            and len(sampled_anomaly_classes) != anomaly_scaled.shape[0]
+        ):
+            print(
+                f"   ⚠️ Adjusting anomaly classes length from {len(sampled_anomaly_classes)} to {anomaly_scaled.shape[0]}"
+            )
+            sampled_anomaly_classes = sampled_anomaly_classes[: anomaly_scaled.shape[0]]
 
         return normal_scaled, anomaly_scaled, data_info, sampled_anomaly_classes

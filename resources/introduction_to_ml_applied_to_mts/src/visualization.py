@@ -944,119 +944,130 @@ class DataVisualizer:
 class DimensionalityReductionVisualizer:
     """
     A class for dimensionality reduction visualization of the 3W dataset.
-    
+
     Provides methods for t-SNE and UMAP analysis with multiple configurations.
     """
-    
+
     def __init__(self):
         """Initialize the dimensionality reduction visualizer."""
         self.class_colors = self._generate_class_colors()
-    
+
     def _generate_class_colors(self):
         """Generate distinct, vibrant colors for each class."""
         # Define high-contrast, vibrant colors for better visibility
         vibrant_colors = [
-            '#FF0000',  # Bright Red (Class 0)
-            '#00FF00',  # Bright Green (Class 1)
-            '#0000FF',  # Bright Blue (Class 2)
-            '#FF8000',  # Bright Orange (Class 3)
-            '#8000FF',  # Bright Purple (Class 4)
-            '#00FFFF',  # Bright Cyan (Class 5)
-            '#FF0080',  # Bright Magenta (Class 6)
-            '#80FF00',  # Bright Lime (Class 7)
-            '#0080FF',  # Bright Sky Blue (Class 8)
-            '#FFFF00',  # Bright Yellow (Class 9)
+            "#FF0000",  # Bright Red (Class 0)
+            "#00FF00",  # Bright Green (Class 1)
+            "#0000FF",  # Bright Blue (Class 2)
+            "#FF8000",  # Bright Orange (Class 3)
+            "#8000FF",  # Bright Purple (Class 4)
+            "#00FFFF",  # Bright Cyan (Class 5)
+            "#FF0080",  # Bright Magenta (Class 6)
+            "#80FF00",  # Bright Lime (Class 7)
+            "#0080FF",  # Bright Sky Blue (Class 8)
+            "#FFFF00",  # Bright Yellow (Class 9)
         ]
-        
+
         return {i: vibrant_colors[i % len(vibrant_colors)] for i in range(10)}
 
     def load_windowed_data(self, persistence, config, fold_number=None):
         """
         Load windowed data from processed files.
-        
+
         Args:
             persistence: DataPersistence instance
             config: Configuration module
             fold_number (int, optional): Specific fold to load. If None, loads first available.
-            
+
         Returns:
             tuple: (test_dfs, test_classes, metadata)
         """
         print("📊 Loading windowed data...")
-        
+
         # Check windowed directory
         windowed_dir = os.path.join(persistence.cv_splits_dir, "windowed")
         print(f"   • Windowed directory: {windowed_dir}")
-        
+
         if not os.path.exists(windowed_dir):
-            raise FileNotFoundError("Run '1_data_treatment.ipynb' first to generate windowed data")
-        
+            raise FileNotFoundError(
+                "Run '1_data_treatment.ipynb' first to generate windowed data"
+            )
+
         # Find fold directories
         fold_dirs = [
-            d for d in os.listdir(windowed_dir)
+            d
+            for d in os.listdir(windowed_dir)
             if d.startswith("fold_") and os.path.isdir(os.path.join(windowed_dir, d))
         ]
         fold_dirs.sort()
-        
+
         if not fold_dirs:
             raise FileNotFoundError("No fold directories found in windowed data.")
-        
+
         # Select fold
         if fold_number is not None:
             target_fold = f"fold_{fold_number}"
             if target_fold not in fold_dirs:
-                raise ValueError(f"Fold {fold_number} not found. Available: {fold_dirs}")
+                raise ValueError(
+                    f"Fold {fold_number} not found. Available: {fold_dirs}"
+                )
             first_fold_dir = target_fold
         else:
             first_fold_dir = fold_dirs[0]
-        
+
         fold_path = os.path.join(windowed_dir, first_fold_dir)
         fold_num = first_fold_dir.replace("fold_", "")
-        
+
         print(f"   • Loading from {first_fold_dir}")
-        
+
         # Load data with fallback options
         data_files = {
-            'pickle': os.path.join(fold_path, f"test_windowed.{config.SAVE_FORMAT}"),
-            'parquet': os.path.join(fold_path, "test_windowed.parquet")
+            "pickle": os.path.join(fold_path, f"test_windowed.{config.SAVE_FORMAT}"),
+            "parquet": os.path.join(fold_path, "test_windowed.parquet"),
         }
-        
+
         test_dfs, test_classes = None, None
         loaded_format = None
-        
+
         for format_name, file_path in data_files.items():
             if os.path.exists(file_path):
                 try:
-                    if format_name == 'pickle':
-                        test_dfs, test_classes = persistence._load_dataframes(file_path, config.SAVE_FORMAT)
+                    if format_name == "pickle":
+                        test_dfs, test_classes = persistence._load_dataframes(
+                            file_path, config.SAVE_FORMAT
+                        )
                     else:
-                        test_dfs, test_classes = persistence._load_from_parquet(file_path)
-                    
+                        test_dfs, test_classes = persistence._load_from_parquet(
+                            file_path
+                        )
+
                     loaded_format = format_name
                     break
-                    
+
                 except Exception as e:
                     print(f"   ⚠️ Failed to load {format_name}: {str(e)[:50]}...")
                     continue
-        
+
         if test_dfs is None:
-            raise FileNotFoundError(f"No compatible test data file found in: {fold_path}")
-        
+            raise FileNotFoundError(
+                f"No compatible test data file found in: {fold_path}"
+            )
+
         metadata = {
-            'fold_number': fold_num,
-            'format': loaded_format,
-            'windows_count': len(test_dfs),
-            'fold_path': fold_path
+            "fold_number": fold_num,
+            "format": loaded_format,
+            "windows_count": len(test_dfs),
+            "fold_path": fold_path,
         }
-        
+
         print(f"   ✅ Loaded {len(test_dfs)} windows from fold {fold_num}")
-        
+
         return test_dfs, test_classes, metadata
 
     def extract_and_map_classes(self, test_dfs, test_classes=None):
         """Extract and map class labels from windowed data."""
         print("🏷️ Processing class labels...")
-        
+
         # Extract classes
         window_classes = []
         for i, window_df in enumerate(test_dfs):
@@ -1070,163 +1081,187 @@ class DimensionalityReductionVisualizer:
                     window_classes.append(test_classes[i])
                 else:
                     window_classes.append(0)
-        
-        print(f"🏷️ Original class distribution: {dict(zip(*np.unique(window_classes, return_counts=True)))}")
-        
+
+        print(
+            f"🏷️ Original class distribution: {dict(zip(*np.unique(window_classes, return_counts=True)))}"
+        )
+
         # Map transient classes
         transient_mapping = {101: 1, 102: 2, 105: 5, 106: 6, 107: 7, 108: 8, 109: 9}
         mapped_classes = []
         transient_count = 0
-        
+
         for cls in window_classes:
             if cls in transient_mapping:
                 mapped_classes.append(transient_mapping[cls])
                 transient_count += 1
             else:
                 mapped_classes.append(cls)
-        
+
         print(f"🔄 Mapped {transient_count} transient classes")
-        print(f"🏷️ Mapped class distribution: {dict(zip(*np.unique(mapped_classes, return_counts=True)))}")
-        
+        print(
+            f"🏷️ Mapped class distribution: {dict(zip(*np.unique(mapped_classes, return_counts=True)))}"
+        )
+
         return mapped_classes
 
     def intelligent_sampling_for_visualization(self, test_dfs, mapped_classes, config):
         """Perform intelligent sampling for visualization."""
         print("🎯 Performing intelligent sampling...")
-        
+
         # Get target classes and max samples
-        if hasattr(config, 'CLASSIFICATION_CONFIG') and 'selected_classes' in config.CLASSIFICATION_CONFIG:
+        if (
+            hasattr(config, "CLASSIFICATION_CONFIG")
+            and "selected_classes" in config.CLASSIFICATION_CONFIG
+        ):
             target_classes = config.CLASSIFICATION_CONFIG["selected_classes"]
         else:
             target_classes = list(range(1, 10))
-        
-        max_samples_per_class = getattr(config, 'VISUALIZATION_MAX_SAMPLES', 50)
-        
+
+        max_samples_per_class = getattr(config, "VISUALIZATION_MAX_SAMPLES", 50)
+
         selected_indices = []
         selected_classes = []
         sampling_summary = {}
-        
-        np.random.seed(getattr(config, 'VISUALIZATION_RANDOM_SEED', 42))
-        
+
+        np.random.seed(getattr(config, "VISUALIZATION_RANDOM_SEED", 42))
+
         for target_class in target_classes:
-            class_indices = [i for i, cls in enumerate(mapped_classes) if cls == target_class]
-            
+            class_indices = [
+                i for i, cls in enumerate(mapped_classes) if cls == target_class
+            ]
+
             if len(class_indices) > 0:
                 n_samples = min(max_samples_per_class, len(class_indices))
-                sampled_indices = np.random.choice(class_indices, size=n_samples, replace=False)
+                sampled_indices = np.random.choice(
+                    class_indices, size=n_samples, replace=False
+                )
                 selected_indices.extend(sampled_indices)
                 selected_classes.extend([target_class] * len(sampled_indices))
                 sampling_summary[target_class] = {
-                    'available': len(class_indices),
-                    'sampled': n_samples
+                    "available": len(class_indices),
+                    "sampled": n_samples,
                 }
-        
+
         # Filter data
         selected_test_dfs = [test_dfs[i] for i in selected_indices]
-        
+
         print(f"   • Selected {len(selected_indices)} windows")
         print(f"   • Sampling summary: {sampling_summary}")
-        
+
         return selected_test_dfs, selected_classes, sampling_summary
 
     def prepare_features_for_visualization(self, selected_test_dfs, selected_classes):
         """Extract and standardize features for dimensionality reduction."""
         print("🔄 Preparing features for visualization...")
-        
+
         # Extract features
         flattened_windows = []
         feature_columns = None
-        
+
         for i, window_df in enumerate(selected_test_dfs):
             if feature_columns is None:
                 feature_columns = [col for col in window_df.columns if col != "class"]
-                print(f"   • Features: {len(feature_columns)} sensors × {window_df.shape[0]} timesteps")
-            
+                print(
+                    f"   • Features: {len(feature_columns)} sensors × {window_df.shape[0]} timesteps"
+                )
+
             try:
                 flattened = window_df[feature_columns].values.flatten()
                 flattened_windows.append(flattened)
             except Exception as e:
                 print(f"   ⚠️ Error processing window {i}: {e}")
                 continue
-        
+
         if not flattened_windows:
             raise ValueError("No valid windows processed")
-        
+
         # Convert to arrays
         X = np.array(flattened_windows)
-        y_labels = np.array(selected_classes[:len(flattened_windows)])
-        
+        y_labels = np.array(selected_classes[: len(flattened_windows)])
+
         # Validate shapes
         if X.shape[0] != y_labels.shape[0]:
             print(f"⚠️ Shape mismatch, fixing...")
             min_samples = min(X.shape[0], y_labels.shape[0])
             X = X[:min_samples]
             y_labels = y_labels[:min_samples]
-        
+
         # Standardize features
         from sklearn.preprocessing import StandardScaler
+
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
-        
+
         print(f"   • Feature matrix: {X_scaled.shape}")
         print(f"   • Memory usage: {X_scaled.nbytes / 1024 / 1024:.2f} MB")
-        
+
         return X_scaled, y_labels, scaler
 
     def run_tsne_analysis(self, X_scaled, y_labels, configs=None):
         """Run t-SNE with multiple configurations."""
         from sklearn.manifold import TSNE
         import time
-        
+
         if configs is None:
             # Use default configs from config module if available
             import src.config as config
-            configs = getattr(config, 'TSNE_CONFIGS', [
-                {"perplexity": 30, "learning_rate": 200, "title": "Standard t-SNE"},
-                {"perplexity": 10, "learning_rate": 100, "title": "Low Perplexity"},
-                {"perplexity": 50, "learning_rate": 300, "title": "High Perplexity"},
-                {"perplexity": 30, "learning_rate": 500, "title": "Fast Learning"}
-            ])
-        
+
+            configs = getattr(
+                config,
+                "TSNE_CONFIGS",
+                [
+                    {"perplexity": 30, "learning_rate": 200, "title": "Standard t-SNE"},
+                    {"perplexity": 10, "learning_rate": 100, "title": "Low Perplexity"},
+                    {
+                        "perplexity": 50,
+                        "learning_rate": 300,
+                        "title": "High Perplexity",
+                    },
+                    {"perplexity": 30, "learning_rate": 500, "title": "Fast Learning"},
+                ],
+            )
+
         print("🔮 Running t-SNE analysis...")
         results = []
-        
+
         for i, config in enumerate(configs):
-            print(f"   • t-SNE #{i+1}: perplexity={config['perplexity']}, lr={config['learning_rate']}...")
-            
+            print(
+                f"   • t-SNE #{i+1}: perplexity={config['perplexity']}, lr={config['learning_rate']}..."
+            )
+
             try:
                 start_time = time.time()
-                
+
                 tsne = TSNE(
                     n_components=2,
-                    perplexity=min(config["perplexity"], X_scaled.shape[0]-1),
+                    perplexity=min(config["perplexity"], X_scaled.shape[0] - 1),
                     learning_rate=config["learning_rate"],
                     random_state=42,
                     n_iter=1000,
-                    init="pca"
+                    init="pca",
                 )
-                
+
                 X_tsne = tsne.fit_transform(X_scaled)
                 elapsed_time = time.time() - start_time
-                
-                results.append({
-                    'embedding': X_tsne,
-                    'config': config,
-                    'time': elapsed_time,
-                    'reducer': tsne
-                })
-                
+
+                results.append(
+                    {
+                        "embedding": X_tsne,
+                        "config": config,
+                        "time": elapsed_time,
+                        "reducer": tsne,
+                    }
+                )
+
                 print(f"     ✅ Completed in {elapsed_time:.1f}s")
-                
+
             except Exception as e:
                 print(f"     ❌ Failed: {e}")
-                results.append({
-                    'embedding': None,
-                    'config': config,
-                    'time': None,
-                    'error': str(e)
-                })
-        
+                results.append(
+                    {"embedding": None, "config": config, "time": None, "error": str(e)}
+                )
+
         return results
 
     def run_umap_analysis(self, X_scaled, y_labels, configs=None):
@@ -1236,164 +1271,219 @@ class DimensionalityReductionVisualizer:
         except ImportError:
             print("❌ UMAP not available. Install with: pip install umap-learn")
             return None
-        
+
         import time
-        
+
         if configs is None:
             # Use default configs from config module if available
             import src.config as config
-            configs = getattr(config, 'UMAP_CONFIGS', [
-                {"n_neighbors": 15, "min_dist": 0.1, "metric": "euclidean", "title": "Standard UMAP"},
-                {"n_neighbors": 5, "min_dist": 0.0, "metric": "euclidean", "title": "Tight Clusters"},
-                {"n_neighbors": 50, "min_dist": 0.5, "metric": "cosine", "title": "Global Structure"},
-                {"n_neighbors": 30, "min_dist": 0.25, "metric": "manhattan", "title": "Robust Config"}
-            ])
-        
+
+            configs = getattr(
+                config,
+                "UMAP_CONFIGS",
+                [
+                    {
+                        "n_neighbors": 15,
+                        "min_dist": 0.1,
+                        "metric": "euclidean",
+                        "title": "Standard UMAP",
+                    },
+                    {
+                        "n_neighbors": 5,
+                        "min_dist": 0.0,
+                        "metric": "euclidean",
+                        "title": "Tight Clusters",
+                    },
+                    {
+                        "n_neighbors": 50,
+                        "min_dist": 0.5,
+                        "metric": "cosine",
+                        "title": "Global Structure",
+                    },
+                    {
+                        "n_neighbors": 30,
+                        "min_dist": 0.25,
+                        "metric": "manhattan",
+                        "title": "Robust Config",
+                    },
+                ],
+            )
+
         print("🚀 Running UMAP analysis...")
         results = []
-        
+
         for i, config in enumerate(configs):
-            print(f"   • UMAP #{i+1}: neighbors={config['n_neighbors']}, dist={config['min_dist']}...")
-            
+            print(
+                f"   • UMAP #{i+1}: neighbors={config['n_neighbors']}, dist={config['min_dist']}..."
+            )
+
             try:
                 start_time = time.time()
-                
+
                 reducer = umap.UMAP(
                     n_components=2,
-                    n_neighbors=min(config["n_neighbors"], X_scaled.shape[0]-1),
+                    n_neighbors=min(config["n_neighbors"], X_scaled.shape[0] - 1),
                     min_dist=config["min_dist"],
                     metric=config["metric"],
                     random_state=42,
-                    n_epochs=200
+                    n_epochs=200,
                 )
-                
+
                 X_umap = reducer.fit_transform(X_scaled)
                 elapsed_time = time.time() - start_time
-                
-                results.append({
-                    'embedding': X_umap,
-                    'config': config,
-                    'time': elapsed_time,
-                    'reducer': reducer
-                })
-                
+
+                results.append(
+                    {
+                        "embedding": X_umap,
+                        "config": config,
+                        "time": elapsed_time,
+                        "reducer": reducer,
+                    }
+                )
+
                 print(f"     ✅ Completed in {elapsed_time:.1f}s")
-                
+
             except Exception as e:
                 print(f"     ❌ Failed: {e}")
-                results.append({
-                    'embedding': None,
-                    'config': config,
-                    'time': None,
-                    'error': str(e)
-                })
-        
+                results.append(
+                    {"embedding": None, "config": config, "time": None, "error": str(e)}
+                )
+
         return results
 
-    def plot_dimensionality_reduction_results(self, results, y_labels, method_name="Dimensionality Reduction"):
+    def plot_dimensionality_reduction_results(
+        self, results, y_labels, method_name="Dimensionality Reduction"
+    ):
         """Plot results from dimensionality reduction analysis."""
         from sklearn.metrics import pairwise_distances
-        
+
         n_configs = len(results)
         cols = 2
         rows = (n_configs + 1) // 2
-        
-        fig, axes = plt.subplots(rows, cols, figsize=(16, 8*rows))
+
+        fig, axes = plt.subplots(rows, cols, figsize=(16, 8 * rows))
         if rows == 1:
             axes = [axes] if cols == 1 else axes
         else:
             axes = axes.flatten()
-        
+
         unique_classes = np.unique(y_labels)
-        
+
         for idx, result in enumerate(results):
             if idx >= len(axes):
                 break
-            
+
             ax = axes[idx]
-            
-            if result['embedding'] is not None:
-                embedding = result['embedding']
-                config = result['config']
-                
+
+            if result["embedding"] is not None:
+                embedding = result["embedding"]
+                config = result["config"]
+
                 # Calculate separation quality
                 embedding_distances = pairwise_distances(embedding)
                 avg_intra_class = 0
                 avg_inter_class = 0
-                
+
                 for class_label in unique_classes:
                     class_mask = y_labels == class_label
                     if np.sum(class_mask) > 1:
                         intra_distances = embedding_distances[class_mask][:, class_mask]
                         avg_intra_class += np.mean(intra_distances)
-                        
-                        inter_distances = embedding_distances[class_mask][:, ~class_mask]
+
+                        inter_distances = embedding_distances[class_mask][
+                            :, ~class_mask
+                        ]
                         if inter_distances.size > 0:
                             avg_inter_class += np.mean(inter_distances)
-                
+
                 separation_ratio = avg_inter_class / max(avg_intra_class, 1e-10)
-                
+
                 # Plot each class with improved visibility
                 for class_label in unique_classes:
                     mask = y_labels == class_label
                     class_points = embedding[mask]
-                    
+
                     ax.scatter(
                         class_points[:, 0],
                         class_points[:, 1],
                         c=[self.class_colors[class_label]],
                         label=f"Class {class_label} (n={np.sum(mask)})",
                         alpha=0.85,  # Increased alpha for better visibility
-                        s=80,        # Larger markers for better visibility
-                        edgecolors='black',  # Black edges for better contrast
-                        linewidth=0.8        # Thicker edges
+                        s=80,  # Larger markers for better visibility
+                        edgecolors="black",  # Black edges for better contrast
+                        linewidth=0.8,  # Thicker edges
                     )
-                
+
                 # Styling
-                ax.set_title(f"{config['title']}\n(Separation: {separation_ratio:.2f})", 
-                            fontsize=11, fontweight="bold")
+                ax.set_title(
+                    f"{config['title']}\n(Separation: {separation_ratio:.2f})",
+                    fontsize=11,
+                    fontweight="bold",
+                )
                 ax.set_xlabel(f"{method_name} Component 1")
                 ax.set_ylabel(f"{method_name} Component 2")
                 ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=9)
                 ax.grid(True, alpha=0.3)
-                
+
                 # Performance annotation
-                if result['time']:
-                    ax.text(0.02, 0.98, f"⚡ {result['time']:.1f}s", 
-                           transform=ax.transAxes, fontsize=9, 
-                           verticalalignment='top', 
-                           bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+                if result["time"]:
+                    ax.text(
+                        0.02,
+                        0.98,
+                        f"⚡ {result['time']:.1f}s",
+                        transform=ax.transAxes,
+                        fontsize=9,
+                        verticalalignment="top",
+                        bbox=dict(
+                            boxstyle="round,pad=0.3", facecolor="white", alpha=0.8
+                        ),
+                    )
             else:
                 # Handle failed reductions
-                ax.text(0.5, 0.5, f"{method_name} Failed\n{result.get('error', 'Unknown error')}", 
-                       horizontalalignment='center', verticalalignment='center',
-                       transform=ax.transAxes, fontsize=12, color='red')
+                ax.text(
+                    0.5,
+                    0.5,
+                    f"{method_name} Failed\n{result.get('error', 'Unknown error')}",
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    transform=ax.transAxes,
+                    fontsize=12,
+                    color="red",
+                )
                 ax.set_title(f"{result['config']['title']} - Failed", fontsize=11)
-        
+
         # Hide unused subplots
         for idx in range(len(results), len(axes)):
             axes[idx].set_visible(False)
-        
-        plt.suptitle(f"{method_name} Parameter Comparison - 3W Dataset", 
-                    fontsize=14, fontweight="bold", y=0.98)
+
+        plt.suptitle(
+            f"{method_name} Parameter Comparison - 3W Dataset",
+            fontsize=14,
+            fontweight="bold",
+            y=0.98,
+        )
         plt.tight_layout()
         plt.show()
-        
+
         return fig
 
     def print_dimensionality_reduction_summary(self, results, method_name):
         """Print performance summary for reduction results."""
         print(f"\n📊 {method_name} Analysis Results:")
-        
-        successful_results = [r for r in results if r['embedding'] is not None]
-        
+
+        successful_results = [r for r in results if r["embedding"] is not None]
+
         if successful_results:
-            fastest_config = min(successful_results, key=lambda x: x['time'])
-            
+            fastest_config = min(successful_results, key=lambda x: x["time"])
+
             print(f"⚡ Configuration Performance:")
             for i, result in enumerate(results):
-                if result['embedding'] is not None:
-                    status = " ⚡ Fastest" if result['time'] == fastest_config['time'] else ""
+                if result["embedding"] is not None:
+                    status = (
+                        " ⚡ Fastest"
+                        if result["time"] == fastest_config["time"]
+                        else ""
+                    )
                     print(f"   • Config {i+1}: {result['time']:.1f}s{status}")
                 else:
                     print(f"   • Config {i+1}: Failed")
@@ -1403,7 +1493,7 @@ class DimensionalityReductionVisualizer:
     def visualize_raw_samples(self, test_dfs, mapped_classes, samples_per_class=5):
         """
         Visualize raw sensor data for samples of each class.
-        
+
         Args:
             test_dfs: List of dataframes containing windowed time series data
             mapped_classes: List of class labels for each window
@@ -1411,73 +1501,115 @@ class DimensionalityReductionVisualizer:
         """
         print("📊 Creating Raw Sensor Data Visualizations")
         print("=" * 60)
-        
+
         # Get unique classes
         unique_classes = sorted(set(mapped_classes))
-        print(f"📈 Visualizing {samples_per_class} samples for each of {len(unique_classes)} classes")
-        
+        print(
+            f"📈 Visualizing {samples_per_class} samples for each of {len(unique_classes)} classes"
+        )
+
         # Define color palette for sensors
         sensor_colors = {
-            'P-PDG': '#FF6B6B',      # Red
-            'P-TPT': '#4ECDC4',      # Teal
-            'T-TPT': '#45B7D1',      # Blue
-            'P-MON-CKP': '#96CEB4',  # Green
-            'T-JUS-CKP': '#FFEAA7',  # Yellow
-            'P-JUS-CKGL': '#DDA0DD', # Plum
-            'QGL': '#FFB347'         # Orange
+            "P-PDG": "#FF6B6B",  # Red
+            "P-TPT": "#4ECDC4",  # Teal
+            "T-TPT": "#45B7D1",  # Blue
+            "P-MON-CKP": "#96CEB4",  # Green
+            "T-JUS-CKP": "#FFEAA7",  # Yellow
+            "P-JUS-CKGL": "#DDA0DD",  # Plum
+            "QGL": "#FFB347",  # Orange
         }
-        
+
         # Create figures for each class
         for class_label in unique_classes:
             print(f"\n🎯 Class {class_label}:")
-            
+
             # Get indices for this class
-            class_indices = [i for i, cls in enumerate(mapped_classes) if cls == class_label]
-            
+            class_indices = [
+                i for i, cls in enumerate(mapped_classes) if cls == class_label
+            ]
+
             if len(class_indices) == 0:
                 print(f"   ⚠️ No samples found for class {class_label}")
                 continue
-            
+
             # Sample random windows for this class
             n_samples = min(samples_per_class, len(class_indices))
-            sampled_indices = np.random.choice(class_indices, size=n_samples, replace=False)
-            
-            print(f"   📊 Showing {n_samples} samples (out of {len(class_indices)} available)")
-            
+            sampled_indices = np.random.choice(
+                class_indices, size=n_samples, replace=False
+            )
+
+            print(
+                f"   📊 Showing {n_samples} samples (out of {len(class_indices)} available)"
+            )
+
             # Create subplot figure for this class
-            fig, axes = plt.subplots(n_samples, 1, figsize=(15, 3*n_samples))
+            fig, axes = plt.subplots(n_samples, 1, figsize=(15, 3 * n_samples))
             if n_samples == 1:
                 axes = [axes]
-            
+
             for idx, window_idx in enumerate(sampled_indices):
                 window_df = test_dfs[window_idx]
                 ax = axes[idx]
-                
+
                 # Get sensor columns (exclude class column)
-                sensor_columns = [col for col in window_df.columns if col != 'class']
-                
+                sensor_columns = [col for col in window_df.columns if col != "class"]
+
                 # Plot each sensor with different colors
                 for sensor in sensor_columns:
-                    color = sensor_colors.get(sensor, np.random.choice(['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#FFB347']))
-                    ax.plot(window_df.index, window_df[sensor], 
-                           label=sensor, color=color, linewidth=1.5, alpha=0.8)
-                
+                    color = sensor_colors.get(
+                        sensor,
+                        np.random.choice(
+                            [
+                                "#FF6B6B",
+                                "#4ECDC4",
+                                "#45B7D1",
+                                "#96CEB4",
+                                "#FFEAA7",
+                                "#DDA0DD",
+                                "#FFB347",
+                            ]
+                        ),
+                    )
+                    ax.plot(
+                        window_df.index,
+                        window_df[sensor],
+                        label=sensor,
+                        color=color,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+
                 # Customize subplot
-                ax.set_title(f'Class {class_label} - Sample {idx+1}', fontsize=12, fontweight='bold')
-                ax.set_xlabel('Time Step')
-                ax.set_ylabel('Sensor Value')
-                ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+                ax.set_title(
+                    f"Class {class_label} - Sample {idx+1}",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+                ax.set_xlabel("Time Step")
+                ax.set_ylabel("Sensor Value")
+                ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
                 ax.grid(True, alpha=0.3)
-                
+
                 # Add sample info
-                ax.text(0.02, 0.98, f'Window {window_idx}', transform=ax.transAxes, 
-                       fontsize=9, verticalalignment='top',
-                       bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
-            
-            plt.suptitle(f'Raw Sensor Data - Class {class_label}', fontsize=16, fontweight='bold', y=0.98)
+                ax.text(
+                    0.02,
+                    0.98,
+                    f"Window {window_idx}",
+                    transform=ax.transAxes,
+                    fontsize=9,
+                    verticalalignment="top",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+                )
+
+            plt.suptitle(
+                f"Raw Sensor Data - Class {class_label}",
+                fontsize=16,
+                fontweight="bold",
+                y=0.98,
+            )
             plt.tight_layout()
             plt.show()
-            
+
             print(f"   ✅ Displayed {n_samples} samples for class {class_label}")
-        
+
         print(f"\n✅ Raw visualization complete for all {len(unique_classes)} classes!")

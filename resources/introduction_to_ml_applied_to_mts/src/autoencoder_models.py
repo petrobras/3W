@@ -148,7 +148,7 @@ class StableLSTMAutoencoder:
 
         # Setup callbacks based on whether we have validation data
         callbacks = []
-        
+
         if val_data is not None:
             # Conservative callbacks for stable training with validation
             early_stopping = EarlyStopping(
@@ -162,7 +162,7 @@ class StableLSTMAutoencoder:
             reduce_lr = ReduceLROnPlateau(
                 monitor="val_loss", factor=0.5, patience=5, min_lr=1e-6, verbose=1
             )
-            
+
             callbacks = [early_stopping, reduce_lr]
             validation_data = (val_data, val_data)
         else:
@@ -170,7 +170,7 @@ class StableLSTMAutoencoder:
             reduce_lr = ReduceLROnPlateau(
                 monitor="loss", factor=0.5, patience=8, min_lr=1e-6, verbose=1
             )
-            
+
             callbacks = [reduce_lr]
             validation_data = None
 
@@ -188,10 +188,10 @@ class StableLSTMAutoencoder:
 
         # Check if training was successful
         final_loss = self.history.history["loss"][-1]
-        
+
         if val_data is not None:
             final_val_loss = self.history.history["val_loss"][-1]
-            
+
             if np.isfinite(final_loss) and np.isfinite(final_val_loss):
                 print(f"✅ Training successful - no NaN values")
                 print(f"   • Final training loss: {final_loss:.6f}")

@@ -124,7 +124,7 @@ class DataAugmentor:
         classes: List[str],
         target_class_counts: Optional[Dict[str, int]] = None,
         strategy: str = "auto",
-        internal_verbose: bool = False
+        internal_verbose: bool = False,
     ) -> Tuple[List[pd.DataFrame], List[str]]:
         """
         Perform random undersampling to reduce majority classes.
@@ -137,7 +137,7 @@ class DataAugmentor:
 
         Returns:
             tuple: (undersampled_dfs, undersampled_classes)
-        """            
+        """
 
         class_counts = Counter(classes)
         if internal_verbose:
@@ -195,7 +195,7 @@ class DataAugmentor:
         classes: List[str],
         target_class_counts: Optional[Dict[str, int]] = None,
         strategy: str = "auto",
-        internal_verbose: bool = False
+        internal_verbose: bool = False,
     ) -> Tuple[List[pd.DataFrame], List[str]]:
         """
         Perform random oversampling to increase minority classes.
@@ -409,9 +409,13 @@ class DataAugmentor:
         target_counts = {cls: target_samples_per_class for cls in class_counts.keys()}
 
         if strategy == "undersample":
-            return self.random_undersample(dfs, classes, target_counts, "auto", internal_verbose)
+            return self.random_undersample(
+                dfs, classes, target_counts, "auto", internal_verbose
+            )
         elif strategy == "oversample":
-            return self.random_oversample(dfs, classes, target_counts, "auto", internal_verbose)
+            return self.random_oversample(
+                dfs, classes, target_counts, "auto", internal_verbose
+            )
         elif strategy == "smote":
             return self.smote_like_oversample(
                 dfs, classes, target_class_counts=target_counts
@@ -513,5 +517,9 @@ def quick_balance_classes(
     """
     augmentor = DataAugmentor(verbose=True)
     return augmentor.balance_classes(
-        dfs, classes, strategy=strategy, target_samples_per_class=min_samples_per_class, internal_verbose=internal_verbose
+        dfs,
+        classes,
+        strategy=strategy,
+        target_samples_per_class=min_samples_per_class,
+        internal_verbose=internal_verbose,
     )
