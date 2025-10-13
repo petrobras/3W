@@ -799,10 +799,16 @@ class DataPreprocessor:
             - List of corresponding class labels
             - List of metadata for each window
         """
+        # Ensure all parameters are integers
+        window_size = int(window_size)
         if stride is None:
             stride = window_size
+        else:
+            stride = int(stride)
         if min_window_size is None:
             min_window_size = window_size
+        else:
+            min_window_size = int(min_window_size)
 
         windowed_dfs = []
         windowed_classes = []

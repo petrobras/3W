@@ -249,6 +249,8 @@ class DataLoader:
         Returns:
             pd.DataFrame: Cleaned dataframe or None if file is invalid
         """
+        from . import config
+
         # Load data
         df = pd.read_parquet(file_path)
 
@@ -279,6 +281,31 @@ class DataLoader:
             if stats["total_files"] < 3:
                 print(f"  Skipping - all class values are NaN")
             return None
+
+        # Apply data sampling if enabled in config
+        if hasattr(config, "ENABLE_DATA_SAMPLING") and config.ENABLE_DATA_SAMPLING:
+            original_len = len(df)
+            if hasattr(config, "SAMPLING_RATE") and config.SAMPLING_RATE > 1:
+                sampling_rate = config.SAMPLING_RATE
+                if (
+                    hasattr(config, "SAMPLING_METHOD")
+                    and config.SAMPLING_METHOD == "random"
+                ):
+                    # Random sampling
+                    sample_size = len(df) // sampling_rate
+                    df = (
+                        df.sample(n=sample_size, random_state=config.RANDOM_SEED)
+                        .sort_index()
+                        .reset_index(drop=True)
+                    )
+                else:
+                    # Uniform sampling (default) - take every nth row
+                    df = df.iloc[::sampling_rate].reset_index(drop=True)
+
+                if stats["total_files"] < 3:
+                    print(
+                        f"  Sampling: {original_len} → {len(df)} samples (1/{sampling_rate})"
+                    )
 
         # Handle missing values in numeric columns
         numeric_cols = df.select_dtypes(include=[np.number]).columns
