@@ -2,7 +2,7 @@
 name = "ThreeWToolkit"
 version = "0.0.1"
 description = ""
-readme = "toolkit/README.md"
+readme = "toolkit/ThreeWToolkit/README.md"
 license = { text = "GPL-3.0" }
 requires-python = "==3.10.11"
 dynamic = ["dependencies"]
