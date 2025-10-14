@@ -40,7 +40,7 @@ class DataLoader:
         Returns:
             Dict containing information about the dataset structure
         """
-        print("📁 Dataset Structure:")
+        print("Dataset Structure:")
         print("=" * 50)
 
         structure_info = {
@@ -82,14 +82,16 @@ class DataLoader:
         return structure_info
 
     def load_dataset(
-        self, class_folders: List[str] = None
+        self, class_folders: List[str] = None, max_files_per_class: int = 150
     ) -> Tuple[List[pd.DataFrame], List[str], Dict[str, Any]]:
         """
-        Load the 3W dataset from parquet files.
+        Load the 3W dataset from parquet files with memory optimization.
 
         Args:
             class_folders (List[str], optional): List of class folders to load.
                                                If None, loads all available classes.
+            max_files_per_class (int): Maximum number of files to load per class.
+                                     Real data files are prioritized over simulated.
 
         Returns:
             Tuple containing:
@@ -108,33 +110,69 @@ class DataLoader:
         filenames_real = []
         filenames_simulated = []
 
-        # Statistics tracking
+        # Statistics tracking (enhanced for file limiting)
         stats = {
-            "total_files": 0,
-            "real_files": 0,
-            "simulated_files": 0,
-            "classes_count": {str(i): {"real": 0, "simulated": 0} for i in range(10)},
+            "total_files_available": 0,
+            "total_files_loaded": 0,
+            "real_files_available": 0,
+            "real_files_loaded": 0,
+            "simulated_files_available": 0,
+            "simulated_files_loaded": 0,
+            "classes_count": {str(i): {"real_available": 0, "real_loaded": 0, 
+                                      "simulated_available": 0, "simulated_loaded": 0, 
+                                      "total_available": 0, "total_loaded": 0} for i in range(10)},
             "empty_files": 0,
             "total_samples": 0,
             "file_tracking": {"real": [], "simulated": []},
+            "max_files_per_class": max_files_per_class,
+            "memory_optimization": True,
         }
 
-        print("🔄 Loading 3W Dataset...")
+        print("Loading 3W Dataset with Memory Optimization...")
+        print(f"Maximum files per class: {max_files_per_class}")
         print("=" * 50)
 
         # Process each class folder
         for class_folder in tqdm(sorted(class_folders), desc="Processing classes"):
             folder_path = os.path.join(self.dataset_path, class_folder)
             parquet_files = glob(os.path.join(folder_path, "*.parquet"))
-
-            # Process each parquet file in the class folder
-            for file_path in tqdm(
-                parquet_files, desc=f"Class {class_folder}", leave=False
-            ):
-                stats["total_files"] += 1
-
+            
+            # Separate files into real and simulated first for prioritization
+            real_files = []
+            simulated_files = []
+            
+            for file_path in parquet_files:
+                filename = os.path.basename(file_path)
+                if self._is_real_data(filename):
+                    real_files.append(file_path)
+                else:
+                    simulated_files.append(file_path)
+            
+            # Update available counts
+            stats["classes_count"][class_folder]["real_available"] = len(real_files)
+            stats["classes_count"][class_folder]["simulated_available"] = len(simulated_files)
+            stats["classes_count"][class_folder]["total_available"] = len(parquet_files)
+            stats["total_files_available"] += len(parquet_files)
+            stats["real_files_available"] += len(real_files)
+            stats["simulated_files_available"] += len(simulated_files)
+            
+            # Prioritize real files, then add simulated files up to the limit
+            files_to_load = []
+            files_to_load.extend(real_files[:max_files_per_class])  # Real files first
+            
+            remaining_slots = max_files_per_class - len(files_to_load)
+            if remaining_slots > 0:
+                files_to_load.extend(simulated_files[:remaining_slots])  # Fill with simulated
+            
+            # Load the selected files
+            loaded_real_count = 0
+            loaded_simulated_count = 0
+            file_counter = 0
+            
+            for file_path in tqdm(files_to_load, desc=f"Class {class_folder}", leave=False):
                 try:
-                    df = self._load_and_clean_file(file_path, stats)
+                    df = self._load_and_clean_file(file_path, stats, file_counter)
+                    file_counter += 1
 
                     if df is None or len(df) == 0:
                         continue
@@ -144,26 +182,32 @@ class DataLoader:
                     is_real_data = self._is_real_data(filename)
 
                     stats["total_samples"] += len(df)
+                    stats["total_files_loaded"] += 1
 
                     if is_real_data:
                         dfs_real.append(df)
                         classes_real.append(class_folder)
                         filenames_real.append(filename)
-                        stats["real_files"] += 1
-                        stats["classes_count"][class_folder]["real"] += 1
+                        stats["real_files_loaded"] += 1
+                        loaded_real_count += 1
                         stats["file_tracking"]["real"].append(filename)
                     else:
                         dfs_simulated.append(df)
                         classes_simulated.append(class_folder)
                         filenames_simulated.append(filename)
-                        stats["simulated_files"] += 1
-                        stats["classes_count"][class_folder]["simulated"] += 1
+                        stats["simulated_files_loaded"] += 1
+                        loaded_simulated_count += 1
                         stats["file_tracking"]["simulated"].append(filename)
 
                 except Exception as e:
-                    print(f"❌ Error loading {file_path}: {str(e)}")
+                    print(f"ERROR: Error loading {file_path}: {str(e)}")
                     stats["empty_files"] += 1
                     continue
+            
+            # Update loaded counts for this class
+            stats["classes_count"][class_folder]["real_loaded"] = loaded_real_count
+            stats["classes_count"][class_folder]["simulated_loaded"] = loaded_simulated_count
+            stats["classes_count"][class_folder]["total_loaded"] = loaded_real_count + loaded_simulated_count
 
         # Combine real and simulated data
         dfs_3w = dfs_real + dfs_simulated
@@ -237,7 +281,7 @@ class DataLoader:
         }
 
     def _load_and_clean_file(
-        self, file_path: str, stats: Dict[str, Any]
+        self, file_path: str, stats: Dict[str, Any], file_counter: int = 0
     ) -> pd.DataFrame:
         """
         Load and clean a single parquet file.
@@ -245,6 +289,7 @@ class DataLoader:
         Args:
             file_path (str): Path to the parquet file
             stats (Dict): Statistics dictionary to update
+            file_counter (int): Current file number for debugging
 
         Returns:
             pd.DataFrame: Cleaned dataframe or None if file is invalid
@@ -255,7 +300,7 @@ class DataLoader:
         df = pd.read_parquet(file_path)
 
         # Debug information for first few files
-        if stats["total_files"] < 3:
+        if file_counter < 3:
             print(f"Debug - File: {os.path.basename(file_path)}")
             print(f"  Shape: {df.shape}")
             print(f"  Columns: {list(df.columns)}")
@@ -269,7 +314,7 @@ class DataLoader:
         # Check if we have class column
         if "class" not in df.columns:
             stats["empty_files"] += 1
-            if stats["total_files"] < 3:
+            if file_counter < 3:
                 print(f"  Skipping - no 'class' column")
             return None
 
@@ -278,7 +323,7 @@ class DataLoader:
 
         if len(df) == 0:
             stats["empty_files"] += 1
-            if stats["total_files"] < 3:
+            if file_counter < 3:
                 print(f"  Skipping - all class values are NaN")
             return None
 
@@ -302,7 +347,7 @@ class DataLoader:
                     # Uniform sampling (default) - take every nth row
                     df = df.iloc[::sampling_rate].reset_index(drop=True)
 
-                if stats["total_files"] < 3:
+                if file_counter < 3:
                     print(
                         f"  Sampling: {original_len} → {len(df)} samples (1/{sampling_rate})"
                     )
@@ -316,25 +361,45 @@ class DataLoader:
 
         if len(df) == 0:
             stats["empty_files"] += 1
-            if stats["total_files"] < 3:
+            if file_counter < 3:
                 print(f"  Skipping - no valid data after cleaning")
             return None
 
-        if stats["total_files"] < 3:
-            print(f"  ✅ Successfully loaded: {len(df)} samples")
+        if file_counter < 3:
+            print(f"  Successfully loaded: {len(df)} samples")
 
         return df
 
     def _print_loading_summary(self, stats: Dict[str, Any], total_loaded: int) -> None:
-        """Print loading summary statistics."""
-        print("\n📊 Loading Summary:")
+        """Print loading summary statistics with memory optimization details."""
+        print("\nLoading Summary:")
         print("=" * 50)
-        print(f"Total files processed: {stats['total_files']}")
-        print(f"Successfully loaded: {total_loaded} files")
-        print(f"Real data files: {stats['real_files']}")
-        print(f"Simulated data files: {stats['simulated_files']}")
-        print(f"Empty/invalid files: {stats['empty_files']}")
-        print(f"Total samples: {stats['total_samples']:,}")
+        
+        # Check if this is the new optimized format
+        if "memory_optimization" in stats and stats["memory_optimization"]:
+            print(f"Total files available: {stats['total_files_available']}")
+            print(f"Total files loaded: {stats['total_files_loaded']}")
+            print(f"Real data - Available: {stats['real_files_available']}, Loaded: {stats['real_files_loaded']}")
+            print(f"Simulated data - Available: {stats['simulated_files_available']}, Loaded: {stats['simulated_files_loaded']}")
+            print(f"Empty/invalid files: {stats['empty_files']}")
+            print(f"Total samples: {stats['total_samples']:,}")
+            
+            # Print per-class breakdown
+            print(f"\nPer-Class Breakdown:")
+            for class_id in sorted(stats['classes_count'].keys()):
+                class_data = stats['classes_count'][class_id]
+                if class_data['total_available'] > 0:
+                    print(f"  Class {class_id}: {class_data['total_loaded']}/{class_data['total_available']} files "
+                          f"(R: {class_data['real_loaded']}/{class_data['real_available']}, "
+                          f"S: {class_data['simulated_loaded']}/{class_data['simulated_available']})")
+        else:
+            # Legacy format for backward compatibility
+            print(f"Total files processed: {stats.get('total_files', 0)}")
+            print(f"Successfully loaded: {total_loaded} files")
+            print(f"Real data files: {stats.get('real_files', 0)}")
+            print(f"Simulated data files: {stats.get('simulated_files', 0)}")
+            print(f"Empty/invalid files: {stats.get('empty_files', 0)}")
+            print(f"Total samples: {stats.get('total_samples', 0):,}")
 
     def filter_target_features(
         self, dfs: List[pd.DataFrame], classes: List[str], target_features: List[str]
@@ -350,7 +415,7 @@ class DataLoader:
         Returns:
             Tuple containing filtered dataframes and their classes
         """
-        print("🔍 Filtering Data to Key Sensor Variables")
+        print("Filtering Data to Key Sensor Variables")
         print("=" * 60)
         print(f"Target features: {target_features}")
 
@@ -382,7 +447,7 @@ class DataLoader:
                             missing_pct = (missing_count / len(filtered_df)) * 100
                             print(f"    {col}: {missing_count} ({missing_pct:.1f}%)")
 
-        print(f"\n📊 Filtering Results:")
+        print(f"\nFiltering Results:")
         print("=" * 40)
         print(f"Datasets after filtering: {len(filtered_dfs)}")
         print(f"Total samples: {sum(len(df) for df in filtered_dfs):,}")
@@ -394,7 +459,7 @@ class DataLoader:
                 count = sum(1 for df in filtered_dfs if feature in df.columns)
                 feature_availability[feature] = count
 
-            print(f"\n🎯 Feature Availability Across Datasets:")
+            print(f"\nFeature Availability Across Datasets:")
             print("-" * 40)
             for feature, count in feature_availability.items():
                 percentage = (count / len(filtered_dfs)) * 100

@@ -423,31 +423,31 @@ clusters = apply_clustering(resized_series)  # Shape: (n_samples,)
 
 ### Memory & Performance Specifications
 ```python
-# Resource requirements and performance characteristics
+# Resource requirements and performance characteristics (depends on the max number of files per class loaded on config file)
 
 MEMORY_REQUIREMENTS = {
     "notebook_1": {
-        "peak_memory": "2-4 GB",
+        "peak_memory": "4-5 GB",
         "processing_time": "5-15 minutes",
         "disk_space": "500 MB - 2 GB"
     },
     "notebook_2": {
-        "peak_memory": "1-2 GB", 
+        "peak_memory": "2-5 GB", 
         "processing_time": "2-5 minutes",
         "output_size": "10-50 MB"
     },
     "notebook_3": {
-        "peak_memory": "2-3 GB",
+        "peak_memory": "2-5 GB",
         "processing_time": "10-30 minutes", 
         "model_size": "1-100 MB"
     },
     "notebook_4": {
-        "peak_memory": "3-6 GB",
+        "peak_memory": "2-5 GB",
         "processing_time": "20-60 minutes",
         "model_size": "10-200 MB"
     },
     "notebook_5": {
-        "peak_memory": "1-3 GB",
+        "peak_memory": "2-5 GB",
         "processing_time": "5-15 minutes",
         "output_size": "5-20 MB"
     }

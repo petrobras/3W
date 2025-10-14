@@ -6,6 +6,7 @@ Parameter Ranges and Validation:
 - WINDOW_SIZE: 100-1000 (depends on data frequency and analysis needs)
 - N_FOLDS: 2-10 (more folds = better CV but higher computation)
 - RANDOM_SEED: Any integer (for reproducibility)
+- MAX_FILES_PER_CLASS: 50-500 (memory optimization, real data prioritized)
 """
 
 # Dataset settings
@@ -13,7 +14,8 @@ DATASET_PATH = "../../dataset/"
 TARGET_FEATURES = ["P-PDG", "P-TPT", "T-TPT", "class"]
 RAW_DATA_DIR = "./processed_data/cv_splits/raw/"
 CLASS_COLUMN = "class"
-
+MAX_FILES_PER_CLASS = 50  # Range: 50-500, Maximum files to load per class (memory optimization)
+# 100 files will use about 4 to 6 GB of RAM
 # Processing settings
 DEFAULT_SCALING_METHOD = (
     "minmax"  # Options: 'standard', 'minmax', 'robust', 'normalizer'

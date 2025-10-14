@@ -60,44 +60,145 @@ class DataVisualizer:
         print("=" * 50)
 
         # Basic statistics
-        print(f"Total number of dataframes: {len(classes)}")
+        print(f"Total number of dataframes loaded: {len(classes)}")
         print(f"Class distribution: {Counter(classes)}")
 
-        # Create visualization
-        fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-        fig.suptitle("3W Dataset Overview", fontsize=16, fontweight="bold")
+        # Check if we have memory optimization stats
+        memory_optimized = dataset_stats.get("memory_optimization", False)
+        
+        if memory_optimized:
+            # Enhanced visualization for memory-optimized loading
+            fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+            fig.suptitle("3W Dataset Overview (Memory Optimized)", fontsize=16, fontweight="bold")
 
-        # Plot 1: Class distribution
-        class_counts = Counter(classes)
-        class_names = list(class_counts.keys())
-        counts = list(class_counts.values())
+            # Plot 1: Loaded files by class
+            class_counts_loaded = Counter(classes)
+            class_names = sorted(class_counts_loaded.keys())
+            loaded_counts = [class_counts_loaded[cls] for cls in class_names]
+            
+            # Get available counts
+            available_counts = [dataset_stats['classes_count'][cls]['total_available'] for cls in class_names]
 
-        axes[0].bar(class_names, counts, color=self.color_palette["primary"], alpha=0.7)
-        axes[0].set_title("Distribution of Files by Class")
-        axes[0].set_xlabel("Class")
-        axes[0].set_ylabel("Number of Files")
-        axes[0].tick_params(axis="x", rotation=45)
-        axes[0].grid(True, alpha=0.3)
+            x_pos = range(len(class_names))
+            width = 0.35
 
-        # Plot 2: Real vs Simulated distribution
-        if "real_files" in dataset_stats and "simulated_files" in dataset_stats:
-            real_count = dataset_stats["real_files"]
-            simulated_count = dataset_stats["simulated_files"]
+            axes[0, 0].bar([x - width/2 for x in x_pos], available_counts, width, 
+                          label='Available', color=self.color_palette["secondary"], alpha=0.7)
+            axes[0, 0].bar([x + width/2 for x in x_pos], loaded_counts, width, 
+                          label='Loaded', color=self.color_palette["primary"], alpha=0.8)
+            
+            axes[0, 0].set_title("Files per Class: Available vs Loaded")
+            axes[0, 0].set_xlabel("Class")
+            axes[0, 0].set_ylabel("Number of Files")
+            axes[0, 0].set_xticks(x_pos)
+            axes[0, 0].set_xticklabels(class_names)
+            axes[0, 0].legend()
+            axes[0, 0].grid(True, alpha=0.3)
 
-            axes[1].pie(
-                [real_count, simulated_count],
-                labels=["Real Data", "Simulated Data"],
+            # Add value labels on bars
+            for i, (avail, loaded) in enumerate(zip(available_counts, loaded_counts)):
+                axes[0, 0].text(i - width/2, avail + 1, str(avail), ha='center', va='bottom', fontsize=9)
+                axes[0, 0].text(i + width/2, loaded + 1, str(loaded), ha='center', va='bottom', fontsize=9)
+
+            # Plot 2: Real vs Simulated distribution (loaded)
+            real_loaded = dataset_stats["real_files_loaded"]
+            simulated_loaded = dataset_stats["simulated_files_loaded"]
+
+            axes[0, 1].pie(
+                [real_loaded, simulated_loaded],
+                labels=[f"Real Data\n({real_loaded})", f"Simulated Data\n({simulated_loaded})"],
                 colors=[self.color_palette["accent"], self.color_palette["secondary"]],
                 autopct="%1.1f%%",
+                startangle=90
             )
-            axes[1].set_title("Real vs Simulated Data Distribution")
+            axes[0, 1].set_title("Real vs Simulated Data (Loaded)")
+
+            # Plot 3: Memory optimization summary
+            total_available = dataset_stats["total_files_available"] 
+            total_loaded = dataset_stats["total_files_loaded"]
+            max_per_class = dataset_stats["max_files_per_class"]
+            
+            categories = ['Total Available', 'Total Loaded', f'Max Limit\n({max_per_class} × {len(class_names)})']
+            values = [total_available, total_loaded, max_per_class * len(class_names)]
+            colors = [self.color_palette["secondary"], self.color_palette["primary"], self.color_palette["accent"]]
+            
+            bars = axes[1, 0].bar(categories, values, color=colors, alpha=0.7)
+            axes[1, 0].set_title("Memory Optimization Summary")
+            axes[1, 0].set_ylabel("Number of Files")
+            axes[1, 0].tick_params(axis='x', rotation=45)
+            
+            # Add value labels
+            for bar, value in zip(bars, values):
+                axes[1, 0].text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(values)*0.01, 
+                               str(value), ha='center', va='bottom', fontweight='bold')
+
+            # Plot 4: Real vs Simulated comparison (available vs loaded)
+            categories = ['Real Files', 'Simulated Files']
+            available = [dataset_stats["real_files_available"], dataset_stats["simulated_files_available"]]
+            loaded = [real_loaded, simulated_loaded]
+
+            x_pos = range(len(categories))
+            width = 0.35
+
+            axes[1, 1].bar([x - width/2 for x in x_pos], available, width, 
+                          label='Available', color=self.color_palette["secondary"], alpha=0.7)
+            axes[1, 1].bar([x + width/2 for x in x_pos], loaded, width, 
+                          label='Loaded', color=self.color_palette["primary"], alpha=0.8)
+            
+            axes[1, 1].set_title("Real vs Simulated: Available vs Loaded")
+            axes[1, 1].set_ylabel("Number of Files")
+            axes[1, 1].set_xticks(x_pos)
+            axes[1, 1].set_xticklabels(categories)
+            axes[1, 1].legend()
+            axes[1, 1].grid(True, alpha=0.3)
+
+            # Add value labels
+            for i, (avail, load) in enumerate(zip(available, loaded)):
+                axes[1, 1].text(i - width/2, avail + max(available)*0.01, str(avail), ha='center', va='bottom', fontsize=10)
+                axes[1, 1].text(i + width/2, load + max(available)*0.01, str(load), ha='center', va='bottom', fontsize=10)
+
+        else:
+            # Original visualization for backward compatibility
+            fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+            fig.suptitle("3W Dataset Overview", fontsize=16, fontweight="bold")
+
+            # Plot 1: Class distribution
+            class_counts = Counter(classes)
+            class_names = list(class_counts.keys())
+            counts = list(class_counts.values())
+
+            axes[0].bar(class_names, counts, color=self.color_palette["primary"], alpha=0.7)
+            axes[0].set_title("Distribution of Files by Class")
+            axes[0].set_xlabel("Class")
+            axes[0].set_ylabel("Number of Files")
+            axes[0].tick_params(axis="x", rotation=45)
+            axes[0].grid(True, alpha=0.3)
+
+            # Plot 2: Real vs Simulated distribution
+            if "real_files" in dataset_stats and "simulated_files" in dataset_stats:
+                real_count = dataset_stats["real_files"]
+                simulated_count = dataset_stats["simulated_files"]
+
+                axes[1].pie(
+                    [real_count, simulated_count],
+                    labels=["Real Data", "Simulated Data"],
+                    colors=[self.color_palette["accent"], self.color_palette["secondary"]],
+                    autopct="%1.1f%%",
+                )
+                axes[1].set_title("Real vs Simulated Data Distribution")
 
         plt.tight_layout()
         plt.show()
 
-        # Print memory usage if available
-        if "total_samples" in dataset_stats:
-            print(f"\\n💾 Total samples: {dataset_stats['total_samples']:,}")
+        # Print memory usage summary
+        if memory_optimized:
+            print(f"\n💾 Memory Optimization Results:")
+            print(f"   • Files available: {dataset_stats['total_files_available']:,}")
+            print(f"   • Files loaded: {dataset_stats['total_files_loaded']:,}")
+            print(f"   • Memory reduction: {((dataset_stats['total_files_available'] - dataset_stats['total_files_loaded']) / dataset_stats['total_files_available'] * 100):.1f}%")
+            print(f"   • Real data priority: {dataset_stats['real_files_loaded']}/{dataset_stats['real_files_available']} real files loaded")
+        elif "total_samples" in dataset_stats:
+            print(f"\n💾 Total samples: {dataset_stats['total_samples']:,}")
 
     def plot_raw_data_analysis(
         self,
