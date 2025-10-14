@@ -8,6 +8,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
+            /*
             !dataset/
           sparse-checkout-cone-mode: false
       - uses: psf/black@stable
