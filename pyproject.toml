@@ -1,74 +1,59 @@
 [project]
 name = "ThreeWToolkit"
 version = "0.0.1"
-description = ""
-readme = "toolkit/ThreeWToolkit/README.md"
-license = { text = "GPL-3.0" }
-requires-python = "==3.10.11"
-dynamic = ["dependencies"]
-
-[tool.poetry]
-packages = [{ include = "ThreeWToolkit", from = "toolkit" }]
-
-[tool.poetry.dependencies]
-python = "==3.10.11"
-numpy = "1.26.4"
-scipy = "1.15.2"
-pandas = "2.2.3"
-scikit-learn = "1.6.1"
-matplotlib = "3.10.1"
-seaborn = "0.13.2"
-plotly = "6.0.0"
-coverage = "7.8.1"
-imbalanced-learn = "0.13.0"
-ipykernel = "6.29.5"
-Pillow = "11.0.0"
-ruff = "0.12.2"
-scikit-image = "0.25.2"
-torch = "2.7.0"
-torchvision = "0.22.0"
-torchmetrics = "1.6.2"
-timm = "1.0.15"
-tqdm = "4.67.1"
-pytest = "8.3.5"
-pydantic = "2.11"
-mypy = "1.16.0"
-PyWavelets = "1.8.0"
-pyarrow = "20.0.0"
-pylatex = "1.4.2"
-pytest-mock = "3.14.1"
-statsmodels = "0.14.5"
-black = "25.9.0"
-
-[tool.poetry.group.dev.dependencies]
-black = "*"
-mypy = "*"
-flake8 = "*"
-jupyter = "*"
-ruff = "*"
-uv = "*"
-types-requests = "2.32.4.20250611"
+description = "A modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation"
+readme = "toolkit/README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26.4",
+    "scipy>=1.15.2",
+    "pandas>=2.2.3",
+    "scikit-learn>=1.6.1",
+    "matplotlib>=3.10.1",
+    "seaborn>=0.13.2",
+    "plotly>=6.0.0",
+    "imbalanced-learn>=0.13.0",
+    "ipykernel>=6.29.5",
+    "Pillow>=11.0.0",
+    "scikit-image>=0.25.2",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "torchmetrics>=1.6.2",
+    "timm>=1.0.15",
+    "tqdm>=4.67.1",
+    "pydantic>=2.11",
+    "PyWavelets>=1.8.0",
+    "pyarrow>=20.0.0",
+    "pylatex>=1.4.2",
+    "statsmodels>=0.14.5",
+]
 
 [project.optional-dependencies]
 dev = [
-  "black",
-  "mypy",
-  "flake8",
-  "jupyter",
-  "ruff",
-  "uv",
-  "types-requests==2.32.4.20250611",
+    "black>=25.9.0",
+    "mypy>=1.16.0",
+    "flake8",
+    "jupyter",
+    "ruff>=0.12.2",
+    "uv",
+    "types-requests>=2.32.4.20250611",
+    "coverage>=7.8.1",
+    "pytest>=8.3.5",
+    "pytest-mock>=3.14.1",
+]
+docs = [
+    "mkdocs",
+    "mkdocstrings[python]",
+    "sphinx",
 ]
 
-
-[tool.poetry.group.docs.dependencies]
-mkdocs = "*"
-mkdocstrings = { extras = ["python"], version = "*" }
-sphinx = "*"
+[tool.setuptools.packages.find]
+where = ["toolkit"]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.coverage.run]
 source = ["toolkit/"]
