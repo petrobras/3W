@@ -9,7 +9,7 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !dataset/*.parquet
+            !*.parquet
           sparse-checkout-cone-mode: false
       - uses: psf/black@stable
         with:
