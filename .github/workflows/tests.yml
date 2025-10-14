@@ -1,14 +1,5 @@
 name: Tests and Coverage
-
-on:
-  push:
-    branches:
-      - main
-      - dev
-  pull_request:
-    branches: 
-      - main 
-      - dev
+on: [push, pull_request]
 
 jobs:
   test:
@@ -17,6 +8,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            !dataset/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Python
         uses: actions/setup-python@v5

@@ -5,8 +5,12 @@ jobs:
     name: Check python code using the official black action
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            !dataset/
+          sparse-checkout-cone-mode: false
       - uses: psf/black@stable
         with:
           src: "."
-          options: "--check --verbose --diff --exclude toolkit/rolling_window.py"
+          options: "--check --verbose --diff"
