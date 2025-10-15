@@ -4,7 +4,7 @@ from importlib import resources
 package = "ThreeWToolkit"
 # We define the project root as the directory where the toolkit is installed (i.e. the parent directory of ThreeWToolkit).
 # This makes all other paths relative to the project's top-level folder.
-PROJECT_ROOT = Path(resources.files(package)).parent
+PROJECT_ROOT = Path(str(resources.files(package))).parent
 
 # Source final output directories
 OUTPUT_DIR = PROJECT_ROOT / "output"
