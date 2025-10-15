@@ -55,10 +55,9 @@ This tutorial series consists of 8 progressive notebooks that will take you from
 
 ### 8. [Pipeline Integration](8_pipeline_integration.ipynb)
 **End-to-End Workflow**
-- Complete pipeline orchestration
-- Automated workflow execution
-- Model deployment considerations
-- Production-ready implementations
+- Creating a basic pipeline
+- Pipeline modules overview
+- Report generation
 
 ## 🏗️ Toolkit Architecture
 
