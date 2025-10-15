@@ -1198,7 +1198,7 @@ class DimensionalityReductionVisualizer:
             else:
                 mapped_classes.append(cls)
 
-        print(f"🔄 Mapped {transient_count} transient classes")
+        print(f"🔄 Mapped {transient_count} points with transient classes")
         print(
             f"🏷️ Mapped class distribution: {dict(zip(*np.unique(mapped_classes, return_counts=True)))}"
         )
@@ -1590,16 +1590,16 @@ class DimensionalityReductionVisualizer:
         else:
             print("   ❌ All configurations failed")
 
-    def visualize_complete_samples(self, test_dfs, mapped_classes, samples_per_class=5):
+    def visualize_window_samples(self, test_dfs, mapped_classes, samples_per_class=5):
         """
-        Visualize complete sensor data for samples of each class.
+        Visualize window sensor data for samples of each class.
 
         Args:
             test_dfs: List of dataframes containing windowed time series data
             mapped_classes: List of class labels for each window
             samples_per_class: Number of samples to show per class
         """
-        print("📊 Creating Complete Sensor Data Visualizations")
+        print("📊 Creating window Sensor Data Visualizations")
         print("=" * 60)
 
         # Get unique classes
@@ -1702,7 +1702,7 @@ class DimensionalityReductionVisualizer:
                 )
 
             plt.suptitle(
-                f"Complete Sensor Data - Class {class_label}",
+                f"Windowed Sensor Data - Class {class_label}",
                 fontsize=16,
                 fontweight="bold",
                 y=0.98,
@@ -1712,4 +1712,3 @@ class DimensionalityReductionVisualizer:
 
             print(f"   ✅ Displayed {n_samples} samples for class {class_label}")
 
-        print(f"\n✅ Complete visualization complete for all {len(unique_classes)} classes!")
