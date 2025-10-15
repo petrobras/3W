@@ -35,16 +35,16 @@ class ClusteringDataLoader:
         self.max_files_per_class = max_files_per_class
         self.enable_sampling = enable_sampling
 
-    def load_raw_data(self, persistence, raw_data_dir):
-        """Load raw 3W dataset from pickle/parquet files"""
-        print("Loading Raw 3W Dataset for Clustering Analysis")
+    def load_complete_data(self, persistence, complete_data_dir):
+        """Load complete 3W dataset from pickle/parquet files"""
+        print("Loading Complete 3W Dataset for Clustering Analysis")
         print("=" * 55)
 
         # Get fold directories
         fold_dirs = [
             d
-            for d in os.listdir(raw_data_dir)
-            if d.startswith("fold_") and os.path.isdir(os.path.join(raw_data_dir, d))
+            for d in os.listdir(complete_data_dir)
+            if d.startswith("fold_") and os.path.isdir(os.path.join(complete_data_dir, d))
         ]
         fold_dirs.sort()
 
@@ -53,7 +53,7 @@ class ClusteringDataLoader:
 
         # Use the first fold for clustering analysis
         selected_fold = fold_dirs[0]
-        fold_path = os.path.join(raw_data_dir, selected_fold)
+        fold_path = os.path.join(complete_data_dir, selected_fold)
         print(f"Using {selected_fold} for clustering analysis")
 
         # Data containers
@@ -71,29 +71,29 @@ class ClusteringDataLoader:
             parquet_file = os.path.join(fold_path, f"{dataset_name}.parquet")
 
             if os.path.exists(pickle_file):
-                raw_dfs, raw_classes = persistence._load_dataframes(
+                complete_dfs, complete_classes = persistence._load_dataframes(
                     pickle_file, "pickle"
                 )
             elif os.path.exists(parquet_file):
-                raw_dfs, raw_classes = persistence._load_from_parquet(parquet_file)
+                complete_dfs, complete_classes = persistence._load_from_parquet(parquet_file)
             else:
                 continue
 
-            if raw_dfs is None or len(raw_dfs) == 0:
+            if complete_dfs is None or len(complete_dfs) == 0:
                 continue
 
             # Sample files if needed
-            if self.enable_sampling and len(raw_dfs) > self.max_files_per_class * 10:
-                n_samples = min(self.max_files_per_class * 10, len(raw_dfs))
+            if self.enable_sampling and len(complete_dfs) > self.max_files_per_class * 10:
+                n_samples = min(self.max_files_per_class * 10, len(complete_dfs))
                 selected_indices = np.random.choice(
-                    len(raw_dfs), n_samples, replace=False
+                    len(complete_dfs), n_samples, replace=False
                 )
-                raw_dfs = [raw_dfs[i] for i in selected_indices]
-                raw_classes = [raw_classes[i] for i in selected_indices]
+                complete_dfs = [complete_dfs[i] for i in selected_indices]
+                complete_classes = [complete_classes[i] for i in selected_indices]
 
             # Process each time series
             processed_data = self._process_time_series(
-                raw_dfs, raw_classes, dataset_name
+                complete_dfs, complete_classes, dataset_name
             )
             all_time_series.extend(processed_data["time_series"])
             all_class_labels.extend(processed_data["labels"])
@@ -110,13 +110,13 @@ class ClusteringDataLoader:
             "fold_used": selected_fold,
         }
 
-    def _process_time_series(self, raw_dfs, raw_classes, dataset_name):
+    def _process_time_series(self, complete_dfs, complete_classes, dataset_name):
         """Process individual time series data"""
         time_series = []
         labels = []
         file_info = []
 
-        for i, (df, class_label) in enumerate(zip(raw_dfs, raw_classes)):
+        for i, (df, class_label) in enumerate(zip(complete_dfs, complete_classes)):
             try:
                 # Drop the 'class' column if it exists
                 if "class" in df.columns:

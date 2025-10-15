@@ -127,178 +127,6 @@ graph TB
     style M fill:#f3e5f5
 ```
 
-## 📋 Data Contracts & Specifications
-
-### Input Data Contract
-```python
-# Raw 3W Dataset Structure
-{
-    "files": "dataset/{class_id}/*.parquet",
-    "schema": {
-        "P-TPT": "float64",     # Pressure sensor readings
-        "T-TPT": "float64",     # Temperature sensor readings  
-        "class": "int64"        # Operational state (0-9, 101-109)
-    },
-    "shape": "(variable_length, 3)",
-    "classes": {
-        0: "Normal operation",
-        1-9: "Various fault types", 
-        101-109: "Transient states"
-    },
-    "constraints": {
-        "min_length": 100,
-        "max_length": 50000,
-        "missing_values": "allowed"
-    }
-}
-```
-
-### Notebook 1 Output Contract
-```python
-# Data Treatment Outputs
-{
-    "windowed_data": {
-        "path": "processed_data/cv_splits/windowed/fold_{i}/",
-        "files": ["train_windowed.pickle", "test_windowed.pickle"],
-        "structure": {
-            "data": "List[DataFrame(300, 2)]",  # Fixed-length windows
-            "labels": "List[int]",              # Class labels per window
-            "shape": "(n_windows, 300, 2)"
-        }
-    },
-    "raw_data": {
-        "path": "processed_data/cv_splits/raw/fold_{i}/", 
-        "files": ["train_data.pickle", "test_data.pickle"],
-        "structure": {
-            "data": "List[DataFrame(variable, 2)]",  # Original length series
-            "labels": "List[int]",                   # Class labels per series
-            "shape": "(n_samples, variable_length, 2)"
-        }
-    },
-    "metadata": {
-        "cv_splits": "3-fold stratified",
-        "scaling_method": "minmax",
-        "window_size": 300,
-        "window_stride": 300
-    }
-}
-```
-
-### Notebook 2 Output Contract
-```python
-# Visualization Outputs
-{
-    "embeddings": {
-        "tsne_2d": "numpy.ndarray(n_samples, 2)",
-        "umap_2d": "numpy.ndarray(n_samples, 2)", 
-        "labels": "numpy.ndarray(n_samples,)"
-    },
-    "plots": {
-        "interactive_plots": "plotly.graph_objects.Figure",
-        "static_plots": "matplotlib.figure.Figure"
-    },
-    "metrics": {
-        "silhouette_score": "float",
-        "separability_index": "float",
-        "embedding_quality": "dict"
-    }
-}
-```
-
-### Notebook 3 Output Contract  
-```python
-# Supervised Learning Outputs
-{
-    "models": {
-        "random_forest": "sklearn.ensemble.RandomForestClassifier",
-        "svm": "sklearn.svm.SVC", 
-        "neural_network": "sklearn.neural_network.MLPClassifier"
-    },
-    "predictions": {
-        "y_pred": "numpy.ndarray(n_test_samples,)",
-        "y_prob": "numpy.ndarray(n_test_samples, n_classes)",
-        "y_true": "numpy.ndarray(n_test_samples,)"
-    },
-    "metrics": {
-        "accuracy": "float",
-        "f1_score_macro": "float", 
-        "classification_report": "dict",
-        "confusion_matrix": "numpy.ndarray(n_classes, n_classes)"
-    },
-    "feature_importance": {
-        "rf_importance": "numpy.ndarray(n_features,)",
-        "feature_names": "List[str]"
-    }
-}
-```
-
-### Notebook 4 Output Contract
-```python
-# Unsupervised Learning Outputs  
-{
-    "model": {
-        "autoencoder": "tensorflow.keras.Model",
-        "encoder": "tensorflow.keras.Model",
-        "decoder": "tensorflow.keras.Model"
-    },
-    "anomaly_detection": {
-        "reconstruction_errors": "numpy.ndarray(n_samples,)",
-        "anomaly_scores": "numpy.ndarray(n_samples,)", 
-        "threshold": "float",
-        "predictions": "numpy.ndarray(n_samples,)"  # 0=normal, 1=anomaly
-    },
-    "metrics": {
-        "detection_rate": "float",      # True positive rate
-        "false_alarm_rate": "float",    # False positive rate
-        "auc_score": "float",
-        "optimal_threshold": "float"
-    },
-    "training_history": {
-        "loss": "List[float]",
-        "val_loss": "List[float]",
-        "epochs": "int"
-    }
-}
-```
-
-### Notebook 5 Output Contract
-```python
-# Clustering Methods Outputs
-{
-    "clustering_data": {
-        "X_original": "numpy.ndarray(n_samples, n_features)",  # Resized to 500pts
-        "X_pca_2d": "numpy.ndarray(n_samples, 2)",            # PCA projection
-        "y_labels": "numpy.ndarray(n_samples,)",              # True classes
-        "file_info": "List[dict]"                             # Metadata per sample
-    },
-    "clustering_results": {
-        "kmeans": {
-            "labels": "numpy.ndarray(n_samples,)",
-            "centroids": "numpy.ndarray(n_clusters, n_features)",
-            "optimal_k": "int",
-            "silhouette_score": "float"
-        },
-        "dbscan": {
-            "labels": "numpy.ndarray(n_samples,)",      # -1 for noise
-            "n_clusters": "int",
-            "n_noise": "int",
-            "silhouette_score": "float"
-        },
-        "meanshift": {
-            "labels": "numpy.ndarray(n_samples,)",
-            "cluster_centers": "numpy.ndarray(n_clusters, n_features)",
-            "n_clusters": "int"
-        }
-    },
-    "interpretation": {
-        "cluster_class_mapping": "dict",               # Cluster to class correspondence
-        "operational_insights": "dict",                # Oil well operation analysis
-        "performance_comparison": "dict",              # Algorithm comparison
-        "recommendations": "List[str]"                 # Practical recommendations
-    }
-}
-```
-
 ## 📚 Notebook Pipeline Description
 
 ### 1️⃣ **Data Treatment** (`1_data_treatment.ipynb`)
@@ -408,15 +236,15 @@ cv_splits = stratified_split(windowed_data)  # 3 folds
 flattened = flatten_windows(windowed_data)   # Shape: (n_windows, 600)
 embeddings = reduce_dimensions(flattened)    # Shape: (n_windows, 2)
 
-# Notebook 3: Supervised Learning  
-X_train, y_train = prepare_classification()  # Shape: (n_train, 600), (n_train,)
-models = train_classifiers(X_train, y_train) # sklearn estimators
-
-# Notebook 4: Unsupervised Learning
+# 3: Unsupervised Learning
 normal_data = filter_class_0(windowed_data)  # Shape: (n_normal, 300, 2)
 autoencoder = train_lstm_ae(normal_data)     # tensorflow.keras.Model
 
-# 3. Raw Data → Clustering Analysis
+# 4: Supervised Learning  
+X_train, y_train = prepare_classification()  # Shape: (n_train, 600), (n_train,)
+models = train_classifiers(X_train, y_train) # sklearn estimators
+
+# 5. Raw Data → Clustering Analysis
 resized_series = resize_to_500pts(raw_data)  # Shape: (n_samples, 1000)
 clusters = apply_clustering(resized_series)  # Shape: (n_samples,)
 ```
@@ -426,8 +254,10 @@ clusters = apply_clustering(resized_series)  # Shape: (n_samples,)
 # Resource requirements and performance characteristics (depends on the max number of files per class loaded on config file)
 
 MEMORY_REQUIREMENTS = {
+
+    "Warning - Notebook 1 depends on the maximum number of files per anomaly"
     "notebook_1": {
-        "peak_memory": "4-5 GB",
+        "peak_memory": "4-6 GB (up to 50 files per class)",
         "processing_time": "5-15 minutes",
         "disk_space": "500 MB - 2 GB"
     },

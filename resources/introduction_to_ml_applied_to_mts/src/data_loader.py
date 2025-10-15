@@ -244,7 +244,7 @@ class DataLoader:
         # Based on 3W dataset conventions:
         # Real data: Contains 'WELL' in filename
         # Simulated data: Starts with 'SIMULATED' or 'OLGA'
-        # Hand-drawn data: Starts with 'DRAWN' or 'DESENHADA'
+        # Hand-dcompleten data: Starts with 'DRAWN' or 'DESENHADA'
 
         filename_upper = filename.upper()
 
