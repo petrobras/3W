@@ -55,10 +55,16 @@ SAVE_FORMAT = "pickle"  # Options: 'pickle' (fastest loading), 'parquet' (cross-
 # Data persistence settings
 PROCESSED_DATA_DIR = "processed_data"
 
+# Unsupervised settings
+# Data Loading Configuration for Per-Fold Evaluation
+MAX_NORMAL_SAMPLES = 500  # Limit normal samples per fold for faster processing
+MAX_ANOMALY_SAMPLES = 200  # Limit anomaly samples per fold
+SELECTED_ANOMALY_CLASSES = [3, 4, 8]  # Target anomaly classes
+
 # Supervised Classification settings
 CLASSIFICATION_CONFIG = {
     # Class selection options - Choose which classes to include in analysis
-    "selected_classes": [1, 2, 3, 4, 5, 6, 7, 8],  # Specific fault types of interest
+    "selected_classes": [0, 3, 4, 8],  # Specific fault types of interest
     # Alternative class selection examples:
     # 'selected_classes': None,              # Default: all fault types (exclude class 0)
     # 'selected_classes': [1, 2, 3, 4, 5],  # Focus on first 5 fault types

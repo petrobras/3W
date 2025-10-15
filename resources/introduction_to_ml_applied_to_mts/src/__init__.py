@@ -12,7 +12,6 @@ from .cross_validation import CrossValidator
 from .data_augmentation import DataAugmentor
 from .data_persistence import DataPersistence
 from .autoencoder_models import StableLSTMAutoencoder
-from .unsupervised_preprocessing import UnsupervisedDataPreprocessor
 from .anomaly_detection import AnomalyDetector
 from . import config
 
@@ -24,7 +23,6 @@ __all__ = [
     "DataAugmentor",
     "DataPersistence",
     "StableLSTMAutoencoder",
-    "UnsupervisedDataPreprocessor",
     "AnomalyDetector",
     "config",
 ]
