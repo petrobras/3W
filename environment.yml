@@ -3,19 +3,13 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.10
-  - notebook=7.3
-  - alive-progress=3.2
-  - h5py=3.13
-  - matplotlib=3.8
-  - natsort=8.4
-  - pandas=1.5
-  - plotly=6.0
-  - pydantic=2.10
-  - scikit-learn=1.6
-  - seaborn=0.13
-  - tslearn=0.6
-  - ydata-profiling=4.15
-  - numba=0.61
-  - missingno=0.5
-  - pyarrow=19.0
+  - python=3.13.3
+  - pip
+  - pandas=2.3.3
+  - plotly=6.3.1
+  - pydantic=2.12.2
+  - scikit-learn=1.7.2
+  - seaborn=0.13.2
+  - pyarrow=21.0.0
+  - pip:
+    - -e .

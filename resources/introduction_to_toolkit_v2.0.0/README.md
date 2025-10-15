@@ -35,24 +35,22 @@ This tutorial series consists of 8 progressive notebooks that will take you from
 - Column renaming and data validation
 
 ### 5. [Feature Extraction](5_feature_extraction.ipynb)
-**Advanced Feature Engineering**
-- Statistical feature extraction
+**Tools for Feature Engineering**
 - Wavelet-based feature extraction
+- Statistical feature extraction
 - Exponential weighted statistical features
-- Feature selection and optimization
 
-### 6. [Exploratory Analysis](6_exploratory_analysis.ipynb)
-**Data Visualization and Insights**
-- Time-series visualization techniques
-- Correlation analysis
-- Statistical summaries and distributions
-- Interactive plotting capabilities
+### 6. [Data Visualization](6_data_visualization.ipynb)
+**Data Visualization**
+- Correlation heatmap 
+- Time-series visualization 
+    - `plot_series`
+    - `plot_mutiple_series`
 
 ### 7. [Model Training and Evaluation](7_model_training_and_evaluation.ipynb)
 **Machine Learning Pipeline**
-- Model selection and configuration
-- Training procedures and hyperparameter tuning
-- Cross-validation strategies
+- Segmenting the signals into windows
+- Training the model, using the windows as inputs
 - Performance metrics and evaluation
 
 ### 8. [Pipeline Integration](8_pipeline_integration.ipynb)
