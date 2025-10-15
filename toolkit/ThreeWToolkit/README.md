@@ -85,7 +85,7 @@ uv pip install -e .
 
 **Option C: Using `conda`**
 ```bash
-conda create -f environment.yml
+conda env create -f environment.yml
 conda activate 3W
 ```
 
