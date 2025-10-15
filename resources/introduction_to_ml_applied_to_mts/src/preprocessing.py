@@ -28,7 +28,6 @@ class DataPreprocessor:
             "standard": StandardScaler(),
             "minmax": MinMaxScaler(),
             "robust": RobustScaler(),
-            "normalizer": Normalizer(norm="l2"),
         }
         self.fitted_scalers = {}
 
@@ -188,16 +187,10 @@ class DataPreprocessor:
         method: str,
     ) -> None:
         """Print scaling summary statistics."""
-        print(f"\n📊 {method.title()} Scaling Summary:")
-        print("=" * 40)
-        print(f"Total dataframes processed: {total_processed}")
-        print(f"Successfully scaled: {successfully_scaled}")
-        print(f"Skipped (no data/errors): {skipped_dfs}")
 
         if scaled_classes:
             unique_classes, counts = np.unique(scaled_classes, return_counts=True)
             class_dist = dict(zip(unique_classes, counts))
-            print(f"Class distribution of scaled data: {class_dist}")
 
     def get_scaling_statistics(
         self, scaled_dfs: List[pd.DataFrame], method: str = "minmax"
@@ -814,24 +807,16 @@ class DataPreprocessor:
         windowed_classes = []
         window_metadata = []
 
-        print(f"🪟 Creating time windows:")
-        print(f"   Window size: {window_size}")
-        print(f"   Stride: {stride}")
-        print(f"   Minimum window size: {min_window_size}")
-        print("-" * 40)
+        # print(f"🪟 Creating time windows:")
 
         total_windows = 0
         skipped_samples = 0
 
         for i, (df, class_label) in enumerate(zip(dfs, classes)):
             df_length = len(df)
-
             # Skip if dataframe is too small
             if df_length < min_window_size:
                 skipped_samples += 1
-                print(
-                    f"⚠️  Skipped sample {i+1} (class {class_label}): too small ({df_length} < {min_window_size})"
-                )
                 continue
 
             # Calculate number of windows for this dataframe
@@ -874,10 +859,6 @@ class DataPreprocessor:
                 if stride >= window_size and end_idx >= df_length:
                     break
 
-            if sample_windows > 0:
-                print(
-                    f"✅ Sample {i+1} (class {class_label}): {sample_windows} windows from {df_length} points"
-                )
 
         print(f"\n📊 Windowing Summary:")
         print(f"   Original samples: {len(dfs)}")
@@ -970,7 +951,6 @@ class DataPreprocessor:
         print("🔄 Applying windowing to train/test split...")
 
         # Window training data
-        print("\n📚 Processing training data:")
         train_windowed_dfs, train_windowed_classes, train_metadata = (
             self.create_time_windows(
                 train_dfs, train_classes, window_size, stride, min_window_size
@@ -978,7 +958,6 @@ class DataPreprocessor:
         )
 
         # Window test data
-        print("\n🧪 Processing test data:")
         test_windowed_dfs, test_windowed_classes, test_metadata = (
             self.create_time_windows(
                 test_dfs, test_classes, window_size, stride, min_window_size

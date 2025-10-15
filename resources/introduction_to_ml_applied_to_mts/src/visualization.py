@@ -200,7 +200,7 @@ class DataVisualizer:
         elif "total_samples" in dataset_stats:
             print(f"\n💾 Total samples: {dataset_stats['total_samples']:,}")
 
-    def plot_complete_data_analysis(
+    def plot_raw_data_analysis(
         self,
         data: pd.DataFrame,
         pressure_col: str = "P-TPT",
@@ -208,7 +208,7 @@ class DataVisualizer:
         title_suffix: str = "",
     ) -> None:
         """
-        Plot comprehensive analysis of complete sensor data.
+        Plot comprehensive analysis of raw sensor data.
 
         Args:
             data (pd.DataFrame): Complete sensor data
@@ -216,7 +216,6 @@ class DataVisualizer:
             temp_col (str): Name of temperature column
             title_suffix (str): Additional text for plot title
         """
-        print(f"\\n🔸 Plotting Complete Data Analysis{title_suffix}...")
 
         # Check if required columns exist
         if pressure_col not in data.columns or temp_col not in data.columns:
@@ -235,7 +234,7 @@ class DataVisualizer:
         # Create plots
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
         fig.suptitle(
-            f"Complete Data Analysis - Pressure and Temperature{title_suffix}",
+            f"Raw Data Analysis - Pressure and Temperature{title_suffix}",
             fontsize=16,
             fontweight="bold",
         )
@@ -247,7 +246,7 @@ class DataVisualizer:
             alpha=0.7,
             linewidth=0.5,
         )
-        axes[0, 0].set_title(f"Complete Pressure ({pressure_col}) Time Series")
+        axes[0, 0].set_title(f"Raw Pressure ({pressure_col}) Time Series")
         axes[0, 0].set_xlabel("Sample Index")
         axes[0, 0].set_ylabel("Pressure Value")
         axes[0, 0].grid(True, alpha=0.3)
@@ -258,7 +257,7 @@ class DataVisualizer:
             alpha=0.7,
             linewidth=0.5,
         )
-        axes[0, 1].set_title(f"Complete Temperature ({temp_col}) Time Series")
+        axes[0, 1].set_title(f"Raw Temperature ({temp_col}) Time Series")
         axes[0, 1].set_xlabel("Sample Index")
         axes[0, 1].set_ylabel("Temperature Value")
         axes[0, 1].grid(True, alpha=0.3)
@@ -271,7 +270,7 @@ class DataVisualizer:
             alpha=0.7,
             density=True,
         )
-        axes[1, 0].set_title(f"Complete Pressure Distribution")
+        axes[1, 0].set_title(f"Raw Pressure Distribution")
         axes[1, 0].set_xlabel("Pressure Value")
         axes[1, 0].set_ylabel("Density")
         axes[1, 0].grid(True, alpha=0.3)
@@ -283,7 +282,7 @@ class DataVisualizer:
             alpha=0.7,
             density=True,
         )
-        axes[1, 1].set_title(f"Complete Temperature Distribution")
+        axes[1, 1].set_title(f"Raw Temperature Distribution")
         axes[1, 1].set_xlabel("Temperature Value")
         axes[1, 1].set_ylabel("Density")
         axes[1, 1].grid(True, alpha=0.3)

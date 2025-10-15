@@ -85,7 +85,7 @@ class DataLoader:
         self, class_folders: List[str] = None, max_files_per_class: int = 150
     ) -> Tuple[List[pd.DataFrame], List[str], Dict[str, Any]]:
         """
-        Load the 3W dataset from parquet files with memory optimization.
+        Load the 3W dataset from parquet files.
 
         Args:
             class_folders (List[str], optional): List of class folders to load.
@@ -127,10 +127,6 @@ class DataLoader:
             "max_files_per_class": max_files_per_class,
             "memory_optimization": True,
         }
-
-        print("Loading 3W Dataset with Memory Optimization...")
-        print(f"Maximum files per class: {max_files_per_class}")
-        print("=" * 50)
 
         # Process each class folder
         for class_folder in tqdm(sorted(class_folders), desc="Processing classes"):
@@ -225,9 +221,6 @@ class DataLoader:
             "filenames": filenames_simulated,
         }
 
-        # Print loading summary
-        self._print_loading_summary(stats, len(dfs_3w))
-
         self.stats = stats
         return dfs_3w, classes_3w, stats
 
@@ -299,13 +292,6 @@ class DataLoader:
         # Load data
         df = pd.read_parquet(file_path)
 
-        # Debug information for first few files
-        if file_counter < 3:
-            print(f"Debug - File: {os.path.basename(file_path)}")
-            print(f"  Shape: {df.shape}")
-            print(f"  Columns: {list(df.columns)}")
-            print(f"  Has 'class' column: {'class' in df.columns}")
-
         # Skip files without any data
         if len(df) == 0:
             stats["empty_files"] += 1
@@ -314,8 +300,6 @@ class DataLoader:
         # Check if we have class column
         if "class" not in df.columns:
             stats["empty_files"] += 1
-            if file_counter < 3:
-                print(f"  Skipping - no 'class' column")
             return None
 
         # Remove rows with missing class labels
@@ -323,8 +307,6 @@ class DataLoader:
 
         if len(df) == 0:
             stats["empty_files"] += 1
-            if file_counter < 3:
-                print(f"  Skipping - all class values are NaN")
             return None
 
         # Apply data sampling if enabled in config
@@ -347,10 +329,6 @@ class DataLoader:
                     # Uniform sampling (default) - take every nth row
                     df = df.iloc[::sampling_rate].reset_index(drop=True)
 
-                if file_counter < 3:
-                    print(
-                        f"  Sampling: {original_len} → {len(df)} samples (1/{sampling_rate})"
-                    )
 
         # Handle missing values in numeric columns
         numeric_cols = df.select_dtypes(include=[np.number]).columns
@@ -361,45 +339,9 @@ class DataLoader:
 
         if len(df) == 0:
             stats["empty_files"] += 1
-            if file_counter < 3:
-                print(f"  Skipping - no valid data after cleaning")
             return None
 
-        if file_counter < 3:
-            print(f"  Successfully loaded: {len(df)} samples")
-
         return df
-
-    def _print_loading_summary(self, stats: Dict[str, Any], total_loaded: int) -> None:
-        """Print loading summary statistics with memory optimization details."""
-        print("\nLoading Summary:")
-        print("=" * 50)
-        
-        # Check if this is the new optimized format
-        if "memory_optimization" in stats and stats["memory_optimization"]:
-            print(f"Total files available: {stats['total_files_available']}")
-            print(f"Total files loaded: {stats['total_files_loaded']}")
-            print(f"Real data - Available: {stats['real_files_available']}, Loaded: {stats['real_files_loaded']}")
-            print(f"Simulated data - Available: {stats['simulated_files_available']}, Loaded: {stats['simulated_files_loaded']}")
-            print(f"Empty/invalid files: {stats['empty_files']}")
-            print(f"Total samples: {stats['total_samples']:,}")
-            
-            # Print per-class breakdown
-            print(f"\nPer-Class Breakdown:")
-            for class_id in sorted(stats['classes_count'].keys()):
-                class_data = stats['classes_count'][class_id]
-                if class_data['total_available'] > 0:
-                    print(f"  Class {class_id}: {class_data['total_loaded']}/{class_data['total_available']} files "
-                          f"(R: {class_data['real_loaded']}/{class_data['real_available']}, "
-                          f"S: {class_data['simulated_loaded']}/{class_data['simulated_available']})")
-        else:
-            # Legacy format for backward compatibility
-            print(f"Total files processed: {stats.get('total_files', 0)}")
-            print(f"Successfully loaded: {total_loaded} files")
-            print(f"Real data files: {stats.get('real_files', 0)}")
-            print(f"Simulated data files: {stats.get('simulated_files', 0)}")
-            print(f"Empty/invalid files: {stats.get('empty_files', 0)}")
-            print(f"Total samples: {stats.get('total_samples', 0):,}")
 
     def filter_target_features(
         self, dfs: List[pd.DataFrame], classes: List[str], target_features: List[str]
