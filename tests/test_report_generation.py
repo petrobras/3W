@@ -16,7 +16,6 @@ def test_initialization(
     assert report_generator_instance.reports_dir.name == "report-Test_Report"
 
 
-
 def test_check_plot_config_valid(
     report_generator_instance,
 ):
