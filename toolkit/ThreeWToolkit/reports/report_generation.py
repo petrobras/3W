@@ -16,8 +16,53 @@ from ..utils.template_manager import copy_html_support_files, copy_latex_support
 
 
 class ReportGeneration:
-    """
-    A class for generating and exporting model evaluation reports.
+    """A class for generating and exporting model evaluation reports.
+    This class orchestrates the creation of comprehensive reports for machine
+    learning models. It takes training and testing data, model predictions,
+    calculated metrics, and plotting configurations to produce reports in
+    various formats, including LaTeX (Beamer presentations) and HTML. The class
+    can also export the raw prediction results to a CSV file for further analysis.
+
+    Attributes:
+        model (Any): The trained machine learning model object.
+        X_train (pd.Series): The training feature data.
+        y_train (pd.Series): The training target data.
+        X_test (pd.Series): The testing feature data.
+        y_test (pd.Series): The testing target data.
+        predictions (pd.Series): The model's predictions on the test set.
+        calculated_metrics (dict): A dictionary of pre-calculated performance metrics.
+        plot_config (dict): A dictionary defining the plots to be included in the report.
+        title (str): The title of the report.
+        author (str): The author of the report.
+        latex_dir (Path): The directory to store intermediate LaTeX files.
+        reports_dir (Path): The base directory where the final report folder will be created.
+        save_report_after_generate (bool): If True, the report is saved immediately after generation.
+        valid_plots (Dict[str, Callable]): A mapping of valid plot names to their corresponding functions.
+
+    Methods:
+        generate_summary_report(format: str, template_name: str = "report_template.html") -> Union[Document, str]:
+            Generates a model evaluation report in either LaTeX (PDF) or HTML format.
+        save_report(doc: Document | str, filename: str, format: str) -> None:
+            Saves the report in both LaTeX (PDF) and HTML formats.
+        export_results_to_csv(results: Dict[str, Any], filename: str) -> pd.DataFrame:
+            Exports machine learning model results to a CSV file.
+        get_visualization(format: str) -> dict:
+            Generates and saves plots based on the provided plot configuration.
+    Private Methods:
+        _generate_summary_report_latex() -> Document:
+            Generates a summary report as a LaTeX Beamer presentation.
+        _generate_summary_report_html(template_name: str = "report_template.html") -> str:
+            Generates a model evaluation report in Markdown format using a Jinja2 template.
+        _save_report_latex(doc: Document, filename: str) -> None:
+            Saves a PyLaTeX Document as a .tex file along with its support files.
+        _save_report_html(report_content: str, filename: str) -> None:
+            Saves the HTML report content to a file and copies necessary assets.
+        _check_plot_config(plot_config: dict) -> None:
+            Validates the plot configuration dictionary.
+
+    Note:
+        This class is designed to be flexible and extensible, allowing users to
+        customize the report generation process according to their needs.
     """
 
     def __init__(
@@ -36,6 +81,33 @@ class ReportGeneration:
         reports_dir: Path = REPORTS_DIR,
         export_report_after_generate: bool = False,
     ):
+        """Initializes the ReportGeneration class.
+
+        This constructor sets up the necessary data and configuration for generating
+        the 3W model report. It takes datasets, model predictions,
+        metrics, and various configuration options as input.
+
+        Args:
+            model (Any): The trained machine learning model object.
+            X_train (pd.Series): The training feature data.
+            y_train (pd.Series): The training target data.
+            X_test (pd.Series): The testing feature data.
+            y_test (pd.Series): The testing target data.
+            predictions (pd.Series): The model's predictions on the test set.
+            calculated_metrics (dict): A dictionary of pre-calculated performance metrics.
+            plot_config (Union[dict, None]): A dictionary defining the plots to be
+                included in the report. If None, an empty dictionary is used.
+            title (str): The title of the report.
+            author (str, optional): The author of the report.
+                Defaults to "3W Toolkit Report".
+            latex_dir (Path, optional): The directory to store intermediate LaTeX files.
+                Defaults to the constant LATEX_DIR.
+            reports_dir (Path, optional): The base directory where the final report
+                folder will be created. Defaults to the constant REPORTS_DIR.
+            export_report_after_generate (bool, optional): If True, the report is
+                saved (e.g., to .html or .tex) immediately after generation. Defaults to False.
+        """
+
         self.model = model
         self.X_train = X_train
         self.y_train = y_train
@@ -66,15 +138,37 @@ class ReportGeneration:
             "PlotWaveletSpectrogram": DataVisualization.plot_wavelet_spectrogram,
         }
 
-    def _format_metric_name(self, method_name: str) -> str:
-        if method_name == "f1":
-            return "F1 Score"
-        if method_name == "get_roc_auc":
-            return "ROC AUC"
-        return method_name.replace("get_", "").replace("_", " ").strip().title()
-
     def _generate_summary_report_latex(self) -> Document:
-        """Generates a Beamer presentation summary report as a PyLaTeX Document."""
+        """Generates a summary report as a LaTeX Beamer presentation.
+
+        This method constructs a multi-slide Beamer presentation using the PyLaTeX
+        library. The presentation is structured into several sections:
+
+        1.  **Title Page**: Displays the report's title, author, and the current date,
+            set against a custom background.
+        2.  **Performance Evaluation**: A slide titled "Figures of Merit" that presents
+            key performance metrics in a tabular format.
+        3.  **Model Overview**: A slide titled "Model and Data" which details the
+            model's configuration (type and parameters) and the data split
+            (number of training and test samples).
+        4.  **Visualizations**: A series of slides, one for each visualization
+            (e.g., plots, heatmaps) generated by the `get_visualization` method.
+            Each slide includes the plot image and a descriptive caption.
+
+        The method uses a custom Petrobras Beamer theme and includes necessary LaTeX
+        packages for formatting. If `self.save_report_after_generate` is True,
+        the generated document is automatically saved as a .tex file and compiled
+        into a PDF.
+
+        Note:
+            This is a private method intended for internal use by the report
+            generation system. It relies on several instance attributes being
+            previously set.
+
+        Returns:
+            pylatex.Document: The generated Beamer presentation as a PyLaTeX
+                              Document object.
+        """
         print(f"Generating Beamer report: '{self.title}'...")
 
         doc = Document(documentclass="beamer", document_options=["t,compress"])
@@ -233,7 +327,20 @@ class ReportGeneration:
         return plot_paths
 
     def _check_plot_config(self, plot_config: dict) -> None:
-        """Validates the plot configuration dictionary."""
+        """Validates the plot configuration dictionary.
+
+        This method iterates through the provided plot configuration, ensuring
+        that each specified plot is a valid type and that all its required
+        parameters are present and correctly formatted.
+        Args:
+            plot_config (dict): A dictionary where keys are the names of the
+                plots to be generated (e.g., "PlotSeries", "PlotCorrelationHeatmap")
+                and values are dictionaries containing the parameters for each plot.
+        Raises:
+            ValueError: If a plot name is not recognized, or if a required
+                parameter for a specific plot type is missing or has an
+                invalid type (e.g., 'series_list' not being a list).
+        """
 
         for plot_name, params in plot_config.items():
             if plot_name not in self.valid_plots:
@@ -261,7 +368,27 @@ class ReportGeneration:
                     )
 
     def _save_report_latex(self, doc: Document, filename: str) -> None:
-        """Compiles and saves a PyLaTeX Document to a PDF file using lualatex."""
+        """Saves a PyLaTeX Document as a .tex file along with its support files.
+
+        This private method handles the process of generating a .tex file from a
+        given PyLaTeX `Document` object. It creates a 'latex' subdirectory within
+        the main reports directory (`self.reports_dir`) if it doesn't already
+        exist. The generated .tex file is saved there. Additionally, it copies
+        necessary LaTeX support files (e.g., images, style files) from a source
+        directory (`self.latex_dir`) to the output directory to ensure the .tex
+        file can be compiled correctly.
+
+        Args:
+            doc (Document): The PyLaTeX Document object to be saved.
+            filename (str): The base name for the output .tex file (e.g., 'my_report').
+                The '.tex' extension will be added automatically.
+
+        Side Effects:
+            - Creates a directory at `self.reports_dir / "latex"`.
+            - Writes a .tex file to the created directory.
+            - Copies support files from `self.latex_dir` to the output directory.
+            - Prints status messages to the console.
+        """
 
         report_path = self.reports_dir / "latex"
         print(f"Saving report to '{report_path}' folder'...")
@@ -281,12 +408,19 @@ class ReportGeneration:
         Generates a model evaluation report in Markdown format using a Jinja2 template.
 
         Args:
-            template_name (str): The name of the template file located in the 'templates' directory.
+            template_name (str, optional): The name of the Jinja2 template file.
+                This file should be located in the directory specified by
+                `HTML_TEMPLATES_DIR` or a 'templates' subdirectory relative to the
+                current working directory. Defaults to "report_template.html".
+
+        Raises:
+            FileNotFoundError: If the specified `template_name` is not found in the
+                configured template directory.
 
         Returns:
-            str: A string containing the complete report in Markdown format.
+            str: A string containing the complete, rendered report in HTML format.
         """
-        print(f"Generating Markdown report from template: '{template_name}'...")
+        print(f"Generating HTML report from template: '{template_name}'...")
 
         # Set up Jinja2 environment
         # This assumes your templates are in a 'templates' subdirectory.
@@ -337,12 +471,26 @@ class ReportGeneration:
         return markdown_output
 
     def _save_report_html(self, report_content: str, filename: str) -> None:
-        """
-        Saves the HTML report content to a file.
+        """Saves the HTML report content to a file and copies necessary assets.
 
-        Args:
-            report_content (str): The HTML string to be saved.
-            filename (str): The name of the file to save (e.g., 'report.md').
+        This private method handles the process of persisting a generated HTML report.
+        It first ensures the target directory (`[reports_dir]/html/`) exists,
+        creating it if necessary. It then writes the provided HTML content to the
+        specified file within that directory. Finally, it copies over any required
+        support files (e.g., CSS, JavaScript, images) to the same directory to
+        ensure the HTML report can be rendered correctly as a standalone file.
+
+            report_content (str): The complete HTML content of the report as a string.
+            filename (str): The name for the output file (e.g., 'analysis_report.html').
+
+        Raises:
+            IOError: If there is an error writing the HTML file to the disk.
+
+        Side Effects:
+            - Creates the `[reports_dir]/html/` directory if it doesn't exist.
+            - Writes a new file to the filesystem at `[reports_dir]/html/[filename]`.
+            - Copies support files to the `[reports_dir]/html/` directory.
+            - Prints status messages to the console during execution.
         """
         report_path = self.reports_dir / "html"
         report_path.mkdir(parents=True, exist_ok=True)
@@ -361,7 +509,37 @@ class ReportGeneration:
     def export_results_to_csv(
         self, results: Dict[str, Any], filename: str
     ) -> pd.DataFrame:
-        """Exports results to CSV file."""
+        """Exports machine learning model results to a CSV file.
+
+        This method takes a dictionary of results from a model evaluation,
+        formats it into a pandas DataFrame, and saves it as a CSV file in the
+        designated reports directory (`self.reports_dir`). The directory is
+        created if it does not exist.
+
+        The output CSV file will contain the input features (`X_test`), the true
+        target values, the model's predictions, the model's name, and the
+        calculated performance metrics.
+
+        Args:
+            results (Dict[str, Any]): A dictionary containing the model evaluation
+                results. It must include the following keys:
+                - 'X_test' (pd.DataFrame or np.ndarray): The test features.
+                - 'true_values' (array-like): The actual target values.
+                - 'predictions' (array-like): The model's predicted values.
+                - 'model_name' (str): The name of the model.
+                - 'metrics' (Dict[str, float]): A dictionary where keys are metric
+                  names (e.g., 'MAE', 'MSE') and values are the corresponding
+                  scores.
+            filename (str): The name for the output CSV file (e.g., 'results.csv').
+
+        Returns:
+            pd.DataFrame: The DataFrame containing the combined results that was
+                saved to the CSV file.
+
+        Raises:
+            ValueError: If the `results` dictionary does not contain all the
+                required keys.
+        """
         print(f"Exporting results to '{filename}'...")
 
         self.reports_dir.mkdir(parents=True, exist_ok=True)

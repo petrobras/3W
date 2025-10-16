@@ -16,17 +16,6 @@ def test_initialization(
     assert report_generator_instance.reports_dir.name == "report-Test_Report"
 
 
-def test_format_metric_name(
-    report_generator_instance,
-):
-    """Test the metric name formatting helper."""
-    assert report_generator_instance._format_metric_name("f1") == "F1 Score"
-    assert report_generator_instance._format_metric_name("get_roc_auc") == "ROC AUC"
-    assert (
-        report_generator_instance._format_metric_name("mean_absolute_error")
-        == "Mean Absolute Error"
-    )
-
 
 def test_check_plot_config_valid(
     report_generator_instance,
