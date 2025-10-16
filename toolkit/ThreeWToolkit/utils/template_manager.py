@@ -2,7 +2,7 @@ from pathlib import Path
 import shutil
 
 
-def copy_html_support_files(html_dir: Path, figures_dir: Path, report_path: Path):
+def copy_html_support_files(html_dir: Path, assets_dir: Path, report_path: Path):
     """
     Copies necessary .sty files and asset files for compilation from a source
     directory to a report directory.
@@ -19,17 +19,17 @@ def copy_html_support_files(html_dir: Path, figures_dir: Path, report_path: Path
                 "No .css files or 'assets' directory found to copy."
             )
 
-        if not figures_dir.is_dir():
-            raise FileNotFoundError("No 'figures' directory found to copy.")
+        if not assets_dir.is_dir():
+            raise FileNotFoundError("No 'assets' directory found to copy.")
 
         for css_file in css_files:
             shutil.copy(css_file, report_path)
 
-        if figures_dir.is_dir():
-            figures_dir_dest = report_path / "figures"
-            if figures_dir_dest.exists():
-                shutil.rmtree(figures_dir_dest)
-            shutil.copytree(figures_dir, figures_dir_dest)
+        if assets_dir.is_dir():
+            assets_dir_dest = report_path / "assets"
+            if assets_dir_dest.exists():
+                shutil.rmtree(assets_dir_dest)
+            shutil.copytree(assets_dir, assets_dir_dest)
 
     except Exception as e:
         print(f"Warning: Could not copy LaTeX support files: {e}")

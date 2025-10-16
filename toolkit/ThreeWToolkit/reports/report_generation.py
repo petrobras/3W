@@ -11,7 +11,7 @@ from pylatex.package import Package
 
 from ThreeWToolkit.data_visualization import DataVisualization
 
-from ..constants import FIGURES_DIR, LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR
+from ..constants import LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR, HTML_ASSETS_DIR
 from ..utils.template_manager import copy_html_support_files, copy_latex_support_files
 
 
@@ -29,7 +29,7 @@ class ReportGeneration:
         y_test: pd.Series,
         predictions: pd.Series,
         calculated_metrics: dict,
-        plot_config: dict,
+        plot_config: Union[dict, None],
         title: str,
         author: str = "3W Toolkit Report",
         latex_dir: Path = LATEX_DIR,
@@ -44,6 +44,10 @@ class ReportGeneration:
         self.metrics = calculated_metrics
         self.predictions = predictions
         self.calculated_metrics = calculated_metrics
+
+        if plot_config is None:
+            plot_config = {}
+
         self.plot_config = plot_config
         self.title = title
         self.author = author
@@ -352,7 +356,7 @@ class ReportGeneration:
         except IOError as e:
             print(f"Error saving HTML file: {e}")
 
-        copy_html_support_files(HTML_TEMPLATES_DIR, FIGURES_DIR, report_path)
+        copy_html_support_files(HTML_TEMPLATES_DIR, HTML_ASSETS_DIR, report_path)
 
     def export_results_to_csv(
         self, results: Dict[str, Any], filename: str

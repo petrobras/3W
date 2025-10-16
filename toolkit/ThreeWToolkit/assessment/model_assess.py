@@ -563,22 +563,23 @@ class ModelAssessment(BaseStep):
             or f"Model Assessment Report - {self.results['model_name']}"
         )
 
-        plot_config = {
-            "PlotSeries": {
-                "series": y_test_series,
-                "title": "True Values",
-                "xlabel": "Sample Index",
-                "ylabel": "Value",
-            },
-            "PlotMultipleSeries": {
-                "series_list": [y_test_series, pd.Series(self.results["predictions"])],
-                "title": "True vs Predicted Values",
-                "xlabel": "Sample Index",
-                "ylabel": "Value",
-                "legend": ["True Values", "Predictions"],
-            },
-            # Additional plots can be added here
-        }
+        # plot_config = {
+        #     "PlotSeries": {
+        #         "series": y_test_series,
+        #         "title": "True Values",
+        #         "xlabel": "Sample Index",
+        #         "ylabel": "Value",
+        #     },
+        #     "PlotMultipleSeries": {
+        #         "series_list": [y_test_series, pd.Series(self.results["predictions"])],
+        #         "title": "True vs Predicted Values",
+        #         "xlabel": "Sample Index",
+        #         "ylabel": "Value",
+        #         "labels": ["True Values", "Predictions"],
+        #     },
+        #     # Additional plots can be added here
+        # }
+        plot_config = None  # Disable plots for now
 
         # Create ReportGeneration instance with legacy constructor
         report_generator = self._report_generation_class(
@@ -598,7 +599,7 @@ class ModelAssessment(BaseStep):
         )
 
         # Generate the comprehensive report
-        self.report_doc = report_generator.generate_summary_report(format="latex")
+        self.report_doc = report_generator.generate_summary_report(format="html")
 
     def _map_metrics_for_report(self) -> list[str]:
         """Map assessment metrics to ReportGeneration format.
