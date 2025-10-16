@@ -204,8 +204,10 @@ class LatentSpaceAnalyzer:
             axes[0, 0], normal_tsne, anomaly_tsne, per_class_metrics, anomaly_classes
         )
 
-        # 2. Raw latent space (first 2 dimensions)
-        self._plot_raw_latent_space(axes[0, 1], class_latent_stats, per_class_metrics)
+        # 2. Complete latent space (first 2 dimensions)
+        self._plot_complete_latent_space(
+            axes[0, 1], class_latent_stats, per_class_metrics
+        )
 
         # 3. Latent dimension variance analysis
         self._plot_latent_variance(axes[0, 2])
@@ -289,8 +291,8 @@ class LatentSpaceAnalyzer:
         ax.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc="upper left")
         ax.grid(True, alpha=0.3)
 
-    def _plot_raw_latent_space(self, ax, class_latent_stats, per_class_metrics):
-        """Plot raw latent space (first 2 dimensions)."""
+    def _plot_complete_latent_space(self, ax, class_latent_stats, per_class_metrics):
+        """Plot complete latent space (first 2 dimensions)."""
         if self.normal_latent.shape[1] >= 2:
             ax.scatter(
                 self.normal_latent[:, 0],
@@ -316,7 +318,7 @@ class LatentSpaceAnalyzer:
 
             ax.set_xlabel("Latent Dimension 1")
             ax.set_ylabel("Latent Dimension 2")
-            ax.set_title("Raw Latent Space (First 2 Dims)")
+            ax.set_title("Complete Latent Space (First 2 Dims)")
             ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
             ax.grid(True, alpha=0.3)
 

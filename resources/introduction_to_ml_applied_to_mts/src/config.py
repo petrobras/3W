@@ -10,18 +10,122 @@ Parameter Ranges and Validation:
 """
 
 # Dataset settings
-DATASET_PATH = "../../dataset/"
 TARGET_FEATURES = ["P-PDG", "P-TPT", "T-TPT", "class"]
-RAW_DATA_DIR = "./processed_data/cv_splits/raw/"
 CLASS_COLUMN = "class"
-MAX_FILES_PER_CLASS = 50  # Range: 50-500, Maximum files to load per class (memory optimization)
-# 100 files will use about 4 to 6 GB of RAM
+MAX_FILES_PER_CLASS = (
+    50  # Range: 50-500, Maximum files to load per class (memory optimization)
+)
+# 50 files will use about 4 to 5 GB of RAM
 # Processing settings
 DEFAULT_SCALING_METHOD = (
     "minmax"  # Options: 'standard', 'minmax', 'robust', 'normalizer'
 )
 RANDOM_SEED = 42  # Range: any integer
-MIN_SAMPLES_THRESHOLD = 100  # Range: 50-500
+
+# Data sampling settings
+ENABLE_DATA_SAMPLING = True  # Enable sampling to reduce data size
+SAMPLING_RATE = 5  # Range: 1-10, Sample every nth row (1 line each n)
+SAMPLING_METHOD = "uniform"  # Options: 'uniform', 'random'
+
+# Cross-validation settings
+N_FOLDS = 3  # Range: 2-10
+CV_RANDOM_STATE = 42
+CV_VERBOSE = False  # Reduced verbosity
+FALLBACK_REAL_PROPORTION = (
+    0.7  # Range: 0.5-0.9, For real/simulated data separation fallback
+)
+
+# Time windowing settings
+WINDOW_SIZE = 300  # Range: 100-1000
+WINDOW_STRIDE = (
+    WINDOW_SIZE // 2
+)  # Range: 1 to WINDOW_SIZE, Overlapping windows (150), use WINDOW_SIZE for non-overlapping
+MIN_WINDOW_SIZE = 300  # Range: 50 to WINDOW_SIZE, Only keep full-size windows
+
+# Data analysis settings
+SAMPLE_ANALYSIS_MIN_SAMPLES = 100
+REQUIRED_COLUMNS = TARGET_FEATURES
+
+# Sensor column names for plotting
+PRESSURE_COLUMN = "P-TPT"
+TEMPERATURE_COLUMN = "T-TPT"
+
+
+# File output settings
+SAVE_FORMAT = "pickle"  # Options: 'pickle' (fastest loading), 'parquet' (cross-platform), 'csv' (universal)
+
+# Data persistence settings
+PROCESSED_DATA_DIR = "processed_data"
+
+# Unsupervised settings
+# Data Loading Configuration for Per-Fold Evaluation
+MAX_NORMAL_SAMPLES = 500  # Limit normal samples per fold for faster processing
+MAX_ANOMALY_SAMPLES = 200  # Limit anomaly samples per fold
+SELECTED_ANOMALY_CLASSES = [3, 4, 8]  # Target anomaly classes
+
+# Supervised Classification settings
+CLASSIFICATION_CONFIG = {
+    # Class selection options - Choose which classes to include in analysis
+    "selected_classes": [0, 3, 4, 8],  # Specific fault types of interest
+    # Alternative class selection examples:
+    # 'selected_classes': None,              # Default: all fault types (exclude class 0)
+    # 'selected_classes': [1, 2, 3, 4, 5],  # Focus on first 5 fault types
+    # 'selected_classes': [7, 8, 9],        # Focus on last 3 fault types
+    # 'selected_classes': [1, 3, 5, 7, 9],  # Focus on odd-numbered fault types
+    # Test data balancing settings
+    "balance_test": False,  # Balance test data for robust evaluation
+    "min_test_samples_per_class": 300,  # Ensure minimum samples per class in test
+    # Training settings
+    "balance_classes": True,  # Use data augmentation for class balancing (training)
+    "balance_strategy": "combined",  # Combined over/undersampling strategy
+    "max_samples_per_class": 1000,  # Limit for computational efficiency (training)
+    "verbose": True,  # Show detailed progress
+}
+
+# Pre-configured class selection sets for common use cases
+CLASSIFICATION_PRESETS = {
+    "all_faults": None,  # All fault types (exclude only class 0)
+    "specific_faults": [2, 3, 8],  # User-defined specific faults
+    "early_faults": [1, 2, 3, 4, 5],  # First 5 fault types
+    "late_faults": [7, 8, 9],  # Last 3 fault types
+    "odd_faults": [1, 3, 5, 7, 9],  # Odd-numbered fault types
+    "even_faults": [2, 4, 6, 8],  # Even-numbered fault types
+    "critical_faults": [3, 6, 8, 9],  # Example: Critical operational faults
+    "minor_faults": [1, 2, 4, 5, 7],  # Example: Minor operational faults
+    "binary_test": [3, 8],  # Simple binary classification test
+}
+
+
+# Display settings
+SEPARATOR_LENGTH = 50
+HEADER_SEPARATOR_LENGTH = 60  # Reduced for more concise display
+
+
+def validate_config():
+    """Validate configuration parameters and provide warnings for invalid values."""
+    warnings = []
+
+    # Validate sampling rate
+    if not (1 <= SAMPLING_RATE <= 10):
+        warnings.append(f"SAMPLING_RATE ({SAMPLING_RATE}) should be between 1-10")
+
+    # Validate window size
+    if not (100 <= WINDOW_SIZE <= 1000):
+        warnings.append(f"WINDOW_SIZE ({WINDOW_SIZE}) should be between 100-1000")
+
+    # Validate cross-validation folds
+    if not (2 <= N_FOLDS <= 10):
+        warnings.append(f"N_FOLDS ({N_FOLDS}) should be between 2-10")
+
+    # Validate scaling method
+    valid_scaling = ["standard", "minmax", "robust", "normalizer"]
+    if DEFAULT_SCALING_METHOD not in valid_scaling:
+        warnings.append(
+            f"DEFAULT_SCALING_METHOD ({DEFAULT_SCALING_METHOD}) should be one of {valid_scaling}"
+        )
+
+    return warnings
+
 
 # Visualization settings
 VISUALIZATION_MAX_SAMPLES = (
@@ -66,127 +170,3 @@ UMAP_CONFIGS = [
         "title": "Robust Config",
     },
 ]
-
-# Data sampling settings
-ENABLE_DATA_SAMPLING = True  # Enable sampling to reduce data size
-SAMPLING_RATE = 5  # Range: 1-10, Sample every nth row (1 line each n)
-SAMPLING_METHOD = "uniform"  # Options: 'uniform', 'random'
-
-# Cross-validation settings
-N_FOLDS = 3  # Range: 2-10
-CV_RANDOM_STATE = 42
-CV_VERBOSE = False  # Reduced verbosity
-FALLBACK_REAL_PROPORTION = (
-    0.7  # Range: 0.5-0.9, For real/simulated data separation fallback
-)
-
-# Time windowing settings
-WINDOW_SIZE = 300  # Range: 100-1000
-WINDOW_STRIDE = (
-    WINDOW_SIZE // 2
-)  # Range: 1 to WINDOW_SIZE, Overlapping windows (150), use WINDOW_SIZE for non-overlapping
-MIN_WINDOW_SIZE = 300  # Range: 50 to WINDOW_SIZE, Only keep full-size windows
-
-# Data analysis settings
-SAMPLE_ANALYSIS_MIN_SAMPLES = 100
-REQUIRED_COLUMNS = TARGET_FEATURES
-
-# Sensor column names for plotting
-PRESSURE_COLUMN = "P-TPT"
-TEMPERATURE_COLUMN = "T-TPT"
-
-
-# File output settings
-OUTPUT_DIR = "processed_data"
-SAVE_FORMAT = "pickle"  # Options: 'pickle' (fastest loading), 'parquet' (cross-platform), 'csv' (universal)
-
-# Data persistence settings
-PROCESSED_DATA_DIR = "processed_data"
-CV_SPLITS_DIR = "cv_splits"
-METADATA_FILE = "processing_metadata.json"
-
-# Save configuration
-SAVE_CV_FOLDS = True
-SAVE_WINDOWED_DATA = True
-SAVE_RAW_SPLITS = True
-SAVE_METADATA = True
-
-# File naming patterns
-FOLD_PATTERN = "fold_{fold_num}"
-TRAIN_PATTERN = "train_data"
-TEST_PATTERN = "test_data"
-WINDOWED_PATTERN = "windowed_data"
-METADATA_PATTERN = "metadata"
-
-# Supervised Classification settings
-CLASSIFICATION_CONFIG = {
-    # Class selection options - Choose which classes to include in analysis
-    "selected_classes": [1, 2, 3, 4, 5, 8],  # Specific fault types of interest
-    # Alternative class selection examples:
-    # 'selected_classes': None,              # Default: all fault types (exclude class 0)
-    # 'selected_classes': [1, 2, 3, 4, 5],  # Focus on first 5 fault types
-    # 'selected_classes': [7, 8, 9],        # Focus on last 3 fault types
-    # 'selected_classes': [1, 3, 5, 7, 9],  # Focus on odd-numbered fault types
-    # Test data balancing settings
-    "balance_test": False,  # Balance test data for robust evaluation
-    "min_test_samples_per_class": 300,  # Ensure minimum samples per class in test
-    # Training settings
-    "balance_classes": True,  # Use data augmentation for class balancing (training)
-    "balance_strategy": "combined",  # Combined over/undersampling strategy
-    "max_samples_per_class": 1000,  # Limit for computational efficiency (training)
-    "verbose": True,  # Show detailed progress
-}
-
-# Pre-configured class selection sets for common use cases
-CLASSIFICATION_PRESETS = {
-    "all_faults": None,  # All fault types (exclude only class 0)
-    "specific_faults": [2, 3, 8],  # User-defined specific faults
-    "early_faults": [1, 2, 3, 4, 5],  # First 5 fault types
-    "late_faults": [7, 8, 9],  # Last 3 fault types
-    "odd_faults": [1, 3, 5, 7, 9],  # Odd-numbered fault types
-    "even_faults": [2, 4, 6, 8],  # Even-numbered fault types
-    "critical_faults": [3, 6, 8, 9],  # Example: Critical operational faults
-    "minor_faults": [1, 2, 4, 5, 7],  # Example: Minor operational faults
-    "binary_test": [3, 8],  # Simple binary classification test
-}
-
-# Visualization settings
-DEFAULT_FIGSIZE = (12, 8)
-
-# Display settings
-SEPARATOR_LENGTH = 50
-HEADER_SEPARATOR_LENGTH = 60  # Reduced for more concise display
-PROGRESS_SEPARATOR_LENGTH = 60
-
-# Performance settings
-MEMORY_EFFICIENT = True  # Use memory-efficient operations when possible
-PROGRESS_BAR_DISABLE = False  # Set to True to disable progress bars entirely
-N_JOBS = 1  # Number of parallel jobs (-1 for all cores, 1 for single-threaded)
-CHUNK_SIZE = 1000  # For large dataset processing
-CACHE_ENABLED = True  # Enable caching for repeated operations
-
-
-def validate_config():
-    """Validate configuration parameters and provide warnings for invalid values."""
-    warnings = []
-
-    # Validate sampling rate
-    if not (1 <= SAMPLING_RATE <= 10):
-        warnings.append(f"SAMPLING_RATE ({SAMPLING_RATE}) should be between 1-10")
-
-    # Validate window size
-    if not (100 <= WINDOW_SIZE <= 1000):
-        warnings.append(f"WINDOW_SIZE ({WINDOW_SIZE}) should be between 100-1000")
-
-    # Validate cross-validation folds
-    if not (2 <= N_FOLDS <= 10):
-        warnings.append(f"N_FOLDS ({N_FOLDS}) should be between 2-10")
-
-    # Validate scaling method
-    valid_scaling = ["standard", "minmax", "robust", "normalizer"]
-    if DEFAULT_SCALING_METHOD not in valid_scaling:
-        warnings.append(
-            f"DEFAULT_SCALING_METHOD ({DEFAULT_SCALING_METHOD}) should be one of {valid_scaling}"
-        )
-
-    return warnings

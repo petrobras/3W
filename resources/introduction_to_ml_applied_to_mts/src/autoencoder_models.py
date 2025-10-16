@@ -233,3 +233,27 @@ class StableLSTMAutoencoder:
         # Compute MSE per sample
         mse_per_sample = np.mean(np.square(data - reconstructed), axis=(1, 2))
         return mse_per_sample
+
+    def encode(self, data, verbose=0):
+        """
+        Get latent representations from the encoder.
+
+        Args:
+            data (np.array): Input data to encode
+            verbose (int): Verbosity level
+
+        Returns:
+            np.array: Latent representations
+        """
+        if self.model is None:
+            raise ValueError("Model not built. Call build_model() first.")
+
+        # Create encoder model if it doesn't exist
+        if not hasattr(self, "_encoder_model") or self._encoder_model is None:
+            self._encoder_model = Model(
+                inputs=self.model.input,
+                outputs=self.model.get_layer("latent").output,
+                name="encoder",
+            )
+
+        return self._encoder_model.predict(data, verbose=verbose)
