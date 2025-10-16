@@ -148,6 +148,7 @@ class AnomalyDetector:
 
         return metrics
 
+
 class PerClassAnomalyVisualizer:
     """Visualization utilities for per-class anomaly detection analysis."""
 

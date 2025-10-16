@@ -205,7 +205,9 @@ class LatentSpaceAnalyzer:
         )
 
         # 2. Complete latent space (first 2 dimensions)
-        self._plot_complete_latent_space(axes[0, 1], class_latent_stats, per_class_metrics)
+        self._plot_complete_latent_space(
+            axes[0, 1], class_latent_stats, per_class_metrics
+        )
 
         # 3. Latent dimension variance analysis
         self._plot_latent_variance(axes[0, 2])

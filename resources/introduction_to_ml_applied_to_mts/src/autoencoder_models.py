@@ -247,13 +247,13 @@ class StableLSTMAutoencoder:
         """
         if self.model is None:
             raise ValueError("Model not built. Call build_model() first.")
-        
+
         # Create encoder model if it doesn't exist
-        if not hasattr(self, '_encoder_model') or self._encoder_model is None:
+        if not hasattr(self, "_encoder_model") or self._encoder_model is None:
             self._encoder_model = Model(
                 inputs=self.model.input,
-                outputs=self.model.get_layer('latent').output,
-                name='encoder'
+                outputs=self.model.get_layer("latent").output,
+                name="encoder",
             )
-        
+
         return self._encoder_model.predict(data, verbose=verbose)

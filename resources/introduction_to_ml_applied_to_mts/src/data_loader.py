@@ -118,9 +118,17 @@ class DataLoader:
             "real_files_loaded": 0,
             "simulated_files_available": 0,
             "simulated_files_loaded": 0,
-            "classes_count": {str(i): {"real_available": 0, "real_loaded": 0, 
-                                      "simulated_available": 0, "simulated_loaded": 0, 
-                                      "total_available": 0, "total_loaded": 0} for i in range(10)},
+            "classes_count": {
+                str(i): {
+                    "real_available": 0,
+                    "real_loaded": 0,
+                    "simulated_available": 0,
+                    "simulated_loaded": 0,
+                    "total_available": 0,
+                    "total_loaded": 0,
+                }
+                for i in range(10)
+            },
             "empty_files": 0,
             "total_samples": 0,
             "file_tracking": {"real": [], "simulated": []},
@@ -132,40 +140,46 @@ class DataLoader:
         for class_folder in tqdm(sorted(class_folders), desc="Processing classes"):
             folder_path = os.path.join(self.dataset_path, class_folder)
             parquet_files = glob(os.path.join(folder_path, "*.parquet"))
-            
+
             # Separate files into real and simulated first for prioritization
             real_files = []
             simulated_files = []
-            
+
             for file_path in parquet_files:
                 filename = os.path.basename(file_path)
                 if self._is_real_data(filename):
                     real_files.append(file_path)
                 else:
                     simulated_files.append(file_path)
-            
+
             # Update available counts
             stats["classes_count"][class_folder]["real_available"] = len(real_files)
-            stats["classes_count"][class_folder]["simulated_available"] = len(simulated_files)
+            stats["classes_count"][class_folder]["simulated_available"] = len(
+                simulated_files
+            )
             stats["classes_count"][class_folder]["total_available"] = len(parquet_files)
             stats["total_files_available"] += len(parquet_files)
             stats["real_files_available"] += len(real_files)
             stats["simulated_files_available"] += len(simulated_files)
-            
+
             # Prioritize real files, then add simulated files up to the limit
             files_to_load = []
             files_to_load.extend(real_files[:max_files_per_class])  # Real files first
-            
+
             remaining_slots = max_files_per_class - len(files_to_load)
             if remaining_slots > 0:
-                files_to_load.extend(simulated_files[:remaining_slots])  # Fill with simulated
-            
+                files_to_load.extend(
+                    simulated_files[:remaining_slots]
+                )  # Fill with simulated
+
             # Load the selected files
             loaded_real_count = 0
             loaded_simulated_count = 0
             file_counter = 0
-            
-            for file_path in tqdm(files_to_load, desc=f"Class {class_folder}", leave=False):
+
+            for file_path in tqdm(
+                files_to_load, desc=f"Class {class_folder}", leave=False
+            ):
                 try:
                     df = self._load_and_clean_file(file_path, stats, file_counter)
                     file_counter += 1
@@ -199,11 +213,15 @@ class DataLoader:
                     print(f"ERROR: Error loading {file_path}: {str(e)}")
                     stats["empty_files"] += 1
                     continue
-            
+
             # Update loaded counts for this class
             stats["classes_count"][class_folder]["real_loaded"] = loaded_real_count
-            stats["classes_count"][class_folder]["simulated_loaded"] = loaded_simulated_count
-            stats["classes_count"][class_folder]["total_loaded"] = loaded_real_count + loaded_simulated_count
+            stats["classes_count"][class_folder][
+                "simulated_loaded"
+            ] = loaded_simulated_count
+            stats["classes_count"][class_folder]["total_loaded"] = (
+                loaded_real_count + loaded_simulated_count
+            )
 
         # Combine real and simulated data
         dfs_3w = dfs_real + dfs_simulated
@@ -328,7 +346,6 @@ class DataLoader:
                 else:
                     # Uniform sampling (default) - take every nth row
                     df = df.iloc[::sampling_rate].reset_index(drop=True)
-
 
         # Handle missing values in numeric columns
         numeric_cols = df.select_dtypes(include=[np.number]).columns

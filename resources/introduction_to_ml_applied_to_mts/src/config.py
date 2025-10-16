@@ -12,7 +12,9 @@ Parameter Ranges and Validation:
 # Dataset settings
 TARGET_FEATURES = ["P-PDG", "P-TPT", "T-TPT", "class"]
 CLASS_COLUMN = "class"
-MAX_FILES_PER_CLASS = 50  # Range: 50-500, Maximum files to load per class (memory optimization)
+MAX_FILES_PER_CLASS = (
+    50  # Range: 50-500, Maximum files to load per class (memory optimization)
+)
 # 50 files will use about 4 to 5 GB of RAM
 # Processing settings
 DEFAULT_SCALING_METHOD = (
@@ -98,6 +100,7 @@ CLASSIFICATION_PRESETS = {
 SEPARATOR_LENGTH = 50
 HEADER_SEPARATOR_LENGTH = 60  # Reduced for more concise display
 
+
 def validate_config():
     """Validate configuration parameters and provide warnings for invalid values."""
     warnings = []
@@ -122,6 +125,7 @@ def validate_config():
         )
 
     return warnings
+
 
 # Visualization settings
 VISUALIZATION_MAX_SAMPLES = (

@@ -65,28 +65,45 @@ class DataVisualizer:
 
         # Check if we have memory optimization stats
         memory_optimized = dataset_stats.get("memory_optimization", False)
-        
+
         if memory_optimized:
             # Enhanced visualization for memory-optimized loading
             fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-            fig.suptitle("3W Dataset Overview (Memory Optimized)", fontsize=16, fontweight="bold")
+            fig.suptitle(
+                "3W Dataset Overview (Memory Optimized)", fontsize=16, fontweight="bold"
+            )
 
             # Plot 1: Loaded files by class
             class_counts_loaded = Counter(classes)
             class_names = sorted(class_counts_loaded.keys())
             loaded_counts = [class_counts_loaded[cls] for cls in class_names]
-            
+
             # Get available counts
-            available_counts = [dataset_stats['classes_count'][cls]['total_available'] for cls in class_names]
+            available_counts = [
+                dataset_stats["classes_count"][cls]["total_available"]
+                for cls in class_names
+            ]
 
             x_pos = range(len(class_names))
             width = 0.35
 
-            axes[0, 0].bar([x - width/2 for x in x_pos], available_counts, width, 
-                          label='Available', color=self.color_palette["secondary"], alpha=0.7)
-            axes[0, 0].bar([x + width/2 for x in x_pos], loaded_counts, width, 
-                          label='Loaded', color=self.color_palette["primary"], alpha=0.8)
-            
+            axes[0, 0].bar(
+                [x - width / 2 for x in x_pos],
+                available_counts,
+                width,
+                label="Available",
+                color=self.color_palette["secondary"],
+                alpha=0.7,
+            )
+            axes[0, 0].bar(
+                [x + width / 2 for x in x_pos],
+                loaded_counts,
+                width,
+                label="Loaded",
+                color=self.color_palette["primary"],
+                alpha=0.8,
+            )
+
             axes[0, 0].set_title("Files per Class: Available vs Loaded")
             axes[0, 0].set_xlabel("Class")
             axes[0, 0].set_ylabel("Number of Files")
@@ -97,8 +114,22 @@ class DataVisualizer:
 
             # Add value labels on bars
             for i, (avail, loaded) in enumerate(zip(available_counts, loaded_counts)):
-                axes[0, 0].text(i - width/2, avail + 1, str(avail), ha='center', va='bottom', fontsize=9)
-                axes[0, 0].text(i + width/2, loaded + 1, str(loaded), ha='center', va='bottom', fontsize=9)
+                axes[0, 0].text(
+                    i - width / 2,
+                    avail + 1,
+                    str(avail),
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                )
+                axes[0, 0].text(
+                    i + width / 2,
+                    loaded + 1,
+                    str(loaded),
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                )
 
             # Plot 2: Real vs Simulated distribution (loaded)
             real_loaded = dataset_stats["real_files_loaded"]
@@ -106,45 +137,77 @@ class DataVisualizer:
 
             axes[0, 1].pie(
                 [real_loaded, simulated_loaded],
-                labels=[f"Real Data\n({real_loaded})", f"Simulated Data\n({simulated_loaded})"],
+                labels=[
+                    f"Real Data\n({real_loaded})",
+                    f"Simulated Data\n({simulated_loaded})",
+                ],
                 colors=[self.color_palette["accent"], self.color_palette["secondary"]],
                 autopct="%1.1f%%",
-                startangle=90
+                startangle=90,
             )
             axes[0, 1].set_title("Real vs Simulated Data (Loaded)")
 
             # Plot 3: Memory optimization summary
-            total_available = dataset_stats["total_files_available"] 
+            total_available = dataset_stats["total_files_available"]
             total_loaded = dataset_stats["total_files_loaded"]
             max_per_class = dataset_stats["max_files_per_class"]
-            
-            categories = ['Total Available', 'Total Loaded', f'Max Limit\n({max_per_class} × {len(class_names)})']
+
+            categories = [
+                "Total Available",
+                "Total Loaded",
+                f"Max Limit\n({max_per_class} × {len(class_names)})",
+            ]
             values = [total_available, total_loaded, max_per_class * len(class_names)]
-            colors = [self.color_palette["secondary"], self.color_palette["primary"], self.color_palette["accent"]]
-            
+            colors = [
+                self.color_palette["secondary"],
+                self.color_palette["primary"],
+                self.color_palette["accent"],
+            ]
+
             bars = axes[1, 0].bar(categories, values, color=colors, alpha=0.7)
             axes[1, 0].set_title("Memory Optimization Summary")
             axes[1, 0].set_ylabel("Number of Files")
-            axes[1, 0].tick_params(axis='x', rotation=45)
-            
+            axes[1, 0].tick_params(axis="x", rotation=45)
+
             # Add value labels
             for bar, value in zip(bars, values):
-                axes[1, 0].text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(values)*0.01, 
-                               str(value), ha='center', va='bottom', fontweight='bold')
+                axes[1, 0].text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + max(values) * 0.01,
+                    str(value),
+                    ha="center",
+                    va="bottom",
+                    fontweight="bold",
+                )
 
             # Plot 4: Real vs Simulated comparison (available vs loaded)
-            categories = ['Real Files', 'Simulated Files']
-            available = [dataset_stats["real_files_available"], dataset_stats["simulated_files_available"]]
+            categories = ["Real Files", "Simulated Files"]
+            available = [
+                dataset_stats["real_files_available"],
+                dataset_stats["simulated_files_available"],
+            ]
             loaded = [real_loaded, simulated_loaded]
 
             x_pos = range(len(categories))
             width = 0.35
 
-            axes[1, 1].bar([x - width/2 for x in x_pos], available, width, 
-                          label='Available', color=self.color_palette["secondary"], alpha=0.7)
-            axes[1, 1].bar([x + width/2 for x in x_pos], loaded, width, 
-                          label='Loaded', color=self.color_palette["primary"], alpha=0.8)
-            
+            axes[1, 1].bar(
+                [x - width / 2 for x in x_pos],
+                available,
+                width,
+                label="Available",
+                color=self.color_palette["secondary"],
+                alpha=0.7,
+            )
+            axes[1, 1].bar(
+                [x + width / 2 for x in x_pos],
+                loaded,
+                width,
+                label="Loaded",
+                color=self.color_palette["primary"],
+                alpha=0.8,
+            )
+
             axes[1, 1].set_title("Real vs Simulated: Available vs Loaded")
             axes[1, 1].set_ylabel("Number of Files")
             axes[1, 1].set_xticks(x_pos)
@@ -154,8 +217,22 @@ class DataVisualizer:
 
             # Add value labels
             for i, (avail, load) in enumerate(zip(available, loaded)):
-                axes[1, 1].text(i - width/2, avail + max(available)*0.01, str(avail), ha='center', va='bottom', fontsize=10)
-                axes[1, 1].text(i + width/2, load + max(available)*0.01, str(load), ha='center', va='bottom', fontsize=10)
+                axes[1, 1].text(
+                    i - width / 2,
+                    avail + max(available) * 0.01,
+                    str(avail),
+                    ha="center",
+                    va="bottom",
+                    fontsize=10,
+                )
+                axes[1, 1].text(
+                    i + width / 2,
+                    load + max(available) * 0.01,
+                    str(load),
+                    ha="center",
+                    va="bottom",
+                    fontsize=10,
+                )
 
         else:
             # Original visualization for backward compatibility
@@ -167,7 +244,9 @@ class DataVisualizer:
             class_names = list(class_counts.keys())
             counts = list(class_counts.values())
 
-            axes[0].bar(class_names, counts, color=self.color_palette["primary"], alpha=0.7)
+            axes[0].bar(
+                class_names, counts, color=self.color_palette["primary"], alpha=0.7
+            )
             axes[0].set_title("Distribution of Files by Class")
             axes[0].set_xlabel("Class")
             axes[0].set_ylabel("Number of Files")
@@ -182,7 +261,10 @@ class DataVisualizer:
                 axes[1].pie(
                     [real_count, simulated_count],
                     labels=["Real Data", "Simulated Data"],
-                    colors=[self.color_palette["accent"], self.color_palette["secondary"]],
+                    colors=[
+                        self.color_palette["accent"],
+                        self.color_palette["secondary"],
+                    ],
                     autopct="%1.1f%%",
                 )
                 axes[1].set_title("Real vs Simulated Data Distribution")
@@ -195,8 +277,12 @@ class DataVisualizer:
             print(f"\n💾 Memory Optimization Results:")
             print(f"   • Files available: {dataset_stats['total_files_available']:,}")
             print(f"   • Files loaded: {dataset_stats['total_files_loaded']:,}")
-            print(f"   • Memory reduction: {((dataset_stats['total_files_available'] - dataset_stats['total_files_loaded']) / dataset_stats['total_files_available'] * 100):.1f}%")
-            print(f"   • Real data priority: {dataset_stats['real_files_loaded']}/{dataset_stats['real_files_available']} real files loaded")
+            print(
+                f"   • Memory reduction: {((dataset_stats['total_files_available'] - dataset_stats['total_files_loaded']) / dataset_stats['total_files_available'] * 100):.1f}%"
+            )
+            print(
+                f"   • Real data priority: {dataset_stats['real_files_loaded']}/{dataset_stats['real_files_available']} real files loaded"
+            )
         elif "total_samples" in dataset_stats:
             print(f"\n💾 Total samples: {dataset_stats['total_samples']:,}")
 
@@ -1717,78 +1803,110 @@ class AnomalyDetectionVisualizer:
     """
     Visualizer for anomaly detection results using autoencoders.
     """
-    
+
     def __init__(self, figsize=(15, 10)):
         self.figsize = figsize
         self.colors = {
-            'normal': '#1f77b4',  # blue
-            'anomaly': '#d62728',  # red
-            'threshold': '#2ca02c',  # green
-            'threshold_alt': '#ff7f0e',  # orange
+            "normal": "#1f77b4",  # blue
+            "anomaly": "#d62728",  # red
+            "threshold": "#2ca02c",  # green
+            "threshold_alt": "#ff7f0e",  # orange
         }
-    
+
     def plot_per_fold_performance(self, fold_results):
         """
         Plot per-fold performance results.
-        
+
         Args:
             fold_results (dict): Dictionary with fold results
         """
         valid_results = [r for r in fold_results.values() if r is not None]
-        
+
         if not valid_results:
             print("No valid results to plot")
             return
-            
+
         # Calculate statistics
-        avg_normal_acc = np.mean([r['normal_accuracy'] for r in valid_results])
-        avg_anomaly_acc = np.mean([r['anomaly_accuracy'] for r in valid_results])
-        avg_overall_acc = np.mean([r['overall_accuracy'] for r in valid_results])
-        
-        std_normal_acc = np.std([r['normal_accuracy'] for r in valid_results])
-        std_anomaly_acc = np.std([r['anomaly_accuracy'] for r in valid_results])
-        std_overall_acc = np.std([r['overall_accuracy'] for r in valid_results])
-        
+        avg_normal_acc = np.mean([r["normal_accuracy"] for r in valid_results])
+        avg_anomaly_acc = np.mean([r["anomaly_accuracy"] for r in valid_results])
+        avg_overall_acc = np.mean([r["overall_accuracy"] for r in valid_results])
+
+        std_normal_acc = np.std([r["normal_accuracy"] for r in valid_results])
+        std_anomaly_acc = np.std([r["anomaly_accuracy"] for r in valid_results])
+        std_overall_acc = np.std([r["overall_accuracy"] for r in valid_results])
+
         # Create visualization
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        
+
         # Per-fold performance
         fold_names = list(fold_results.keys())
-        normal_accs = [fold_results[f]['normal_accuracy'] if fold_results[f] else 0 for f in fold_names]
-        anomaly_accs = [fold_results[f]['anomaly_accuracy'] if fold_results[f] else 0 for f in fold_names]
-        
+        normal_accs = [
+            fold_results[f]["normal_accuracy"] if fold_results[f] else 0
+            for f in fold_names
+        ]
+        anomaly_accs = [
+            fold_results[f]["anomaly_accuracy"] if fold_results[f] else 0
+            for f in fold_names
+        ]
+
         x = np.arange(len(fold_names))
         width = 0.35
-        
-        ax1.bar(x - width/2, normal_accs, width, label='Normal', alpha=0.7, color=self.colors['normal'])
-        ax1.bar(x + width/2, anomaly_accs, width, label='Anomaly', alpha=0.7, color=self.colors['anomaly'])
-        ax1.set_xlabel('Fold')
-        ax1.set_ylabel('Accuracy')
-        ax1.set_title('Per-Fold Detection Accuracy')
+
+        ax1.bar(
+            x - width / 2,
+            normal_accs,
+            width,
+            label="Normal",
+            alpha=0.7,
+            color=self.colors["normal"],
+        )
+        ax1.bar(
+            x + width / 2,
+            anomaly_accs,
+            width,
+            label="Anomaly",
+            alpha=0.7,
+            color=self.colors["anomaly"],
+        )
+        ax1.set_xlabel("Fold")
+        ax1.set_ylabel("Accuracy")
+        ax1.set_title("Per-Fold Detection Accuracy")
         ax1.set_xticks(x)
-        ax1.set_xticklabels([f.replace('fold_', 'F') for f in fold_names])
+        ax1.set_xticklabels([f.replace("fold_", "F") for f in fold_names])
         ax1.legend()
         ax1.grid(True, alpha=0.3)
-        
+
         # Overall statistics
-        categories = ['Normal', 'Anomaly', 'Overall']
+        categories = ["Normal", "Anomaly", "Overall"]
         means = [avg_normal_acc, avg_anomaly_acc, avg_overall_acc]
         stds = [std_normal_acc, std_anomaly_acc, std_overall_acc]
-        
-        ax2.bar(categories, means, yerr=stds, capsize=5, alpha=0.7, 
-                color=[self.colors['normal'], self.colors['anomaly'], 'green'])
-        ax2.set_ylabel('Accuracy')
-        ax2.set_title('Average Performance ± Std')
+
+        ax2.bar(
+            categories,
+            means,
+            yerr=stds,
+            capsize=5,
+            alpha=0.7,
+            color=[self.colors["normal"], self.colors["anomaly"], "green"],
+        )
+        ax2.set_ylabel("Accuracy")
+        ax2.set_title("Average Performance ± Std")
         ax2.grid(True, alpha=0.3)
-        
+
         plt.tight_layout()
         plt.show()
-    
-    def plot_reconstruction_errors(self, normal_errors, anomaly_errors, anomaly_classes=None, 
-                                 threshold_percentile=95, threshold_std_multiplier=2):
+
+    def plot_reconstruction_errors(
+        self,
+        normal_errors,
+        anomaly_errors,
+        anomaly_classes=None,
+        threshold_percentile=95,
+        threshold_std_multiplier=2,
+    ):
         """
         Plot reconstruction error distributions with thresholds.
-        
+
         Args:
             normal_errors (np.array): Reconstruction errors for normal data
             anomaly_errors (np.array): Reconstruction errors for anomaly data
@@ -1798,8 +1916,10 @@ class AnomalyDetectionVisualizer:
         """
         # Calculate thresholds
         threshold_pct = np.percentile(normal_errors, threshold_percentile)
-        threshold_std = np.mean(normal_errors) + threshold_std_multiplier * np.std(normal_errors)
-        
+        threshold_std = np.mean(normal_errors) + threshold_std_multiplier * np.std(
+            normal_errors
+        )
+
         # Create figure
         if anomaly_classes is not None and len(set(anomaly_classes)) > 1:
             fig, axes = plt.subplots(2, 2, figsize=self.figsize)
@@ -1807,136 +1927,214 @@ class AnomalyDetectionVisualizer:
         else:
             fig, axes = plt.subplots(1, 2, figsize=(12, 5))
             axes = [axes[0], axes[1]]
-        
+
         # Plot 1: Overall distribution
         ax = axes[0]
-        ax.hist(normal_errors, bins=50, alpha=0.7, label='Normal', color=self.colors['normal'], density=True)
-        ax.hist(anomaly_errors, bins=50, alpha=0.7, label='Anomaly', color=self.colors['anomaly'], density=True)
-        ax.axvline(threshold_pct, color=self.colors['threshold'], linestyle='--', 
-                  label=f'{threshold_percentile}th percentile')
-        ax.axvline(threshold_std, color=self.colors['threshold_alt'], linestyle='--', 
-                  label=f'μ + {threshold_std_multiplier}σ')
-        ax.set_xlabel('Reconstruction Error')
-        ax.set_ylabel('Density')
-        ax.set_title('Reconstruction Error Distribution')
+        ax.hist(
+            normal_errors,
+            bins=50,
+            alpha=0.7,
+            label="Normal",
+            color=self.colors["normal"],
+            density=True,
+        )
+        ax.hist(
+            anomaly_errors,
+            bins=50,
+            alpha=0.7,
+            label="Anomaly",
+            color=self.colors["anomaly"],
+            density=True,
+        )
+        ax.axvline(
+            threshold_pct,
+            color=self.colors["threshold"],
+            linestyle="--",
+            label=f"{threshold_percentile}th percentile",
+        )
+        ax.axvline(
+            threshold_std,
+            color=self.colors["threshold_alt"],
+            linestyle="--",
+            label=f"μ + {threshold_std_multiplier}σ",
+        )
+        ax.set_xlabel("Reconstruction Error")
+        ax.set_ylabel("Density")
+        ax.set_title("Reconstruction Error Distribution")
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 2: Box plot comparison
         ax = axes[1]
         data_to_plot = [normal_errors, anomaly_errors]
-        labels = ['Normal', 'Anomaly']
-        colors = [self.colors['normal'], self.colors['anomaly']]
-        
+        labels = ["Normal", "Anomaly"]
+        colors = [self.colors["normal"], self.colors["anomaly"]]
+
         box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
-        for patch, color in zip(box_plot['boxes'], colors):
+        for patch, color in zip(box_plot["boxes"], colors):
             patch.set_facecolor(color)
             patch.set_alpha(0.7)
-        
-        ax.axhline(threshold_pct, color=self.colors['threshold'], linestyle='--', 
-                  label=f'{threshold_percentile}th percentile')
-        ax.axhline(threshold_std, color=self.colors['threshold_alt'], linestyle='--', 
-                  label=f'μ + {threshold_std_multiplier}σ')
-        ax.set_ylabel('Reconstruction Error')
-        ax.set_title('Error Distribution by Data Type')
+
+        ax.axhline(
+            threshold_pct,
+            color=self.colors["threshold"],
+            linestyle="--",
+            label=f"{threshold_percentile}th percentile",
+        )
+        ax.axhline(
+            threshold_std,
+            color=self.colors["threshold_alt"],
+            linestyle="--",
+            label=f"μ + {threshold_std_multiplier}σ",
+        )
+        ax.set_ylabel("Reconstruction Error")
+        ax.set_title("Error Distribution by Data Type")
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 3: Per-class distributions (if applicable)
-        if anomaly_classes is not None and len(set(anomaly_classes)) > 1 and len(axes) > 2:
+        if (
+            anomaly_classes is not None
+            and len(set(anomaly_classes)) > 1
+            and len(axes) > 2
+        ):
             ax = axes[2]
             unique_classes = sorted(set(anomaly_classes))
-            
+
             # Normal data
-            ax.hist(normal_errors, bins=30, alpha=0.5, label='Normal', 
-                   color=self.colors['normal'], density=True)
-            
+            ax.hist(
+                normal_errors,
+                bins=30,
+                alpha=0.5,
+                label="Normal",
+                color=self.colors["normal"],
+                density=True,
+            )
+
             # Each anomaly class
             class_colors = plt.cm.Set3(np.linspace(0, 1, len(unique_classes)))
             for i, cls in enumerate(unique_classes):
                 if cls != 0:  # Skip normal class
                     cls_indices = [j for j, c in enumerate(anomaly_classes) if c == cls]
                     cls_errors = anomaly_errors[cls_indices]
-                    ax.hist(cls_errors, bins=30, alpha=0.7, label=f'Class {cls}', 
-                           color=class_colors[i], density=True)
-            
-            ax.axvline(threshold_pct, color=self.colors['threshold'], linestyle='--', 
-                      label=f'{threshold_percentile}th percentile')
-            ax.axvline(threshold_std, color=self.colors['threshold_alt'], linestyle='--', 
-                      label=f'μ + {threshold_std_multiplier}σ')
-            ax.set_xlabel('Reconstruction Error')
-            ax.set_ylabel('Density')
-            ax.set_title('Per-Class Error Distribution')
+                    ax.hist(
+                        cls_errors,
+                        bins=30,
+                        alpha=0.7,
+                        label=f"Class {cls}",
+                        color=class_colors[i],
+                        density=True,
+                    )
+
+            ax.axvline(
+                threshold_pct,
+                color=self.colors["threshold"],
+                linestyle="--",
+                label=f"{threshold_percentile}th percentile",
+            )
+            ax.axvline(
+                threshold_std,
+                color=self.colors["threshold_alt"],
+                linestyle="--",
+                label=f"μ + {threshold_std_multiplier}σ",
+            )
+            ax.set_xlabel("Reconstruction Error")
+            ax.set_ylabel("Density")
+            ax.set_title("Per-Class Error Distribution")
             ax.legend()
             ax.grid(True, alpha=0.3)
-            
+
             # Plot 4: Class performance summary
             if len(axes) > 3:
                 ax = axes[3]
                 class_stats = []
                 class_names = []
-                
+
                 for cls in unique_classes:
                     if cls != 0:
-                        cls_indices = [j for j, c in enumerate(anomaly_classes) if c == cls]
+                        cls_indices = [
+                            j for j, c in enumerate(anomaly_classes) if c == cls
+                        ]
                         cls_errors = anomaly_errors[cls_indices]
                         detection_rate_pct = np.mean(cls_errors > threshold_pct)
                         detection_rate_std = np.mean(cls_errors > threshold_std)
                         class_stats.append([detection_rate_pct, detection_rate_std])
-                        class_names.append(f'Class {cls}')
-                
+                        class_names.append(f"Class {cls}")
+
                 class_stats = np.array(class_stats)
                 x = np.arange(len(class_names))
                 width = 0.35
-                
-                ax.bar(x - width/2, class_stats[:, 0], width, 
-                      label=f'{threshold_percentile}th percentile', alpha=0.7, 
-                      color=self.colors['threshold'])
-                ax.bar(x + width/2, class_stats[:, 1], width, 
-                      label=f'μ + {threshold_std_multiplier}σ', alpha=0.7, 
-                      color=self.colors['threshold_alt'])
-                
-                ax.set_xlabel('Anomaly Class')
-                ax.set_ylabel('Detection Rate')
-                ax.set_title('Detection Rate by Class and Threshold')
+
+                ax.bar(
+                    x - width / 2,
+                    class_stats[:, 0],
+                    width,
+                    label=f"{threshold_percentile}th percentile",
+                    alpha=0.7,
+                    color=self.colors["threshold"],
+                )
+                ax.bar(
+                    x + width / 2,
+                    class_stats[:, 1],
+                    width,
+                    label=f"μ + {threshold_std_multiplier}σ",
+                    alpha=0.7,
+                    color=self.colors["threshold_alt"],
+                )
+
+                ax.set_xlabel("Anomaly Class")
+                ax.set_ylabel("Detection Rate")
+                ax.set_title("Detection Rate by Class and Threshold")
                 ax.set_xticks(x)
                 ax.set_xticklabels(class_names)
                 ax.legend()
                 ax.grid(True, alpha=0.3)
-        
+
         plt.tight_layout()
         plt.show()
-        
+
         # Print threshold information
         print(f"Threshold Analysis:")
         print(f"  • {threshold_percentile}th percentile: {threshold_pct:.6f}")
         print(f"  • μ + {threshold_std_multiplier}σ: {threshold_std:.6f}")
-        
-    def plot_latent_space_tsne(self, autoencoder, normal_data, anomaly_data, anomaly_classes=None, 
-                              max_samples=1000, perplexity=30, random_state=42):
+
+    def plot_latent_space_tsne(
+        self,
+        autoencoder,
+        normal_data,
+        anomaly_data,
+        anomaly_classes=None,
+        max_samples=1000,
+        perplexity=30,
+        random_state=42,
+    ):
         """
         Plot t-SNE visualization of latent space.
-        
+
         Args:
             autoencoder: Trained autoencoder model
             normal_data (np.array): Normal data samples
-            anomaly_data (np.array): Anomaly data samples  
+            anomaly_data (np.array): Anomaly data samples
             anomaly_classes (list): Class labels for anomaly data
             max_samples (int): Maximum samples to use for t-SNE
             perplexity (int): t-SNE perplexity parameter
             random_state (int): Random state for reproducibility
         """
         from sklearn.manifold import TSNE
-        
+
         # Sample data if too large
         if len(normal_data) > max_samples // 2:
-            normal_indices = np.random.choice(len(normal_data), max_samples // 2, replace=False)
+            normal_indices = np.random.choice(
+                len(normal_data), max_samples // 2, replace=False
+            )
             normal_sample = normal_data[normal_indices]
         else:
             normal_sample = normal_data
-            
+
         if len(anomaly_data) > max_samples // 2:
-            anomaly_indices = np.random.choice(len(anomaly_data), max_samples // 2, replace=False)
+            anomaly_indices = np.random.choice(
+                len(anomaly_data), max_samples // 2, replace=False
+            )
             anomaly_sample = anomaly_data[anomaly_indices]
             if anomaly_classes is not None:
                 anomaly_classes_sample = [anomaly_classes[i] for i in anomaly_indices]
@@ -1945,172 +2143,241 @@ class AnomalyDetectionVisualizer:
         else:
             anomaly_sample = anomaly_data
             anomaly_classes_sample = anomaly_classes
-        
+
         # Get latent representations using the encoder method
         normal_latent = autoencoder.encode(normal_sample, verbose=0)
         anomaly_latent = autoencoder.encode(anomaly_sample, verbose=0)
-        
+
         # Combine data
         all_latent = np.vstack([normal_latent, anomaly_latent])
-        labels = ['Normal'] * len(normal_latent) + ['Anomaly'] * len(anomaly_latent)
-        
+        labels = ["Normal"] * len(normal_latent) + ["Anomaly"] * len(anomaly_latent)
+
         # Compute t-SNE
         print(f"Computing t-SNE embedding for {len(all_latent)} samples...")
         tsne = TSNE(n_components=2, perplexity=perplexity, random_state=random_state)
         latent_2d = tsne.fit_transform(all_latent)
-        
+
         # Create plots
         fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-        
+
         # Plot 1: Normal vs Anomaly
         ax = axes[0]
-        normal_mask = np.array(labels) == 'Normal'
-        anomaly_mask = np.array(labels) == 'Anomaly'
-        
-        ax.scatter(latent_2d[normal_mask, 0], latent_2d[normal_mask, 1], 
-                  c=self.colors['normal'], alpha=0.6, label='Normal', s=20)
-        ax.scatter(latent_2d[anomaly_mask, 0], latent_2d[anomaly_mask, 1], 
-                  c=self.colors['anomaly'], alpha=0.6, label='Anomaly', s=20)
-        ax.set_xlabel('t-SNE 1')
-        ax.set_ylabel('t-SNE 2')
-        ax.set_title('Latent Space: Normal vs Anomaly')
+        normal_mask = np.array(labels) == "Normal"
+        anomaly_mask = np.array(labels) == "Anomaly"
+
+        ax.scatter(
+            latent_2d[normal_mask, 0],
+            latent_2d[normal_mask, 1],
+            c=self.colors["normal"],
+            alpha=0.6,
+            label="Normal",
+            s=20,
+        )
+        ax.scatter(
+            latent_2d[anomaly_mask, 0],
+            latent_2d[anomaly_mask, 1],
+            c=self.colors["anomaly"],
+            alpha=0.6,
+            label="Anomaly",
+            s=20,
+        )
+        ax.set_xlabel("t-SNE 1")
+        ax.set_ylabel("t-SNE 2")
+        ax.set_title("Latent Space: Normal vs Anomaly")
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 2: By anomaly class
         ax = axes[1]
-        ax.scatter(latent_2d[normal_mask, 0], latent_2d[normal_mask, 1], 
-                  c=self.colors['normal'], alpha=0.6, label='Normal', s=20)
-        
+        ax.scatter(
+            latent_2d[normal_mask, 0],
+            latent_2d[normal_mask, 1],
+            c=self.colors["normal"],
+            alpha=0.6,
+            label="Normal",
+            s=20,
+        )
+
         if anomaly_classes_sample is not None:
             unique_classes = sorted(set(anomaly_classes_sample))
             class_colors = plt.cm.Set3(np.linspace(0, 1, len(unique_classes)))
-            
+
             for i, cls in enumerate(unique_classes):
                 if cls != 0:  # Skip normal class
                     cls_mask = np.array(anomaly_classes_sample) == cls
                     anomaly_start_idx = len(normal_latent)
                     global_mask = np.zeros(len(latent_2d), dtype=bool)
                     global_mask[anomaly_start_idx:][cls_mask] = True
-                    
-                    ax.scatter(latent_2d[global_mask, 0], latent_2d[global_mask, 1], 
-                              c=[class_colors[i]], alpha=0.7, label=f'Class {cls}', s=20)
+
+                    ax.scatter(
+                        latent_2d[global_mask, 0],
+                        latent_2d[global_mask, 1],
+                        c=[class_colors[i]],
+                        alpha=0.7,
+                        label=f"Class {cls}",
+                        s=20,
+                    )
         else:
-            ax.scatter(latent_2d[anomaly_mask, 0], latent_2d[anomaly_mask, 1], 
-                      c=self.colors['anomaly'], alpha=0.6, label='Anomaly', s=20)
-        
-        ax.set_xlabel('t-SNE 1')
-        ax.set_ylabel('t-SNE 2')
-        ax.set_title('Latent Space: By Anomaly Class')
+            ax.scatter(
+                latent_2d[anomaly_mask, 0],
+                latent_2d[anomaly_mask, 1],
+                c=self.colors["anomaly"],
+                alpha=0.6,
+                label="Anomaly",
+                s=20,
+            )
+
+        ax.set_xlabel("t-SNE 1")
+        ax.set_ylabel("t-SNE 2")
+        ax.set_title("Latent Space: By Anomaly Class")
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
+
         plt.tight_layout()
         plt.show()
 
     def plot_roc_analysis(self, normal_errors, anomaly_errors, anomaly_classes=None):
         """
         Plot ROC (Receiver Operating Characteristic) curve analysis.
-        
+
         Args:
             normal_errors (np.array): Reconstruction errors for normal data
             anomaly_errors (np.array): Reconstruction errors for anomaly data
             anomaly_classes (list): Class labels for anomaly data
         """
         from sklearn.metrics import roc_curve, auc, precision_recall_curve
-        
+
         # Prepare data for ROC analysis
         # Normal = 0 (negative class), Anomaly = 1 (positive class)
-        y_true = np.concatenate([np.zeros(len(normal_errors)), np.ones(len(anomaly_errors))])
+        y_true = np.concatenate(
+            [np.zeros(len(normal_errors)), np.ones(len(anomaly_errors))]
+        )
         y_scores = np.concatenate([normal_errors, anomaly_errors])
-        
+
         # Compute ROC curve and AUC
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
         roc_auc = auc(fpr, tpr)
-        
+
         # Compute Precision-Recall curve
         precision, recall, pr_thresholds = precision_recall_curve(y_true, y_scores)
         pr_auc = auc(recall, precision)
-        
+
         # Create comprehensive ROC analysis
         fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-        
+
         # Plot 1: ROC Curve
         ax = axes[0, 0]
-        ax.plot(fpr, tpr, color=self.colors['anomaly'], lw=2, 
-                label=f'ROC Curve (AUC = {roc_auc:.3f})')
-        ax.plot([0, 1], [0, 1], color='gray', lw=1, linestyle='--', alpha=0.8, 
-                label='Random Classifier')
+        ax.plot(
+            fpr,
+            tpr,
+            color=self.colors["anomaly"],
+            lw=2,
+            label=f"ROC Curve (AUC = {roc_auc:.3f})",
+        )
+        ax.plot(
+            [0, 1],
+            [0, 1],
+            color="gray",
+            lw=1,
+            linestyle="--",
+            alpha=0.8,
+            label="Random Classifier",
+        )
         ax.set_xlim([0.0, 1.0])
         ax.set_ylim([0.0, 1.05])
-        ax.set_xlabel('False Positive Rate (1 - Specificity)')
-        ax.set_ylabel('True Positive Rate (Sensitivity)')
-        ax.set_title('ROC Curve')
+        ax.set_xlabel("False Positive Rate (1 - Specificity)")
+        ax.set_ylabel("True Positive Rate (Sensitivity)")
+        ax.set_title("ROC Curve")
         ax.legend(loc="lower right")
         ax.grid(True, alpha=0.3)
-        
+
         # Add optimal threshold point
         # Find threshold that maximizes TPR - FPR (Youden's index)
         optimal_idx = np.argmax(tpr - fpr)
         optimal_threshold = thresholds[optimal_idx]
         optimal_fpr = fpr[optimal_idx]
         optimal_tpr = tpr[optimal_idx]
-        
-        ax.plot(optimal_fpr, optimal_tpr, 'ro', markersize=8, 
-                label=f'Optimal Point (threshold={optimal_threshold:.4f})')
+
+        ax.plot(
+            optimal_fpr,
+            optimal_tpr,
+            "ro",
+            markersize=8,
+            label=f"Optimal Point (threshold={optimal_threshold:.4f})",
+        )
         ax.legend(loc="lower right")
-        
+
         # Plot 2: Precision-Recall Curve
         ax = axes[0, 1]
-        ax.plot(recall, precision, color=self.colors['threshold'], lw=2,
-                label=f'PR Curve (AUC = {pr_auc:.3f})')
+        ax.plot(
+            recall,
+            precision,
+            color=self.colors["threshold"],
+            lw=2,
+            label=f"PR Curve (AUC = {pr_auc:.3f})",
+        )
         ax.set_xlim([0.0, 1.0])
         ax.set_ylim([0.0, 1.05])
-        ax.set_xlabel('Recall (Sensitivity)')
-        ax.set_ylabel('Precision')
-        ax.set_title('Precision-Recall Curve')
+        ax.set_xlabel("Recall (Sensitivity)")
+        ax.set_ylabel("Precision")
+        ax.set_title("Precision-Recall Curve")
         ax.legend(loc="lower left")
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 3: Threshold Analysis
         ax = axes[1, 0]
         # Sample thresholds for visualization
         threshold_range = np.linspace(np.min(y_scores), np.max(y_scores), 100)
         tpr_vals = []
         fpr_vals = []
-        
+
         for thresh in threshold_range:
             predictions = y_scores > thresh
             tp = np.sum((predictions == 1) & (y_true == 1))
             fp = np.sum((predictions == 1) & (y_true == 0))
             tn = np.sum((predictions == 0) & (y_true == 0))
             fn = np.sum((predictions == 0) & (y_true == 1))
-            
+
             tpr_val = tp / (tp + fn) if (tp + fn) > 0 else 0
             fpr_val = fp / (fp + tn) if (fp + tn) > 0 else 0
-            
+
             tpr_vals.append(tpr_val)
             fpr_vals.append(fpr_val)
-        
-        ax.plot(threshold_range, tpr_vals, color=self.colors['anomaly'], 
-                label='True Positive Rate', lw=2)
-        ax.plot(threshold_range, fpr_vals, color=self.colors['normal'], 
-                label='False Positive Rate', lw=2)
-        ax.axvline(optimal_threshold, color='red', linestyle='--', alpha=0.8,
-                  label=f'Optimal Threshold')
-        ax.set_xlabel('Threshold')
-        ax.set_ylabel('Rate')
-        ax.set_title('TPR and FPR vs Threshold')
+
+        ax.plot(
+            threshold_range,
+            tpr_vals,
+            color=self.colors["anomaly"],
+            label="True Positive Rate",
+            lw=2,
+        )
+        ax.plot(
+            threshold_range,
+            fpr_vals,
+            color=self.colors["normal"],
+            label="False Positive Rate",
+            lw=2,
+        )
+        ax.axvline(
+            optimal_threshold,
+            color="red",
+            linestyle="--",
+            alpha=0.8,
+            label=f"Optimal Threshold",
+        )
+        ax.set_xlabel("Threshold")
+        ax.set_ylabel("Rate")
+        ax.set_title("TPR and FPR vs Threshold")
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 4: Performance metrics summary
         ax = axes[1, 1]
-        
+
         # Calculate metrics at different common thresholds
         percentiles = [90, 95, 99]
         threshold_methods = {}
-        
+
         # Percentile-based thresholds
         for p in percentiles:
             thresh = np.percentile(normal_errors, p)
@@ -2119,18 +2386,18 @@ class AnomalyDetectionVisualizer:
             fp = np.sum((predictions == 1) & (y_true == 0))
             tn = np.sum((predictions == 0) & (y_true == 0))
             fn = np.sum((predictions == 0) & (y_true == 1))
-            
+
             tpr = tp / (tp + fn) if (tp + fn) > 0 else 0
             fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
             precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-            
-            threshold_methods[f'{p}th percentile'] = {
-                'threshold': thresh,
-                'tpr': tpr,
-                'fpr': fpr,
-                'precision': precision
+
+            threshold_methods[f"{p}th percentile"] = {
+                "threshold": thresh,
+                "tpr": tpr,
+                "fpr": fpr,
+                "precision": precision,
             }
-        
+
         # Statistical threshold
         stat_thresh = np.mean(normal_errors) + 2 * np.std(normal_errors)
         predictions = y_scores > stat_thresh
@@ -2138,64 +2405,82 @@ class AnomalyDetectionVisualizer:
         fp = np.sum((predictions == 1) & (y_true == 0))
         tn = np.sum((predictions == 0) & (y_true == 0))
         fn = np.sum((predictions == 0) & (y_true == 1))
-        
+
         tpr = tp / (tp + fn) if (tp + fn) > 0 else 0
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        
-        threshold_methods['μ + 2σ'] = {
-            'threshold': stat_thresh,
-            'tpr': tpr,
-            'fpr': fpr,
-            'precision': precision
+
+        threshold_methods["μ + 2σ"] = {
+            "threshold": stat_thresh,
+            "tpr": tpr,
+            "fpr": fpr,
+            "precision": precision,
         }
-        
+
         # Optimal threshold
-        threshold_methods['Optimal (Youden)'] = {
-            'threshold': optimal_threshold,
-            'tpr': optimal_tpr,
-            'fpr': optimal_fpr,
-            'precision': precision  # Using the same precision for simplicity
+        threshold_methods["Optimal (Youden)"] = {
+            "threshold": optimal_threshold,
+            "tpr": optimal_tpr,
+            "fpr": optimal_fpr,
+            "precision": precision,  # Using the same precision for simplicity
         }
-        
+
         # Create comparison plot
         methods = list(threshold_methods.keys())
-        tpr_values = [threshold_methods[m]['tpr'] for m in methods]
-        fpr_values = [threshold_methods[m]['fpr'] for m in methods]
-        
+        tpr_values = [threshold_methods[m]["tpr"] for m in methods]
+        fpr_values = [threshold_methods[m]["fpr"] for m in methods]
+
         x = np.arange(len(methods))
         width = 0.35
-        
-        ax.bar(x - width/2, tpr_values, width, label='True Positive Rate', 
-               alpha=0.7, color=self.colors['anomaly'])
-        ax.bar(x + width/2, fpr_values, width, label='False Positive Rate', 
-               alpha=0.7, color=self.colors['normal'])
-        
-        ax.set_xlabel('Threshold Method')
-        ax.set_ylabel('Rate')
-        ax.set_title('Performance Comparison')
+
+        ax.bar(
+            x - width / 2,
+            tpr_values,
+            width,
+            label="True Positive Rate",
+            alpha=0.7,
+            color=self.colors["anomaly"],
+        )
+        ax.bar(
+            x + width / 2,
+            fpr_values,
+            width,
+            label="False Positive Rate",
+            alpha=0.7,
+            color=self.colors["normal"],
+        )
+
+        ax.set_xlabel("Threshold Method")
+        ax.set_ylabel("Rate")
+        ax.set_title("Performance Comparison")
         ax.set_xticks(x)
-        ax.set_xticklabels(methods, rotation=45, ha='right')
+        ax.set_xticklabels(methods, rotation=45, ha="right")
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
+
         plt.tight_layout()
         plt.show()
-        
+
         # Print detailed results
         print(f"\n📊 ROC Analysis Results:")
         print(f"   • ROC AUC: {roc_auc:.3f}")
         print(f"   • PR AUC: {pr_auc:.3f}")
         print(f"   • Optimal threshold (Youden's): {optimal_threshold:.6f}")
-        print(f"   • At optimal threshold - TPR: {optimal_tpr:.3f}, FPR: {optimal_fpr:.3f}")
-        
+        print(
+            f"   • At optimal threshold - TPR: {optimal_tpr:.3f}, FPR: {optimal_fpr:.3f}"
+        )
+
         print(f"\n📋 Threshold Method Comparison:")
-        print(f"{'Method':<15} {'Threshold':<12} {'TPR':<8} {'FPR':<8} {'Precision':<8}")
+        print(
+            f"{'Method':<15} {'Threshold':<12} {'TPR':<8} {'FPR':<8} {'Precision':<8}"
+        )
         print("-" * 55)
         for method, metrics in threshold_methods.items():
-            print(f"{method:<15} {metrics['threshold']:<12.6f} {metrics['tpr']:<8.3f} "
-                  f"{metrics['fpr']:<8.3f} {metrics['precision']:<8.3f}")
-        
+            print(
+                f"{method:<15} {metrics['threshold']:<12.6f} {metrics['tpr']:<8.3f} "
+                f"{metrics['fpr']:<8.3f} {metrics['precision']:<8.3f}"
+            )
+
         # Performance interpretation
         print(f"\n🎯 Performance Interpretation:")
         if roc_auc >= 0.9:
@@ -2206,20 +2491,22 @@ class AnomalyDetectionVisualizer:
             print(f"   • Fair discrimination (0.7 ≤ AUC < 0.8)")
         else:
             print(f"   • Poor discrimination (AUC < 0.7)")
-        
+
         return {
-            'roc_auc': roc_auc,
-            'pr_auc': pr_auc,
-            'optimal_threshold': optimal_threshold,
-            'optimal_tpr': optimal_tpr,
-            'optimal_fpr': optimal_fpr,
-            'threshold_methods': threshold_methods
+            "roc_auc": roc_auc,
+            "pr_auc": pr_auc,
+            "optimal_threshold": optimal_threshold,
+            "optimal_tpr": optimal_tpr,
+            "optimal_fpr": optimal_fpr,
+            "threshold_methods": threshold_methods,
         }
-    
-    def plot_svm_analysis(self, normal_scores, anomaly_scores, anomaly_classes=None, fold_name="Best Fold"):
+
+    def plot_svm_analysis(
+        self, normal_scores, anomaly_scores, anomaly_classes=None, fold_name="Best Fold"
+    ):
         """
         Plot comprehensive SVM decision function analysis.
-        
+
         Args:
             normal_scores (np.array): SVM decision function scores for normal data
             anomaly_scores (np.array): SVM decision function scores for anomaly data
@@ -2229,87 +2516,123 @@ class AnomalyDetectionVisualizer:
         import matplotlib.pyplot as plt
         import numpy as np
         from sklearn.metrics import roc_curve, auc
-        
+
         print(f"🏆 Best Performing Fold (Distance-Based): {fold_name}")
-        
+
         # ⚠️  IMPORTANT: For SVM, we work with DECISION FUNCTION SCORES directly
         # Positive scores = Normal (inside boundary)
         # Negative scores = Anomaly (outside boundary)
 
         # Create proper SVM visualization
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-        
+
         # Plot 1: Score distributions
         ax = axes[0, 0]
-        ax.hist(normal_scores, alpha=0.7, bins=30, label='Normal', color='blue', density=True)
-        ax.hist(anomaly_scores, alpha=0.7, bins=30, label='Anomaly', color='red', density=True)
-        ax.axvline(0, color='black', linestyle='--', alpha=0.8, label='Decision Boundary (score=0)')
-        ax.set_xlabel('SVM Decision Function Score')
-        ax.set_ylabel('Density')
-        ax.set_title('Distribution of SVM Decision Scores')
+        ax.hist(
+            normal_scores,
+            alpha=0.7,
+            bins=30,
+            label="Normal",
+            color="blue",
+            density=True,
+        )
+        ax.hist(
+            anomaly_scores,
+            alpha=0.7,
+            bins=30,
+            label="Anomaly",
+            color="red",
+            density=True,
+        )
+        ax.axvline(
+            0,
+            color="black",
+            linestyle="--",
+            alpha=0.8,
+            label="Decision Boundary (score=0)",
+        )
+        ax.set_xlabel("SVM Decision Function Score")
+        ax.set_ylabel("Density")
+        ax.set_title("Distribution of SVM Decision Scores")
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 2: Box plots
         ax = axes[0, 1]
         data_to_plot = [normal_scores, anomaly_scores]
-        box_plot = ax.boxplot(data_to_plot, labels=['Normal', 'Anomaly'], patch_artist=True)
-        box_plot['boxes'][0].set_facecolor('blue')
-        box_plot['boxes'][1].set_facecolor('red')
-        ax.axhline(0, color='black', linestyle='--', alpha=0.8, label='Decision Boundary')
-        ax.set_ylabel('SVM Decision Score')
-        ax.set_title('Score Distribution Summary')
+        box_plot = ax.boxplot(
+            data_to_plot, labels=["Normal", "Anomaly"], patch_artist=True
+        )
+        box_plot["boxes"][0].set_facecolor("blue")
+        box_plot["boxes"][1].set_facecolor("red")
+        ax.axhline(
+            0, color="black", linestyle="--", alpha=0.8, label="Decision Boundary"
+        )
+        ax.set_ylabel("SVM Decision Score")
+        ax.set_title("Score Distribution Summary")
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 3: ROC Curve - FIXED VERSION
         # For ROC: Normal=0, Anomaly=1 (standard convention)
-        y_true = np.concatenate([np.zeros(len(normal_scores)), np.ones(len(anomaly_scores))])
-        
+        y_true = np.concatenate(
+            [np.zeros(len(normal_scores)), np.ones(len(anomaly_scores))]
+        )
+
         # For One-Class SVM decision function:
         # - Positive scores = Normal (inliers)
         # - Negative scores = Anomaly (outliers)
         # For ROC curve, we need "anomaly probability scores" where higher = more anomalous
         y_scores = np.concatenate([-normal_scores, -anomaly_scores])
-        
+
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
         roc_auc_raw = auc(fpr, tpr)
-        
+
         # FIX FOR INVERTED ROC: If AUC < 0.5, the scores are backwards
         # In that case, use 1 - AUC to get the correct interpretation
         if roc_auc_raw < 0.5:
             roc_auc = 1 - roc_auc_raw
-            print(f"   • ROC was inverted (AUC < 0.5), corrected: {roc_auc_raw:.3f} → {roc_auc:.3f}")
+            print(
+                f"   • ROC was inverted (AUC < 0.5), corrected: {roc_auc_raw:.3f} → {roc_auc:.3f}"
+            )
             # Also flip the ROC curve
             fpr = 1 - fpr[::-1]
             tpr = 1 - tpr[::-1]
         else:
             roc_auc = roc_auc_raw
             print(f"   • ROC AUC (correct): {roc_auc:.3f}")
-        
+
         # Debug: Print some values to verify
         print(f"   • Sample normal scores: {normal_scores[:5]}")
         print(f"   • Sample anomaly scores: {anomaly_scores[:5]}")
         print(f"   • Converted normal anomaly scores: {-normal_scores[:5]}")
         print(f"   • Converted anomaly anomaly scores: {-anomaly_scores[:5]}")
-        
+
         ax = axes[1, 0]
-        ax.plot(fpr, tpr, color='red', lw=2, label=f'ROC Curve (AUC = {roc_auc:.3f})')
-        ax.plot([0, 1], [0, 1], color='gray', lw=1, linestyle='--', alpha=0.8, label='Random')
+        ax.plot(fpr, tpr, color="red", lw=2, label=f"ROC Curve (AUC = {roc_auc:.3f})")
+        ax.plot(
+            [0, 1],
+            [0, 1],
+            color="gray",
+            lw=1,
+            linestyle="--",
+            alpha=0.8,
+            label="Random",
+        )
         ax.set_xlim([0.0, 1.0])
         ax.set_ylim([0.0, 1.05])
-        ax.set_xlabel('False Positive Rate')
-        ax.set_ylabel('True Positive Rate')
-        ax.set_title('ROC Curve (SVM Decision Function)')
+        ax.set_xlabel("False Positive Rate")
+        ax.set_ylabel("True Positive Rate")
+        ax.set_title("ROC Curve (SVM Decision Function)")
         ax.legend(loc="lower right")
         ax.grid(True, alpha=0.3)
-        
+
         # Plot 4: Performance metrics
         ax = axes[1, 1]
-        
+
         # Calculate performance at decision boundary (score = 0)
         normal_correct = np.sum(normal_scores > 0)
         anomaly_correct = np.sum(anomaly_scores < 0)
-        
+
         # Show some key statistics
         metrics_text = f"""SVM Performance Summary:
         
@@ -2327,20 +2650,27 @@ Anomaly Data:
 
 Overall Accuracy: {(normal_correct + anomaly_correct)/(len(normal_scores) + len(anomaly_scores))*100:.1f}%
 ROC AUC: {roc_auc:.3f}"""
-        
-        ax.text(0.05, 0.95, metrics_text, transform=ax.transAxes, fontsize=10,
-                verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
+        ax.text(
+            0.05,
+            0.95,
+            metrics_text,
+            transform=ax.transAxes,
+            fontsize=10,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+        )
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        ax.axis('off')
-        
+        ax.axis("off")
+
         plt.tight_layout()
         plt.show()
-        
-        return {
-            'roc_auc': roc_auc,
-            'normal_accuracy': normal_correct/len(normal_scores),
-            'anomaly_accuracy': anomaly_correct/len(anomaly_scores),
-            'overall_accuracy': (normal_correct + anomaly_correct)/(len(normal_scores) + len(anomaly_scores))
-        }
 
+        return {
+            "roc_auc": roc_auc,
+            "normal_accuracy": normal_correct / len(normal_scores),
+            "anomaly_accuracy": anomaly_correct / len(anomaly_scores),
+            "overall_accuracy": (normal_correct + anomaly_correct)
+            / (len(normal_scores) + len(anomaly_scores)),
+        }
