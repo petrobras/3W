@@ -41,7 +41,7 @@ class DataPersistence:
             self.base_dir,
             self.cv_splits_dir,
             self.metadata_dir,
-            os.path.join(self.cv_splits_dir, "raw"),
+            os.path.join(self.cv_splits_dir, "complete"),
             os.path.join(self.cv_splits_dir, "windowed"),
         ]
 
@@ -72,7 +72,7 @@ class DataPersistence:
             print("💾 Saving Cross-Validation Folds")
             print("-" * 50)
 
-        fold_dir = os.path.join(self.cv_splits_dir, "raw")
+        fold_dir = os.path.join(self.cv_splits_dir, "complete")
         saved_files = []
 
         for fold_idx, fold_info in enumerate(cv_folds):
@@ -430,7 +430,7 @@ class DataPersistence:
             List[Dict]: Loaded cross-validation folds
         """
         if fold_dir is None:
-            fold_dir = os.path.join(self.cv_splits_dir, "raw")
+            fold_dir = os.path.join(self.cv_splits_dir, "complete")
 
         if not os.path.exists(fold_dir):
             raise FileNotFoundError(f"Fold directory not found: {fold_dir}")
