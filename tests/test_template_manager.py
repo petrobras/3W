@@ -12,8 +12,8 @@ def test_copy_html_support_files_success(tmp_path: Path):
     # 1. Setup: Create source and destination directories
     html_dir = tmp_path / "html_src"
     html_dir.mkdir()
-    figures_dir = tmp_path / "figures_src"
-    figures_dir.mkdir()
+    assets_dir = tmp_path / "assets_src"
+    assets_dir.mkdir()
     report_path = tmp_path / "report_dest"
     report_path.mkdir()
 
@@ -21,21 +21,21 @@ def test_copy_html_support_files_success(tmp_path: Path):
     (html_dir / "style.css").touch()
     (html_dir / "theme.css").touch()
     (html_dir / "index.html").touch()  # This should be ignored
-    (figures_dir / "plot.png").touch()
-    (figures_dir / "chart.svg").touch()
+    (assets_dir / "plot.png").touch()
+    (assets_dir / "chart.svg").touch()
 
     # 2. Act: Call the function
-    copy_html_support_files(html_dir, figures_dir, report_path)
+    copy_html_support_files(html_dir, assets_dir, report_path)
 
     # 3. Assert: Check if files were copied as expected
     assert (report_path / "style.css").exists()
     assert (report_path / "theme.css").exists()
     assert not (report_path / "index.html").exists()
 
-    figures_dest = report_path / "figures"
-    assert figures_dest.is_dir()
-    assert (figures_dest / "plot.png").exists()
-    assert (figures_dest / "chart.svg").exists()
+    assets_dest = report_path / "assets"
+    assert assets_dest.is_dir()
+    assert (assets_dest / "plot.png").exists()
+    assert (assets_dest / "chart.svg").exists()
 
 
 def test_replaces_existing_figures_directory(tmp_path: Path):
@@ -48,24 +48,24 @@ def test_replaces_existing_figures_directory(tmp_path: Path):
     html_dir.mkdir()
     (html_dir / "style.css").touch()
 
-    figures_dir_src = tmp_path / "figures_src"
-    figures_dir_src.mkdir()
-    (figures_dir_src / "new_plot.png").touch()
+    assets_dir_src = tmp_path / "assets_src"
+    assets_dir_src.mkdir()
+    (assets_dir_src / "new_plot.png").touch()
 
     report_path = tmp_path / "report_dest"
     report_path.mkdir()
 
-    # Create a pre-existing figures directory in the destination
-    figures_dir_dest_old = report_path / "figures"
-    figures_dir_dest_old.mkdir()
-    (figures_dir_dest_old / "old_plot.svg").touch()
+    # Create a pre-existing assets directory in the destination
+    assets_dir_dest_old = report_path / "assets"
+    assets_dir_dest_old.mkdir()
+    (assets_dir_dest_old / "old_plot.svg").touch()
 
     # 2. Act
-    copy_html_support_files(html_dir, figures_dir_src, report_path)
+    copy_html_support_files(html_dir, assets_dir_src, report_path)
 
     # 3. Assert
-    assert (report_path / "figures" / "new_plot.png").exists()
-    assert not (report_path / "figures" / "old_plot.svg").exists()
+    assert (report_path / "assets" / "new_plot.png").exists()
+    assert not (report_path / "assets" / "old_plot.svg").exists()
 
 
 def test_fails_if_no_css_files_found(tmp_path: Path, capsys):
@@ -77,14 +77,14 @@ def test_fails_if_no_css_files_found(tmp_path: Path, capsys):
     html_dir.mkdir()  # No .css files here
     (html_dir / "index.html").touch()
 
-    figures_dir = tmp_path / "figures_src"
-    figures_dir.mkdir()
+    assets_dir = tmp_path / "assets_src"
+    assets_dir.mkdir()
 
     report_path = tmp_path / "report_dest"
     report_path.mkdir()
 
     # 2. Act
-    copy_html_support_files(html_dir, figures_dir, report_path)
+    copy_html_support_files(html_dir, assets_dir, report_path)
 
     # 3. Assert
     captured = capsys.readouterr()
@@ -95,9 +95,9 @@ def test_fails_if_no_css_files_found(tmp_path: Path, capsys):
     assert not list(report_path.iterdir())
 
 
-def test_fails_if_figures_dir_does_not_exist(tmp_path: Path, capsys):
+def test_fails_if_assets_dir_does_not_exist(tmp_path: Path, capsys):
     """
-    Tests that the function fails and prints a warning if the figures directory
+    Tests that the function fails and prints a warning if the assets directory
     does not exist.
     """
     # 1. Setup
@@ -106,18 +106,18 @@ def test_fails_if_figures_dir_does_not_exist(tmp_path: Path, capsys):
     (html_dir / "style.css").touch()
 
     # This directory is never created
-    non_existent_figures_dir = tmp_path / "non_existent_figures"
+    non_existent_assets_dir = tmp_path / "non_existent_assets"
 
     report_path = tmp_path / "report_dest"
     report_path.mkdir()
 
     # 2. Act
-    copy_html_support_files(html_dir, non_existent_figures_dir, report_path)
+    copy_html_support_files(html_dir, non_existent_assets_dir, report_path)
 
     # 3. Assert
     captured = capsys.readouterr()
     assert "Warning: Could not copy LaTeX support files" in captured.out
-    assert "No 'figures' directory found to copy" in captured.out
+    assert "No 'assets' directory found to copy" in captured.out
     # Ensure no files were copied
     assert not list(report_path.iterdir())
 
