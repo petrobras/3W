@@ -1,6 +1,6 @@
 [project]
 name = "ThreeWToolkit"
-version = "0.0.1"
+version = "2.0.0"
 description = "A modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation"
 readme = "toolkit/README.md"
 license = { text = "Apache-2.0" }
