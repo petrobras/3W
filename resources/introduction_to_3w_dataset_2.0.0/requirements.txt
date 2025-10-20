@@ -1,8 +1,6 @@
 ipykernel
 ipywidgets
 pandas
-pandas-profiling
-ydata_profiling
 plotly
 numpy
 scikit-learn
