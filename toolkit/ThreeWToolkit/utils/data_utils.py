@@ -204,6 +204,30 @@ def default_data_normalization(
     std = pd.Series({tag: GLOBAL_STDS[tag] for tag in selected_columns})
     return (data - avg) / std
 
+def default_label_handling(
+    data: pd.DataFrame, *args, **kwargs
+) -> pd.DataFrame:
+    """Apply default label processing.
+
+    Args:
+        data (pd.DataFrame): labels to be adjusted.
+        *args: Additional positional arguments (unused).
+        **kwargs: Additional keyword arguments (unused).
+
+    Returns:
+        pd.DataFrame: Adjusted dataframe with modified "class" column.
+
+    Notes:
+        - Maps transient labels to corresponding faults
+        - Annotation gaps are filled with adjacent valid labels, forward first, then backwards
+    """
+    s = data["class"]
+    s = s % 100 # map transients to faults
+    s = s.ffill() # forward fill of gaps in annotations
+    s = s.bfill() # backward fill of holes in annotations
+    data["class"] = s
+    return data
+
 
 def default_data_processing(
     data: dict[str, pd.DataFrame],
@@ -213,10 +237,10 @@ def default_data_processing(
     *args,
     **kwargs,
 ) -> pd.DataFrame:
-    """Apply default cleaning and scaling on data, while filling missing values with 0 (the default average).
+    """Apply default cleaning and scaling on data and labels.
 
-    Performs a complete data processing pipeline including cleanup, normalization,
-    and missing value imputation.
+    Performs a complete data processing pipeline including cleanup, normalization, and missing value imputation.
+    Maps transient labels to the corresponding fault labels, and fills annotation gaps with the nearest labels in the series.
 
     Args:
         data (dict[str, pd.DataFrame]): Dictionary containing 'signal' and 'label' dataframes.
@@ -246,7 +270,7 @@ def default_data_processing(
     # Label processing
     # Obs: When target_column is None, "label" is not in data
     if "label" in data:
-        data["label"]["class"] = fill_target_value
+        data["label"] = default_label_handling(data["label"])
 
     # TODO: Implement normalization labels for regression tasks
 
