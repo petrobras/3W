@@ -7,3 +7,4 @@ scikit-learn
 tqdm
 pyarrow
 pydantic
+nbformat
