@@ -204,9 +204,8 @@ def default_data_normalization(
     std = pd.Series({tag: GLOBAL_STDS[tag] for tag in selected_columns})
     return (data - avg) / std
 
-def default_label_handling(
-    data: pd.DataFrame, *args, **kwargs
-) -> pd.DataFrame:
+
+def default_label_handling(data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
     """Apply default label processing.
 
     Args:
@@ -222,9 +221,9 @@ def default_label_handling(
         - Annotation gaps are filled with adjacent valid labels, forward first, then backwards
     """
     s = data["class"]
-    s = s % 100 # map transients to faults
-    s = s.ffill() # forward fill of gaps in annotations
-    s = s.bfill() # backward fill of holes in annotations
+    s = s % 100  # map transients to faults
+    s = s.ffill()  # forward fill of gaps in annotations
+    s = s.bfill()  # backward fill of holes in annotations
     data["class"] = s
     return data
 
