@@ -13,12 +13,6 @@
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 
-> [!TIP]
-> Would you like to participate in the 4th Workshop on 3W?
-
-| Register at https://forms.gle/cmLa2u4VaXd1T7qp8<br><br>We will hold this workshop on the 3W between October 20 and 23, 2025. Always from 09:00 to 12:00 (GMT-3 - Brasília time).<br>This workshop will be 100% online, free of charge, and aimed at those interested in exploring, using and/or contributing to the 3W Project.<br>Short courses will be offered and works developed with the 3W Project resources by different authors around the world will be presented.<br><br>|
-|----------------------------------------------|
-
 # Table of Content
 
 * [Introduction](#introduction)
