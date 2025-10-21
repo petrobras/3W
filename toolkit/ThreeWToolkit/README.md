@@ -1,6 +1,6 @@
 <h1>
   <img src="../../images/3w_logo.png" width="45" style="vertical-align: middle; margin-right: 10px;" />
-  3W ToolKit
+  3W Toolkit
 </h1>
 
 <a id="readme-top"></a>
