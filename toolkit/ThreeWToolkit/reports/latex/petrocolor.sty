@@ -1,0 +1,28 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{petrocolor}[2021/03/04]
+
+\RequirePackage{xcolor}
+
+% Main colour
+\definecolor{maincolor}{RGB/cmyk}{15,143,77/90,0,46,44}
+
+% "Warm grey"
+\definecolor{sintefgrey}{RGB/cmyk}{235,235,230/0,0,0,.1}
+\colorlet{sintefgray}{sintefgrey}
+
+% Greens
+\definecolorset{RGB/cmyk}{sintef}{}{lightgreen, 205,250,225/.23, 0,.20, 0;%
+                                    green,       20,185,120/.73, 0,.67, 0;%
+                                    darkgreen,    0, 70, 40/.93,.43,.92,.52}
+
+% Additional colours
+\definecolorset{RGB/cmyk}{sintef}{}{yellow, 253,198,68/0,22,73,1;%
+                                    red,    190, 60,55/19, 86,77, 8;%
+                                    lilla,  120,  0,80/48,100,27,31}
+
+% Deprecated colours for backward compatibility
+\definecolorset{HTML}{sintef}{}{cyan,      22A7E5;%
+                                magenta,   EC008C;%
+                                lightgrey, D8D0C7}
+\colorlet{sinteflightgray}{sinteflightgrey}
+
