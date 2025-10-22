@@ -420,10 +420,18 @@ class Pipeline:
                 # Store processed data as dictionary for this file
                 new_signals[idx_data_file] = processed_df.to_dict()
 
-                # Extract and store labels (assuming uniform labels per file)
-                unique_file_labels = np.unique(file_labels)
-                if len(unique_file_labels) == 1:
-                    new_labels.append([unique_file_labels[0]] * len(file_labels))
+                if not step.__class__.__name__ == "Windowing":
+                    new_labels = file_labels
+                else:
+                    labels_series = pd.Series(file_labels)
+                    label_step_config = step.config.copy()
+                    label_step_config.window = "boxcar"
+                    label_step = Windowing(label_step_config)
+
+                    windowed_label = label_step(labels_series)
+                    windowed_label.drop(columns=["win"], inplace=True)
+
+                    new_labels = windowed_label.mode(axis=1)[0].values
 
             # Update batch with processed signals and labels
             batch_processed["signals"] = new_signals
