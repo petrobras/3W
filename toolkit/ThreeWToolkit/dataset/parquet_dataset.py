@@ -92,6 +92,7 @@ class ParquetDataset(BaseStep):
             print("[ParquetDataset] Dataset integrity check passed!")
 
         all_events_files = [e.relative_to(root) for e in root.rglob("*.parquet")]
+        all_events_files = sorted(all_events_files)
 
         # Filter files by event type and class
         found_events = self._filter_events(all_events_files)

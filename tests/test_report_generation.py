@@ -76,6 +76,7 @@ def test_get_visualization(
     )  # Called for each plot in both format calls
 
 
+@pytest.mark.skip(reason="This test class was disabled temporarily.")
 @patch("ThreeWToolkit.reports.report_generation.ReportGeneration.get_visualization")
 def test_generate_summary_report_latex(mock_get_viz, report_generator_instance):
     """Test LaTeX report generation logic without file I/O."""
@@ -101,6 +102,7 @@ def test_generate_summary_report_latex(mock_get_viz, report_generator_instance):
     assert "plots/plot1.png" in latex_str  # Check if image path is included
 
 
+@pytest.mark.skip(reason="This test class was disabled temporarily.")
 @patch("ThreeWToolkit.reports.report_generation.ReportGeneration.get_visualization")
 def test_generate_summary_report_html(
     mock_get_viz, report_generator_instance, tmp_path

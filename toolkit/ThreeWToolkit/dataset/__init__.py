@@ -1,5 +1,6 @@
-from .parquet_dataset import ParquetDataset
+from .parquet_dataset import ParquetDataset, ParquetDatasetConfig
 
 __all__ = [
     "ParquetDataset",
+    "ParquetDatasetConfig",
 ]
