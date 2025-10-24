@@ -18,7 +18,6 @@ from sklearn.utils import resample
 from collections import Counter
 from typing import List, Tuple, Dict, Optional, Union
 import random
-from copy import deepcopy
 
 
 class DataAugmentor:
@@ -485,15 +484,6 @@ class DataAugmentor:
             )
 
         return augmented_dfs, augmented_classes
-
-
-# Convenience functions for common use cases
-def quick_noise_augmentation(
-    dfs: List[pd.DataFrame], classes: List[str], noise_level: float = 0.01
-) -> Tuple[List[pd.DataFrame], List[str]]:
-    """Quick noise augmentation with default settings."""
-    augmentor = DataAugmentor(verbose=True)
-    return augmentor.add_noise(dfs, classes, noise_level=noise_level)
 
 
 def quick_balance_classes(
