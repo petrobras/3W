@@ -1,0 +1,10 @@
+ipykernel
+ipywidgets
+pandas
+plotly
+numpy
+scikit-learn
+tqdm
+pyarrow
+pydantic
+nbformat
