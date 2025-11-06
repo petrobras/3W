@@ -1,7 +1,6 @@
 import torch
 import logging
 import pandas as pd
-import numpy as np
 from typing import Any, Optional
 from pydantic import BaseModel
 
@@ -420,10 +419,19 @@ class Pipeline:
                 # Store processed data as dictionary for this file
                 new_signals[idx_data_file] = processed_df.to_dict()
 
-                # Extract and store labels (assuming uniform labels per file)
-                unique_file_labels = np.unique(file_labels)
-                if len(unique_file_labels) == 1:
-                    new_labels.append([unique_file_labels[0]] * len(file_labels))
+                if not step.__class__.__name__ == "Windowing":
+                    new_labels.append(file_labels)
+                else:
+                    labels_series = pd.Series(file_labels)
+                    label_step_config = step.config.copy()
+                    label_step_config.window = "boxcar"
+                    label_step_config.normalize = False
+                    label_step = Windowing(label_step_config)
+
+                    windowed_label = label_step(labels_series)
+                    windowed_label.drop(columns=["win"], inplace=True)
+
+                    new_labels.append(windowed_label.mode(axis=1)[0].values)
 
             # Update batch with processed signals and labels
             batch_processed["signals"] = new_signals
@@ -528,31 +536,53 @@ class Pipeline:
             )
             # Apply default windowing configuration
             windowing = Windowing(WindowingConfig(pad_last_window=True))
+            label_windowing = Windowing(
+                WindowingConfig(window="boxcar", pad_last_window=True)
+            )
 
-        all_dfs = []
-        # Process each file in the batch
-        for idx_data_file in range(len(batch["signals"])):
-            file_labels = batch["labels"][idx_data_file]
-            unique_label = np.unique(file_labels)[0]
+            all_dfs = []
+            # Process each file in the batch
+            for idx_data_file in range(len(batch["signals"])):
+                # Get signal data for this file
+                signal_data = batch["signals"][idx_data_file]
 
-            # Get signal data for this file
-            signal_data = batch["signals"][idx_data_file]
+                file_labels = batch["labels"][idx_data_file]
 
-            # Convert signal data to DataFrame
-            df_signal = pd.DataFrame(signal_data)
+                # Convert signal data to DataFrame
+                df_signal = pd.DataFrame(signal_data)
+                # Convert label data to Series
+                labels_series = pd.Series(file_labels)
 
-            # Apply windowing if it wasn't done during preprocessing
-            if not is_windowing_applied:
                 df_signal = windowing(df_signal)
+                df_label = label_windowing(labels_series)
 
-            # Clean up: remove windowing index column if present
-            df_signal = df_signal.drop("win", axis=1, errors="ignore")
+                # Clean up: remove windowing index column if present
+                df_signal = df_signal.drop("win", axis=1, errors="ignore")
+                df_label = df_label.drop("win", axis=1, errors="ignore")
 
-            # Add label column for feature extraction
-            df_signal["label"] = unique_label
-            all_dfs.append(df_signal)
+                df_signal["label"] = df_label.mode(axis=1)[0].values
+                all_dfs.append(df_signal)
 
-        # Concatenate all files into a single DataFrame for feature extraction
-        df_batch = pd.concat(all_dfs, axis=0, ignore_index=True)
+            # Concatenate all files into a single DataFrame for feature extraction
+            df_batch = pd.concat(all_dfs, axis=0, ignore_index=True)
 
-        return is_windowing_applied, df_batch
+            return is_windowing_applied, df_batch
+
+        else:
+            all_dfs = []
+
+            for idx_data_file in range(len(batch["signals"])):
+                signal_data = batch["signals"][idx_data_file]
+
+                df_signal = pd.DataFrame(signal_data)
+
+                df_signal = df_signal.drop("win", axis=1, errors="ignore")
+
+                df_signal["label"] = batch["labels"][idx_data_file]
+
+                all_dfs.append(df_signal)
+
+            # Concatenate all files into a single DataFrame for feature extraction
+            df_batch = pd.concat(all_dfs, axis=0, ignore_index=True)
+
+            return is_windowing_applied, df_batch
