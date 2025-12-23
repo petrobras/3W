@@ -3,7 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
 
+from pathlib import Path
 from typing import Callable, Any
+from torch.utils.data import DataLoader
 from pydantic import field_validator
 
 from tqdm.auto import tqdm
@@ -12,9 +14,10 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from ..core.base_step import BaseStep
 from ..core.base_model_trainer import ModelTrainerConfig
 from ..core.enums import OptimizersEnum, CriterionEnum, TaskType
-from ..core.base_training_strategies import TrainingStrategy
-from ..models.mlp import MLPConfig
-from ..models.sklearn_models import SklearnModelsConfig
+from ..models.mlp import MLPConfig, MLP
+from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
+from ..utils import ModelRecorder
+from torch.utils.data import TensorDataset
 from ..assessment.model_assess import ModelAssessment, ModelAssessmentConfig
 
 
@@ -221,6 +224,67 @@ class TrainerConfig(ModelTrainerConfig):
 
 
 class ModelTrainer(BaseStep):
+    """Simplified model trainer focused on training with delegated evaluation.
+
+    This class handles the training process for both PyTorch neural networks (MLP)
+    and scikit-learn models. It supports regular training, cross-validation, and
+    provides convenient methods for model persistence and evaluation.
+
+    The trainer is designed to be lightweight and focused solely on training,
+    with evaluation capabilities delegated to the ModelAssessment class for
+    better separation of concerns.
+
+    Args:
+        config (TrainerConfig): Configuration object containing all training
+            parameters and model configuration.
+
+    Attributes:
+        config (TrainerConfig): The training configuration.
+        lr (float): Learning rate from configuration.
+        device (str): Computing device ('cpu' or 'cuda').
+        model (MLP | SklearnModels): The instantiated model to train.
+        optimizer (torch.optim.Optimizer | None): PyTorch optimizer (None for sklearn models).
+        criterion (Callable | None): Loss function (None for sklearn models).
+        cross_validation (bool | None): Whether cross-validation is enabled.
+        n_splits (int): Number of folds for cross-validation.
+        batch_size (int): Batch size for training.
+        epochs (int): Number of training epochs.
+        seed (int): Random seed for reproducibility.
+        shuffle_train (bool): Whether to shuffle training data.
+        history (list): Training history from completed training runs.
+
+    Example:
+        Basic usage:
+        >>> config = TrainerConfig(
+        ...     batch_size=32,
+        ...     epochs=100,
+        ...     seed=42,
+        ...     learning_rate=0.001,
+        ...     config_model=MLPConfig(...)
+        ... )
+        >>> trainer = ModelTrainer(config)
+        >>> trainer.train(X_train, y_train, X_val, y_val)
+        >>>
+        >>> # Save the trained model
+        >>> trainer.save(Path("model.pth"))
+        >>>
+        >>> # Evaluate using ModelAssessment
+        >>> results = trainer.assess(X_test, y_test)
+
+        Cross-validation usage:
+        >>> config = TrainerConfig(
+        ...     batch_size=32,
+        ...     epochs=100,
+        ...     seed=42,
+        ...     learning_rate=0.001,
+        ...     config_model=MLPConfig(...),
+        ...     cross_validation=True,
+        ...     n_splits=5
+        ... )
+        >>> trainer = ModelTrainer(config)
+        >>> trainer.train(X_train, y_train)  # No validation set needed
+    """
+
     def __init__(self, config: TrainerConfig) -> None:
         """Initialize the ModelTrainer with the given configuration.
 
@@ -237,21 +301,23 @@ class ModelTrainer(BaseStep):
         self.config = config
         self.lr = config.learning_rate
         self.device = config.device
+        self.model = self._get_model(config.config_model)
 
-        self.model = config.config_model.setup(device = config.device)
-        
-        self.training_strategy: TrainingStrategy = self.model.get_training_strategy()
-
-        self.training_strategy.requires_optimizer()
-
-        if self.model.requires_optimizer():
-            self.optimizer = self._get_optimizer(config.optimizer)
-
-        if self.model.requires_criterion():
-            self.criterion = self._get_fn_cost(config.criterion)
+        # Only create optimizer and criterion for PyTorch models
+        if isinstance(self.model, MLP):
+            self.optimizer: torch.optim.Optimizer | None = self._get_optimizer(
+                self.config.optimizer
+            )
+            self.criterion: Callable[..., Any] | None = self._get_fn_cost(
+                self.config.criterion
+            )
+        else:
+            self.optimizer = None
+            self.criterion = None
 
         self.cross_validation = config.cross_validation
-        self.n_splits = config.n_splits if config.cross_validation else None
+        if self.config.cross_validation:
+            self.n_splits = config.n_splits
         self.batch_size = config.batch_size
         self.epochs = config.epochs
         self.seed = config.seed
@@ -261,17 +327,24 @@ class ModelTrainer(BaseStep):
         self.history: list = []
 
     def pre_process(self, data: Any) -> dict[str, Any]:
-        """Standardize input data format.
+        """Standardizes the input of the step.
+
+        Validates and standardizes the input data format for training.
 
         Args:
-            data: Input data (dict or tuple/list).
+            data: Input data that should contain training data and optionally validation data.
+                  Can be a dict or any structure containing the required training data.
 
         Returns:
-            Standardized data dictionary.
+            dict[str, Any]: Standardized data dictionary with required keys.
+
+        Raises:
+            ValueError: If required training data is missing.
         """
         if isinstance(data, dict):
             processed_data = data.copy()
         else:
+            # If data is not a dict, assume it's a tuple/list with (x_train, y_train, ...)
             if hasattr(data, "__iter__") and len(data) >= 2:
                 processed_data = {"x_train": data[0], "y_train": data[1]}
                 if len(data) >= 4:
@@ -280,17 +353,18 @@ class ModelTrainer(BaseStep):
                     processed_data["kwargs"] = data[4]
             else:
                 raise ValueError(
-                    "Input data must be dict or iterable with (x_train, y_train)"
+                    "Input data must be a dict or iterable with at least (x_train, y_train)"
                 )
 
         # Validate required keys
         required_keys = ["x_train", "y_train"]
-        missing_keys = [k for k in required_keys if k not in processed_data]
+        missing_keys = [key for key in required_keys if key not in processed_data]
         if missing_keys:
-            raise ValueError(f"Missing required keys: {missing_keys}")
+            raise ValueError(f"Missing required keys in input data: {missing_keys}")
 
-        # Ensure optional keys exist
-        for key in ["x_val", "y_val", "kwargs"]:
+        # Ensure optional keys exist with None defaults
+        optional_keys = ["x_val", "y_val", "kwargs"]
+        for key in optional_keys:
             if key not in processed_data:
                 processed_data[key] = None if key != "kwargs" else {}
 
@@ -350,165 +424,29 @@ class ModelTrainer(BaseStep):
 
         return data
 
-    def train(
-        self,
-        x_train: pd.DataFrame,
-        y_train: pd.DataFrame | pd.Series,
-        x_val: pd.DataFrame | None = None,
-        y_val: pd.DataFrame | pd.Series | None = None,
-        **kwargs,
-    ) -> None:
-        """Train model using configured strategy.
-
-        Handles three scenarios:
-        1. Cross-validation with k-fold splits
-        2. Validation data provided
-        3. Auto-split for validation
+    def _get_model(
+        self, config_model: MLPConfig | SklearnModelsConfig
+    ) -> MLP | SklearnModels:
+        """Instantiate the appropriate model based on the configuration.
 
         Args:
-            x_train: Training features.
-            y_train: Training labels.
-            x_val: Validation features (optional).
-            y_val: Validation labels (optional).
-            **kwargs: Additional training parameters.
-        """
-        if self.cross_validation:
-            self._train_with_cross_validation(x_train, y_train, **kwargs)
-        elif x_val is not None and y_val is not None:
-            self._train_with_validation(x_train, y_train, x_val, y_val, **kwargs)
-        else:
-            self._train_with_auto_split(x_train, y_train, **kwargs)
-
-    def _train_with_cross_validation(
-        self, x_train: Any, y_train: Any, **kwargs
-    ) -> None:
-        """Train using k-fold cross-validation.
-
-        Args:
-            x_train: Training features.
-            y_train: Training labels.
-            **kwargs: Additional training parameters.
-        """
-        self.history = []
-
-        skf = StratifiedKFold(
-            n_splits=self.n_splits, shuffle=True, random_state=self.seed
-        )
-        splits = list(skf.split(x_train, y_train))
-
-        pbar = tqdm(
-            enumerate(splits),
-            total=self.n_splits,
-            desc="[Pipeline] Training Fold 1",
-            unit="fold",
-            colour="#0a2c53",
-        )
-
-        for fold, (train_idx, val_idx) in pbar:
-            pbar.set_description_str(f"[Pipeline] Training Fold {fold + 1}")
-
-            # Split data
-            x_train_fold = self._select_rows(x_train, train_idx)
-            y_train_fold = self._select_rows(y_train, train_idx)
-            x_val_fold = self._select_rows(x_train, val_idx)
-            y_val_fold = self._select_rows(y_train, val_idx)
-
-            # Train on fold
-            fold_history = self._call_training_strategy(
-                x_train_fold, y_train_fold, x_val_fold, y_val_fold, **kwargs
-            )
-            self.history.append(fold_history)
-
-    def _train_with_validation(
-        self, x_train: Any, y_train: Any, x_val: Any, y_val: Any, **kwargs
-    ) -> None:
-        """Train using provided validation data.
-
-        Args:
-            x_train: Training features.
-            y_train: Training labels.
-            x_val: Validation features.
-            y_val: Validation labels.
-            **kwargs: Additional training parameters.
-        """
-        self.history = [
-            self._call_training_strategy(x_train, y_train, x_val, y_val, **kwargs)
-        ]
-
-    def _train_with_auto_split(self, x_train: Any, y_train: Any, **kwargs) -> None:
-        """Train with automatic train/validation split.
-
-        Args:
-            x_train: Training features.
-            y_train: Training labels.
-            **kwargs: Additional training parameters.
-        """
-        x_train, y_train, x_val, y_val = self._holdout(x_train, y_train)
-        self.history = [
-            self._call_training_strategy(x_train, y_train, x_val, y_val, **kwargs)
-        ]
-
-    def _call_training_strategy(
-        self, x_train: Any, y_train: Any, x_val: Any = None, y_val: Any = None, **kwargs
-    ) -> dict[str, list[Any]] | None:
-        """Delegate training to the strategy.
-
-        Args:
-            x_train: Training features.
-            y_train: Training labels.
-            x_val: Validation features (optional).
-            y_val: Validation labels (optional).
-            **kwargs: Additional training parameters.
+            config_model (MLPConfig | SklearnModelsConfig): Model configuration
+                object that determines which type of model to create.
 
         Returns:
-            Training history or None.
+            MLP | SklearnModels: The instantiated model, moved to the appropriate
+                device if it's a PyTorch model.
+
+        Raises:
+            ValueError: If the model configuration type is not recognized.
         """
-        # Prepare kwargs for strategy
-        strategy_kwargs = {
-            "epochs": self.epochs,
-            "optimizer": self.optimizer,
-            "criterion": self.criterion,
-            "batch_size": self.batch_size,
-            "shuffle": self.shuffle_train,
-            "device": self.device,
-            **kwargs,
-        }
-
-        self.model = self.config.config_model.setup(device = self.device)
-        
-        # Reinitialize optimizer if model requires it
-        if self.training_strategy.requires_optimizer():
-            strategy_kwargs["optimizer"] = self._get_optimizer(self.config.optimizer)
-
-        if self.training_strategy.requires_criterion():
-            strategy_kwargs["criterion"] = self.criterion
-
-        return self.training_strategy.train(
-            self.model, x_train, y_train, x_val, y_val, **strategy_kwargs
-        )
-
-    def _holdout(self, X, Y, test_size=None):
-        """Split dataset using holdout.
-
-        Args:
-            X: Features.
-            Y: Targets.
-            test_size: Fraction for validation split.
-
-        Returns:
-            Tuple of (X_train, Y_train, X_val, Y_val).
-        """
-        if test_size is None:
-            test_size = self.val_size
-
-        X_train, X_val, Y_train, Y_val = train_test_split(
-            X,
-            Y,
-            test_size=test_size,
-            shuffle=self.shuffle_train,
-            random_state=self.seed,
-        )
-        return X_train, Y_train, X_val, Y_val
+        match config_model:
+            case MLPConfig():
+                return MLP(config_model).to(self.device)
+            case SklearnModelsConfig():
+                return SklearnModels(config_model)
+            case _:
+                raise ValueError(f"Unknown model config: {config_model}")
 
     def _get_optimizer(self, optimizer: str) -> torch.optim.Optimizer:
         """Create and return the specified PyTorch optimizer.
@@ -560,6 +498,150 @@ class ModelTrainer(BaseStep):
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
+    def _create_dataloader(
+        self, x: Any, y: Any = None, shuffle: bool = False
+    ) -> DataLoader:
+        """Create a PyTorch DataLoader from pandas DataFrame/Series.
+
+        Converts pandas data structures to PyTorch tensors and wraps them
+        in a DataLoader for batch processing during training.
+
+        Args:
+            x (Any): Input features as pandas DataFrame or compatible structure.
+            y (Any, optional): Target labels as pandas DataFrame/Series or
+                compatible structure. If None, creates empty tensors.
+            shuffle (bool, optional): Whether to shuffle data in the DataLoader.
+                Defaults to False.
+
+        Returns:
+            DataLoader: PyTorch DataLoader configured with the specified
+                batch size and shuffle setting.
+        """
+        X_tensor = torch.tensor(x.values, dtype=torch.float32)
+        if y is not None:
+            y_tensor = torch.tensor(y.values, dtype=torch.float32)
+            dataset = TensorDataset(X_tensor, y_tensor)
+        else:
+            y_tensor = torch.empty_like(X_tensor)
+            dataset = TensorDataset(X_tensor, y_tensor)
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
+
+    def train(
+        self,
+        x_train: pd.DataFrame,
+        y_train: pd.DataFrame | pd.Series,
+        x_val: pd.DataFrame | None = None,
+        y_val: pd.DataFrame | pd.Series | None = None,
+        **kwargs,
+    ) -> None:
+        """Train the model using the provided training data.
+
+        This method handles three training scenarios:
+        1. Cross-validation: Uses k-fold cross-validation with stratified splits
+        2. Validation provided: Uses provided validation data
+        3. Auto-split: Automatically splits training data for validation
+
+        The training history is stored in self.history for later analysis.
+
+        Args:
+            x_train (pd.DataFrame): Training input features.
+            y_train (pd.DataFrame | pd.Series): Training target labels.
+            x_val (pd.DataFrame | None, optional): Validation input features.
+                If None and cross_validation is False, data will be auto-split.
+            y_val (pd.DataFrame | pd.Series | None, optional): Validation target
+                labels. If None and cross_validation is False, data will be auto-split.
+            **kwargs: Additional keyword arguments passed to the underlying
+                model's fit method.
+
+        Note:
+            - For cross-validation, x_val and y_val are ignored
+            - Model state is reset between cross-validation folds for PyTorch models
+            - Training history is stored as a list of fold histories (cross-validation)
+            or a single-element list (regular training)
+        """
+        if self.cross_validation:
+            self.history = []
+
+            # Create stratified k-fold splits
+            skf = StratifiedKFold(
+                n_splits=self.n_splits, shuffle=True, random_state=self.seed
+            )
+            splits = list(skf.split(x_train, y_train))
+
+            # Store initial model configuration for resetting between folds
+            initial_config = self.config.config_model
+
+            # Perform stratified k-fold cross-validation with progress bar
+            pbar = tqdm(
+                enumerate(splits),
+                total=self.n_splits,
+                desc="[Pipeline] Training Fold 1",
+                unit="fold",
+                colour="#0a2c53",
+            )
+            for fold, (train_idx, val_idx) in pbar:
+                # Updates the bar description for the current fold
+                pbar.set_description_str(f"[Pipeline] Training Fold {fold + 1}")
+
+                # Reinitialize model for each fold (fresh start)
+                if isinstance(self.model, MLP):
+                    self.model = self._get_model(initial_config)
+                    # Reinitialize optimizer with new model parameters
+                    self.optimizer = self._get_optimizer(self.config.optimizer)
+
+                # Split data for current fold
+                x_train_fold = self._select_rows(x_train, train_idx)
+                y_train_fold = self._select_rows(y_train, train_idx)
+                x_val_fold = self._select_rows(x_train, val_idx)
+                y_val_fold = self._select_rows(y_train, val_idx)
+
+                # Train on current fold and store history
+                fold_history = self.call_trainer(
+                    x_train_fold,
+                    y_train_fold,
+                    x_val=x_val_fold,
+                    y_val=y_val_fold,
+                    **kwargs,
+                )
+                self.history.append(fold_history)
+
+        elif x_val is not None and y_val is not None:
+            # Use provided validation data
+            self.history = [
+                self.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val, **kwargs)
+            ]
+        else:
+            # Automatically split training data for validation
+            x_train, y_train, x_val, y_val = self.holdout(x_train, y_train)
+            self.history = [
+                self.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val, **kwargs)
+            ]
+
+    def holdout(self, X, Y, test_size=None):
+        """
+        Split any dataset into two subsets using holdout.
+
+        Args:
+            X (array-like): Features.
+            Y (array-like): Targets.
+            test_size (float, optional): Fraction of data for the second split.
+                If None, uses self.val_size. Should be between 0 and 1.
+
+        Returns:
+            Tuple: (X_train, Y_train, X_holdout, Y_holdout)
+        """
+        if test_size is None:
+            test_size = self.val_size
+
+        X_train, X_holdout, Y_train, Y_holdout = train_test_split(
+            X,
+            Y,
+            test_size=test_size,
+            shuffle=self.shuffle_train,
+            random_state=self.seed,
+        )
+        return X_train, Y_train, X_holdout, Y_holdout
+
     def _select_rows(self, data, idx):
         """Select rows from data using provided indices.
 
@@ -576,6 +658,101 @@ class ModelTrainer(BaseStep):
             return data.iloc[idx]
         else:
             return data[idx]
+
+    def call_trainer(
+        self,
+        x_train: Any,
+        y_train: Any,
+        x_val: Any = None,
+        y_val: Any = None,
+        **kwargs,
+    ) -> dict[str, list[Any]] | None:
+        """Call the appropriate training method based on model type.
+
+        Dispatches training to either PyTorch neural network training loop
+        or scikit-learn model fitting, handling the different interfaces
+        transparently.
+
+        Args:
+            x_train (Any): Training input features.
+            y_train (Any): Training target labels.
+            x_val (Any, optional): Validation input features.
+            y_val (Any, optional): Validation target labels.
+            **kwargs: Additional arguments passed to the model's fit method.
+
+        Returns:
+            dict[str, list[Any]] | None: Training history dictionary for PyTorch
+                models (containing loss/metric trajectories), or None for
+                scikit-learn models.
+        """
+        if isinstance(self.model, MLP):
+            # PyTorch model training
+            train_loader = self._create_dataloader(
+                x_train, y_train, shuffle=self.shuffle_train
+            )
+            val_loader = (
+                self._create_dataloader(x_val, y_val, shuffle=False)
+                if x_val is not None and y_val is not None
+                else None
+            )
+
+            # Use configured optimizer/criterion or fallback to defaults
+            optimizer = (
+                self.optimizer
+                if self.optimizer is not None
+                else torch.optim.Adam(self.model.parameters(), lr=self.lr)
+            )
+            criterion = self.criterion if self.criterion is not None else nn.MSELoss()
+
+            return self.model.fit(
+                train_loader,
+                self.epochs,
+                optimizer,
+                criterion,
+                val_loader,
+                device=self.device,
+            )
+        else:
+            # Scikit-learn model training
+            return self.model.fit(x_train, y_train, **kwargs)
+
+    def save(self, filepath: Path) -> None:
+        """Save the trained model to disk.
+
+        Uses the ModelRecorder utility to save model checkpoints in a
+        consistent format across different model types.
+
+        Args:
+            filepath (Path): The file path where the model should be saved.
+                The extension should be appropriate for the model type
+                (.pth for PyTorch models, .pkl for scikit-learn models).
+
+        Note:
+            The saved model can be loaded later using the load() method.
+        """
+        ModelRecorder.save_best_model(model=self.model, filename=filepath)
+
+    def load(self, filepath: Path) -> MLP | SklearnModels:
+        """Load a previously saved model from disk.
+
+        Loads model weights/parameters from the specified file and applies
+        them to the current model instance.
+
+        Args:
+            filepath (Path): The file path from which to load the model.
+                Should contain a model saved with the save() method.
+
+        Returns:
+            MLP | SklearnModels: The model instance with loaded weights/parameters.
+
+        Note:
+            For PyTorch models, this loads the state dict. For scikit-learn
+            models, this loads the entire model state.
+        """
+        state_dict = ModelRecorder.load_model(filename=filepath)
+        if isinstance(self.model, MLP):
+            self.model.load_state_dict(state_dict)
+        return self.model
 
     def assess(
         self,

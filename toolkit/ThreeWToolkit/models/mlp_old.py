@@ -1,15 +1,13 @@
 import numpy as np
 import torch.nn as nn
 import torch
-
-from pydantic import Field, field_validator
-from typing import Iterable, Any, Type, TypeAlias, Callable
-from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 
-from . import MLP
+from tqdm.auto import tqdm
 from ..core.base_models import ModelsConfig, BaseModels
 from ..core.enums import ModelTypeEnum, ActivationFunctionEnum
+from typing import Iterable, Any, TypeAlias, Callable
+from pydantic import Field, field_validator
 
 # Type alias for PyTorch model parameters
 ParamsT: TypeAlias = (
@@ -78,6 +76,7 @@ class MLPConfig(ModelsConfig):
         - Input and output sizes must match your data dimensions;
         - After inference, the input_size field will be updated with the actual value.
     """
+
     model_type: ModelTypeEnum = Field(
         default=ModelTypeEnum.MLP,
         description="Type of model (automatically set to MLP).",
@@ -102,8 +101,6 @@ class MLPConfig(ModelsConfig):
         ge=0,
         description="L2 regularization parameter (>=0 or None for no regularization).",
     )
-    _target: Type = MLP
-    
 
     @field_validator("input_size")
     @classmethod
@@ -194,6 +191,7 @@ class MLPConfig(ModelsConfig):
         except (AttributeError, ValueError):
             # Handle frozen models
             object.__setattr__(self, "input_size", input_size)
+
 
 class MLP(BaseModels, nn.Module):
     """Multi-Layer Perceptron (MLP) implementation using PyTorch.
@@ -691,9 +689,3 @@ class MLP(BaseModels, nn.Module):
                 y_pred.extend(preds.cpu().numpy())
 
         return np.array(y_pred)
-    
-    def requires_optimizer(self):
-        return True
-    
-    def requires_criterion(self):
-        return True
