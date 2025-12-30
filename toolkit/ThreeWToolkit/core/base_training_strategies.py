@@ -1,14 +1,13 @@
 from typing import Any
 from abc import ABC, abstractmethod
 
-from .base_models import BaseModels
-
 
 class TrainingStrategy(ABC):
     """Abstract training strategy.
 
     Defines the interface for different training approaches.
     """
+
     @abstractmethod
     def train(
         self,
@@ -18,7 +17,7 @@ class TrainingStrategy(ABC):
         x_val: Any = None,
         y_val: Any = None,
         **kwargs,
-    ) -> dict[str, list[Any]]:
+    ) -> Any:
         """Train the model.
 
         Args:
@@ -36,15 +35,15 @@ class TrainingStrategy(ABC):
 
     def requires_optimizer(self) -> bool:
         """Check if model requires an optimizer.
-        
+
         Returns:
             True if model needs optimizer (neural networks), False otherwise (sklearn).
         """
         return False
-    
+
     def requires_criterion(self) -> bool:
         """Check if model requires a loss function.
-        
+
         Returns:
             True if model needs criterion (neural networks), False otherwise (sklearn).
         """

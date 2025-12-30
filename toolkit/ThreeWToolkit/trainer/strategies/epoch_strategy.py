@@ -50,9 +50,9 @@ class EpochTrainingStrategy(TrainingStrategy):
             AssertionError: If the model is not a valid torch.nn.Module.
             ValueError: If optimizer or criterion is not provided.
         """
-        assert model is not None and isinstance(
-            model, nn.Module
-        ), "Model must be a valid torch.nn.Module before training."
+        assert model is not None and isinstance(model, nn.Module), (
+            "Model must be a valid torch.nn.Module before training."
+        )
 
         epochs = kwargs.get("epochs", 10)
         optimizer = kwargs.get("optimizer")

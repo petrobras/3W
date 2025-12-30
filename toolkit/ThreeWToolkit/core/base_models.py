@@ -1,19 +1,18 @@
-from dataclasses import dataclass
-from typing import Any, Type
-import numpy as np
-
+from typing import Type
 from abc import ABC, abstractmethod
 from pathlib import Path
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator
+from importlib import import_module
 
 from ..core.enums import ModelTypeEnum
 from ..core.base_training_strategies import TrainingStrategy
+from ..core.base_prediction_strategies import PredictionStrategy
 
 
 class ModelsConfig(BaseModel):
     model_type: ModelTypeEnum = Field(..., description="Type of model to use.")
     random_seed: int | None = Field(42, description="Random seed for reproducibility.")
-    _target: Type | None = Field(default=None, exclude=True)
+    _target: str = PrivateAttr()
 
     @field_validator("model_type")
     @classmethod
@@ -33,29 +32,41 @@ class ModelsConfig(BaseModel):
             raise ValueError("model_type is required.")
 
         return v
-    
-    def setup(self, **kwargs) -> Any:
+
+    def setup(self, **kwargs) -> "BaseModels":
         """Instantiate the model specified in _target.
-        
+
         Args:
             **kwargs: Additional arguments passed to model constructor.
-        
+
         Returns:
             Instantiated model instance.
-        
+
         Raises:
             ValueError: If _target is not set.
-        
+
         Example:
             >>> config = MLPConfig(hidden_sizes=(64, 32), output_size=10)
             >>> model = config.setup(device='cuda')
         """
+        _MODELS_NAMESPACE = "..models"
+
         if self._target is None:
             raise ValueError(
                 f"{self.__class__.__name__} must set _target attribute. "
-                f"Example: _target: Type = MLP"
+                f"Example: _target: Type = 'MLP'"
             )
-        return self._target(self, **kwargs)
+
+        models_pkg = import_module(_MODELS_NAMESPACE)
+
+        try:
+            model_cls: Type = getattr(models_pkg, self._target)
+        except AttributeError:
+            raise ValueError(
+                f"Model '{self._target}' not found in {_MODELS_NAMESPACE}.__init__.py"
+            )
+
+        return model_cls(self, **kwargs)
 
 
 class BaseModels(ABC):
@@ -89,15 +100,6 @@ class BaseModels(ABC):
         pass
 
     @abstractmethod
-    def predict(self) -> np.ndarray:
-        """Generate predictions for the given data.
-
-        Returns:
-            Array of predictions.
-        """
-        pass
-
-    @abstractmethod
     def save(self, path: Path):
         """Save model to disk.
 
@@ -117,50 +119,21 @@ class BaseModels(ABC):
             Loaded model instance.
         """
         pass
-    
+
     @abstractmethod
-    def get_training_strategy(self) -> TrainingStrategy:
-        """Return the appropriate training strategy for this model.
+    def get_training_strategy(self) -> Type[TrainingStrategy]:
+        """Return the training strategy class associated with this model.
 
         Returns:
-            TrainingStrategy instance.
+            Type[TrainingStrategy]: Training strategy class.
         """
         pass
 
-@dataclass
-class InstantiateConfig:
-    """Base config class with instantiation capability.
-    
-    This follows the Hydra pattern where configs know how to
-    instantiate their corresponding objects via the _target attribute.
-    
-    Attributes:
-        _target: The class to instantiate.
-    
-    Example:
-        @dataclass
-        class MLPConfig(InstantiateConfig):
-            _target: Type = MLP
-            hidden_sizes: tuple = (64, 32)
-            output_size: int = 10
-        
-        config = MLPConfig()
-        model = config.setup()  # Creates MLP instance
-    """
-    
-    _target: Type
-    
-    def setup(self, **kwargs) -> Any:
-        """Instantiate the object specified in _target.
-        
-        Args:
-            **kwargs: Additional keyword arguments passed to the constructor.
-        
+    @abstractmethod
+    def get_prediction_strategy(self) -> Type[PredictionStrategy]:
+        """Return the prediction strategy class associated with this model.
+
         Returns:
-            Instantiated object.
-        
-        Example:
-            config = MLPConfig(hidden_sizes=(128, 64))
-            model = config.setup(device='cuda')
+            Type[PredictionStrategy]: Prediction strategy class.
         """
-        return self._target(self, **kwargs)
+        pass

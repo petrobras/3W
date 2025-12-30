@@ -12,19 +12,21 @@ class FitOnceStrategy(TrainingStrategy):
     def train(
         self,
         model: Any,
-        X: Any,
-        y: Any,
+        x_train: Any,
+        y_train: Any,
+        x_val: Any = None,
+        y_val: Any = None,
         **kwargs,
-    ) -> None:
+    ) -> Any:
         """Train sklearn model.
 
         Args:
             model: Sklearn model to train.
-            X: Training features.
+            x_train: Training features.
             y: Training labels.
             **kwargs: Additional arguments passed to fit().
 
         Returns:
             None (sklearn models don't return history).
         """
-        return model.fit(X, y, **kwargs)
+        return model.fit(x_train, y_train, **kwargs)

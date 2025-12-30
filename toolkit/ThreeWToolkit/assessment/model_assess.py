@@ -1,3 +1,4 @@
+from ThreeWToolkit.core.base_models import BaseModels
 import torch
 import numpy as np
 import pandas as pd
@@ -18,8 +19,6 @@ from ..metrics import (
     explained_variance_score,
 )
 
-from ..models.mlp import MLP
-from ..models.sklearn_models import SklearnModels
 
 from pylatex import Document
 
@@ -210,48 +209,9 @@ class ModelAssessment(BaseStep):
 
         return data
 
-    def _setup_metrics(self):
-        """Configure metric functions based on the task type.
-
-        Creates a mapping between metric names and their corresponding
-        calculation functions, with appropriate parameters for each task type.
-
-        For classification tasks, metrics use weighted averaging to handle
-        class imbalance. For regression tasks, standard regression metrics
-        are configured.
-
-        Note:
-            - Classification metrics use zero_division=0 to handle edge cases
-            - Average precision requires at least 2 classes to be meaningful
-            - All functions are wrapped with appropriate error handling
-        """
-        if self.config.task_type == TaskType.CLASSIFICATION:
-            self.metric_functions = {
-                "accuracy": accuracy_score,
-                "balanced_accuracy": balanced_accuracy_score,
-                "precision": lambda y_true, y_pred: precision_score(
-                    y_true, y_pred, average="weighted", zero_division=0
-                ),
-                "recall": lambda y_true, y_pred: recall_score(
-                    y_true, y_pred, average="weighted", zero_division=0
-                ),
-                "f1": lambda y_true, y_pred: f1_score(
-                    y_true, y_pred, average="weighted", zero_division=0
-                ),
-                "average_precision": lambda y_true, y_pred: (
-                    average_precision_score(y_true, y_pred, average="weighted")
-                    if len(np.unique(y_true)) > 1
-                    else 0.0
-                ),
-            }
-        else:  # TaskType.REGRESSION
-            self.metric_functions = {
-                "explained_variance": explained_variance_score,
-            }
-
     def evaluate(
         self,
-        model: MLP | SklearnModels | Any,
+        model: BaseModels,
         X_test: pd.DataFrame | np.ndarray,
         y_test: pd.DataFrame | pd.Series | np.ndarray,
         **kwargs,
@@ -298,20 +258,40 @@ class ModelAssessment(BaseStep):
             - Report generation and result export occur automatically if enabled
             - Metric calculation is robust with error handling for edge cases
         """
-        # Store model reference for report generation
-        self._current_model = model
-
         # Convert inputs to consistent numpy array format
         X_test_array = self._to_numpy(X_test)
         y_test_array = self._to_numpy(y_test).flatten()
 
+        strategy_kwargs: dict[str, Any] = {}
+
+        prediction_strategy = model.get_prediction_strategy()
+        strategy = prediction_strategy()
+
+        if strategy.requires_dataloader():
+            # Create PyTorch tensor from numpy array
+            X_tensor = torch.tensor(X_test, dtype=torch.float32)
+            # Create dummy labels for DataLoader compatibility
+            y_dummy = torch.zeros(X_tensor.shape[0])
+            dataset = TensorDataset(X_tensor, y_dummy)
+
+            # Create DataLoader with configured batch size
+            test_loader = DataLoader(
+                dataset, batch_size=self.config.batch_size, shuffle=False
+            )
+
+            strategy_kwargs["loader"] = test_loader
+            strategy_kwargs["device"] = self.config.device
+
+        else:
+            strategy_kwargs["X"] = X_test_array
+
         # Generate predictions using appropriate method for model type
-        predictions = self._get_predictions(model, X_test_array, **kwargs)
+        predictions = strategy.predict(model, self.config.task_type, **strategy_kwargs)
 
         # Calculate all requested metrics
         if self.metric_functions is None:
             self._setup_metrics()
-        metrics_results = self._calculate_metrics(y_test_array, predictions)
+        metrics_results = self._calc_metrics(y_test_array, predictions)
 
         # Store comprehensive results
         self.results = {
@@ -327,295 +307,15 @@ class ModelAssessment(BaseStep):
 
         # Generate LaTeX report if enabled
         if self.config.generate_report:
-            self._generate_report(X_test_array, y_test_array)
+            self._generate_report(model, X_test_array, y_test_array)
 
         # Export results to CSV files if enabled
         if self.config.export_results:
-            self._export_results()
+            self.export_results()
 
         print(self.summary())
 
         return self.results
-
-    def _get_predictions(
-        self, model: MLP | SklearnModels | Any, X_test: np.ndarray, **kwargs
-    ) -> np.ndarray:
-        """Generate predictions from model with proper handling for different types.
-
-        Dispatches prediction generation to the appropriate method based on
-        the model type, handling the different interfaces transparently.
-
-        Args:
-            model (MLP | SklearnModels | Any): Trained model instance.
-            X_test (np.ndarray): Test features as numpy array.
-            **kwargs: Additional arguments passed to the prediction method.
-
-        Returns:
-            np.ndarray: Model predictions as a numpy array.
-
-        Note:
-            - PyTorch MLP models require special DataLoader handling
-            - SklearnModels wrapper and sklearn models use direct predict method
-            - All predictions are returned in consistent numpy array format
-        """
-        if isinstance(model, MLP):
-            return self._get_mlp_predictions(model, X_test, **kwargs)
-        elif isinstance(model, SklearnModels):
-            return model.predict(X_test, **kwargs)
-        else:
-            # Assume it's a sklearn model or has predict method
-            return model.predict(X_test, **kwargs)
-
-    def _get_mlp_predictions(
-        self, model: MLP, X_test: np.ndarray, **kwargs
-    ) -> np.ndarray:
-        """Generate predictions from PyTorch MLP model using DataLoader.
-
-        Creates a DataLoader from test data and uses the model's predict method
-        to generate predictions on the specified device.
-
-        Args:
-            model (MLP): PyTorch MLP model instance.
-            X_test (np.ndarray): Test features as numpy array.
-            **kwargs: Additional arguments passed to model.predict().
-
-        Returns:
-            np.ndarray: Model predictions as numpy array.
-
-        Note:
-            - Creates dummy labels for DataLoader compatibility
-            - Uses configured batch_size and device from assessment config
-            - Maintains gradient tracking disabled for prediction efficiency
-        """
-        # Create PyTorch tensor from numpy array
-        X_tensor = torch.tensor(X_test, dtype=torch.float32)
-        # Create dummy labels for DataLoader compatibility
-        y_dummy = torch.zeros(X_tensor.shape[0])
-        dataset = TensorDataset(X_tensor, y_dummy)
-
-        # Create DataLoader with configured batch size
-        test_loader = DataLoader(
-            dataset, batch_size=self.config.batch_size, shuffle=False
-        )
-
-        # Generate predictions using model's predict method
-        return model.predict(test_loader, device=self.config.device, **kwargs)
-
-    def _calculate_metrics(
-        self, y_true: np.ndarray, y_pred: np.ndarray
-    ) -> dict[str, float]:
-        """Calculate evaluation metrics based on configuration.
-
-        Computes all requested metrics using the configured metric functions,
-        with robust error handling for edge cases and invalid configurations.
-
-        Args:
-            y_true (np.ndarray): True target values.
-            y_pred (np.ndarray): Model predictions.
-
-        Returns:
-            dict[str, float]: Dictionary mapping metric names to their values.
-                Metrics that fail to compute are set to NaN with a warning.
-
-        Note:
-            - Handles edge cases like single-class predictions gracefully
-            - Warns about unavailable metrics for the current task type
-            - All metric values are converted to Python float for JSON compatibility
-        """
-        metrics_results = {}
-
-        for metric_name in self.config.metrics:
-            if self.metric_functions and metric_name in self.metric_functions.keys():
-                try:
-                    metric_value = self.metric_functions[metric_name](y_true, y_pred)
-                    metrics_results[metric_name] = float(metric_value)
-                except Exception as e:
-                    print(f"Warning: Could not calculate {metric_name}: {e}")
-                    metrics_results[metric_name] = np.nan
-            else:
-                print(
-                    f"Warning: Metric '{metric_name}' not available for task type '{self.config.task_type}'"
-                )
-                metrics_results[metric_name] = np.nan
-
-        return metrics_results
-
-    def _get_model_name(self, model: Any) -> str:
-        """Extract a human-readable name from the model object.
-
-        Args:
-            model (Any): Model instance to extract name from.
-
-        Returns:
-            str: Model class name or "Unknown_Model" if name cannot be determined.
-        """
-        if hasattr(model, "__class__"):
-            return model.__class__.__name__
-        return "Unknown_Model"
-
-    def _to_numpy(self, data: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
-        """Convert various data types to numpy array format.
-
-        Handles pandas DataFrames/Series and numpy arrays uniformly,
-        ensuring consistent data format for all downstream processing.
-
-        Args:
-            data (pd.DataFrame | pd.Series | np.ndarray): Input data
-                in various supported formats.
-
-        Returns:
-            np.ndarray: Data converted to numpy array format.
-
-        Note:
-            - Preserves data structure and dtype when possible
-            - Handles both pandas and numpy input gracefully
-            - Falls back to np.array() for other array-like objects
-        """
-        if isinstance(data, (pd.DataFrame, pd.Series)):
-            return np.asarray(data.values)
-        elif isinstance(data, np.ndarray):
-            return data
-        else:
-            return np.array(data)
-
-    def _export_results(self):
-        """Export evaluation results to CSV files.
-
-        Creates two CSV files in the output directory:
-        1. predictions.csv: Contains predictions, true values, and metrics
-        2. metrics_summary.csv: Contains aggregated metrics and metadata
-
-        The export includes model metadata and timestamps for result tracking.
-
-        Note:
-            - Creates output directory if it doesn't exist
-            - Handles export errors gracefully with warning messages
-            - Files are timestamped and include model identification
-        """
-        try:
-            # Create DataFrame with predictions and true values
-            predictions_df = pd.DataFrame(
-                {
-                    "true_values": self.results["true_values"],
-                    "predictions": self.results["predictions"],
-                }
-            )
-
-            # Add metrics as additional columns for easy analysis
-            for metric_name, metric_value in self.results["metrics"].items():
-                predictions_df[f"metric_{metric_name}"] = metric_value
-
-            # Add metadata columns
-            predictions_df["model_name"] = self.results["model_name"]
-            predictions_df["task_type"] = self.results["task_type"].value
-
-            # Save predictions with metadata
-            predictions_path = self.config.output_dir / "predictions.csv"
-            predictions_df.to_csv(predictions_path, index=False)
-
-            # Create metrics summary DataFrame
-            metrics_df = pd.DataFrame([self.results["metrics"]])
-            metrics_df["model_name"] = self.results["model_name"]
-            metrics_df["task_type"] = self.results["task_type"].value
-            metrics_df["timestamp"] = self.results["timestamp"]
-
-            # Save metrics summary
-            metrics_path = self.config.output_dir / "metrics_summary.csv"
-            metrics_df.to_csv(metrics_path, index=False)
-
-            print(f"Results exported to {self.config.output_dir}")
-
-        except Exception as e:
-            print(f"Warning: Results export failed: {e}")
-
-    def _generate_report(self, X_test: np.ndarray, y_test: np.ndarray):
-        """Generate LaTeX report using the ReportGeneration class.
-
-        Creates a comprehensive report including model performance metrics,
-        visualizations, and analysis. Integrates with the legacy ReportGeneration
-        system while adapting to its expected data format.
-
-        Args:
-            X_test (np.ndarray): Test features for report generation.
-            y_test (np.ndarray): Test targets for report generation.
-
-        Note:
-            - Requires ReportGeneration class to be available
-            - Converts data to pandas Series format for legacy compatibility
-            - Uses pre-calculated metrics and predictions for efficiency
-            - Handles missing ReportGeneration gracefully with warnings
-        """
-        if not hasattr(self, "_report_generation_class"):
-            print("Warning: ReportGeneration not available")
-            return
-
-        # Convert numpy arrays to pandas Series for legacy compatibility
-        X_test_series = pd.Series(X_test.flatten() if len(X_test.shape) > 1 else X_test)
-        y_test_series = pd.Series(y_test)
-
-        # Create empty training data (required by legacy interface)
-        X_train_series = pd.Series([])
-        y_train_series = pd.Series([])
-
-        # Determine report title from configuration or use default
-        report_title = (
-            self.config.report_title
-            or f"Model Assessment Report - {self.results['model_name']}"
-        )
-
-        # plot_config = {
-        #     "PlotSeries": {
-        #         "series": y_test_series,
-        #         "title": "True Values",
-        #         "xlabel": "Sample Index",
-        #         "ylabel": "Value",
-        #     },
-        #     "PlotMultipleSeries": {
-        #         "series_list": [y_test_series, pd.Series(self.results["predictions"])],
-        #         "title": "True vs Predicted Values",
-        #         "xlabel": "Sample Index",
-        #         "ylabel": "Value",
-        #         "labels": ["True Values", "Predictions"],
-        #     },
-        #     # Additional plots can be added here
-        # }
-        plot_config = None  # Disable plots for now
-
-        # Create ReportGeneration instance with legacy constructor
-        report_generator = self._report_generation_class(
-            model=self._current_model,
-            X_train=X_train_series,
-            y_train=y_train_series,
-            X_test=X_test_series,
-            y_test=y_test_series,
-            title=report_title,
-            author=self.config.report_author,
-            reports_dir=self.config.output_dir,
-            export_report_after_generate=True,
-            # Pass pre-calculated values to avoid recomputation
-            predictions=pd.Series(self.results["predictions"]),
-            calculated_metrics=self.results["metrics"],
-            plot_config=plot_config,
-        )
-
-        # Generate the comprehensive report
-        self.report_doc = report_generator.generate_summary_report(format="html")
-
-    def _map_metrics_for_report(self) -> list[str]:
-        """Map assessment metrics to ReportGeneration format.
-
-        Adapts the current metric configuration to the format expected
-        by the legacy ReportGeneration system.
-
-        Returns:
-            list[str]: List of metric names in ReportGeneration format.
-
-        Note:
-            - Currently returns metrics as-is, but can be extended for
-              more complex mapping if needed
-            - Provides abstraction layer for future ReportGeneration updates
-        """
-        return self.config.metrics
 
     def get_metric(self, metric_name: str) -> float:
         """Retrieve a specific metric value from the last evaluation.
@@ -700,3 +400,242 @@ class ModelAssessment(BaseStep):
                 summary_lines.append(f"  {metric_name}: N/A")
 
         return "\n".join(summary_lines)
+
+    def export_results(self):
+        """Export evaluation results to CSV files.
+
+        Creates two CSV files in the output directory:
+        1. predictions.csv: Contains predictions, true values, and metrics
+        2. metrics_summary.csv: Contains aggregated metrics and metadata
+
+        The export includes model metadata and timestamps for result tracking.
+
+        Note:
+            - Creates output directory if it doesn't exist
+            - Handles export errors gracefully with warning messages
+            - Files are timestamped and include model identification
+        """
+        try:
+            # Create DataFrame with predictions and true values
+            predictions_df = pd.DataFrame(
+                {
+                    "true_values": self.results["true_values"],
+                    "predictions": self.results["predictions"],
+                }
+            )
+
+            # Add metrics as additional columns for easy analysis
+            for metric_name, metric_value in self.results["metrics"].items():
+                predictions_df[f"metric_{metric_name}"] = metric_value
+
+            # Add metadata columns
+            predictions_df["model_name"] = self.results["model_name"]
+            predictions_df["task_type"] = self.results["task_type"].value
+
+            # Save predictions with metadata
+            predictions_path = self.config.output_dir / "predictions.csv"
+            predictions_df.to_csv(predictions_path, index=False)
+
+            # Create metrics summary DataFrame
+            metrics_df = pd.DataFrame([self.results["metrics"]])
+            metrics_df["model_name"] = self.results["model_name"]
+            metrics_df["task_type"] = self.results["task_type"].value
+            metrics_df["timestamp"] = self.results["timestamp"]
+
+            # Save metrics summary
+            metrics_path = self.config.output_dir / "metrics_summary.csv"
+            metrics_df.to_csv(metrics_path, index=False)
+
+            print(f"Results exported to {self.config.output_dir}")
+
+        except Exception as e:
+            print(f"Warning: Results export failed: {e}")
+
+    def _setup_metrics(self):
+        """Configure metric functions based on the task type.
+
+        Creates a mapping between metric names and their corresponding
+        calculation functions, with appropriate parameters for each task type.
+
+        For classification tasks, metrics use weighted averaging to handle
+        class imbalance. For regression tasks, standard regression metrics
+        are configured.
+
+        Note:
+            - Classification metrics use zero_division=0 to handle edge cases
+            - Average precision requires at least 2 classes to be meaningful
+            - All functions are wrapped with appropriate error handling
+        """
+        if self.config.task_type == TaskType.CLASSIFICATION:
+            self.metric_functions = {
+                "accuracy": accuracy_score,
+                "balanced_accuracy": balanced_accuracy_score,
+                "precision": lambda y_true, y_pred: precision_score(
+                    y_true, y_pred, average="weighted", zero_division=0
+                ),
+                "recall": lambda y_true, y_pred: recall_score(
+                    y_true, y_pred, average="weighted", zero_division=0
+                ),
+                "f1": lambda y_true, y_pred: f1_score(
+                    y_true, y_pred, average="weighted", zero_division=0
+                ),
+                "average_precision": lambda y_true, y_pred: (
+                    average_precision_score(y_true, y_pred, average="weighted")
+                    if len(np.unique(y_true)) > 1
+                    else 0.0
+                ),
+            }
+        else:  # TaskType.REGRESSION
+            self.metric_functions = {
+                "explained_variance": explained_variance_score,
+            }
+
+    def _calc_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
+        """Calculate evaluation metrics based on configuration.
+
+        Computes all requested metrics using the configured metric functions,
+        with robust error handling for edge cases and invalid configurations.
+
+        Args:
+            y_true (np.ndarray): True target values.
+            y_pred (np.ndarray): Model predictions.
+
+        Returns:
+            dict[str, float]: Dictionary mapping metric names to their values.
+                Metrics that fail to compute are set to NaN with a warning.
+
+        Note:
+            - Handles edge cases like single-class predictions gracefully
+            - Warns about unavailable metrics for the current task type
+            - All metric values are converted to Python float for JSON compatibility
+        """
+        metrics_results = {}
+
+        for metric_name in self.config.metrics:
+            if self.metric_functions and metric_name in self.metric_functions.keys():
+                try:
+                    metric_value = self.metric_functions[metric_name](y_true, y_pred)
+                    metrics_results[metric_name] = float(metric_value)
+                except Exception as e:
+                    print(f"Warning: Could not calculate {metric_name}: {e}")
+                    metrics_results[metric_name] = np.nan
+            else:
+                print(
+                    f"Warning: Metric '{metric_name}' not available for task type '{self.config.task_type}'"
+                )
+                metrics_results[metric_name] = np.nan
+
+        return metrics_results
+
+    def _to_numpy(self, data: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
+        """Convert various data types to numpy array format.
+
+        Handles pandas DataFrames/Series and numpy arrays uniformly,
+        ensuring consistent data format for all downstream processing.
+
+        Args:
+            data (pd.DataFrame | pd.Series | np.ndarray): Input data
+                in various supported formats.
+
+        Returns:
+            np.ndarray: Data converted to numpy array format.
+
+        Note:
+            - Preserves data structure and dtype when possible
+            - Handles both pandas and numpy input gracefully
+            - Falls back to np.array() for other array-like objects
+        """
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            return np.asarray(data.values)
+        elif isinstance(data, np.ndarray):
+            return data
+        else:
+            return np.array(data)
+
+    def _get_model_name(self, model: Any) -> str:
+        """Extract a human-readable name from the model object.
+
+        Args:
+            model (Any): Model instance to extract name from.
+
+        Returns:
+            str: Model class name or "Unknown_Model" if name cannot be determined.
+        """
+        if hasattr(model, "__class__"):
+            return model.__class__.__name__
+        return "Unknown_Model"
+
+    def _generate_report(
+        self, model: BaseModels, X_test: np.ndarray, y_test: np.ndarray
+    ):
+        """Generate LaTeX report using the ReportGeneration class.
+
+        Creates a comprehensive report including model performance metrics,
+        visualizations, and analysis. Integrates with the legacy ReportGeneration
+        system while adapting to its expected data format.
+
+        Args:
+            X_test (np.ndarray): Test features for report generation.
+            y_test (np.ndarray): Test targets for report generation.
+
+        Note:
+            - Requires ReportGeneration class to be available
+            - Converts data to pandas Series format for legacy compatibility
+            - Uses pre-calculated metrics and predictions for efficiency
+            - Handles missing ReportGeneration gracefully with warnings
+        """
+        if not hasattr(self, "_report_generation_class"):
+            print("Warning: ReportGeneration not available")
+            return
+
+        # Convert numpy arrays to pandas Series for legacy compatibility
+        X_test_series = pd.Series(X_test.flatten() if len(X_test.shape) > 1 else X_test)
+        y_test_series = pd.Series(y_test)
+
+        # Create empty training data (required by legacy interface)
+        X_train_series = pd.Series([])
+        y_train_series = pd.Series([])
+
+        # Determine report title from configuration or use default
+        report_title = (
+            self.config.report_title
+            or f"Model Assessment Report - {self.results['model_name']}"
+        )
+
+        # plot_config = {
+        #     "PlotSeries": {
+        #         "series": y_test_series,
+        #         "title": "True Values",
+        #         "xlabel": "Sample Index",
+        #         "ylabel": "Value",
+        #     },
+        #     "PlotMultipleSeries": {
+        #         "series_list": [y_test_series, pd.Series(self.results["predictions"])],
+        #         "title": "True vs Predicted Values",
+        #         "xlabel": "Sample Index",
+        #         "ylabel": "Value",
+        #         "labels": ["True Values", "Predictions"],
+        #     },
+        #     # Additional plots can be added here
+        # }
+        plot_config = None  # Disable plots for now
+
+        # Create ReportGeneration instance with legacy constructor
+        report_generator = self._report_generation_class(
+            model=model,
+            X_train=X_train_series,
+            y_train=y_train_series,
+            X_test=X_test_series,
+            y_test=y_test_series,
+            title=report_title,
+            author=self.config.report_author,
+            reports_dir=self.config.output_dir,
+            export_report_after_generate=True,
+            # Pass pre-calculated values to avoid recomputation
+            predictions=pd.Series(self.results["predictions"]),
+            calculated_metrics=self.results["metrics"],
+            plot_config=plot_config,
+        )
+
+        # Generate the comprehensive report
+        self.report_doc = report_generator.generate_summary_report(format="html")

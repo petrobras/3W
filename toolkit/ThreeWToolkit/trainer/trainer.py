@@ -12,7 +12,6 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from ..core.base_step import BaseStep
 from ..core.base_model_trainer import ModelTrainerConfig
 from ..core.enums import OptimizersEnum, CriterionEnum, TaskType
-from ..core.base_training_strategies import TrainingStrategy
 from ..models.mlp import MLPConfig
 from ..models.sklearn_models import SklearnModelsConfig
 from ..assessment.model_assess import ModelAssessment, ModelAssessmentConfig
@@ -238,18 +237,6 @@ class ModelTrainer(BaseStep):
         self.lr = config.learning_rate
         self.device = config.device
 
-        self.model = config.config_model.setup(device = config.device)
-        
-        self.training_strategy: TrainingStrategy = self.model.get_training_strategy()
-
-        self.training_strategy.requires_optimizer()
-
-        if self.model.requires_optimizer():
-            self.optimizer = self._get_optimizer(config.optimizer)
-
-        if self.model.requires_criterion():
-            self.criterion = self._get_fn_cost(config.criterion)
-
         self.cross_validation = config.cross_validation
         self.n_splits = config.n_splits if config.cross_validation else None
         self.batch_size = config.batch_size
@@ -466,24 +453,26 @@ class ModelTrainer(BaseStep):
         # Prepare kwargs for strategy
         strategy_kwargs = {
             "epochs": self.epochs,
-            "optimizer": self.optimizer,
-            "criterion": self.criterion,
             "batch_size": self.batch_size,
             "shuffle": self.shuffle_train,
             "device": self.device,
             **kwargs,
         }
 
-        self.model = self.config.config_model.setup(device = self.device)
-        
+        self.model = self.config.config_model.setup(device=self.device)
+        training_strategy = self.model.get_training_strategy()
+        strategy = training_strategy()
+
         # Reinitialize optimizer if model requires it
-        if self.training_strategy.requires_optimizer():
-            strategy_kwargs["optimizer"] = self._get_optimizer(self.config.optimizer)
+        if strategy.requires_optimizer():
+            strategy_kwargs["optimizer"] = self._get_optimizer(
+                self.model, self.config.optimizer
+            )
 
-        if self.training_strategy.requires_criterion():
-            strategy_kwargs["criterion"] = self.criterion
+        if strategy.requires_criterion():
+            strategy_kwargs["criterion"] = self._get_fn_cost(self.config.criterion)
 
-        return self.training_strategy.train(
+        return strategy.train(
             self.model, x_train, y_train, x_val, y_val, **strategy_kwargs
         )
 
@@ -510,7 +499,7 @@ class ModelTrainer(BaseStep):
         )
         return X_train, Y_train, X_val, Y_val
 
-    def _get_optimizer(self, optimizer: str) -> torch.optim.Optimizer:
+    def _get_optimizer(self, model: Any, optimizer: str) -> torch.optim.Optimizer:
         """Create and return the specified PyTorch optimizer.
 
         Args:
@@ -524,7 +513,7 @@ class ModelTrainer(BaseStep):
         Raises:
             ValueError: If the optimizer name is not recognized.
         """
-        model_params = self.model.get_params()
+        model_params = model.get_params()
         if optimizer == OptimizersEnum.ADAM.value:
             return optim.Adam(params=model_params, lr=self.lr)
         elif optimizer == OptimizersEnum.ADAMW.value:
