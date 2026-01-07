@@ -1,7 +1,7 @@
-from pathlib import Path
 import torch.nn as nn
 import torch
 
+from pathlib import Path
 from pydantic import Field, field_validator
 from typing import Iterable, Any, Type, TypeAlias
 
@@ -364,7 +364,12 @@ class MLP(BaseModels, nn.Module):
         """
         if not self._layers_built:
             input_size = x.shape[-1]
+
             self._build_layers(input_size)
+            assert self.model is not None
+
+            self.model = self.model.to(x.device)
+
             self._layers_built = True
 
     def _get_activation_function(self, activation: str) -> nn.Module:

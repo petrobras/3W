@@ -29,4 +29,4 @@ class FitOnceStrategy(TrainingStrategy):
         Returns:
             None (sklearn models don't return history).
         """
-        return model.fit(x_train, y_train, **kwargs)
+        return model.model_class.fit(x_train, y_train)

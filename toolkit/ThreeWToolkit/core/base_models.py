@@ -4,9 +4,9 @@ from pathlib import Path
 from pydantic import BaseModel, Field, PrivateAttr, field_validator
 from importlib import import_module
 
-from ..core.enums import ModelTypeEnum
-from ..core.base_training_strategies import TrainingStrategy
-from ..core.base_prediction_strategies import PredictionStrategy
+from .enums import ModelTypeEnum
+from .base_training_strategies import TrainingStrategy
+from .base_prediction_strategies import PredictionStrategy
 
 
 class ModelsConfig(BaseModel):
@@ -49,7 +49,7 @@ class ModelsConfig(BaseModel):
             >>> config = MLPConfig(hidden_sizes=(64, 32), output_size=10)
             >>> model = config.setup(device='cuda')
         """
-        _MODELS_NAMESPACE = "..models"
+        _MODELS_NAMESPACE = "ThreeWToolkit.models"
 
         if self._target is None:
             raise ValueError(

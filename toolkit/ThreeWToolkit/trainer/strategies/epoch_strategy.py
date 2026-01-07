@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from typing import Any, Callable
 from torch.utils.data import DataLoader, TensorDataset
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from ...core.base_training_strategies import TrainingStrategy
 
@@ -108,14 +108,11 @@ class EpochTrainingStrategy(TrainingStrategy):
                 )
                 loss_dict["val_loss"].append(val_loss)
 
-                pbar.set_description_str(
-                    f"[Pipeline] Training | train_loss: {avg_train_loss:.4f}, "
-                    f"val_loss: {val_loss:.4f}"
+                pbar.set_postfix(
+                    train_loss=f"{avg_train_loss:.4f}", val_loss=f"{val_loss:.4f}"
                 )
             else:
-                pbar.set_description_str(
-                    f"[Pipeline] Training | train_loss: {avg_train_loss:.4f}"
-                )
+                pbar.set_postfix(train_loss=f"{avg_train_loss:.4f}")
 
         return loss_dict
 
@@ -149,8 +146,8 @@ class EpochTrainingStrategy(TrainingStrategy):
         running_loss = 0.0
 
         for x_batch, y_batch in train_loader:
-            x_batch = x_batch.to(device)
-            y_batch = y_batch.to(device)
+            x_batch = x_batch.to(device, non_blocking=True)
+            y_batch = y_batch.to(device, non_blocking=True)
 
             optimizer.zero_grad()
             outputs = model(x_batch)
@@ -219,6 +216,9 @@ class EpochTrainingStrategy(TrainingStrategy):
         Returns:
             torch.Tensor: Computed loss.
         """
+        if outputs.ndim == 1:
+            outputs = outputs.unsqueeze(1)
+
         if outputs.shape[1] > 1:
             targets = targets.long()
             return criterion(outputs, targets)
@@ -249,12 +249,14 @@ class EpochTrainingStrategy(TrainingStrategy):
             DataLoader: PyTorch DataLoader instance.
         """
         if not isinstance(X, torch.Tensor):
-            X = torch.FloatTensor(X)
+            X = torch.as_tensor(X.values, dtype=torch.float32)
         if not isinstance(y, torch.Tensor):
-            y = torch.FloatTensor(y)
+            y = torch.as_tensor(y.values)
 
         dataset = TensorDataset(X, y)
-        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        return DataLoader(
+            dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True
+        )
 
     def requires_optimizer(self) -> bool:
         """Indicate whether this strategy requires an optimizer.

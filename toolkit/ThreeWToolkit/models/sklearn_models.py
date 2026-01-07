@@ -41,6 +41,8 @@ class SklearnModelsConfig(ModelsConfig):
         default_factory=dict, description="Hyperparameters for the scikit-learn model."
     )
 
+    _target: str = "SklearnModels"
+
 
 class SklearnModels(BaseModels):
     """
@@ -71,7 +73,7 @@ class SklearnModels(BaseModels):
         if "random_state" in model_class().get_params():
             params["random_state"] = config.random_seed
 
-        self.model = model_class(**params)
+        self.model_class = model_class(**params)
         self._feature_names: list[str] | None = None
 
     def forward(self, x: Any) -> Any:
@@ -93,7 +95,7 @@ class SklearnModels(BaseModels):
             )
 
         ModelRecorder.save_best_model(
-            model=self.model,
+            model=self.model_class,
             filename=str(path),
         )
 
@@ -107,7 +109,7 @@ class SklearnModels(BaseModels):
         Returns:
             SklearnModels: Current instance with loaded model.
         """
-        self.model = ModelRecorder.load_model(filename=str(path))
+        self.model_class = ModelRecorder.load_model(filename=str(path))
         return self
 
     def get_training_strategy(self) -> Type[TrainingStrategy]:
@@ -130,8 +132,8 @@ class SklearnModels(BaseModels):
 
     def get_params(self) -> dict[str, Any]:
         """Return sklearn estimator parameters."""
-        return self.model.get_params()
+        return self.model_class.get_params()
 
     def set_params(self, **params: Any) -> None:
         """Set sklearn estimator parameters."""
-        self.model.set_params(**params)
+        self.model_class.set_params(**params)

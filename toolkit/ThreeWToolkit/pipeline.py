@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Any
 from pydantic import BaseModel
 
-from .models.mlp import MLP
+from .models.mlp import MLPConfig
 from tqdm.auto import tqdm
 
 from .assessment.model_assess import ModelAssessment
@@ -30,7 +30,7 @@ from .feature_extraction.extract_wavelet_features import (
     ExtractWaveletFeatures,
     WaveletConfig,
 )
-from .models.sklearn_models import SklearnModels
+from .models.sklearn_models import SklearnModels, SklearnModelsConfig
 from .preprocessing._data_processing import (
     ImputeMissing,
     Normalize,
@@ -289,7 +289,10 @@ class Pipeline:
         """
         # Train the model if training step exists
         if self.step_model_training:
-            if not isinstance(self.step_model_training.model, (MLP, SklearnModels)):
+            if not isinstance(
+                self.step_model_training.config.config_model,
+                (MLPConfig, SklearnModelsConfig),
+            ):
                 raise NotImplementedError("Model not implemented yet.")
 
             if self.step_data_loader is None:

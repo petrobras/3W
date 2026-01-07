@@ -377,9 +377,12 @@ class ModelTrainer(BaseStep):
             **kwargs: Additional training parameters.
         """
         self.history = []
+        self.models_per_fold = []
 
         skf = StratifiedKFold(
-            n_splits=self.n_splits, shuffle=True, random_state=self.seed
+            n_splits=self.n_splits,
+            shuffle=self.config.shuffle_train,
+            random_state=self.seed,
         )
         splits = list(skf.split(x_train, y_train))
 
@@ -405,6 +408,7 @@ class ModelTrainer(BaseStep):
                 x_train_fold, y_train_fold, x_val_fold, y_val_fold, **kwargs
             )
             self.history.append(fold_history)
+            self.models_per_fold.append(self.model)
 
     def _train_with_validation(
         self, x_train: Any, y_train: Any, x_val: Any, y_val: Any, **kwargs
@@ -459,7 +463,8 @@ class ModelTrainer(BaseStep):
             **kwargs,
         }
 
-        self.model = self.config.config_model.setup(device=self.device)
+        self.model = self.config.config_model.setup()
+
         training_strategy = self.model.get_training_strategy()
         strategy = training_strategy()
 

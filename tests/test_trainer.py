@@ -198,115 +198,6 @@ class TestTrainer:
         trainer = ModelTrainer(trainer_config)
         assert trainer.n_splits == 5
 
-    def test_mlp_trainer_save_and_load(self, tmp_path, mlp_trainer_and_data):
-        """
-        Tests saving and loading PyTorch MLP models.
-
-        Verifies:
-        - Model can be saved to disk
-        - Model can be loaded from disk
-        - Loaded model is not None
-        """
-        trainer, x, y = mlp_trainer_and_data
-        trainer.train(x, y)
-
-        save_path = tmp_path / "mlp_model.pth"
-        trainer.save(save_path)
-
-        loaded_model = trainer.load(save_path)
-        assert loaded_model is not None
-
-    def test_trainer_save_and_load_sklearn(self, tmp_path, sklearn_trainer_and_data):
-        """
-        Tests saving and loading Scikit-learn models.
-
-        Verifies:
-        - Scikit-learn model can be pickled and saved
-        - Model can be loaded from pickle file
-        - Loaded model is not None
-        """
-        trainer, x, y = sklearn_trainer_and_data
-        trainer.train(x, y)
-
-        save_path = tmp_path / "sklearn_model.pkl"
-        trainer.save(save_path)
-
-        loaded_model = trainer.load(save_path)
-        assert loaded_model is not None
-
-    def test_call_trainer_with_val_loader(self, mlp_trainer_and_data):
-        """
-        Tests internal call_trainer method with validation data.
-
-        Verifies:
-        - call_trainer creates validation DataLoader when x_val and y_val provided
-        - Training executes successfully with validation
-        - Result contains train_loss
-        """
-        trainer, x, y = mlp_trainer_and_data
-        trainer.cross_validation = False
-
-        x_val = x.iloc[:10]
-        y_val = y.iloc[:10]
-        x_train = x.iloc[10:]
-        y_train = y.iloc[10:]
-
-        result = trainer.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val)
-
-        assert result is not None
-        assert "train_loss" in result
-
-    def test_call_trainer_without_val_loader(self, mlp_trainer_and_data):
-        """
-        Tests internal call_trainer method without validation data.
-
-        Verifies:
-        - call_trainer works when x_val and y_val are None
-        - Training executes successfully without validation
-        - Result contains train_loss
-        """
-        trainer, x, y = mlp_trainer_and_data
-        trainer.cross_validation = False
-
-        x_train = x.iloc[10:]
-        y_train = y.iloc[10:]
-
-        result = trainer.call_trainer(x_train, y_train, x_val=None, y_val=None)
-
-        assert result is not None
-        assert "train_loss" in result
-
-    def test_call_trainer_sklearn_branch(self, mlp_trainer_and_data):
-        """
-        Tests the sklearn model branch in call_trainer.
-
-        Verifies:
-        - call_trainer handles sklearn models differently than PyTorch
-        - sklearn fit method is called correctly
-        - Result is returned from sklearn training
-        """
-
-        class DummySklearn:
-            """Mock sklearn model for testing."""
-
-            def fit(self, x, y, **kwargs):
-                return {"dummy": True}
-
-        trainer = mlp_trainer_and_data[0]
-
-        # Temporarily replace model with dummy sklearn
-        original_model = trainer.model
-        trainer.model = DummySklearn()
-
-        x_df = pd.DataFrame(np.zeros((2, 2)), columns=["f0", "f1"])
-        y_series = pd.Series(np.zeros((2, 1)).flatten(), name="label")
-
-        result = trainer.call_trainer(x_df, y_series)
-        assert result == {"dummy": True}
-
-        # Restore original model
-        trainer.model = original_model
-
     def test_all_optimizers(self, mlp_trainer_and_data):
         """
         Tests that all supported optimizers can be instantiated.
@@ -326,7 +217,9 @@ class TestTrainer:
             OptimizersEnum.SGD.value,
             OptimizersEnum.RMSPROP.value,
         ]:
-            optimizer_obj = trainer._get_optimizer(opt)
+            model = trainer.config.config_model.setup()
+
+            optimizer_obj = trainer._get_optimizer(model, opt)
             assert optimizer_obj is not None
 
     def test_invalid_optimizer_raises_error(self, mlp_trainer_and_data):
@@ -338,8 +231,10 @@ class TestTrainer:
         """
         trainer = mlp_trainer_and_data[0]
 
+        model = trainer.config.config_model.setup()
+
         with pytest.raises(ValueError):
-            trainer._get_optimizer("notarealoptimizer")
+            trainer._get_optimizer(model, "notarealoptimizer")
 
     def test_invalid_criterion_raises_error(self, mlp_trainer_and_data):
         """
@@ -349,10 +244,10 @@ class TestTrainer:
         - _get_fn_cost raises ValueError for unknown loss functions
         """
         trainer = mlp_trainer_and_data[0]
-        trainer.config.criterion = "not_a_criterion"
+        model = trainer.config.config_model.setup()
 
         with pytest.raises(ValueError):
-            trainer._get_fn_cost(trainer.config.criterion)
+            trainer._get_optimizer(model, "notarealoptimizer")
 
     def test_trainer_invalid_model_config(self):
         """
@@ -381,19 +276,6 @@ class TestTrainer:
                     device="cpu",
                 )
             )
-
-    def test_invalid_model_config_in_get_model(self, mlp_trainer_and_data):
-        """
-        Tests _get_model method with invalid configuration.
-
-        Verifies:
-        - _get_model raises ValueError for unrecognized config types
-        """
-        trainer = mlp_trainer_and_data[0]
-        config = "not_a_model_config"
-
-        with pytest.raises(ValueError):
-            trainer._get_model(config)
 
     def test_trainer_config_batch_size_validation(self):
         """

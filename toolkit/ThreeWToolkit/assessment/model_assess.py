@@ -269,7 +269,7 @@ class ModelAssessment(BaseStep):
 
         if strategy.requires_dataloader():
             # Create PyTorch tensor from numpy array
-            X_tensor = torch.tensor(X_test, dtype=torch.float32)
+            X_tensor = torch.as_tensor(X_test_array, dtype=torch.float32)
             # Create dummy labels for DataLoader compatibility
             y_dummy = torch.zeros(X_tensor.shape[0])
             dataset = TensorDataset(X_tensor, y_dummy)

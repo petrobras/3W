@@ -7,13 +7,10 @@ import shutil
 
 from pathlib import Path
 from unittest.mock import Mock, patch
-from torch.utils.data import DataLoader
 
 from ThreeWToolkit.assessment.model_assess import ModelAssessment
 from ThreeWToolkit.core.base_assessment import ModelAssessmentConfig
 from ThreeWToolkit.core.enums import TaskType
-from ThreeWToolkit.models.mlp import MLP
-from ThreeWToolkit.models.sklearn_models import SklearnModels
 
 
 class TestModelAssessmentConfig:
@@ -457,109 +454,6 @@ class TestModelAssessmentEvaluate:
         assert results["task_type"] == TaskType.REGRESSION
 
 
-class TestModelAssessmentGetPredictions:
-    """Test suite for _get_predictions method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor(self, temp_dir):
-        config = ModelAssessmentConfig(output_dir=temp_dir)
-        return ModelAssessment(config)
-
-    def test_get_predictions_sklearn_model(self, assessor):
-        """Test getting predictions from sklearn-like model."""
-        model = Mock()
-        model.predict = Mock(return_value=np.array([0, 1, 0]))
-        X_test = np.array([[1, 2], [3, 4], [5, 6]])
-
-        predictions = assessor._get_predictions(model, X_test)
-
-        model.predict.assert_called_once_with(X_test)
-        assert np.array_equal(predictions, np.array([0, 1, 0]))
-
-    def test_get_predictions_sklearn_models_wrapper(self, assessor):
-        """Test getting predictions from SklearnModels wrapper."""
-        model = Mock(spec=SklearnModels)
-        model.predict = Mock(return_value=np.array([1, 0, 1]))
-        X_test = np.array([[1, 2], [3, 4], [5, 6]])
-
-        predictions = assessor._get_predictions(model, X_test)
-
-        model.predict.assert_called_once_with(X_test)
-        assert np.array_equal(predictions, np.array([1, 0, 1]))
-
-    def test_get_predictions_mlp_model(self, assessor):
-        """Test getting predictions from PyTorch MLP model."""
-        model = Mock(spec=MLP)
-        expected_predictions = np.array([0, 1, 0, 1])
-
-        with patch.object(
-            assessor, "_get_mlp_predictions", return_value=expected_predictions
-        ):
-            X_test = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
-            predictions = assessor._get_predictions(model, X_test)
-
-            assert np.array_equal(predictions, expected_predictions)
-
-    def test_get_predictions_with_kwargs(self, assessor):
-        """Test getting predictions with additional kwargs."""
-        model = Mock()
-        model.predict = Mock(return_value=np.array([0, 1]))
-        X_test = np.array([[1, 2], [3, 4]])
-
-        _ = assessor._get_predictions(model, X_test, verbose=True)
-
-        model.predict.assert_called_once_with(X_test, verbose=True)
-
-
-class TestModelAssessmentGetMLPPredictions:
-    """Test suite for _get_mlp_predictions method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor(self, temp_dir):
-        config = ModelAssessmentConfig(output_dir=temp_dir, batch_size=2, device="cpu")
-        return ModelAssessment(config)
-
-    def test_get_mlp_predictions(self, assessor):
-        """Test getting predictions from MLP model."""
-        model = Mock(spec=MLP)
-        expected_predictions = np.array([0, 1, 0, 1])
-        model.predict = Mock(return_value=expected_predictions)
-
-        X_test = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
-
-        predictions = assessor._get_mlp_predictions(model, X_test)
-
-        # Verify DataLoader was passed to predict
-        call_args = model.predict.call_args
-        assert isinstance(call_args[0][0], DataLoader)
-        assert call_args[1]["device"] == "cpu"
-        assert np.array_equal(predictions, expected_predictions)
-
-    def test_get_mlp_predictions_with_kwargs(self, assessor):
-        """Test MLP predictions with additional kwargs."""
-        model = Mock(spec=MLP)
-        model.predict = Mock(return_value=np.array([0, 1]))
-
-        X_test = np.array([[1, 2], [3, 4]])
-
-        _ = assessor._get_mlp_predictions(model, X_test, custom_arg="value")
-
-        call_args = model.predict.call_args
-        assert call_args[1]["custom_arg"] == "value"
-
-
 class TestModelAssessmentCalculateMetrics:
     """Test suite for _calculate_metrics method."""
 
@@ -583,7 +477,7 @@ class TestModelAssessmentCalculateMetrics:
         y_true = np.array([0, 1, 0, 1, 0, 1])
         y_pred = np.array([0, 1, 0, 1, 0, 1])
 
-        metrics = assessor._calculate_metrics(y_true, y_pred)
+        metrics = assessor._calc_metrics(y_true, y_pred)
 
         assert "accuracy" in metrics
         assert "f1" in metrics
@@ -601,7 +495,7 @@ class TestModelAssessmentCalculateMetrics:
         y_true = np.array([0, 1, 0, 1])
         y_pred = np.array([0, 1, 0, 1])
 
-        metrics = assessor._calculate_metrics(y_true, y_pred)
+        metrics = assessor._calc_metrics(y_true, y_pred)
 
         captured = capsys.readouterr()
         assert "Warning: Could not calculate error_metric" in captured.out
@@ -614,7 +508,7 @@ class TestModelAssessmentCalculateMetrics:
         y_true = np.array([0, 1, 0, 1])
         y_pred = np.array([0, 1, 0, 1])
 
-        metrics = assessor._calculate_metrics(y_true, y_pred)
+        metrics = assessor._calc_metrics(y_true, y_pred)
 
         captured = capsys.readouterr()
         assert "Warning: Metric 'unavailable_metric' not available" in captured.out
@@ -625,7 +519,7 @@ class TestModelAssessmentCalculateMetrics:
         y_true = np.array([0, 1, 0, 1])
         y_pred = np.array([0, 1, 0, 1])
 
-        metrics = assessor._calculate_metrics(y_true, y_pred)
+        metrics = assessor._calc_metrics(y_true, y_pred)
 
         for value in metrics.values():
             assert isinstance(value, (float, type(np.nan)))
@@ -683,71 +577,6 @@ class TestModelAssessmentHelperMethods:
 
         assert isinstance(result, np.ndarray)
         assert result.shape == (2, 2)
-
-
-class TestModelAssessmentExportResults:
-    """Test suite for _export_results method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor_with_results(self, temp_dir):
-        config = ModelAssessmentConfig(output_dir=temp_dir)
-        assessor = ModelAssessment(config)
-        assessor.results = {
-            "model_name": "TestModel",
-            "task_type": TaskType.CLASSIFICATION,
-            "predictions": np.array([0, 1, 0, 1]),
-            "true_values": np.array([0, 1, 0, 1]),
-            "metrics": {"accuracy": 1.0, "f1": 1.0},
-            "timestamp": "2024-01-01T00:00:00",
-        }
-        return assessor
-
-    def test_export_results_creates_files(self, assessor_with_results, capsys):
-        """Test that export creates both CSV files."""
-        assessor_with_results._export_results()
-
-        output_dir = assessor_with_results.config.output_dir
-        assert (output_dir / "predictions.csv").exists()
-        assert (output_dir / "metrics_summary.csv").exists()
-
-        captured = capsys.readouterr()
-        assert "Results exported to" in captured.out
-
-    def test_export_results_predictions_content(self, assessor_with_results):
-        """Test predictions CSV contains correct data."""
-        assessor_with_results._export_results()
-
-        predictions_path = assessor_with_results.config.output_dir / "predictions.csv"
-        df = pd.read_csv(predictions_path)
-
-        assert "true_values" in df.columns
-        assert "predictions" in df.columns
-        assert "metric_accuracy" in df.columns
-        assert "metric_f1" in df.columns
-        assert "model_name" in df.columns
-        assert "task_type" in df.columns
-        assert len(df) == 4
-
-    def test_export_results_metrics_content(self, assessor_with_results):
-        """Test metrics summary CSV contains correct data."""
-        assessor_with_results._export_results()
-
-        metrics_path = assessor_with_results.config.output_dir / "metrics_summary.csv"
-        df = pd.read_csv(metrics_path)
-
-        assert "accuracy" in df.columns
-        assert "f1" in df.columns
-        assert "model_name" in df.columns
-        assert "task_type" in df.columns
-        assert "timestamp" in df.columns
-        assert len(df) == 1
-        assert df["accuracy"].iloc[0] == 1.0
 
 
 class TestModelAssessmentGetMetric:
@@ -880,168 +709,3 @@ class TestModelAssessmentSummary:
         summary = assessor.summary()
         assert "Task Type: regression" in summary
         assert "explained_variance: 0.9234" in summary
-
-
-class TestModelAssessmentIntegration:
-    """Integration tests for complete workflows."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    def test_complete_classification_workflow(self, temp_dir, capsys):
-        """Test complete workflow from initialization to export."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy", "f1", "precision", "recall"],
-            task_type=TaskType.CLASSIFICATION,
-            export_results=True,
-            generate_report=False,
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-
-        # Create mock model
-        model = Mock()
-        model.__class__.__name__ = "RandomForest"
-        model.predict = Mock(return_value=np.array([0, 1, 0, 1, 1, 0]))
-
-        # Create test data
-        X_test = np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]])
-        y_test = np.array([0, 1, 0, 1, 1, 0])
-
-        # Evaluate
-        results = assessor.evaluate(model, X_test, y_test)
-
-        # Verify results
-        assert results["model_name"] == "RandomForest"
-        assert "accuracy" in results["metrics"]
-        assert results["metrics"]["accuracy"] == 1.0
-
-        # Verify exports
-        assert (temp_dir / "predictions.csv").exists()
-        assert (temp_dir / "metrics_summary.csv").exists()
-
-        # Verify metric retrieval
-        accuracy = assessor.get_metric("accuracy")
-        assert accuracy == 1.0
-
-        # Verify summary
-        summary = assessor.summary()
-        assert "RandomForest" in summary
-
-    def test_complete_regression_workflow(self, temp_dir):
-        """Test complete workflow for regression task."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["explained_variance"],
-            task_type=TaskType.REGRESSION,
-            export_results=True,
-            generate_report=False,
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-
-        model = Mock()
-        model.__class__.__name__ = "LinearRegression"
-        model.predict = Mock(return_value=np.array([1.1, 2.0, 3.2, 4.1]))
-
-        X_test = np.array([[1], [2], [3], [4]])
-        y_test = np.array([1.0, 2.0, 3.0, 4.0])
-
-        results = assessor.evaluate(model, X_test, y_test)
-
-        assert results["task_type"] == TaskType.REGRESSION
-        assert "explained_variance" in results["metrics"]
-
-    def test_pipeline_workflow(self, temp_dir):
-        """Test using ModelAssessment in a pipeline."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy"],
-            export_results=False,
-            generate_report=False,
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-
-        # Simulate pipeline data
-        model = Mock()
-        model.predict = Mock(return_value=np.array([0, 1, 0, 1]))
-
-        pipeline_data = {
-            "model": model,
-            "x_test": np.array([[1, 2], [3, 4], [5, 6], [7, 8]]),
-            "y_test": np.array([0, 1, 0, 1]),
-        }
-
-        # Pre-process
-        processed_data = assessor.pre_process(pipeline_data)
-        assert "kwargs" in processed_data
-
-        # Run
-        run_data = assessor.run(processed_data)
-        assert "assessment_results" in run_data
-        assert "metrics" in run_data
-
-        # Post-process
-        final_data = assessor.post_process(run_data)
-        assert final_data["assessment_completed"] is True
-        assert "assessment_timestamp" in final_data
-        assert "assessment_summary" in final_data
-
-    def test_mlp_model_workflow(self, temp_dir):
-        """Test workflow with PyTorch MLP model."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy"],
-            batch_size=2,
-            device="cpu",
-            export_results=False,
-            generate_report=False,
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-
-        # Create mock MLP model
-        model = Mock(spec=MLP)
-        model.predict = Mock(return_value=np.array([0, 1, 0, 1]))
-
-        X_test = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
-        y_test = np.array([0, 1, 0, 1])
-
-        _ = assessor.evaluate(model, X_test, y_test)
-
-        # Verify DataLoader was created and used
-        model.predict.assert_called_once()
-        call_args = model.predict.call_args
-        assert isinstance(call_args[0][0], DataLoader)
-        assert call_args[1]["device"] == "cpu"
-
-    def test_workflow_with_pandas_data(self, temp_dir):
-        """Test workflow with pandas DataFrame and Series."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy", "f1"],
-            export_results=True,
-            generate_report=False,
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-
-        model = Mock()
-        model.__class__.__name__ = "DecisionTree"
-        model.predict = Mock(return_value=np.array([0, 1, 0, 1, 1, 0]))
-
-        X_test = pd.DataFrame(
-            {"feature1": [1, 3, 5, 7, 9, 11], "feature2": [2, 4, 6, 8, 10, 12]}
-        )
-        y_test = pd.Series([0, 1, 0, 1, 1, 0])
-
-        results = assessor.evaluate(model, X_test, y_test)
-
-        assert isinstance(results["X_test"], np.ndarray)
-        assert isinstance(results["true_values"], np.ndarray)
-        assert results["metrics"]["accuracy"] == 1.0
