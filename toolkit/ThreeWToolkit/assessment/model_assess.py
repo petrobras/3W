@@ -1,14 +1,18 @@
-from ThreeWToolkit.core.base_models import BaseModels
+import shutil
 import torch
 import numpy as np
 import pandas as pd
 
+from pathlib import Path
+from datetime import datetime
 from typing import Any, Callable
 from torch.utils.data import DataLoader, TensorDataset
+from dataclasses import dataclass, field
 
+from ..core.base_models import BaseModels
 from ..core.base_step import BaseStep
 from ..core.base_assessment import ModelAssessmentConfig
-from ..core.enums import TaskType
+from ..core.enums import DataSplit, TaskType
 from ..metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -19,77 +23,320 @@ from ..metrics import (
     explained_variance_score,
 )
 
-
 from pylatex import Document
 
 
-class ModelAssessment(BaseStep):
-    """Comprehensive model evaluation class for both PyTorch and scikit-learn models.
+class MetricRegistry:
+    """Registry that maps task types to supported metrics."""
 
-    This class provides a unified interface for evaluating machine learning models
-    across different frameworks. It handles metric calculation, result export,
-    and report generation with support for both classification and regression tasks.
+    def __init__(self):
+        """Initialize the metric registry."""
+        self._registry = {
+            TaskType.CLASSIFICATION: {
+                "accuracy": accuracy_score,
+                "balanced_accuracy": balanced_accuracy_score,
+                "precision": lambda y, p: precision_score(
+                    y, p, average="weighted", zero_division=0
+                ),
+                "recall": lambda y, p: recall_score(
+                    y, p, average="weighted", zero_division=0
+                ),
+                "f1": lambda y, p: f1_score(y, p, average="weighted", zero_division=0),
+                "average_precision": lambda y, p: (
+                    average_precision_score(y, p, average="weighted")
+                    if len(np.unique(y)) > 1
+                    else 0.0
+                ),
+            },
+            TaskType.REGRESSION: {
+                "explained_variance": explained_variance_score,
+            },
+        }
 
-    The class automatically adapts its evaluation strategy based on the model type
-    (PyTorch MLP vs scikit-learn) and provides flexible output options including
-    CSV export and LaTeX report generation.
+    def resolve(
+        self, task_type: TaskType, metrics: list[str]
+    ) -> dict[str, Callable[[np.ndarray, np.ndarray], float]]:
+        """Resolve metric names to callable functions.
 
-    Args:
-        config (ModelAssessmentConfig): Configuration object containing evaluation
-            parameters, output settings, and metric specifications.
+        Args:
+            task_type (TaskType): Task type.
+            metrics (list[str]): List of metric names.
+
+        Returns:
+            dict[str, Callable[[np.ndarray, np.ndarray], float]]: Mapping of metric names to functions.
+
+        Raises:
+            ValueError: If a metric is not supported for the task type.
+        """
+        available = self._registry.get(task_type, {})
+        resolved = {}
+        for m in metrics:
+            if m not in available:
+                raise ValueError(f"Metric '{m}' not available for task {task_type}")
+            resolved[m] = available[m]
+        return resolved
+
+
+@dataclass
+class FoldResults:
+    """Stores evaluation results for a single fold in cross-validation.
 
     Attributes:
-        config (ModelAssessmentConfig): The assessment configuration.
-        results (dict[str, Any]): Dictionary storing the latest evaluation results.
-        report_doc (Document | None): Generated LaTeX report document.
-        metric_functions (dict): Mapping of metric names to their calculation functions.
+        fold_index (int): Index of the fold.
+        predictions (np.ndarray): Model predictions for the fold.
+        true_values (np.ndarray): Ground truth values for the fold.
+        metrics (dict[str, float]): Calculated metrics for the fold.
+        model_name (str): Name of the evaluated model.
+        timestamp (str): ISO timestamp when the fold was evaluated.
+        X_train (np.ndarray | None): Training features for the fold.
+        y_train (np.ndarray | None): Training labels for the fold.
+        X_val (np.ndarray | None): Validation features for the fold.
+        y_val (np.ndarray | None): Validation labels for the fold.
+    """
 
-    Example:
-        Basic usage for classification:
-        >>> config = ModelAssessmentConfig(
-        ...     metrics=["accuracy", "f1", "precision", "recall"],
-        ...     task_type=TaskType.CLASSIFICATION,
-        ...     export_results=True
-        ... )
-        >>> assessor = ModelAssessment(config)
-        >>> results = assessor.evaluate(model, X_test, y_test)
-        >>> print(f"Accuracy: {results['metrics']['accuracy']:.4f}")
-        >>> print(assessor.summary())
+    fold_index: int
+    predictions: np.ndarray
+    true_values: np.ndarray
+    metrics: dict[str, float]
+    model_name: str
+    timestamp: str
 
-        Usage with report generation:
-        >>> config = ModelAssessmentConfig(
-        ...     metrics=["explained_variance"],
-        ...     task_type=TaskType.REGRESSION,
-        ...     generate_report=True,
-        ...     report_title="Model Performance Analysis"
-        ... )
-        >>> assessor = ModelAssessment(config)
-        >>> results = assessor.evaluate(model, X_test, y_test)
+    X_train: np.ndarray | None = None
+    y_train: np.ndarray | None = None
+    X_val: np.ndarray | None = None
+    y_val: np.ndarray | None = None
 
-    Note:
-        - The class automatically creates output directories if they don't exist
-        - Report generation requires the ReportGeneration class to be available
-        - Metric calculations are robust with error handling and fallback values
+
+@dataclass
+class AggregatedResults:
+    """Stores aggregated cross-validation metrics.
+
+    Attributes:
+        metrics_mean (dict[str, float]): Mean value of each metric.
+        metrics_std (dict[str, float]): Standard deviation of each metric.
+        metrics_per_fold (list[dict[str, float]]): Metrics calculated per fold.
+        n_folds (int): Number of folds.
+    """
+
+    metrics_mean: dict[str, float]
+    metrics_std: dict[str, float]
+    metrics_per_fold: list[dict[str, float]]
+    n_folds: int
+
+
+@dataclass
+class AssessmentInput:
+    """
+    Container for model assessment input data.
+
+    This dataclass defines the standardized interface between the
+    training and assessment pipeline steps.
+    """
+
+    models: list[BaseModels]
+    x: pd.DataFrame | np.ndarray
+    y: pd.DataFrame | np.ndarray
+
+    dataset_split: DataSplit
+    kwargs: dict[str, Any] = field(default_factory=dict)
+
+    # Optional cross-validation data
+    x_train_folds: list[np.ndarray] = field(default_factory=list)
+    y_train_folds: list[np.ndarray] = field(default_factory=list)
+    x_val_folds: list[np.ndarray] = field(default_factory=list)
+    y_val_folds: list[np.ndarray] = field(default_factory=list)
+
+
+@dataclass
+class AssessmentOutput:
+    """Container for model assessment results.
+
+    Attributes:
+        model_name (str): Name of the evaluated model.
+        task_type (TaskType): Classification or regression task.
+        dataset_split (DataSplit): Dataset split used for evaluation.
+        timestamp (str): Evaluation timestamp.
+        predictions (np.ndarray | None): Model predictions.
+        true_values (np.ndarray | None): Ground truth values.
+        metrics (dict[str, float] | None): Calculated metrics.
+        fold_results (list[FoldResults]): Results per fold (CV only).
+        aggregated_results (AggregatedResults | None): Aggregated CV results.
+        config (dict[str, Any]): Serialized assessment configuration.
+        is_cross_validation (bool): Whether CV was used.
+        experiment_dir (str | None): Output directory for the experiment.
+    """
+
+    model_name: str
+    task_type: TaskType
+    dataset_split: DataSplit
+    timestamp: str
+
+    predictions: np.ndarray | None = None
+    true_values: np.ndarray | None = None
+    metrics: dict[str, float] | None = None
+
+    fold_results: list[FoldResults] = field(default_factory=list)
+    aggregated_results: AggregatedResults | None = None
+
+    config: dict[str, Any] = field(default_factory=dict)
+    is_cross_validation: bool = False
+
+    experiment_dir: str | None = None
+
+
+class AssessmentInputValidator:
+    """Validates and normalizes input data for model assessment."""
+
+    @staticmethod
+    def validate(
+        data: AssessmentInput,
+        config: ModelAssessmentConfig,
+    ) -> AssessmentInput:
+        """Validate and normalize assessment input.
+
+        This method ensures that the AssessmentInput object contains all
+        required attributes and that their values are consistent with the
+        assessment configuration.
+
+        It also applies default values defined in the configuration when
+        optional fields are missing.
+
+        Args:
+            data (AssessmentInput): Raw assessment input.
+            config (ModelAssessmentConfig): Assessment configuration.
+
+        Returns:
+            AssessmentInput: Validated and normalized assessment input.
+
+        Raises:
+            ValueError: If required fields are missing or inconsistent.
+            TypeError: If provided values have incompatible types.
+        """
+        # Required fields validation
+        if not data.models:
+            raise ValueError("At least one model must be provided")
+
+        if data.x is None or data.y is None:
+            raise ValueError("Both x and y must be provided")
+
+        # Normalize models field
+        if not isinstance(data.models, list):
+            data.models = [data.models]
+
+        # Dataset split default
+        if data.dataset_split is None:
+            data.dataset_split = config.dataset_split
+
+        # Kwargs default
+        if data.kwargs is None:
+            data.kwargs = {}
+
+        # Cross-validation consistency
+        fold_fields = (
+            data.x_train_folds,
+            data.y_train_folds,
+            data.x_val_folds,
+            data.y_val_folds,
+        )
+
+        any_fold_provided = any(len(f) > 0 for f in fold_fields)
+
+        if any_fold_provided:
+            if not all(f is not None for f in fold_fields):
+                raise ValueError(
+                    "All fold inputs (x_train_folds, y_train_folds, "
+                    "x_val_folds, y_val_folds) must be provided together"
+                )
+
+            n_models = len(data.models)
+
+            if data.x_train_folds and len(data.x_train_folds) != n_models:
+                raise ValueError("x_train_folds length must match number of models")
+
+            if data.y_train_folds and len(data.y_train_folds) != n_models:
+                raise ValueError("y_train_folds length must match number of models")
+
+            if data.x_val_folds and len(data.x_val_folds) != n_models:
+                raise ValueError("x_val_folds length must match number of models")
+
+            if data.y_val_folds and len(data.y_val_folds) != n_models:
+                raise ValueError("y_val_folds length must match number of models")
+
+        return data
+
+
+class MetricsAggregator:
+    """Utility class for aggregating cross-validation metrics."""
+
+    @staticmethod
+    def aggregate(metrics_per_fold: list[dict[str, float]]) -> AggregatedResults:
+        """Aggregate metrics across folds.
+
+        Args:
+            metrics_per_fold (list[dict[str, float]]): Metrics per fold.
+
+        Returns:
+            AggregatedResults: Mean and standard deviation of metrics.
+        """
+        metric_names = metrics_per_fold[0].keys()
+        mean, std = {}, {}
+
+        for name in metric_names:
+            values = [m[name] for m in metrics_per_fold]
+            mean[name] = float(np.mean(values))
+            std[name] = float(np.std(values))
+
+        return AggregatedResults(
+            metrics_mean=mean,
+            metrics_std=std,
+            metrics_per_fold=metrics_per_fold,
+            n_folds=len(metrics_per_fold),
+        )
+
+
+class ModelAssessment(BaseStep):
+    """Pipeline step responsible for evaluating trained machine learning models.
+
+    This class provides a unified and framework-agnostic interface for assessing
+    model performance. It supports both single-model evaluation and
+    cross-validation scenarios, handling:
+
+    - Prediction generation
+    - Metric computation
+    - Result aggregation
+    - CSV export
+    - Optional report generation
+
+    The assessment behavior is driven entirely by `ModelAssessmentConfig`,
+    allowing flexible extension without modifying this class.
+
+    Args:
+        config (ModelAssessmentConfig): Configuration object defining metrics,
+            task type, output options, and reporting behavior.
+
+    Attributes:
+        config (ModelAssessmentConfig): Assessment configuration.
+        results (AssessmentResults | None): Results from the most recent evaluation.
+        report_doc (Document | None): Generated report document, if enabled.
+        metric_registry (MetricRegistry): Registry used to resolve metric functions.
+        experiment_dir (Path | None): Directory where outputs are stored.
     """
 
     def __init__(self, config: ModelAssessmentConfig):
-        """Initialize the ModelAssessment with the given configuration.
+        """Initialize the model assessment step.
 
-        Sets up metric functions, creates output directories, and initializes
-        the report generation system if enabled.
+        This constructor initializes internal state, prepares metric resolution,
+        and conditionally enables report generation using lazy imports to avoid
+        circular dependencies.
 
         Args:
-            config (ModelAssessmentConfig): Configuration object containing
-                all assessment parameters and settings.
+            config (ModelAssessmentConfig): Assessment configuration object.
         """
         self.config = config
-        self.results: dict[str, Any] = {}
+        self.results: AssessmentOutput | None = None
         self.report_doc: Document | None = None
 
-        # Create output directory for results and reports
-        self.config.output_dir.mkdir(parents=True, exist_ok=True)
-
-        # Import ReportGeneration lazily to avoid circular imports
+        # Lazily import report generation to avoid circular dependencies
         if self.config.generate_report:
             try:
                 from ..reports.report_generation import ReportGeneration
@@ -101,263 +348,313 @@ class ModelAssessment(BaseStep):
                 )
                 self.config.generate_report = False
 
-        self.metric_functions: dict[str, Callable] | None = None
+        # Initialize metric registry
+        self.metric_registry = MetricRegistry()
 
-    def pre_process(self, data: Any) -> dict[str, Any]:
-        """Standardizes the input of the step.
+    def pre_process(self, data: AssessmentInput) -> AssessmentInput:
+        """Validate and normalize assessment input data.
 
-        Validates and standardizes the input data format for model assessment.
+        This method ensures that the input object conforms to the expected
+        schema and that all required attributes are present and consistent.
+        It also applies default configuration values when necessary.
 
         Args:
-            data: Input data that should contain trained model and test data.
-                  Can be a dict or any structure containing the required assessment data.
+            data (AssessmentInput): Raw assessment input object.
 
         Returns:
-            dict[str, Any]: Standardized data dictionary with required keys.
+            AssessmentInput: Validated and normalized assessment input.
 
         Raises:
-            ValueError: If required assessment data is missing.
+            TypeError: If the input is not an AssessmentInput instance.
+            ValueError: If required fields are missing or inconsistent.
         """
-        if isinstance(data, dict):
-            processed_data = data.copy()
-        else:
-            # If data is not a dict, assume it's a tuple/list with (model, x_test, y_test, ...)
-            if hasattr(data, "__iter__") and len(data) >= 3:
-                processed_data = {
-                    "model": data[0],
-                    "x_test": data[1],
-                    "y_test": data[2],
-                }
-                if len(data) >= 4:
-                    processed_data["kwargs"] = data[3]
-            else:
-                raise ValueError(
-                    "Input data must be a dict or iterable with at least (model, x_test, y_test)"
-                )
-
-        # Validate required keys
-        required_keys = ["model", "x_test", "y_test"]
-        missing_keys = [key for key in required_keys if key not in processed_data]
-        if missing_keys:
-            raise ValueError(f"Missing required keys in input data: {missing_keys}")
-
-        # Ensure optional keys exist with defaults
-        if "kwargs" not in processed_data:
-            processed_data["kwargs"] = {}
-
-        # Validate that model exists and is not None
-        if processed_data["model"] is None:
-            raise ValueError("Model cannot be None for assessment")
-
-        return processed_data
-
-    def run(self, data: dict[str, Any]) -> dict[str, Any]:
-        """Main logic of the step.
-
-        Performs the actual model assessment using the provided data.
-
-        Args:
-            data (dict[str, Any]): Preprocessed data containing model and test data.
-
-        Returns:
-            dict[str, Any]: Data with assessment results added.
-        """
-        # Extract assessment parameters
-        model = data["model"]
-        x_test = data["x_test"]
-        y_test = data["y_test"]
-        kwargs = data.get("kwargs", {})
-
-        self._setup_metrics()
-        # Perform evaluation
-        assessment_results = self.evaluate(model, x_test, y_test, **kwargs)
-
-        # Add assessment results to data
-        data["assessment_results"] = assessment_results
-        data["metrics"] = assessment_results["metrics"]
-        data["predictions"] = assessment_results["predictions"]
-        data["assessor"] = self
-
-        return data
-
-    def post_process(self, data: dict[str, Any]) -> dict[str, Any]:
-        """Standardizes the output of the step.
-
-        Performs any final processing and ensures output format consistency.
-
-        Args:
-            data (dict[str, Any]): Data with assessment results.
-
-        Returns:
-            dict[str, Any]: Final processed data ready for next pipeline step.
-        """
-        # Ensure all expected outputs are present
-        expected_outputs = ["assessment_results", "metrics", "predictions", "assessor"]
-        for key in expected_outputs:
-            if key not in data:
-                raise RuntimeError(
-                    f"Assessment step failed to produce expected output: {key}"
-                )
-
-        # Add metadata about the assessment step
-        data["assessment_completed"] = True
-        data["task_type"] = self.config.task_type
-        data["assessment_timestamp"] = pd.Timestamp.now().isoformat()
-
-        # Add summary for easy access
-        data["assessment_summary"] = self.summary()
-
-        return data
-
-    def evaluate(
-        self,
-        model: BaseModels,
-        X_test: pd.DataFrame | np.ndarray,
-        y_test: pd.DataFrame | pd.Series | np.ndarray,
-        **kwargs,
-    ) -> dict[str, Any]:
-        """Evaluate model performance on test data with comprehensive metrics.
-
-        This method performs a complete model evaluation including prediction
-        generation, metric calculation, result storage, and optional report
-        generation and export.
-
-        Args:
-            model (MLP | SklearnModels | Any): Trained model instance.
-                Can be a PyTorch MLP, SklearnModels wrapper, or any sklearn-
-                compatible model with a predict method.
-            X_test (pd.DataFrame | np.ndarray): Test input features.
-                Will be automatically converted to numpy array for processing.
-            y_test (pd.DataFrame | pd.Series | np.ndarray): Test target
-                values. Will be flattened and converted to numpy array.
-            **kwargs: Additional keyword arguments passed to the model's
-                predict method.
-
-        Returns:
-            dict[str, Any]: Comprehensive evaluation results containing:
-                - model_name (str): Name of the evaluated model
-                - task_type (TaskType): Classification or regression
-                - predictions (np.ndarray): Model predictions on test data
-                - true_values (np.ndarray): Actual target values
-                - X_test (np.ndarray): Test features (for report generation)
-                - metrics (dict[str, float]): Calculated metric values
-                - config (dict): Assessment configuration as dictionary
-                - timestamp (str): ISO format timestamp of evaluation
-
-        Example:
-            >>> results = assessor.evaluate(trained_model, X_test, y_test)
-            >>> print(f"Model: {results['model_name']}")
-            >>> print(f"Accuracy: {results['metrics']['accuracy']:.4f}")
-            >>>
-            >>> # Access predictions and true values
-            >>> predictions = results['predictions']
-            >>> true_values = results['true_values']
-
-        Note:
-            - Results are stored in self.results for later access
-            - Report generation and result export occur automatically if enabled
-            - Metric calculation is robust with error handling for edge cases
-        """
-        # Convert inputs to consistent numpy array format
-        X_test_array = self._to_numpy(X_test)
-        y_test_array = self._to_numpy(y_test).flatten()
-
-        strategy_kwargs: dict[str, Any] = {}
-
-        prediction_strategy = model.get_prediction_strategy()
-        strategy = prediction_strategy()
-
-        if strategy.requires_dataloader():
-            # Create PyTorch tensor from numpy array
-            X_tensor = torch.as_tensor(X_test_array, dtype=torch.float32)
-            # Create dummy labels for DataLoader compatibility
-            y_dummy = torch.zeros(X_tensor.shape[0])
-            dataset = TensorDataset(X_tensor, y_dummy)
-
-            # Create DataLoader with configured batch size
-            test_loader = DataLoader(
-                dataset, batch_size=self.config.batch_size, shuffle=False
+        if not isinstance(data, AssessmentInput):
+            raise TypeError(
+                "Input to ModelAssessment must be an AssessmentInput instance"
             )
 
-            strategy_kwargs["loader"] = test_loader
-            strategy_kwargs["device"] = self.config.device
+        validated_data = AssessmentInputValidator.validate(
+            data=data,
+            config=self.config,
+        )
 
+        return validated_data
+
+    def run(self, data: AssessmentInput) -> AssessmentOutput:
+        """Execute the model assessment pipeline step.
+
+        This method orchestrates the execution of the assessment logic by
+        invoking the evaluation routine and returning the structured
+        assessment output.
+
+        Args:
+            data (AssessmentInput): Preprocessed assessment input.
+
+        Returns:
+            AssessmentOutput: Final assessment results.
+        """
+        return self.evaluate(data)
+
+    def post_process(self, data: AssessmentOutput) -> AssessmentOutput:
+        """Finalize and enrich the assessment output.
+
+        This method appends additional metadata and human-readable
+        summaries to the assessment output object without altering
+        the core evaluation results.
+
+        Args:
+            data (AssessmentOutput): Assessment output generated by the
+                evaluation stage.
+
+        Returns:
+            AssessmentOutput: Enriched assessment output.
+        """
+
+        return data
+
+    def evaluate(self, data: AssessmentInput) -> AssessmentOutput:
+        """Evaluate one or multiple models on the provided dataset.
+
+        This method orchestrates the full evaluation lifecycle:
+        prediction, metric computation, result aggregation, exporting,
+        and optional report generation.
+
+        Args:
+            data (AssessmentInput): Dictionary containing:
+                - models: list of trained models
+                - x: input features
+                - y: ground truth labels
+                - dataset_split: dataset split identifier
+
+        Returns:
+            AssessmentOutput: Structured assessment results.
+
+        Raises:
+            RuntimeError: If evaluation fails and cleanup is required.
+        """
+        # Extract models
+        models = data.models
+
+        # Convert inputs to NumPy arrays
+        X_array = self._to_numpy(data.x)
+        y_array = self._to_numpy(data.y).flatten()
+
+        # Resolve metric functions based on task type
+        metric_fns = self.metric_registry.resolve(
+            task_type=self.config.task_type, metrics=self.config.metrics
+        )
+
+        # Determine whether this is a cross-validation scenario
+        is_cross_validation = len(models) > 1
+
+        if is_cross_validation:
+            results = self._evaluate_cv(
+                models, X_array, y_array, metric_fns, data.dataset_split
+            )
         else:
-            strategy_kwargs["X"] = X_test_array
+            results = self._evaluate_single(
+                models[0], X_array, y_array, metric_fns, data.dataset_split
+            )
 
-        # Generate predictions using appropriate method for model type
-        predictions = strategy.predict(model, self.config.task_type, **strategy_kwargs)
+        try:
+            # Create output directory for results and reports
+            self.experiment_timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
-        # Calculate all requested metrics
-        if self.metric_functions is None:
-            self._setup_metrics()
-        metrics_results = self._calc_metrics(y_test_array, predictions)
+            self.experiment_dir: Path = (
+                self.config.output_dir / f"exp_{self.experiment_timestamp}"
+            )
+            self.experiment_dir.mkdir(parents=True, exist_ok=True)
+            results.experiment_dir = str(self.experiment_dir)
 
-        # Store comprehensive results
-        self.results = {
-            "model_name": self._get_model_name(model),
-            "task_type": self.config.task_type,
-            "predictions": predictions,
-            "true_values": y_test_array,
-            "X_test": X_test_array,  # Store for report generation
-            "metrics": metrics_results,
-            "config": self.config.model_dump(),
-            "timestamp": pd.Timestamp.now().isoformat(),
-        }
+            # Build structured output
+            output = AssessmentOutput(
+                model_name=models[0].model_name,
+                task_type=self.config.task_type,
+                dataset_split=data.dataset_split,
+                timestamp=self.experiment_timestamp,
+                is_cross_validation=is_cross_validation,
+                config=self.config.model_dump(),
+                experiment_dir=str(self.experiment_dir),
+            )
 
-        # Generate LaTeX report if enabled
-        if self.config.generate_report:
-            self._generate_report(model, X_test_array, y_test_array)
+            # Populate results
+            output.predictions = results.predictions
+            output.true_values = results.true_values
+            output.metrics = results.metrics
+            output.fold_results = results.fold_results
+            output.aggregated_results = results.aggregated_results
 
-        # Export results to CSV files if enabled
-        if self.config.export_results:
-            self.export_results()
+            self.results = output
 
+            # Generate LaTeX report if enabled
+            if self.config.generate_report:
+                self._generate_report(data, output)
+
+            # Export results to CSV files if enabled
+            if self.config.export_results:
+                self._export_results()
+
+        except Exception as exc:
+            if getattr(self, "experiment_dir", None) and self.experiment_dir.exists():
+                shutil.rmtree(self.experiment_dir)
+
+            raise RuntimeError(
+                "ModelAssessment failed. Experiment directory was fully removed."
+            ) from exc
+
+        # Print summary
         print(self.summary())
 
-        return self.results
+        return output
 
-    def get_metric(self, metric_name: str) -> float:
-        """Retrieve a specific metric value from the last evaluation.
-
-        Provides convenient access to individual metric values without
-        accessing the full results dictionary.
+    def _evaluate_single(
+        self,
+        model: BaseModels,
+        X: np.ndarray,
+        y: np.ndarray,
+        metric_fns: dict[str, Callable],
+        dataset_split: DataSplit,
+    ) -> AssessmentOutput:
+        """Evaluate a single trained model.
 
         Args:
-            metric_name (str): Name of the metric to retrieve.
+            model (BaseModels): Trained model instance.
+            X (np.ndarray): Input features.
+            y (np.ndarray): Ground truth labels.
+            metric_fns (dict[str, Callable]): Metric functions.
+            dataset_split (DataSplit): Dataset split identifier.
 
         Returns:
-            float: The metric value.
-
-        Raises:
-            ValueError: If no evaluation has been run or if the specified
-                metric was not calculated.
-
-        Example:
-            >>> assessor.evaluate(model, X_test, y_test)
-            >>> accuracy = assessor.get_metric("accuracy")
-            >>> f1_score = assessor.get_metric("f1")
+            AssessmentOutput: Evaluation results for a single model.
         """
-        if not self.results:
-            raise ValueError("No evaluation results found. Run evaluate() first.")
+        preds = self._get_predictions(model, X)
+        metrics = {k: float(fn(y, preds)) for k, fn in metric_fns.items()}
 
-        if metric_name not in self.results["metrics"]:
-            available_metrics = list(self.results["metrics"].keys())
-            raise ValueError(
-                f"Metric '{metric_name}' not found. Available metrics: {available_metrics}"
+        return AssessmentOutput(
+            model_name=model.model_name,
+            task_type=self.config.task_type,
+            dataset_split=dataset_split,
+            timestamp=pd.Timestamp.now().isoformat(),
+            predictions=preds,
+            true_values=y,
+            metrics=metrics,
+            is_cross_validation=False,
+            config=self.config.model_dump(),
+        )
+
+    def _evaluate_cv(
+        self,
+        models: list[BaseModels],
+        X: np.ndarray,
+        y: np.ndarray,
+        metric_fns: dict[str, Callable],
+        dataset_split: DataSplit,
+    ) -> AssessmentOutput:
+        """Evaluate multiple models in a cross-validation setting.
+
+        Args:
+            models (list[BaseModels]): Models trained on different folds.
+            X (np.ndarray): Evaluation features.
+            y (np.ndarray): Ground truth labels.
+            metric_fns (dict[str, Callable]): Metric functions.
+            dataset_split (DataSplit): Dataset split identifier.
+
+        Returns:
+            AssessmentOutput: Aggregated cross-validation results.
+        """
+        fold_results = []
+        metrics_per_fold = []
+
+        for idx, model in enumerate(models):
+            preds = self._get_predictions(model, X)
+            metrics = {k: float(fn(y, preds)) for k, fn in metric_fns.items()}
+
+            fold_results.append(
+                FoldResults(
+                    fold_index=idx,
+                    predictions=preds,
+                    true_values=y,
+                    metrics=metrics,
+                    model_name=model.model_name,
+                    timestamp=pd.Timestamp.now().isoformat(),
+                )
+            )
+            metrics_per_fold.append(metrics)
+
+        aggregated = MetricsAggregator.aggregate(metrics_per_fold)
+
+        return AssessmentOutput(
+            model_name=models[0].model_name,
+            task_type=self.config.task_type,
+            dataset_split=dataset_split,
+            timestamp=pd.Timestamp.now().isoformat(),
+            fold_results=fold_results,
+            aggregated_results=aggregated,
+            is_cross_validation=True,
+            config=self.config.model_dump(),
+        )
+
+    def _get_predictions(self, model: BaseModels, X: np.ndarray) -> np.ndarray:
+        """Generate predictions using the model's prediction strategy.
+
+        Automatically selects between dataloader-based or array-based
+        prediction strategies.
+
+        Args:
+            model (BaseModels): Trained model.
+            X (np.ndarray): Input features.
+
+        Returns:
+            np.ndarray: Model predictions.
+
+        Note:
+            A dummy target tensor is created when using DataLoader-based
+            strategies to satisfy PyTorch Dataset interface requirements.
+        """
+        strategy = model.get_prediction_strategy()()
+
+        if strategy.requires_dataloader():
+            # Create DataLoader when required by the strategy
+            dataset = TensorDataset(
+                torch.tensor(X, dtype=torch.float32), torch.zeros(len(X))
+            )
+            loader = DataLoader(dataset, batch_size=self.config.batch_size)
+
+            return strategy.predict(
+                model, self.config.task_type, loader=loader, device=self.config.device
             )
 
-        return self.results["metrics"][metric_name]
+        return strategy.predict(model, self.config.task_type, X=X)
 
-    def summary(self) -> str:
-        """Generate a formatted text summary of evaluation results.
+    def _to_numpy(self, data: Any) -> np.ndarray:
+        """Convert pandas or array-like data to NumPy format.
 
-        Creates a human-readable summary including model information,
-        evaluation metadata, and all calculated metrics with appropriate
-        formatting.
+        Args:
+            data (Any): Input data.
 
         Returns:
-            str: Formatted summary string suitable for printing or logging.
+            np.ndarray: Converted NumPy array.
+        """
+        if isinstance(data, (pd.Series, pd.DataFrame)):
+            return data.values
+
+        return np.asarray(data)
+
+    def summary(self) -> str:
+        """Generate a human-readable summary of the assessment results.
+
+        This method builds a formatted text summary containing metadata about
+        the evaluation (model name, task type, dataset split, timestamp) and
+        all computed metrics. It supports both single evaluation and
+        cross-validation scenarios.
+
+        For cross-validation, aggregated metrics (mean ± standard deviation)
+        are displayed. For single evaluation, raw metric values are shown.
+
+        Returns:
+            str: A formatted summary string suitable for printing or logging.
+                If no evaluation has been performed, an informative message
+                is returned instead.
 
         Example:
             >>> assessor.evaluate(model, X_test, y_test)
@@ -366,18 +663,17 @@ class ModelAssessment(BaseStep):
             ========================
             Model: RandomForestClassifier
             Task Type: TaskType.CLASSIFICATION
+            Dataset Split: DatasetSplit.TEST
             Timestamp: 2024-01-15T10:30:45.123456
 
             Metrics:
-              accuracy: 0.8750
-              f1: 0.8542
-              precision: 0.8634
-              recall: 0.8750
+            accuracy: 0.8750
+            f1: 0.8542
 
-        Note:
-            - NaN values are displayed as "N/A"
-            - Numeric values are formatted to 4 decimal places
-            - Returns informative message if no evaluation has been performed
+        Notes:
+            - Numeric metric values are formatted with 4 decimal places.
+            - Cross-validation metrics are shown as mean ± std.
+            - Returns a default message if no results are available.
         """
         if not self.results:
             return "No evaluation results available. Run evaluate() first."
@@ -385,257 +681,257 @@ class ModelAssessment(BaseStep):
         summary_lines = [
             "Model Assessment Summary",
             "========================",
-            f"Model: {self.results['model_name']}",
-            f"Task Type: {self.results['task_type']}",
-            f"Timestamp: {self.results['timestamp']}",
+            f"Model: {self.results.model_name}",
+            f"Task Type: {self.results.task_type.value}",
+            f"Dataset Split: {self.results.dataset_split}",
+            f"Timestamp: {self.results.timestamp}",
             "",
             "Metrics:",
         ]
 
-        # Add formatted metric values
-        for metric_name, metric_value in self.results["metrics"].items():
-            if not np.isnan(metric_value):
-                summary_lines.append(f"  {metric_name}: {metric_value:.4f}")
-            else:
-                summary_lines.append(f"  {metric_name}: N/A")
+        # Cross-validation: show aggregated metrics (mean ± std)
+        if self.results.is_cross_validation and self.results.aggregated_results:
+            for m, v in self.results.aggregated_results.metrics_mean.items():
+                std = self.results.aggregated_results.metrics_std[m]
+                summary_lines.append(f"{m}: {v:.4f} ± {std:.4f}")
+        else:
+            # Single evaluation: show raw metric values
+            if self.results.metrics:
+                for m, v in self.results.metrics.items():
+                    summary_lines.append(f"{m}: {v:.4f}")
 
         return "\n".join(summary_lines)
 
-    def export_results(self):
-        """Export evaluation results to CSV files.
+    def _export_results(self) -> None:
+        """Export assessment results to disk.
 
-        Creates two CSV files in the output directory:
-        1. predictions.csv: Contains predictions, true values, and metrics
-        2. metrics_summary.csv: Contains aggregated metrics and metadata
+        This method dispatches the export process according to the evaluation
+        strategy. For single evaluation, predictions and metrics are exported.
+        For cross-validation, fold-level and aggregated results are exported.
 
-        The export includes model metadata and timestamps for result tracking.
-
-        Note:
-            - Creates output directory if it doesn't exist
-            - Handles export errors gracefully with warning messages
-            - Files are timestamped and include model identification
+        Raises:
+            RuntimeError: If no assessment results are available.
         """
-        try:
-            # Create DataFrame with predictions and true values
-            predictions_df = pd.DataFrame(
+        if self.results is None:
+            raise RuntimeError("No assessment results available to export.")
+
+        if self.results.is_cross_validation:
+            self._export_cv_results()
+        else:
+            self._export_single_results()
+
+        print(f"Results exported to {self.experiment_dir}")
+
+    def _export_single_results(self) -> None:
+        """Export results from a single evaluation run.
+
+        This method saves:
+            - A CSV file with true values and predictions.
+            - A CSV file with computed metrics.
+
+        Each exported file includes metadata such as model name, task type,
+        dataset split, and timestamp.
+        """
+        if self.results is None:
+            raise RuntimeError("No assessment results available to export.")
+
+        r = self.results
+
+        # Predictions
+        predictions_df = pd.DataFrame(
+            {
+                "true_values": r.true_values,
+                "predictions": r.predictions,
+            }
+        )
+        predictions_df["model_name"] = r.model_name
+        predictions_df["task_type"] = r.task_type.value
+        predictions_df["dataset_split"] = r.dataset_split.value
+        predictions_df["timestamp"] = r.timestamp
+
+        predictions_df.to_csv(
+            self.experiment_dir / f"predictions_{r.dataset_split.value}.csv",
+            index=False,
+        )
+
+        # Metrics
+        metrics_df = pd.DataFrame([r.metrics])
+        metrics_df["model_name"] = r.model_name
+        metrics_df["task_type"] = r.task_type.value
+        metrics_df["dataset_split"] = r.dataset_split.value
+        metrics_df["timestamp"] = r.timestamp
+
+        metrics_df.to_csv(
+            self.experiment_dir / f"metrics_{r.dataset_split.value}.csv",
+            index=False,
+        )
+
+    def _export_cv_results(self) -> None:
+        """Export results from a cross-validation evaluation.
+
+        This method saves:
+            - Predictions for each fold.
+            - Metrics computed per fold.
+            - Aggregated metrics (mean and standard deviation).
+        """
+        if self.results is None:
+            raise RuntimeError("No assessment results available to export.")
+
+        r = self.results
+
+        # Predictions per fold
+        fold_rows = []
+        for fold in r.fold_results:
+            for y_true, y_pred in zip(fold.true_values, fold.predictions):
+                fold_rows.append(
+                    {
+                        "fold": fold.fold_index,
+                        "true_value": y_true,
+                        "prediction": y_pred,
+                        "model_name": fold.model_name,
+                        "timestamp": fold.timestamp,
+                    }
+                )
+
+        pd.DataFrame(fold_rows).to_csv(
+            self.experiment_dir / "cv_predictions.csv",
+            index=False,
+        )
+
+        if r.aggregated_results:
+            # Metrics per fold
+            metrics_per_fold_df = pd.DataFrame(r.aggregated_results.metrics_per_fold)
+            metrics_per_fold_df["fold"] = range(r.aggregated_results.n_folds)
+
+            metrics_per_fold_df.to_csv(
+                self.experiment_dir / "cv_metrics_per_fold.csv",
+                index=False,
+            )
+
+            # Aggregated metrics
+            aggregated_df = pd.DataFrame(
                 {
-                    "true_values": self.results["true_values"],
-                    "predictions": self.results["predictions"],
+                    "metric": r.aggregated_results.metrics_mean.keys(),
+                    "mean": r.aggregated_results.metrics_mean.values(),
+                    "std": r.aggregated_results.metrics_std.values(),
                 }
             )
 
-            # Add metrics as additional columns for easy analysis
-            for metric_name, metric_value in self.results["metrics"].items():
-                predictions_df[f"metric_{metric_name}"] = metric_value
-
-            # Add metadata columns
-            predictions_df["model_name"] = self.results["model_name"]
-            predictions_df["task_type"] = self.results["task_type"].value
-
-            # Save predictions with metadata
-            predictions_path = self.config.output_dir / "predictions.csv"
-            predictions_df.to_csv(predictions_path, index=False)
-
-            # Create metrics summary DataFrame
-            metrics_df = pd.DataFrame([self.results["metrics"]])
-            metrics_df["model_name"] = self.results["model_name"]
-            metrics_df["task_type"] = self.results["task_type"].value
-            metrics_df["timestamp"] = self.results["timestamp"]
-
-            # Save metrics summary
-            metrics_path = self.config.output_dir / "metrics_summary.csv"
-            metrics_df.to_csv(metrics_path, index=False)
-
-            print(f"Results exported to {self.config.output_dir}")
-
-        except Exception as e:
-            print(f"Warning: Results export failed: {e}")
-
-    def _setup_metrics(self):
-        """Configure metric functions based on the task type.
-
-        Creates a mapping between metric names and their corresponding
-        calculation functions, with appropriate parameters for each task type.
-
-        For classification tasks, metrics use weighted averaging to handle
-        class imbalance. For regression tasks, standard regression metrics
-        are configured.
-
-        Note:
-            - Classification metrics use zero_division=0 to handle edge cases
-            - Average precision requires at least 2 classes to be meaningful
-            - All functions are wrapped with appropriate error handling
-        """
-        if self.config.task_type == TaskType.CLASSIFICATION:
-            self.metric_functions = {
-                "accuracy": accuracy_score,
-                "balanced_accuracy": balanced_accuracy_score,
-                "precision": lambda y_true, y_pred: precision_score(
-                    y_true, y_pred, average="weighted", zero_division=0
-                ),
-                "recall": lambda y_true, y_pred: recall_score(
-                    y_true, y_pred, average="weighted", zero_division=0
-                ),
-                "f1": lambda y_true, y_pred: f1_score(
-                    y_true, y_pred, average="weighted", zero_division=0
-                ),
-                "average_precision": lambda y_true, y_pred: (
-                    average_precision_score(y_true, y_pred, average="weighted")
-                    if len(np.unique(y_true)) > 1
-                    else 0.0
-                ),
-            }
-        else:  # TaskType.REGRESSION
-            self.metric_functions = {
-                "explained_variance": explained_variance_score,
-            }
-
-    def _calc_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
-        """Calculate evaluation metrics based on configuration.
-
-        Computes all requested metrics using the configured metric functions,
-        with robust error handling for edge cases and invalid configurations.
-
-        Args:
-            y_true (np.ndarray): True target values.
-            y_pred (np.ndarray): Model predictions.
-
-        Returns:
-            dict[str, float]: Dictionary mapping metric names to their values.
-                Metrics that fail to compute are set to NaN with a warning.
-
-        Note:
-            - Handles edge cases like single-class predictions gracefully
-            - Warns about unavailable metrics for the current task type
-            - All metric values are converted to Python float for JSON compatibility
-        """
-        metrics_results = {}
-
-        for metric_name in self.config.metrics:
-            if self.metric_functions and metric_name in self.metric_functions.keys():
-                try:
-                    metric_value = self.metric_functions[metric_name](y_true, y_pred)
-                    metrics_results[metric_name] = float(metric_value)
-                except Exception as e:
-                    print(f"Warning: Could not calculate {metric_name}: {e}")
-                    metrics_results[metric_name] = np.nan
-            else:
-                print(
-                    f"Warning: Metric '{metric_name}' not available for task type '{self.config.task_type}'"
-                )
-                metrics_results[metric_name] = np.nan
-
-        return metrics_results
-
-    def _to_numpy(self, data: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
-        """Convert various data types to numpy array format.
-
-        Handles pandas DataFrames/Series and numpy arrays uniformly,
-        ensuring consistent data format for all downstream processing.
-
-        Args:
-            data (pd.DataFrame | pd.Series | np.ndarray): Input data
-                in various supported formats.
-
-        Returns:
-            np.ndarray: Data converted to numpy array format.
-
-        Note:
-            - Preserves data structure and dtype when possible
-            - Handles both pandas and numpy input gracefully
-            - Falls back to np.array() for other array-like objects
-        """
-        if isinstance(data, (pd.DataFrame, pd.Series)):
-            return np.asarray(data.values)
-        elif isinstance(data, np.ndarray):
-            return data
-        else:
-            return np.array(data)
-
-    def _get_model_name(self, model: Any) -> str:
-        """Extract a human-readable name from the model object.
-
-        Args:
-            model (Any): Model instance to extract name from.
-
-        Returns:
-            str: Model class name or "Unknown_Model" if name cannot be determined.
-        """
-        if hasattr(model, "__class__"):
-            return model.__class__.__name__
-        return "Unknown_Model"
+            aggregated_df.to_csv(
+                self.experiment_dir / "cv_metrics_aggregated.csv",
+                index=False,
+            )
 
     def _generate_report(
-        self, model: BaseModels, X_test: np.ndarray, y_test: np.ndarray
-    ):
-        """Generate LaTeX report using the ReportGeneration class.
+        self, input_data: AssessmentInput, output_data: AssessmentOutput
+    ) -> None:
+        """Generate an assessment report if enabled in the configuration.
 
-        Creates a comprehensive report including model performance metrics,
-        visualizations, and analysis. Integrates with the legacy ReportGeneration
-        system while adapting to its expected data format.
+        This method acts as a dispatcher for report generation, handling
+        both single evaluation and cross-validation scenarios.
+
+        If report generation is disabled or the report generation backend
+        is not available, the method exits gracefully.
 
         Args:
-            X_test (np.ndarray): Test features for report generation.
-            y_test (np.ndarray): Test targets for report generation.
+            input_data (AssessmentInput): Assessment input data.
+            output_data (AssessmentOutput): Assessment output results.
 
-        Note:
-            - Requires ReportGeneration class to be available
-            - Converts data to pandas Series format for legacy compatibility
-            - Uses pre-calculated metrics and predictions for efficiency
-            - Handles missing ReportGeneration gracefully with warnings
+        Raises:
+            RuntimeError: If results are not available.
         """
-        if not hasattr(self, "_report_generation_class"):
-            print("Warning: ReportGeneration not available")
+        if not self.config.generate_report:
             return
 
-        # Convert numpy arrays to pandas Series for legacy compatibility
-        X_test_series = pd.Series(X_test.flatten() if len(X_test.shape) > 1 else X_test)
-        y_test_series = pd.Series(y_test)
+        if self.results is None:
+            raise RuntimeError("No results available to generate report.")
 
-        # Create empty training data (required by legacy interface)
-        X_train_series = pd.Series([])
-        y_train_series = pd.Series([])
+        if not hasattr(self, "_report_generation_class"):
+            print("Warning: ReportGeneration not available.")
+            return
 
-        # Determine report title from configuration or use default
-        report_title = (
-            self.config.report_title
-            or f"Model Assessment Report - {self.results['model_name']}"
-        )
+        if self.results.is_cross_validation:
+            # self._generate_cv_report(input_data, output_data) # TODO: Cross-validation report generation still requires adjustments
+            pass
+        else:
+            self._generate_single_report(input_data, output_data)
 
-        # plot_config = {
-        #     "PlotSeries": {
-        #         "series": y_test_series,
-        #         "title": "True Values",
-        #         "xlabel": "Sample Index",
-        #         "ylabel": "Value",
-        #     },
-        #     "PlotMultipleSeries": {
-        #         "series_list": [y_test_series, pd.Series(self.results["predictions"])],
-        #         "title": "True vs Predicted Values",
-        #         "xlabel": "Sample Index",
-        #         "ylabel": "Value",
-        #         "labels": ["True Values", "Predictions"],
-        #     },
-        #     # Additional plots can be added here
-        # }
-        plot_config = None  # Disable plots for now
+    def _generate_single_report(
+        self, input_data: AssessmentInput, output_data: AssessmentOutput
+    ):
+        """Generate a report for a single evaluation run.
 
-        # Create ReportGeneration instance with legacy constructor
-        report_generator = self._report_generation_class(
-            model=model,
-            X_train=X_train_series,
-            y_train=y_train_series,
-            X_test=X_test_series,
-            y_test=y_test_series,
-            title=report_title,
-            author=self.config.report_author,
-            reports_dir=self.config.output_dir,
-            export_report_after_generate=True,
-            # Pass pre-calculated values to avoid recomputation
-            predictions=pd.Series(self.results["predictions"]),
-            calculated_metrics=self.results["metrics"],
-            plot_config=plot_config,
-        )
+        This method builds a report using training and test data, predictions,
+        and computed metrics. The report is generated and automatically exported.
 
-        # Generate the comprehensive report
-        self.report_doc = report_generator.generate_summary_report(format="html")
+        Args:
+            input_data (AssessmentInput): Assessment input data.
+            output_data (AssessmentOutput): Assessment output results.
+        """
+        if self.results is None:
+            raise RuntimeError("No assessment results available to report.")
+
+        r = self.results
+
+        title = self.config.report_title or f"Model Assessment Report - {r.model_name}"
+
+        if r.metrics:
+            report_generator = self._report_generation_class(
+                model=input_data.models[0],
+                X_train=input_data.x_train_folds[0],
+                y_train=input_data.y_train_folds[0],
+                X_test=input_data.x,
+                y_test=input_data.y,
+                predictions=r.predictions,
+                calculated_metrics=r.metrics,
+                plot_config=None,
+                title=title,
+                author=self.config.report_author,
+                reports_dir=self.experiment_dir,
+                export_report_after_generate=True,
+            )
+
+            self.report_doc = report_generator.generate_summary_report(format="html")
+
+    def _generate_cv_report(
+        self, input_data: AssessmentInput, output_data: AssessmentOutput
+    ):
+        """Generate a report for a cross-validation evaluation.
+
+        This method aggregates cross-validation metrics (mean and standard
+        deviation) and generates a consolidated report covering all folds.
+
+        Args:
+            input_data (AssessmentInput): Assessment input data.
+            output_data (AssessmentOutput): Assessment output results.
+        """
+        if self.results is None:
+            raise RuntimeError("No assessment results available to report.")
+
+        r = self.results
+
+        if r.aggregated_results:
+            aggregated_metrics = {
+                f"{k}_mean": v for k, v in r.aggregated_results.metrics_mean.items()
+            } | {f"{k}_std": v for k, v in r.aggregated_results.metrics_std.items()}
+
+            title = (
+                self.config.report_title or f"Model Assessment Report - {r.model_name}"
+            )
+
+            report_generator = self._report_generation_class(
+                model=input_data.models,
+                X_train=input_data.x_train_folds,
+                y_train=input_data.y_train_folds,
+                X_test=input_data.x,
+                y_test=input_data.y,
+                predictions=r.predictions,
+                calculated_metrics=aggregated_metrics,
+                plot_config=None,
+                title=title,
+                author=self.config.report_author,
+                reports_dir=self.experiment_dir,
+                export_report_after_generate=True,
+            )
+
+            self.report_doc = report_generator.generate_summary_report(format="html")

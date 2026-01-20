@@ -17,7 +17,7 @@ class TrainingStrategy(ABC):
         x_val: Any = None,
         y_val: Any = None,
         **kwargs,
-    ) -> Any:
+    ) -> dict[str, Any]:
         """Train the model.
 
         Args:
@@ -33,18 +33,12 @@ class TrainingStrategy(ABC):
         """
         pass
 
+    @property
     def requires_optimizer(self) -> bool:
-        """Check if model requires an optimizer.
-
-        Returns:
-            True if model needs optimizer (neural networks), False otherwise (sklearn).
-        """
+        """True if strategy requires optimizer (eg neural networks)."""
         return False
 
+    @property
     def requires_criterion(self) -> bool:
-        """Check if model requires a loss function.
-
-        Returns:
-            True if model needs criterion (neural networks), False otherwise (sklearn).
-        """
+        """True if strategy requires loss function."""
         return False

@@ -35,11 +35,11 @@ class SklearnPredictionStrategy(PredictionStrategy):
         if X is None:
             raise ValueError("Input data must be provided via 'X'.")
 
-        if not hasattr(model, "predict"):
+        if not hasattr(model.model_class, "predict"):
             raise ValueError("Model must implement a 'predict' method.")
 
         X = self._ensure_dataframe(X, kwargs)
-        y_pred = model.predict(X)
+        y_pred = model.model_class.predict(X)
 
         # Explicit casting to numpy array for consistency
         return np.asarray(y_pred)
@@ -71,13 +71,13 @@ class SklearnPredictionStrategy(PredictionStrategy):
         if X is None:
             raise ValueError("Input data must be provided via 'X'.")
 
-        if not hasattr(model, "predict_proba"):
+        if not hasattr(model.model_class, "predict_proba"):
             raise NotImplementedError(
                 "This scikit-learn model does not support predict_proba."
             )
 
         X = self._ensure_dataframe(X, kwargs)
-        return np.asarray(model.predict_proba(X))
+        return np.asarray(model.model_class.predict_proba(X))
 
     def _ensure_dataframe(self, x: Any, kwargs: dict) -> Any:
         """

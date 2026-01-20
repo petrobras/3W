@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from ThreeWToolkit.constants import OUTPUT_DIR
 
-from ..core.enums import TaskType
+from ..core.enums import DataSplit, TaskType
 
 from .base_step import BaseStep
 
@@ -64,6 +64,9 @@ class ModelAssessmentConfig(BaseModel):
     )
     report_author: str = Field(
         default="3W Toolkit Report", description="Author name for the report"
+    )
+    dataset_split: DataSplit = Field(
+        default=DataSplit.TEST, description="Type of dataset to be evaluated"
     )
 
     @field_validator("task_type")

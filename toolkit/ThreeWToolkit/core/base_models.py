@@ -1,8 +1,7 @@
 from typing import Type
 from abc import ABC, abstractmethod
 from pathlib import Path
-from pydantic import BaseModel, Field, PrivateAttr, field_validator
-from importlib import import_module
+from pydantic import BaseModel, Field, field_validator
 
 from .enums import ModelTypeEnum
 from .base_training_strategies import TrainingStrategy
@@ -10,14 +9,22 @@ from .base_prediction_strategies import PredictionStrategy
 
 
 class ModelsConfig(BaseModel):
+    """
+    Base configuration class for all models.
+
+    Defines common configuration attributes shared across
+    all model implementations and provides a factory method
+    to instantiate concrete models.
+    """
+
     model_type: ModelTypeEnum = Field(..., description="Type of model to use.")
     random_seed: int | None = Field(42, description="Random seed for reproducibility.")
-    _target: str = PrivateAttr()
+    target_: type["BaseModels"]
 
     @field_validator("model_type")
     @classmethod
     def check_model_type(cls, v, info):
-        if v not in {
+        allowed = {
             ModelTypeEnum.MLP,
             ModelTypeEnum.LOGISTIC_REGRESSION,
             ModelTypeEnum.RANDOM_FOREST,
@@ -26,47 +33,40 @@ class ModelsConfig(BaseModel):
             ModelTypeEnum.KNN,
             ModelTypeEnum.NAIVE_BAYES,
             ModelTypeEnum.SVM,
-        }:
-            raise NotImplementedError("model_type not implemented yet.")
-        elif v is None:
-            raise ValueError("model_type is required.")
+        }
+
+        if v not in allowed:
+            raise NotImplementedError(f"model_type {v} not implemented yet.")
 
         return v
 
     def setup(self, **kwargs) -> "BaseModels":
-        """Instantiate the model specified in _target.
+        """Instantiate the model specified in target_.
+
+        This method acts as a factory that builds the concrete model
+        associated with this configuration object.
 
         Args:
-            **kwargs: Additional arguments passed to model constructor.
+            **kwargs: Additional keyword arguments passed to the model constructor.
 
         Returns:
-            Instantiated model instance.
+            BaseModels: Instantiated model object.
 
         Raises:
-            ValueError: If _target is not set.
-
-        Example:
-            >>> config = MLPConfig(hidden_sizes=(64, 32), output_size=10)
-            >>> model = config.setup(device='cuda')
+            ValueError: If target_ is not defined.
+            RuntimeError: If model instantiation fails.
         """
-        _MODELS_NAMESPACE = "ThreeWToolkit.models"
 
-        if self._target is None:
+        if self.target_ is None:
             raise ValueError(
-                f"{self.__class__.__name__} must set _target attribute. "
-                f"Example: _target: Type = 'MLP'"
+                f"{self.__class__.__name__} must set target_ attribute. "
+                f"Example: target_: Type = 'MLP'"
             )
-
-        models_pkg = import_module(_MODELS_NAMESPACE)
 
         try:
-            model_cls: Type = getattr(models_pkg, self._target)
-        except AttributeError:
-            raise ValueError(
-                f"Model '{self._target}' not found in {_MODELS_NAMESPACE}.__init__.py"
-            )
-
-        return model_cls(self, **kwargs)
+            return self.target_(self, **kwargs)
+        except Exception as e:
+            raise RuntimeError("Failed to instantiate model") from e
 
 
 class BaseModels(ABC):
@@ -76,6 +76,10 @@ class BaseModels(ABC):
     Defines the core interface that all models must implement,
     separating model architecture from training logic.
     """
+
+    @property
+    def model_name(self) -> str:
+        return self.__class__.__name__
 
     def __init__(self, config: ModelsConfig):
         """

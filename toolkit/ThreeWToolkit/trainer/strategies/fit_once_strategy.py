@@ -17,7 +17,7 @@ class FitOnceStrategy(TrainingStrategy):
         x_val: Any = None,
         y_val: Any = None,
         **kwargs,
-    ) -> Any:
+    ) -> dict[str, Any]:
         """Train sklearn model.
 
         Args:
@@ -29,4 +29,10 @@ class FitOnceStrategy(TrainingStrategy):
         Returns:
             None (sklearn models don't return history).
         """
-        return model.model_class.fit(x_train, y_train)
+        history: dict[str, Any] = {"model": None}
+
+        model.model_class.fit(x_train, y_train)
+
+        history["model"] = model
+
+        return history

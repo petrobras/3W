@@ -27,6 +27,7 @@ class DataSplit(str, Enum):
     TRAIN = "train"
     VALIDATION = "validation"
     TEST = "test"
+    CUSTOM = "custom"
 
 
 class ActivationFunctionEnum(Enum):

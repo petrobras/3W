@@ -38,8 +38,8 @@ class MLPConfig(ModelsConfig):
         hidden_sizes (tuple[int, ...]): Tuple specifying the size of each hidden layer.
             Must contain at least one positive integer.
         output_size (int): Number of output neurons. Must be greater than 0.
-        activation_function (str, optional): Activation function to use between layers.
-            Options: "relu", "sigmoid", "tanh". Defaults to "relu".
+        activation_function (str, optional): Activation function identifier.
+            Allowed values are defined in ActivationFunctionEnum: {"relu", "sigmoid", "tanh"}.
         regularization (float | None, optional): L2 regularization parameter.
             If specified, must be >= 0. Defaults to None (no regularization).
 
@@ -73,6 +73,9 @@ class MLPConfig(ModelsConfig):
         ...     regularization=0.01
         ... )
 
+    Attributes:
+        target_ (type): Reference to the concrete model class associated with this configuration.
+
     Note:
         - When input_size is `None`, the model will infer it from the first forward pass;
         - The model automatically adds activation functions between hidden layers;
@@ -105,7 +108,7 @@ class MLPConfig(ModelsConfig):
         ge=0,
         description="L2 regularization parameter (>=0 or None for no regularization).",
     )
-    _target: str = "MLP"
+    target_: type[BaseModels] = Field(default_factory=lambda: MLP)
 
     @field_validator("input_size")
     @classmethod
@@ -113,7 +116,7 @@ class MLPConfig(ModelsConfig):
         """Validate that `input_size` is positive if specified.
 
         Args:
-            v (int | None): The input size to validate.
+            v (tuple[int, ...]): The input size to validate.
 
         Returns:
             int | None: The validated input size.
@@ -185,6 +188,7 @@ class MLPConfig(ModelsConfig):
 
         Raises:
             ValueError: If input_size is not positive.
+            RuntimeError: If assignment fails due to immutable configuration.
         """
         if input_size <= 0:
             raise ValueError("Inferred input_size must be > 0")
@@ -287,7 +291,7 @@ class MLP(BaseModels, nn.Module):
         the input tensor's last dimension.
 
         Args:
-            x (torch.Tensor): Input tensor with shape (batch_size, input_size).
+            x (torch.Tensor): Input tensor where the last dimension represents the feature dimension (…, input_size).
 
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, output_size).
@@ -328,9 +332,19 @@ class MLP(BaseModels, nn.Module):
         return self
 
     def get_training_strategy(self) -> Type[TrainingStrategy]:
+        """Return the training strategy class associated with this model.
+
+        Returns:
+            Type[TrainingStrategy]: Training strategy implementation.
+        """
         return EpochTrainingStrategy
 
     def get_prediction_strategy(self) -> Type[PredictionStrategy]:
+        """Return the prediction strategy class associated with this model.
+
+        Returns:
+            Type[PredictionStrategy]: Prediction strategy implementation.
+        """
         return TorchPredictionStrategy
 
     def _build_layers(self, input_size: int) -> None:

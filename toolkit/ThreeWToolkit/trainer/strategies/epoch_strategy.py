@@ -78,9 +78,10 @@ class EpochTrainingStrategy(TrainingStrategy):
                 x_val, y_val, batch_size=batch_size, shuffle=False
             )
 
-        loss_dict: dict[str, list[Any]] = {"train_loss": []}
+        history: dict[str, Any] = {"model": None, "train_loss": []}
+
         if val_loader is not None:
-            loss_dict["val_loss"] = []
+            history["val_loss"] = []
 
         pbar = tqdm(
             range(epochs),
@@ -97,7 +98,7 @@ class EpochTrainingStrategy(TrainingStrategy):
                 optimizer=optimizer,
                 device=device,
             )
-            loss_dict["train_loss"].append(avg_train_loss)
+            history["train_loss"].append(avg_train_loss)
 
             if val_loader is not None:
                 val_loss = self._calculate_val_loss(
@@ -106,7 +107,7 @@ class EpochTrainingStrategy(TrainingStrategy):
                     criterion=criterion,
                     device=device,
                 )
-                loss_dict["val_loss"].append(val_loss)
+                history["val_loss"].append(val_loss)
 
                 pbar.set_postfix(
                     train_loss=f"{avg_train_loss:.4f}", val_loss=f"{val_loss:.4f}"
@@ -114,7 +115,27 @@ class EpochTrainingStrategy(TrainingStrategy):
             else:
                 pbar.set_postfix(train_loss=f"{avg_train_loss:.4f}")
 
-        return loss_dict
+        history["model"] = model
+
+        return history
+
+    @property
+    def requires_optimizer(self) -> bool:
+        """Indicate whether this strategy requires an optimizer.
+
+        Returns:
+            bool: Always True for neural network training strategies.
+        """
+        return True
+
+    @property
+    def requires_criterion(self) -> bool:
+        """Indicate whether this strategy requires a loss function.
+
+        Returns:
+            bool: Always True for neural network training strategies.
+        """
+        return True
 
     def _train_epoch(
         self,
@@ -257,19 +278,3 @@ class EpochTrainingStrategy(TrainingStrategy):
         return DataLoader(
             dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True
         )
-
-    def requires_optimizer(self) -> bool:
-        """Indicate whether this strategy requires an optimizer.
-
-        Returns:
-            bool: Always True for neural network training strategies.
-        """
-        return True
-
-    def requires_criterion(self) -> bool:
-        """Indicate whether this strategy requires a loss function.
-
-        Returns:
-            bool: Always True for neural network training strategies.
-        """
-        return True

@@ -40,8 +40,7 @@ class SklearnModelsConfig(ModelsConfig):
     model_params: dict[str, Any] = Field(
         default_factory=dict, description="Hyperparameters for the scikit-learn model."
     )
-
-    _target: str = "SklearnModels"
+    target_: type[BaseModels] = Field(default_factory=lambda: SklearnModels)
 
 
 class SklearnModels(BaseModels):
@@ -75,6 +74,10 @@ class SklearnModels(BaseModels):
 
         self.model_class = model_class(**params)
         self._feature_names: list[str] | None = None
+
+    @property
+    def model_name(self) -> str:
+        return self.model_class.__class__.__name__
 
     def forward(self, x: Any) -> Any:
         """
