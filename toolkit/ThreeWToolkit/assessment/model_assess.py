@@ -919,13 +919,15 @@ class ModelAssessment(BaseStep):
                 self.config.report_title or f"Model Assessment Report - {r.model_name}"
             )
 
+            fold_preds = [f_res.predictions for f_res in r.fold_results]
+
             report_generator = self._report_generation_class(
                 model=input_data.models,
                 X_train=input_data.x_train_folds,
                 y_train=input_data.y_train_folds,
                 X_test=input_data.x,
                 y_test=input_data.y,
-                predictions=r.predictions,
+                predictions=fold_preds,
                 calculated_metrics=aggregated_metrics,
                 plot_config=None,
                 title=title,

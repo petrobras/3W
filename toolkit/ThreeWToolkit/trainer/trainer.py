@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from tqdm.auto import tqdm
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+from sklearn.utils.class_weight import compute_class_weight
 
 from ..core.base_step import BaseStep
 from ..core.base_models import BaseModels
@@ -137,6 +138,23 @@ class TrainerConfig(ModelTrainerConfig):
     task_type: TaskType = Field(
         default=TaskType.CLASSIFICATION,
         description="Type of task (classification or regression)",
+    )
+
+    use_class_weights: bool = Field(
+        default=False,
+        description="Enable automatic class weight computation for imbalanced datasets",
+    )
+
+    class_weight_strategy: str = Field(
+        default="balanced", description="Class weight strategy: 'balanced' or 'manual'"
+    )
+
+    manual_class_weights: dict[int, float] | None = Field(
+        default=None, description="Manual class weights mapping"
+    )
+
+    deterministic: bool = Field(
+        default=False, description="Enable deterministic CUDA behavior"
     )
 
     @field_validator("optimizer")
@@ -375,6 +393,8 @@ class ModelTrainer(BaseStep):
         Returns:
             TrainOutput: Object containing training artifacts and results.
         """
+        self._set_seed()
+
         # Perform training
         self.train(
             x_train=data.x_train,
@@ -549,7 +569,10 @@ class ModelTrainer(BaseStep):
             )
 
         if strategy.requires_criterion:
-            strategy_kwargs["criterion"] = self._get_fn_cost(self.config.criterion)
+            strategy_kwargs["criterion"] = self._get_fn_cost(
+                self.config.criterion,
+                y_train=y_train,
+            )
 
         return strategy.train(model, x_train, y_train, x_val, y_val, **strategy_kwargs)
 
@@ -604,23 +627,71 @@ class ModelTrainer(BaseStep):
         else:
             raise ValueError(f"Unknown optimizer: {optimizer}")
 
-    def _get_fn_cost(self, criterion: str | None) -> Callable:
-        """Create and return the specified loss function.
+    def _get_fn_cost(
+        self, criterion: str | None, y_train: ArrayLike | None = None
+    ) -> Callable:
+        """
+        Create and return the configured loss function.
+
+        This method instantiates the appropriate PyTorch loss function based on
+        the selected criterion and training configuration.
+
+        When class weighting is enabled (`use_class_weights=True`) and the task
+        is classification, the method automatically computes and injects class
+        weights into the loss function using the training labels.
+
+        Supported behaviors:
+            - Multi-class classification:
+                Uses `nn.CrossEntropyLoss(weight=class_weights)`
+            - Binary classification:
+                Uses `nn.BCEWithLogitsLoss(pos_weight=class_weights)`
+            - Regression:
+                Uses `nn.MSELoss` or `nn.L1Loss`
 
         Args:
-            criterion (str | None): Name of the loss function to create. Must be
-                one of: "cross_entropy", "binary_cross_entropy", "mse", "mae".
+            criterion (str | None):
+                Name of the loss function. Must be one of:
+                {"cross_entropy", "binary_cross_entropy", "mse", "mae"}.
+
+            y_train (ArrayLike | None):
+                Training labels used to compute class weights when
+                class weighting is enabled. Required only for classification
+                tasks with `use_class_weights=True`.
 
         Returns:
-            Callable: The configured loss function instance.
+            Callable:
+                Instantiated PyTorch loss function ready for training.
 
         Raises:
-            ValueError: If the criterion name is not recognized.
+            ValueError:
+                If the specified criterion name is not supported.
+
+            ValueError:
+                If class weighting is enabled but `y_train` is not provided.
+
+        Notes:
+            - `weight` in CrossEntropyLoss applies per-class weighting for
+            multi-class classification.
+
+            - `pos_weight` in BCEWithLogitsLoss controls positive class weighting
+            in binary classification and expects a tensor of size [1] or
+            matching output dimensions.
+
+            - For regression losses, class weighting is ignored.
         """
+        class_weights = None
+
+        if (
+            self.config.use_class_weights
+            and self._is_classification_task()
+            and y_train is not None
+        ):
+            class_weights = self._compute_class_weights(y_train)
+
         if criterion == CriterionEnum.CROSS_ENTROPY.value:
-            return nn.CrossEntropyLoss()
+            return nn.CrossEntropyLoss(weight=class_weights)
         elif criterion == CriterionEnum.BINARY_CROSS_ENTROPY.value:
-            return nn.BCEWithLogitsLoss()
+            return nn.BCEWithLogitsLoss(pos_weight=class_weights)
         elif criterion == CriterionEnum.MSE.value:
             return nn.MSELoss()
         elif criterion == CriterionEnum.MAE.value:
@@ -802,3 +873,113 @@ class ModelTrainer(BaseStep):
             "y_train": [],
             "y_val": [],
         }
+
+    def _set_seed(self) -> None:
+        """
+        Set global random seeds to improve experiment reproducibility.
+
+        This method configures random number generators for NumPy and PyTorch
+        (CPU and CUDA backends) to ensure deterministic behavior across
+        training runs when possible.
+
+        It also adjusts CuDNN backend settings to favor deterministic
+        operations over performance-optimized but non-deterministic kernels.
+
+        Notes:
+            - Setting `torch.backends.cudnn.deterministic = True` may reduce
+            training performance but improves reproducibility.
+            - Some GPU operations remain non-deterministic depending on
+            hardware and PyTorch version.
+            - For full reproducibility, dataset shuffling and data loader
+            worker seeds should also be controlled.
+
+        Side Effects:
+            Modifies global random generator states for NumPy and PyTorch,
+            affecting all subsequent random operations in the current process.
+        """
+        seed = self.seed
+
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+        if self.config.deterministic:
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+
+    def _compute_class_weights(self, y: ArrayLike) -> torch.Tensor:
+        """
+        Compute class weights for imbalanced classification problems.
+
+        This method generates class weighting tensors to be used by loss
+        functions such as CrossEntropyLoss in order to mitigate class
+        imbalance during training.
+
+        Two strategies are supported:
+
+        - Manual:
+            Uses user-provided weights defined in the trainer configuration.
+
+        - Automatic ("balanced"):
+            Computes weights using scikit-learn's `compute_class_weight`
+            with the "balanced" strategy, which assigns higher weights
+            to underrepresented classes.
+
+        Args:
+            y (ArrayLike): Target labels used to compute class distribution.
+                Can be a NumPy array, pandas Series/DataFrame, or any array-like
+                structure containing class indices.
+
+        Returns:
+            torch.Tensor: Tensor containing class weights ordered by class label,
+                with dtype float32 and moved to the configured training device.
+
+        Raises:
+            ValueError: If manual weighting strategy is selected but
+                `manual_class_weights` is not provided in the configuration.
+
+        Notes:
+            - For manual strategy, class weights are sorted by class label key
+            to ensure correct alignment with model output indices.
+            - For automatic strategy, class labels are inferred directly from `y`.
+            - Returned tensor is placed on the same device used for training
+            (CPU or GPU).
+            - This method assumes a classification task with discrete labels.
+
+        Example:
+            Automatic balancing:
+            >>> weights = trainer._compute_class_weights(y_train)
+            >>> criterion = nn.CrossEntropyLoss(weight=weights)
+
+            Manual balancing:
+            >>> config.manual_class_weights = {0: 1.0, 1: 3.5}
+            >>> weights = trainer._compute_class_weights(y_train)
+        """
+        if self.config.class_weight_strategy == "manual":
+            if self.config.manual_class_weights is None:
+                raise ValueError("manual_class_weights must be provided")
+
+            weights = self.config.manual_class_weights
+            return torch.tensor(
+                [weights[k] for k in sorted(weights.keys())],
+                dtype=torch.float32,
+                device=self.device,
+            )
+
+        # automatic balanced
+        y_np = np.asarray(y)
+
+        classes = np.unique(y_np)
+
+        class_weights = compute_class_weight(
+            class_weight="balanced",
+            classes=classes,
+            y=y_np,
+        )
+
+        return torch.tensor(
+            class_weights,
+            dtype=torch.float32,
+            device=self.device,
+        )
