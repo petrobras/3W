@@ -32,6 +32,7 @@ No matter how you choose to contribute, please be respectful and follow our [cod
 - [Code Style Guidelines](#code-style-guidelines)
 
 ---
+
 ## Code of Conduct
 
 This project adheres to a [code of conduct](https://github.com/petrobras/3W/blob/main/CODE_OF_CONDUCT.md) that we expect all contributors to follow. Please be respectful, inclusive, and considerate in all interactions.
@@ -41,6 +42,7 @@ This project adheres to a [code of conduct](https://github.com/petrobras/3W/blob
 ### Setting Up Your Development Environment
 
 ---
+
 ## Architecture Overview
 
 Our toolkit is built on some core principles:
@@ -227,6 +229,7 @@ Your model must specify:
 #### Step 6: Add Tests
 
 See [Testing Guidelines](#testing-guidelines) for details.
+
 ---
 
 ### Creating Training Strategies
