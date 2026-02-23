@@ -1,10 +1,23 @@
 [project]
 name = "ThreeWToolkit"
-version = "2.0.0"
+version = "2.1.0"
 description = "A modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation"
-readme = "toolkit/README.md"
+readme = { file = "toolkit/ThreeWToolkit/README.md", content-type = "text/markdown" }
 license = { text = "Apache-2.0" }
+authors = [
+    { name = "Ricardo Emanuel Vaz Vargas", email = "ricardo.vargas@petrobras.com.br" },
+]
 requires-python = ">=3.10"
+keywords = [
+    "machine-learning",
+    "time-series",
+    "fault-detection",
+    "oil-wells",
+    "classification",
+    "petroleum",
+    "data-science",
+    "artificial-intelligence",
+]
 dependencies = [
     "numpy>=1.26.4",
     "scipy>=1.15.2",
@@ -30,19 +43,28 @@ dependencies = [
     "pyarrow>=20.0.0",
     "pylatex>=1.4.2",
     "statsmodels>=0.14.5",
+    "requests<=2.35.5",
 ]
+
+[project.urls]
+Homepage = "https://github.com/petrobras/3W"
+Repository = "https://github.com/petrobras/3W"
+Documentation = "https://github.com/petrobras/3W"
+"Bug Tracker" = "https://github.com/petrobras/3W/issues"
+"Source Code" = "https://github.com/petrobras/3W"
+Changelog = "https://github.com/petrobras/3W/releases"
 
 [project.optional-dependencies]
 dev = [
-    "black>=25.9.0",
-    "mypy>=1.16.0",
+    "mypy>=1.19.1",
+    "black>=26.1.0",
+    "ruff>=0.14.13",
+    "pytest>=9.0.2",
     "flake8",
     "jupyter",
-    "ruff>=0.12.2",
     "uv",
     "types-requests>=2.32.4.20250611",
     "coverage>=7.8.1",
-    "pytest>=8.3.5",
     "pytest-mock>=3.14.1",
 ]
 docs = [
@@ -53,6 +75,10 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["toolkit"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["dataset/*"] 
+
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
@@ -76,3 +102,4 @@ quote-style = "double"
 python_version = "3.10"
 mypy_path = "toolkit/"
 ignore_missing_imports = true
+

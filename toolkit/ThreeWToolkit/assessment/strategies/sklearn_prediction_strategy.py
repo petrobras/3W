@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Any
 
 from ...core.base_prediction_strategies import PredictionStrategy
-from ...core.enums import TaskType
+from ...core.enums import TaskTypeEnum
 
 
 class SklearnPredictionStrategy(PredictionStrategy):
@@ -14,13 +14,15 @@ class SklearnPredictionStrategy(PredictionStrategy):
     scikit-learn `predict` API.
     """
 
-    def predict(self, model: Any, task: TaskType | None = None, **kwargs) -> np.ndarray:
+    def predict(
+        self, model: Any, task: TaskTypeEnum | None = None, **kwargs
+    ) -> np.ndarray:
         """Generate predictions using a scikit-learn model.
 
         Args:
             model (Any): Trained scikit-learn model implementing `predict`.
-            task (TaskType | None): Task type indicating how predictions
-                should be interpreted. Defaults to TaskType.CLASSIFICATION.
+            task (TaskTypeEnum | None): Task type indicating how predictions
+                should be interpreted. Defaults to TaskTypeEnum.CLASSIFICATION.
             **kwargs: Additional keyword arguments:
                 X (np.ndarray): Input feature matrix.
 

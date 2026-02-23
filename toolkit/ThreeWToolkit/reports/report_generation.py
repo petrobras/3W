@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import jinja2
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
@@ -24,7 +25,7 @@ class ReportGeneration:
     can also export the raw prediction results to a CSV file for further analysis.
 
     Attributes:
-        model (Any): The trained machine learning model object.
+        model: The trained machine learning model object (MLP, SklearnModels, or sklearn-compatible model).
         X_train (pd.Series): The training feature data.
         y_train (pd.Series): The training target data.
         X_test (pd.Series): The testing feature data.
@@ -44,7 +45,7 @@ class ReportGeneration:
             Generates a model evaluation report in either LaTeX (PDF) or HTML format.
         save_report(doc: Document | str, filename: str, format: str) -> None:
             Saves the report in both LaTeX (PDF) and HTML formats.
-        export_results_to_csv(results: dict[str, Any], filename: str) -> pd.DataFrame:
+        export_results_to_csv(results: dict[str, pd.DataFrame | np.ndarray | str | dict[str, float]], filename: str) -> pd.DataFrame:
             Exports machine learning model results to a CSV file.
         get_visualization(format: str) -> dict:
             Generates and saves plots based on the provided plot configuration.
@@ -67,14 +68,14 @@ class ReportGeneration:
 
     def __init__(
         self,
-        model: Any,
+        model,
         X_train: pd.Series,
         y_train: pd.Series,
         X_test: pd.Series,
         y_test: pd.Series,
         predictions: pd.Series,
-        calculated_metrics: dict,
-        plot_config: dict | None,
+        calculated_metrics: dict[str, float],
+        plot_config: dict[str, dict] | None,
         title: str,
         author: str = "3W Toolkit Report",
         latex_dir: Path = LATEX_DIR,
@@ -88,7 +89,7 @@ class ReportGeneration:
         metrics, and various configuration options as input.
 
         Args:
-            model (Any): The trained machine learning model object.
+            model: The trained machine learning model object (MLP, SklearnModels, or sklearn-compatible model).
             X_train (pd.Series): The training feature data.
             y_train (pd.Series): The training target data.
             X_test (pd.Series): The testing feature data.
@@ -507,7 +508,9 @@ class ReportGeneration:
         copy_html_support_files(HTML_TEMPLATES_DIR, HTML_ASSETS_DIR, report_path)
 
     def export_results_to_csv(
-        self, results: dict[str, Any], filename: str
+        self,
+        results: dict[str, pd.DataFrame | np.ndarray | str | dict[str, float]],
+        filename: str,
     ) -> pd.DataFrame:
         """Exports machine learning model results to a CSV file.
 
@@ -521,7 +524,7 @@ class ReportGeneration:
         calculated performance metrics.
 
         Args:
-            results (dict[str, Any]): A dictionary containing the model evaluation
+            results (dict[str, pd.DataFrame | np.ndarray | str | dict[str, float]]): A dictionary containing the model evaluation
                 results. It must include the following keys:
                 - 'X_test' (pd.DataFrame or np.ndarray): The test features.
                 - 'true_values' (array-like): The actual target values.
@@ -562,6 +565,8 @@ class ReportGeneration:
         else:
             # Assuming it's a NumPy array
             X_test_arr = results["X_test"]
+            if not isinstance(X_test_arr, np.ndarray):
+                raise TypeError("X_test must be a pandas DataFrame or numpy array")
             if X_test_arr.ndim == 1:
                 X_test_arr = X_test_arr.reshape(-1, 1)
 
@@ -576,8 +581,10 @@ class ReportGeneration:
         df_export["predictions"] = results["predictions"]
         df_export["model_name"] = results["model_name"]
 
-        for metric_name, metric_value in results["metrics"].items():
-            df_export[metric_name] = metric_value
+        metrics = results["metrics"]
+        if isinstance(metrics, dict):
+            for metric_name, metric_value in metrics.items():
+                df_export[metric_name] = metric_value
 
         df_export.to_csv(self.reports_dir / filename, index=True)
         print(f"Successfully exported results to '{self.reports_dir / filename}'.")

@@ -16,6 +16,14 @@ FIGSHARE_VERSION_IDS = {
     "2.0.0": "29205836",
 }
 
+# expected SHA256 digests for dataset versions
+FIGSHARE_VERSION_DIGESTS = {
+    "1.0.0": "34762c8d8077718f75024398996bbc57669f72234084b750f0bcaecfb7e85402",
+    "1.1.0": "a4d99b1783333f4ca7389e45e5bab0188aeb5c381a6439c8a3f634bd96ab9d82",
+    "1.1.1": "fed2af7c6f607b46d4963fe7eb7ee7ada7df3cfde0885f205a6408d0c2adff69",
+    "2.0.0": "c037a6a9d5dcc9b2add7b9ea413f5cff367c57bad3a93faac1d1d32da27fcbea",
+}
+
 
 class GetFigshareDataValidator(BaseModel):
     """Validator for figshare data download parameters.
@@ -35,11 +43,12 @@ class GetFigshareDataValidator(BaseModel):
 
     @field_validator("path")
     @classmethod
-    def validate_path(cls, v: Path) -> Path:
+    def validate_path(cls: type["GetFigshareDataValidator"], path: Path) -> Path:
         """Validate that the path exists and is a directory.
 
         Args:
-            v (Path): Path to validate.
+            cls (GetFigshareDataValidator): The class reference.
+            path (Path): Path to validate.
 
         Returns:
             Path: The validated path.
@@ -47,19 +56,20 @@ class GetFigshareDataValidator(BaseModel):
         Raises:
             RuntimeError: If path doesn't exist or is not a directory.
         """
-        if not v.exists():
+        if not path.exists():
             raise RuntimeError("Provided path must exist.")
-        if not v.is_dir():
+        if not path.is_dir():
             raise RuntimeError("Provided path must be a directory.")
-        return v
+        return path
 
     @field_validator("version")
     @classmethod
-    def validate_version(cls, v: str) -> str:
+    def validate_version(cls: type["GetFigshareDataValidator"], version: str) -> str:
         """Validate that the version is supported.
 
         Args:
-            v (str): Version string to validate.
+            cls (GetFigshareDataValidator): The class reference.
+            version (str): Version string to validate.
 
         Returns:
             str: The validated version string.
@@ -67,17 +77,20 @@ class GetFigshareDataValidator(BaseModel):
         Raises:
             ValueError: If version is not in FIGSHARE_VERSION_IDS.
         """
-        if v not in FIGSHARE_VERSION_IDS:
-            raise ValueError(f"Unknown dataset version: {v}.")
-        return v
+        if version not in FIGSHARE_VERSION_IDS:
+            raise ValueError(f"Unknown dataset version: {version}.")
+        return version
 
     @field_validator("chunk_size")
     @classmethod
-    def validate_chunk_size(cls, v: int) -> int:
+    def validate_chunk_size(
+        cls: type["GetFigshareDataValidator"], chunk_size: int
+    ) -> int:
         """Validate that chunk size is positive.
 
         Args:
-            v (int): Chunk size to validate.
+            cls (GetFigshareDataValidator): The class reference.
+            chunk_size (int): Chunk size to validate.
 
         Returns:
             int: The validated chunk size.
@@ -85,9 +98,9 @@ class GetFigshareDataValidator(BaseModel):
         Raises:
             ValueError: If chunk size is not greater than zero.
         """
-        if v <= 0:
+        if chunk_size <= 0:
             raise ValueError("Chunk size must be greater than zero.")
-        return v
+        return chunk_size
 
 
 @GeneralUtils.validate_func_args_with_pydantic(GetFigshareDataValidator)
@@ -135,11 +148,9 @@ def get_figshare_data(
     downloaded = []
     for meta in metadata:  # iterate through multiple files if present
         # Stream download from Figshare
-        stream = requests.get(
-            FIGSHARE_BASE_URL + "/file/download/" + str(meta["id"]), stream=True
-        )
+        stream = requests.get(meta["download_url"], stream=True)
         stream_size = int(stream.headers.get("content-length", 0))
-        hasher = hashlib.md5()
+        hasher = hashlib.sha256()
         file_path = path / meta["name"]
 
         # Download with progress bar
@@ -156,10 +167,10 @@ def get_figshare_data(
                         pbar.update(len(chunk))
 
             # Verify file integrity
-            if hasher.hexdigest() != meta["supplied_md5"]:
+            if hasher.hexdigest() != FIGSHARE_VERSION_DIGESTS[version]:
                 raise RuntimeError(
                     f"Wrong checksum detected in {meta['name']}. "
-                    f"Expected {meta['supplied_md5']}, got {hasher.hexdigest()}."
+                    f"Expected {FIGSHARE_VERSION_DIGESTS[version]}, got {hasher.hexdigest()}."
                 )
         downloaded.append(file_path)
     return downloaded

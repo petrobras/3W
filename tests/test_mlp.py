@@ -7,7 +7,7 @@ import pydantic
 
 from torch.utils.data import DataLoader, TensorDataset
 
-from ThreeWToolkit.core.enums import TaskType
+from ThreeWToolkit.core.enums import TaskTypeEnum
 from ThreeWToolkit.models.mlp import MLP, MLPConfig
 from ThreeWToolkit.trainer.trainer import ModelTrainer, TrainerConfig
 
@@ -78,7 +78,7 @@ class TestMLP:
 
         strategy_kwargs = {"loader": loader, "device": "cpu"}
 
-        preds = strategy.predict(model, TaskType.CLASSIFICATION, **strategy_kwargs)
+        preds = strategy.predict(model, TaskTypeEnum.CLASSIFICATION, **strategy_kwargs)
 
         assert preds.shape == (n_samples,)
         assert np.all((preds >= 0) & (preds < num_classes))

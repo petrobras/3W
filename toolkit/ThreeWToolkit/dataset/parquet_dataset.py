@@ -4,7 +4,6 @@ import zipfile
 import pandas as pd
 
 from pathlib import Path
-from typing import Any
 
 from pandas import read_parquet
 
@@ -18,7 +17,14 @@ DATASET_VALIDATION_RULES = {
 }
 
 
-class ParquetDataset(BaseStep):
+class ParquetDataset(
+    BaseStep[
+        dict[str, pd.DataFrame | Path] | None,
+        dict[str, pd.DataFrame | Path] | None,
+        dict[str, pd.DataFrame | Path] | None,
+        dict[str, pd.DataFrame | Path],
+    ]
+):
     """
     Dataset handler for Parquet files.
 
@@ -27,6 +33,15 @@ class ParquetDataset(BaseStep):
     """
 
     def __init__(self, config: ParquetDatasetConfig):
+        """
+        Initialize the ParquetDataset with the given configuration.
+
+        Args:
+            config (ParquetDatasetConfig): Configuration object for the dataset.
+
+        Raises:
+            ValueError: If dataset version or options are invalid.
+        """
         self.config = config
 
         # Check if dataset version is valid
@@ -122,9 +137,17 @@ class ParquetDataset(BaseStep):
     def _check_event_type(self, event: Path) -> bool:
         """
         Check if the event file name matches one of the requested event types.
+        Supports both enum members and strings.
         """
         if isinstance(self.config.event_type, list):
-            return any(event.name.startswith(t.value) for t in self.config.event_type)
+            return any(
+                event.name.startswith(
+                    event_type_value.value
+                    if hasattr(event_type_value, "value")
+                    else event_type_value
+                )
+                for event_type_value in self.config.event_type
+            )
         else:  # Default: accept all
             return True
 
@@ -147,9 +170,12 @@ class ParquetDataset(BaseStep):
             if self._check_event_type(e) and self._check_event_class(e)
         ]
 
-    def is_dataset_extracted_correctly(self):
+    def is_dataset_extracted_correctly(self) -> bool:
         """
         Check if the dataset is already extracted by checking the number of parquet files.
+
+        Returns:
+            bool: True if the number of extracted files matches the expectation, False otherwise.
         """
         extracted_files = list(Path(self.config.path).rglob("*.parquet"))
         total_expected_files = DATASET_VALIDATION_RULES[self.config.version][
@@ -227,13 +253,28 @@ class ParquetDataset(BaseStep):
         for idx in range(total_files):
             yield self[idx]
 
-    def pre_process(self, data: Any = None) -> Any:
+    def pre_process(
+        self, data: dict[str, pd.DataFrame | Path] | None = None
+    ) -> dict[str, pd.DataFrame | Path] | None:
         """
         Clean or preprocess data if required by configuration.
+
+        Args:
+            data: Input data dictionary containing file information.
+
+        Returns:
+            dict[str, pd.DataFrame | Path] | None: Processed data dictionary.
+
+        Raises:
+            ValueError: If file_name is invalid when clean_data is True.
         """
-        if self.config.clean_data:
+        if self.config.clean_data and data is not None:
             # NOTE: Currently assuming that the parent folder name corresponds to the target value
-            fill_target_value = int(data.get("file_name").parent.name)
+            file_name = data.get("file_name")
+            if file_name is not None and isinstance(file_name, Path):
+                fill_target_value = int(file_name.parent.name)
+            else:
+                raise ValueError("file_name must be a Path when clean_data is True")
 
             data = default_data_processing(
                 data,
@@ -242,7 +283,9 @@ class ParquetDataset(BaseStep):
             )
         return data
 
-    def run(self, data: Any = None) -> Any:
+    def run(
+        self, data: dict[str, pd.DataFrame | Path] | None = None
+    ) -> dict[str, pd.DataFrame | Path] | None:
         """
         Run the dataset step. Only checks are performed.
 
@@ -250,43 +293,55 @@ class ParquetDataset(BaseStep):
         Otherwise, this could return (X_tensor, y_tensor) and let `post_process`
         handle DataLoader creation. For compatibility, we return the input data.
         """
-        if data["signal"].empty:
+        if data is None:
+            return None
+        if "signal" not in data:
+            raise ValueError("[ParquetDataset] 'signal' key not found in data.")
+        signal = data["signal"]
+        if not isinstance(signal, pd.DataFrame):
+            raise ValueError("[ParquetDataset] 'signal' must be a pandas DataFrame.")
+        if signal.empty:
             raise ValueError("[ParquetDataset] Empty file or invalid columns.")
 
         # Only check label if target_column is defined
         if self.config.target_column is not None:
             if "label" not in data:
                 raise ValueError("[ParquetDataset] No target column found.")
-
-            if not isinstance(data["label"], (pd.Series, pd.DataFrame)):
+            label = data["label"]
+            if not isinstance(label, (pd.Series, pd.DataFrame)):
                 raise ValueError(
                     "[ParquetDataset] 'label' column must be a pandas Series or DataFrame."
                 )
 
-            if data["label"].empty:
+            if label.empty:
                 raise ValueError("[ParquetDataset] Target column is empty.")
 
-            if len(data["label"]) != len(data["signal"]):
+            if len(label) != len(signal):
                 raise ValueError(
                     "[ParquetDataset] Target column has different length than signal."
                 )
 
         return data
 
-    def post_process(self, data: Any) -> Any:
+    def post_process(
+        self, data: dict[str, pd.DataFrame | Path] | None
+    ) -> dict[str, pd.DataFrame | Path]:
         """
+        Finalize dataset processing.
         If you want to use the BaseStep flow (pre -> run -> post),
         return the DataLoader here when `run` returns (X, y).
         Since `run` already returns a DataLoader-compatible object,
         this method currently acts as an identity function.
         """
+        if data is None:
+            raise ValueError("Data cannot be None in post_process")
         return data
 
     def __len__(self) -> int:
         """Return the number of events in the dataset."""
         return len(self.files_events)
 
-    def __getitem__(self, idx: int) -> dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, pd.DataFrame | Path]:
         """
         Load and process one dataset file.
 
@@ -294,12 +349,12 @@ class ParquetDataset(BaseStep):
             idx (int): Index of the file.
 
         Returns:
-            dict[str, Any]: Dictionary containing signals, labels, and file name.
+            dict[str, pd.DataFrame | Path]: Dictionary containing signals, labels, and file name.
         """
         data = self.load_data(idx)
         return self.__call__(data)
 
-    def load_data(self, idx: int) -> dict[str, Any]:
+    def load_data(self, idx: int) -> dict[str, pd.DataFrame | Path]:
         """
         Load a parquet file and separate signals and labels.
 
@@ -307,14 +362,14 @@ class ParquetDataset(BaseStep):
             idx (int): File index.
 
         Returns:
-            dict[str, Any]:
+            dict[str, pd.DataFrame | Path]:
                 - signal: DataFrame of input signals
                 - label: DataFrame of labels (if target_column is defined)
                 - file_name: Path to the file
         """
         file_name = self.files_events[idx]
         path = Path(self.config.path) / file_name
-        ret: dict[str, Any] = {}
+        ret: dict[str, pd.DataFrame | Path] = {}
 
         ret["signal"] = read_parquet(
             path, columns=self.config.columns, engine="pyarrow"
@@ -322,8 +377,12 @@ class ParquetDataset(BaseStep):
 
         if self.config.target_column is not None:
             # Drop target column from signals if present
-            if self.config.target_column in ret["signal"].columns:
-                ret["signal"].drop(columns=[self.config.target_column], inplace=True)
+            signal = ret["signal"]
+            if (
+                isinstance(signal, pd.DataFrame)
+                and self.config.target_column in signal.columns
+            ):
+                signal.drop(columns=[self.config.target_column], inplace=True)
 
             # Load target column separately
             ret["label"] = read_parquet(

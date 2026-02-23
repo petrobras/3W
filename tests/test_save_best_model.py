@@ -2,22 +2,23 @@ import tempfile
 import pickle
 import pytest
 import torch
-import torch.nn as nn
 import sklearn.linear_model
 
 from io import BytesIO
 from pathlib import Path
 
 from ThreeWToolkit.utils import ModelRecorder
+from ThreeWToolkit.models.mlp import MLP, MLPConfig
 
 
-class SimpleTorchModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.linear = nn.Linear(10, 1)
-
-    def forward(self, x):
-        return self.linear(x)
+def make_mlp() -> MLP:
+    config = MLPConfig(
+        input_size=10,
+        hidden_sizes=(8,),
+        output_size=1,
+        random_seed=42,
+    )
+    return MLP(config)
 
 
 class TestModelRecorder:
@@ -25,7 +26,7 @@ class TestModelRecorder:
         """
         Setup simple models for each supported framework.
         """
-        self.torch_model = SimpleTorchModel()
+        self.torch_model = make_mlp()
         self.sklearn_model = sklearn.linear_model.LogisticRegression()
 
     def test_save_torch_model(self):
@@ -65,18 +66,18 @@ class TestModelRecorder:
         filename = 12345
         with pytest.raises(
             TypeError,
-            match=f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object.",
+            match=f"Invalid filename: `{filename}`. Expected a string or path-like object.",
         ):
             ModelRecorder.save_best_model(self.sklearn_model, filename)
 
     def test_file_like_object_not_supported(self):
         """
-        Test passing a file-like object raises ValueError.
+        Test passing a file-like object raises TypeError.
         """
         fake_file = BytesIO()
         with pytest.raises(
-            ValueError,
-            match=f"Saving to file-like object '{fake_file}' is not supported. Please provide a valid file path.",
+            TypeError,
+            match=f"Invalid filename: `{fake_file}`. Expected a string or path-like object.",
         ):
             ModelRecorder.save_best_model(self.sklearn_model, fake_file)
 

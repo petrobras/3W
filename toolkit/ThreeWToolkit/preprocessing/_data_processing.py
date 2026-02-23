@@ -13,7 +13,11 @@ from ..core.base_preprocessing import (
 )
 
 
-class ImputeMissing(BaseStep):
+class ImputeMissing(
+    BaseStep[
+        pd.DataFrame | pd.Series, pd.DataFrame, pd.DataFrame, pd.DataFrame | pd.Series
+    ]
+):
     """
     A data processing step that handles missing values in numeric columns using various imputation strategies.
 
@@ -139,7 +143,14 @@ class ImputeMissing(BaseStep):
         return data["__temp__"] if self.is_series else data
 
 
-class Normalize(BaseStep):
+class Normalize(
+    BaseStep[
+        pd.DataFrame | pd.Series,
+        np.ndarray,
+        tuple[np.ndarray, np.ndarray],
+        pd.DataFrame | pd.Series | tuple[pd.DataFrame | pd.Series, np.ndarray],
+    ]
+):
     """
     A data processing step that normalizes data using different normalization strategies.
 
@@ -196,7 +207,7 @@ class Normalize(BaseStep):
 
         return np.asarray(data.values)
 
-    def run(self, X_array: np.ndarray) -> tuple:
+    def run(self, X_array: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Apply normalization to the input array and compute norms.
 
@@ -208,7 +219,7 @@ class Normalize(BaseStep):
             X_array (np.ndarray): Input array to be normalized
 
         Returns:
-            tuple: (normalized_array, norms_array) containing the normalized data and computed norms
+            tuple[np.ndarray, np.ndarray]: (normalized_array, norms_array) containing the normalized data and computed norms
         """
         # Apply sklearn normalization
         normalized = sk_normalize(
@@ -227,7 +238,9 @@ class Normalize(BaseStep):
 
         return normalized, norms
 
-    def post_process(self, result: tuple) -> pd.DataFrame | pd.Series | tuple:
+    def post_process(
+        self, result: tuple[np.ndarray, np.ndarray]
+    ) -> pd.DataFrame | pd.Series | tuple[pd.DataFrame | pd.Series, np.ndarray]:
         """
         Reconstruct pandas objects from numpy arrays and return results based on configuration.
 
@@ -236,10 +249,10 @@ class Normalize(BaseStep):
         normalized data or a tuple including the computed norms.
 
         Args:
-            result (tuple): Tuple containing (normalized_array, norms_array)
+            result (tuple[np.ndarray, np.ndarray]): Tuple containing (normalized_array, norms_array)
 
         Returns:
-            pd.DataFrame | pd.Series | tuple: Normalized data in original format,
+            pd.DataFrame | pd.Series | tuple[pd.DataFrame | pd.Series, np.ndarray]: Normalized data in original format,
                                                    optionally with norms if configured
         """
         normalized, norms = result
@@ -259,7 +272,9 @@ class Normalize(BaseStep):
         return (normalized, norms) if self.config.return_norm_values else normalized
 
 
-class Windowing(BaseStep):
+class Windowing(
+    BaseStep[pd.DataFrame | pd.Series, np.ndarray, pd.DataFrame, pd.DataFrame]
+):
     """
     A data processing step that applies windowing techniques to time series data.
 
@@ -424,7 +439,7 @@ class Windowing(BaseStep):
         return df
 
 
-class RenameColumns(BaseStep):
+class RenameColumns(BaseStep[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]):
     """
     A simple data processing step that renames DataFrame columns according to a mapping.
 

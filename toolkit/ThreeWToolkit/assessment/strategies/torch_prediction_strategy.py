@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from typing import Any
 from ...core.base_prediction_strategies import PredictionStrategy
-from ...core.enums import TaskType
+from ...core.enums import TaskTypeEnum
 
 
 class TorchPredictionStrategy(PredictionStrategy):
@@ -17,15 +17,15 @@ class TorchPredictionStrategy(PredictionStrategy):
     def predict(
         self,
         model: nn.Module,
-        task: TaskType | None = TaskType.CLASSIFICATION,
+        task: TaskTypeEnum | None = TaskTypeEnum.CLASSIFICATION,
         **kwargs,
     ) -> np.ndarray:
         """Generate predictions using a PyTorch model.
 
         Args:
             model (nn.Module): Trained PyTorch model used for inference.
-            task (TaskType | None): Task type indicating how outputs should
-                be interpreted. Defaults to TaskType.CLASSIFICATION.
+            task (TaskTypeEnum | None): Task type indicating how outputs should
+                be interpreted. Defaults to TaskTypeEnum.CLASSIFICATION.
             **kwargs: Additional keyword arguments:
                 loader (DataLoader): PyTorch DataLoader providing input batches.
                 device (str): Device to run inference on (e.g., "cpu", "cuda").
@@ -39,9 +39,9 @@ class TorchPredictionStrategy(PredictionStrategy):
             AssertionError: If the model is not a valid torch.nn.Module.
             ValueError: If no DataLoader is provided or the task type is unknown.
         """
-        assert model is not None and isinstance(model, nn.Module), (
-            "Model must be a valid torch.nn.Module before prediction."
-        )
+        assert model is not None and isinstance(
+            model, nn.Module
+        ), "Model must be a valid torch.nn.Module before prediction."
 
         loader = kwargs.get("loader")
         device = kwargs.get("device", "cpu")
@@ -59,11 +59,11 @@ class TorchPredictionStrategy(PredictionStrategy):
                 X_batch = X_batch.to(device).float()
                 outputs = model(X_batch)
 
-                if task == TaskType.CLASSIFICATION:
+                if task == TaskTypeEnum.CLASSIFICATION:
                     threshold = kwargs.get("threshold", 0.5)
                     preds = self._predict_classification(outputs, threshold)
 
-                elif task == TaskType.REGRESSION:
+                elif task == TaskTypeEnum.REGRESSION:
                     preds = self._predict_regression(outputs)
 
                 else:

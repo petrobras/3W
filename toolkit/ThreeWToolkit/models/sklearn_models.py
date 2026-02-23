@@ -1,8 +1,10 @@
 from pathlib import Path
+from numpy.typing import ArrayLike
 
-from typing import Any, Type
+from typing import Mapping, Type
 from pydantic import Field
 
+from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -21,7 +23,6 @@ from ..core.base_prediction_strategies import PredictionStrategy
 from ..core.base_training_strategies import TrainingStrategy
 from ..trainer.strategies.fit_once_strategy import FitOnceStrategy
 
-
 # Dictionary to map the enum to the scikit-learn classes
 SKLEARN_MODELS = {
     ModelTypeEnum.LOGISTIC_REGRESSION: LogisticRegression,
@@ -37,7 +38,7 @@ SKLEARN_MODELS = {
 class SklearnModelsConfig(ModelsConfig):
     """Configuration that extends the base ModelsConfig for scikit-learn models."""
 
-    model_params: dict[str, Any] = Field(
+    model_params: dict[str, int | float | str | bool | None] = Field(
         default_factory=dict, description="Hyperparameters for the scikit-learn model."
     )
     target_: type[BaseModels] = Field(default_factory=lambda: SklearnModels)
@@ -72,14 +73,14 @@ class SklearnModels(BaseModels):
         if "random_state" in model_class().get_params():
             params["random_state"] = config.random_seed
 
-        self.model_class = model_class(**params)
+        self.model_class: BaseEstimator = model_class(**params)
         self._feature_names: list[str] | None = None
 
     @property
     def model_name(self) -> str:
         return self.model_class.__class__.__name__
 
-    def forward(self, x: Any) -> Any:
+    def forward(self, x: ArrayLike) -> None:
         """
         Sklearn model not implements forward function.
         """
@@ -133,10 +134,10 @@ class SklearnModels(BaseModels):
         """
         return SklearnPredictionStrategy
 
-    def get_params(self) -> dict[str, Any]:
+    def get_params(self) -> Mapping[str, object]:
         """Return sklearn estimator parameters."""
         return self.model_class.get_params()
 
-    def set_params(self, **params: Any) -> None:
+    def set_params(self, **params: object) -> None:
         """Set sklearn estimator parameters."""
         self.model_class.set_params(**params)

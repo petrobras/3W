@@ -1,3 +1,4 @@
 from .assessment_visualizations import AssessmentVisualization
+from .model_assess import ModelAssessment, ModelAssessmentConfig
 
-__all__ = ["AssessmentVisualization"]
+__all__ = ["ModelAssessment", "ModelAssessmentConfig", "AssessmentVisualization"]

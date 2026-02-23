@@ -10,7 +10,7 @@ from glob import glob
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict
 from collections import Counter
 
 
@@ -33,7 +33,7 @@ class DataLoader:
         self.class_folders = []
         self.stats = {}
 
-    def explore_structure(self) -> Dict[str, Any]:
+    def explore_structure(self) -> Dict[str, int | str | List[str]]:
         """
         Explore the dataset structure and return information about files.
 
@@ -83,7 +83,11 @@ class DataLoader:
 
     def load_dataset(
         self, class_folders: List[str] = None, max_files_per_class: int = 150
-    ) -> Tuple[List[pd.DataFrame], List[str], Dict[str, Any]]:
+    ) -> Tuple[
+        List[pd.DataFrame],
+        List[str],
+        Dict[str, int | float | str | List[str] | pd.DataFrame],
+    ]:
         """
         Load the 3W dataset from parquet files.
 
@@ -276,7 +280,7 @@ class DataLoader:
         # If it doesn't match simulated patterns and contains well-like patterns, consider real
         return True
 
-    def get_separated_data(self) -> Dict[str, Any]:
+    def get_separated_data(self) -> Dict[str, List[pd.DataFrame] | List[str]]:
         """
         Get real and simulated data separately.
 
@@ -292,7 +296,7 @@ class DataLoader:
         }
 
     def _load_and_clean_file(
-        self, file_path: str, stats: Dict[str, Any], file_counter: int = 0
+        self, file_path: str, stats: Dict[str, int | float | str], file_counter: int = 0
     ) -> pd.DataFrame:
         """
         Load and clean a single parquet file.
@@ -400,13 +404,13 @@ class DataLoader:
                         )
                         print(f"  Available features: {available_features}")
                         print(f"  Shape after filtering: {filtered_df.shape}")
-                        print(f"  Missing values per column:")
+                        print("  Missing values per column:")
                         for col in filtered_df.columns:
                             missing_count = filtered_df[col].isnull().sum()
                             missing_pct = (missing_count / len(filtered_df)) * 100
                             print(f"    {col}: {missing_count} ({missing_pct:.1f}%)")
 
-        print(f"\nFiltering Results:")
+        print("\nFiltering Results:")
         print("=" * 40)
         print(f"Datasets after filtering: {len(filtered_dfs)}")
         print(f"Total samples: {sum(len(df) for df in filtered_dfs):,}")
@@ -418,7 +422,7 @@ class DataLoader:
                 count = sum(1 for df in filtered_dfs if feature in df.columns)
                 feature_availability[feature] = count
 
-            print(f"\nFeature Availability Across Datasets:")
+            print("\nFeature Availability Across Datasets:")
             print("-" * 40)
             for feature, count in feature_availability.items():
                 percentage = (count / len(filtered_dfs)) * 100
@@ -430,7 +434,7 @@ class DataLoader:
 
     def get_dataset_info(
         self, dfs: List[pd.DataFrame], classes: List[str]
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, int | float | str | List[str] | pd.DataFrame]:
         """
         Get comprehensive information about the loaded dataset.
 

@@ -1,36 +1,40 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import IO, Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..models.mlp import MLP
+    from ..models.sklearn_models import SklearnModels
 
 
 class ModelRecorder:
     @staticmethod
-    def save_best_model(model: Any, filename: str | Path | IO[bytes]) -> None:
+    def save_best_model(model: MLP | SklearnModels, filename: str | Path) -> None:
         """
         Save a model to disk depending on its type and file extension.
         Supports PyTorch and scikit-learn (Pickle).
 
         Parameters:
             model: Trained model object.
-            filename: File name or file-like object where the model will be saved.
+            filename: File name where the model will be saved.
         """
         if isinstance(filename, (str, Path)):
             path = Path(filename)
             ext = path.suffix.lower()
-        elif hasattr(filename, "write"):
-            raise ValueError(
-                f"Saving to file-like object '{filename}' is not supported. Please provide a valid file path."
-            )
         else:
             raise TypeError(
-                f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object."
+                f"Invalid filename: `{filename}`. Expected a string or path-like object."
             )
 
         # PyTorch
         if ext in [".pt", ".pth"]:
             try:
                 import torch
+                from ..models.mlp import MLP
 
-                torch.save(model.state_dict(), filename)
+                if isinstance(model, MLP):
+                    torch.save(model.state_dict(), filename)
             except Exception as e:
                 raise RuntimeError(f"Error saving PyTorch model: {e}")
 
@@ -48,37 +52,36 @@ class ModelRecorder:
             raise ValueError(f"Unsupported file extension: {ext}")
 
     @staticmethod
-    def load_model(filename: str | Path | IO[bytes], model: Any = None) -> Any:
+    def load_model(
+        filename: str | Path, model: MLP | SklearnModels | None = None
+    ) -> MLP | SklearnModels:
         """
         Load a model from disk depending on its type and file extension.
         Supports PyTorch (.pt, .pth) and scikit-learn/Pickle (.pkl, .pickle).
 
         Parameters:
-            filename (str | Path | IO[bytes]):  Path or file-like object pointing to the saved model file.
-            model (Any, optional):  An uninitialized model instance to load weights into. Required for PyTorch models.
+            filename (str | Path):  Path pointing to the saved model file.
+            model (MLP | SklearnModels, optional):  An uninitialized model instance to load weights into. Required for PyTorch models.
         """
         if isinstance(filename, (str, Path)):
             path = Path(filename)
             ext = path.suffix.lower()
-        elif hasattr(filename, "read"):
-            raise ValueError(
-                f"Loading from file-like object '{filename}' is not supported. Please provide a valid file path."
-            )
         else:
             raise TypeError(
-                f"Invalid filename: `{filename}`. Expected a string, path-like object, or file-like object."
+                f"Invalid filename: `{filename}`. Expected a string or path-like object."
             )
 
         # PyTorch
         if ext in [".pt", ".pth"]:
             try:
                 import torch
+                from ..models.mlp import MLP
 
                 if model is None:
-                    # Returns only the state_dict in case it does not have the model
                     return torch.load(filename)
                 state_dict = torch.load(filename)
-                model.load_state_dict(state_dict)
+                if isinstance(model, MLP):
+                    model.load_state_dict(state_dict)
                 return model
             except Exception as e:
                 raise RuntimeError(f"Error loading PyTorch model: {e}")

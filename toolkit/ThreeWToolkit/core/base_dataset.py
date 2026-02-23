@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from typing import Literal
 from pathlib import Path
 
@@ -20,7 +20,7 @@ class ParquetDatasetConfig(BaseModel):
         default=None,
         description='List of files to load if split=="list". Must be explicitly provided.',
     )
-    event_type: list[EventPrefixEnum] | None = Field(
+    event_type: list[EventPrefixEnum] | list[str] | None = Field(
         default=None,
         description="Event types to include. (e.g., simulated, real, ...)",
     )
@@ -64,27 +64,59 @@ class ParquetDatasetConfig(BaseModel):
 
     @field_validator("file_list")
     @classmethod
-    def validate_file_list(cls, v, info):
+    def validate_file_list(
+        cls: type["ParquetDatasetConfig"],
+        file_list: list[str] | list[Path] | None,
+        info: ValidationInfo,
+    ) -> list[str] | list[Path] | None:
         """
         Ensure that `file_list` is only provided when `split=="list"`.
-        Raise a ValueError otherwise.
+
+        Args:
+            cls (ParquetDatasetConfig): The class reference.
+            file_list (list[str] | list[Path] | None): List of files to load.
+            info (ValidationInfo): Validation info containing the split.
+
+        Returns:
+            list[str] | list[Path] | None: Validated file list.
+
+        Raises:
+            ValueError: If file_list is provided incorrectly based on split.
         """
         split = info.data.get("split")
-        if split == "list" and v is None:
+        if split == "list" and file_list is None:
             raise ValueError('file_list must be provided if split is "list".')
-        elif split != "list" and v is not None:
+        elif split != "list" and file_list is not None:
             raise ValueError(f'file_list must not be provided if split="{split}".')
-        return v
+        return file_list
 
     @field_validator("event_type")
     @classmethod
-    def validate_event_type(cls, v):
+    def validate_event_type(
+        cls: type["ParquetDatasetConfig"],
+        event_type: list[EventPrefixEnum] | list[str] | None,
+    ) -> list[EventPrefixEnum] | list[str] | None:
         """
-        Ensure that all event types are valid members of EventPrefixEnum.
-        Raise a ValueError if an unknown type is provided.
+        Ensure that all event types are valid string values of EventPrefixEnum.
+
+        Args:
+            cls (ParquetDatasetConfig): The class reference.
+            event_type (list[EventPrefixEnum] | list[str] | None): List of event types.
+
+        Returns:
+            list[EventPrefixEnum] | list[str] | None: Validated event types.
+
+        Raises:
+            ValueError: If an unknown type is provided.
+            TypeError: If event_type is not a list of strings.
         """
-        if v is not None:
-            for t in v:
-                if t not in list(EventPrefixEnum):
-                    raise ValueError(f"Unknown event_type: {t}")
-        return v
+        if event_type is not None:
+            valid_strs = {e.value for e in EventPrefixEnum}
+            if not isinstance(event_type, list) or not all(
+                isinstance(event_type_item, str) for event_type_item in event_type
+            ):
+                raise TypeError("event_type must be a list of str.")
+            for event_type_item in event_type:
+                if event_type_item not in valid_strs:
+                    raise ValueError(f"Unknown event_type: {event_type_item}")
+        return event_type

@@ -3,16 +3,17 @@ import torch
 import numpy as np
 import pandas as pd
 
+from numpy.typing import ArrayLike
 from pathlib import Path
 from datetime import datetime
-from typing import Any, Callable
+from typing import Callable, Mapping
 from torch.utils.data import DataLoader, TensorDataset
 from dataclasses import dataclass, field
 
 from ..core.base_models import BaseModels
 from ..core.base_step import BaseStep
 from ..core.base_assessment import ModelAssessmentConfig
-from ..core.enums import DataSplit, TaskType
+from ..core.enums import DataSplitEnum, TaskTypeEnum
 from ..metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -32,7 +33,7 @@ class MetricRegistry:
     def __init__(self):
         """Initialize the metric registry."""
         self._registry = {
-            TaskType.CLASSIFICATION: {
+            TaskTypeEnum.CLASSIFICATION: {
                 "accuracy": accuracy_score,
                 "balanced_accuracy": balanced_accuracy_score,
                 "precision": lambda y, p: precision_score(
@@ -48,18 +49,18 @@ class MetricRegistry:
                     else 0.0
                 ),
             },
-            TaskType.REGRESSION: {
+            TaskTypeEnum.REGRESSION: {
                 "explained_variance": explained_variance_score,
             },
         }
 
     def resolve(
-        self, task_type: TaskType, metrics: list[str]
+        self, task_type: TaskTypeEnum, metrics: list[str]
     ) -> dict[str, Callable[[np.ndarray, np.ndarray], float]]:
         """Resolve metric names to callable functions.
 
         Args:
-            task_type (TaskType): Task type.
+            task_type (TaskTypeEnum): Task type.
             metrics (list[str]): List of metric names.
 
         Returns:
@@ -137,8 +138,8 @@ class AssessmentInput:
     x: pd.DataFrame | np.ndarray
     y: pd.DataFrame | np.ndarray
 
-    dataset_split: DataSplit
-    kwargs: dict[str, Any] = field(default_factory=dict)
+    dataset_split: DataSplitEnum
+    kwargs: Mapping[str, object] = field(default_factory=dict)
 
     # Optional cross-validation data
     x_train_folds: list[np.ndarray] = field(default_factory=list)
@@ -153,8 +154,8 @@ class AssessmentOutput:
 
     Attributes:
         model_name (str): Name of the evaluated model.
-        task_type (TaskType): Classification or regression task.
-        dataset_split (DataSplit): Dataset split used for evaluation.
+        task_type (TaskTypeEnum): Classification or regression task.
+        dataset_split (DataSplitEnum): Dataset split used for evaluation.
         timestamp (str): Evaluation timestamp.
         predictions (np.ndarray | None): Model predictions.
         true_values (np.ndarray | None): Ground truth values.
@@ -167,8 +168,8 @@ class AssessmentOutput:
     """
 
     model_name: str
-    task_type: TaskType
-    dataset_split: DataSplit
+    task_type: TaskTypeEnum
+    dataset_split: DataSplitEnum
     timestamp: str
 
     predictions: np.ndarray | None = None
@@ -178,7 +179,7 @@ class AssessmentOutput:
     fold_results: list[FoldResults] = field(default_factory=list)
     aggregated_results: AggregatedResults | None = None
 
-    config: dict[str, Any] = field(default_factory=dict)
+    config: Mapping[str, object] = field(default_factory=dict)
     is_cross_validation: bool = False
 
     experiment_dir: str | None = None
@@ -513,7 +514,7 @@ class ModelAssessment(BaseStep):
         X: np.ndarray,
         y: np.ndarray,
         metric_fns: dict[str, Callable],
-        dataset_split: DataSplit,
+        dataset_split: DataSplitEnum,
     ) -> AssessmentOutput:
         """Evaluate a single trained model.
 
@@ -522,7 +523,7 @@ class ModelAssessment(BaseStep):
             X (np.ndarray): Input features.
             y (np.ndarray): Ground truth labels.
             metric_fns (dict[str, Callable]): Metric functions.
-            dataset_split (DataSplit): Dataset split identifier.
+            dataset_split (DataSplitEnum): Dataset split identifier.
 
         Returns:
             AssessmentOutput: Evaluation results for a single model.
@@ -548,7 +549,7 @@ class ModelAssessment(BaseStep):
         X: np.ndarray,
         y: np.ndarray,
         metric_fns: dict[str, Callable],
-        dataset_split: DataSplit,
+        dataset_split: DataSplitEnum,
     ) -> AssessmentOutput:
         """Evaluate multiple models in a cross-validation setting.
 
@@ -557,7 +558,7 @@ class ModelAssessment(BaseStep):
             X (np.ndarray): Evaluation features.
             y (np.ndarray): Ground truth labels.
             metric_fns (dict[str, Callable]): Metric functions.
-            dataset_split (DataSplit): Dataset split identifier.
+            dataset_split (DataSplitEnum): Dataset split identifier.
 
         Returns:
             AssessmentOutput: Aggregated cross-validation results.
@@ -626,11 +627,11 @@ class ModelAssessment(BaseStep):
 
         return strategy.predict(model, self.config.task_type, X=X)
 
-    def _to_numpy(self, data: Any) -> np.ndarray:
+    def _to_numpy(self, data: pd.Series | pd.DataFrame | ArrayLike) -> np.ndarray:
         """Convert pandas or array-like data to NumPy format.
 
         Args:
-            data (Any): Input data.
+            data (pd.Series | pd.DataFrame | ArrayLike): Input data.
 
         Returns:
             np.ndarray: Converted NumPy array.
@@ -662,7 +663,7 @@ class ModelAssessment(BaseStep):
             Model Assessment Summary
             ========================
             Model: RandomForestClassifier
-            Task Type: TaskType.CLASSIFICATION
+            Task Type: TaskTypeEnum.CLASSIFICATION
             Dataset Split: DatasetSplit.TEST
             Timestamp: 2024-01-15T10:30:45.123456
 

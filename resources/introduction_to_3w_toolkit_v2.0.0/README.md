@@ -82,7 +82,7 @@ The core layer provides configuration and foundational components:
 
 - **Configuration Modules**: Each application module has a corresponding `*Config` class for parameter management
 - **Metrics**: Comprehensive evaluation metrics including `AccuracyScoreConfig`, `PrecisionScoreConfig`, `RecallScoreConfig`, `F1ScoreConfig`, `RocAucScoreConfig`, etc.
-- **Enumerators**: Type-safe enumerations for `ModelTypeEnum`, `DataSplit`, `CriterionEnum`, `TaskType`, `EventPrefixEnum`, `OptimizersEnum`, `ActivationFunctionEnum`
+- **Enumerators**: Type-safe enumerations for `ModelTypeEnum`, `DataSplit`, `CriterionEnum`, `TaskTypeEnum`, `EventPrefixEnum`, `OptimizersEnum`, `ActivationFunctionEnum`
 - **Base Classes**: Abstract base classes that define interfaces and common functionality
 
 ## 🎯 Learning Objectives

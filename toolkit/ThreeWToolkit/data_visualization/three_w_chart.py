@@ -4,10 +4,12 @@ import plotly.graph_objects as go
 
 from pathlib import Path
 from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 from ..utils.data_utils import get_config_dataset_ini
+from ..data_visualization.base_visualizer import BaseVisualizer
 
 
-class ThreeWChart:
+class ThreeWChart(BaseVisualizer):
     """A class to generate interactive visualizations for 3W dataset files using Plotly.
 
     Notes
@@ -238,11 +240,20 @@ class ThreeWChart:
 
         return df
 
-    def plot(self) -> None:
-        """Generates and displays the interactive chart using Plotly.
+    def plot(self, ax=None) -> tuple[Figure, None]:
+        """Generate and display an interactive Plotly chart.
+
+        This method creates a Plotly figure based on the available data and
+        configuration options. Since Plotly does not use Matplotlib axes,
+        the returned Axes object is always None.
+
+        Returns:
+            Tuple[Figure, Optional[Axes]]:
+                - Figure: The generated Plotly figure.
+                - Axes: Always None (not applicable for Plotly).
 
         Raises:
-            ValueError: If no available columns are found to plot.
+            ValueError: If no valid columns are available for plotting.
         """
         df = self._load_data()
 
@@ -309,4 +320,5 @@ class ThreeWChart:
         )
 
         self._add_custom_legend(fig, present_classes)
-        fig.show(config={"displaylogo": False})
+
+        return fig, None

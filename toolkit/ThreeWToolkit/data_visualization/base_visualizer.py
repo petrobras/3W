@@ -16,7 +16,7 @@ class BaseVisualizer(ABC):
     """
 
     @abstractmethod
-    def plot(self, ax: Axes | None = None) -> tuple[Figure, Axes]:
+    def plot(self, ax: Axes | None = None) -> tuple[Figure, Axes | None]:
         """
         Render the visualization.
 

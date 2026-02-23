@@ -2,7 +2,7 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 from typing import Any
-from .enums import TaskType
+from .enums import TaskTypeEnum
 
 
 class PredictionStrategy(ABC):
@@ -16,7 +16,7 @@ class PredictionStrategy(ABC):
     def predict(
         self,
         model: Any,
-        task: TaskType | None = None,
+        task: TaskTypeEnum | None = None,
         **kwargs,
     ) -> np.ndarray:
         """Generate predictions using a trained model.

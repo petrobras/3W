@@ -1,11 +1,11 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
+import numpy as np
 
-from typing import Callable, Any, TypeAlias
-from pydantic import Field, field_validator
+from typing import Callable, Mapping, TypeAlias
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 from dataclasses import dataclass, field
 
 from tqdm.auto import tqdm
@@ -14,8 +14,9 @@ from sklearn.utils.class_weight import compute_class_weight
 
 from ..core.base_step import BaseStep
 from ..core.base_models import BaseModels
+from ..core.protocols import SupportsOptimizerParams
 from ..core.base_model_trainer import ModelTrainerConfig
-from ..core.enums import OptimizersEnum, CriterionEnum, TaskType
+from ..core.enums import OptimizersEnum, CriterionEnum, TaskTypeEnum
 from ..models.mlp import MLPConfig
 from ..models.sklearn_models import SklearnModelsConfig
 from ..assessment.model_assess import (
@@ -30,227 +31,213 @@ ArrayLike: TypeAlias = pd.DataFrame | pd.Series | np.ndarray
 
 class TrainerConfig(ModelTrainerConfig):
     """
-    Configuration for model training.
+    Configuration object for the training pipeline.
 
-    This class defines all hyperparameters and execution settings required
-    to configure the training pipeline.
+    Defines hyperparameters, data splitting strategy, optimization settings,
+    and task-specific behavior.
 
-    Args:
-        batch_size (int): Number of samples per batch.
-        epochs (int): Number of training epochs.
+    Attributes:
+        batch_size (int): Number of samples per batch. Must be > 0.
+        epochs (int): Number of training epochs. Must be > 0.
         seed (int): Random seed for reproducibility.
-        learning_rate (float): Optimizer learning rate.
-        config_model (MLPConfig | SklearnModelsConfig): Model configuration object.
-        criterion (str): Loss function name.
-        optimizer (str): Optimizer algorithm name.
-        device (str): Device for training computations.
-        cross_validation (bool | None): Whether to enable k-fold cross-validation.
-        n_splits (int): Number of folds for cross-validation.
-        test_size (float): Test dataset proportion.
-        val_size (float): Validation dataset proportion.
-        shuffle_train (bool): Whether to shuffle training data.
-        task_type (TaskType): Type of task (classification or regression).
+        learning_rate (float): Optimizer learning rate. Must be > 0.
+        config_model (MLPConfig | SklearnModelsConfig): Model configuration.
+        criterion (str): Loss function name. Must exist in CriterionEnum.
+        optimizer (str): Optimizer name. Must exist in OptimizersEnum.
+        device (str): "cpu" or "cuda". If "cuda", GPU must be available.
+        cross_validation (bool | None): Enable k-fold cross-validation.
+        n_splits (int): Number of folds when cross_validation=True. Must be > 1.
+        test_size (float): Test split proportion (0 < test_size < 1).
+        val_size (float): Validation split proportion (0 < val_size < 1).
+        shuffle_train (bool): Shuffle training data.
+        task_type (TaskTypeEnum): Classification or regression.
+        use_class_weights (bool): Enable class weighting.
+        class_weight_strategy (str): "balanced" or "manual".
+        manual_class_weights (dict[int, float] | None): Required if strategy="manual".
+        deterministic (bool): Enable deterministic CUDA behavior.
 
-    Example:
-        >>> config = TrainerConfig(
-        ...     batch_size=32,
-        ...     epochs=100,
-        ...     learning_rate=1e-3,
-        ...     config_model=MLPConfig(...),
-        ...     cross_validation=True,
-        ...     n_splits=5
-        ... )
+    Raises:
+        ValueError: If configuration values are inconsistent or invalid.
     """
 
-    batch_size: int = Field(
-        default=32,
-        gt=0,
-        description="Number of samples per batch during training",
-    )
+    batch_size: int = Field(default=32, gt=0)
+    epochs: int = Field(default=50, gt=0)
+    seed: int = Field(default=42)
+    learning_rate: float = Field(default=1e-3, gt=0)
 
-    epochs: int = Field(
-        default=50,
-        gt=0,
-        description="Number of training epochs",
-    )
+    config_model: MLPConfig | SklearnModelsConfig = Field(...)
 
-    seed: int = Field(
-        default=42,
-        description="Random seed for reproducibility",
-    )
+    criterion: str = Field(default="cross_entropy")
+    optimizer: str = Field(default="adam")
 
-    learning_rate: float = Field(
-        default=1e-3,
-        gt=0,
-        description="Learning rate for optimizer",
-    )
+    device: str = Field(default="cuda" if torch.cuda.is_available() else "cpu")
 
-    config_model: MLPConfig | SklearnModelsConfig = Field(
-        ...,
-        description="Configuration object of the selected model",
-    )
+    cross_validation: bool | None = Field(default=None)
+    n_splits: int = Field(default=5, gt=1)
 
-    criterion: str = Field(
-        default="cross_entropy",
-        description="Loss function name",
-    )
+    test_size: float = Field(default=0.2, gt=0, lt=1)
+    val_size: float = Field(default=0.3, gt=0, lt=1)
 
-    optimizer: str = Field(
-        default="adam",
-        description="Optimizer algorithm name",
-    )
+    shuffle_train: bool = Field(default=True)
 
-    device: str = Field(
-        default="cuda" if torch.cuda.is_available() else "cpu",
-        description="Device for training computations",
-    )
+    task_type: TaskTypeEnum = Field(default=TaskTypeEnum.CLASSIFICATION)
 
-    cross_validation: bool | None = Field(
-        default=None,
-        description="Whether to enable k-fold cross-validation",
-    )
+    use_class_weights: bool = Field(default=False)
+    class_weight_strategy: str = Field(default="balanced")
+    manual_class_weights: dict[int, float] | None = Field(default=None)
 
-    n_splits: int = Field(
-        default=5,
-        gt=1,
-        description="Number of folds for cross-validation",
-    )
+    deterministic: bool = Field(default=False)
 
-    test_size: float = Field(
-        default=0.2,
-        gt=0,
-        lt=1,
-        description="Proportion of dataset reserved for testing",
-    )
+    @field_validator("batch_size")
+    @classmethod
+    def check_batch_size(cls: type["TrainerConfig"], value: int) -> int:
+        """Validate that batch_size is positive.
 
-    val_size: float = Field(
-        default=0.3,
-        gt=0,
-        lt=1,
-        description="Proportion of training data used for validation",
-    )
+        Args:
+            cls (TrainerConfig): The class reference.
+            value (int): The batch size value to validate.
 
-    shuffle_train: bool = Field(
-        default=True,
-        description="Whether to shuffle training data before each epoch",
-    )
+        Returns:
+            int: The validated batch size.
 
-    task_type: TaskType = Field(
-        default=TaskType.CLASSIFICATION,
-        description="Type of task (classification or regression)",
-    )
+        Raises:
+            ValueError: If batch_size is not greater than 0.
+        """
+        if value <= 0:
+            raise ValueError("batch_size must be > 0")
+        return value
 
-    use_class_weights: bool = Field(
-        default=False,
-        description="Enable automatic class weight computation for imbalanced datasets",
-    )
+    @field_validator("epochs")
+    @classmethod
+    def check_epochs(cls: type["TrainerConfig"], value: int) -> int:
+        """Validate that epochs is positive.
 
-    class_weight_strategy: str = Field(
-        default="balanced", description="Class weight strategy: 'balanced' or 'manual'"
-    )
+        Args:
+            cls (TrainerConfig): The class reference.
+            value (int): The number of epochs to validate.
 
-    manual_class_weights: dict[int, float] | None = Field(
-        default=None, description="Manual class weights mapping"
-    )
+        Returns:
+            int: The validated number of epochs.
 
-    deterministic: bool = Field(
-        default=False, description="Enable deterministic CUDA behavior"
-    )
+        Raises:
+            ValueError: If epochs is not greater than 0.
+        """
+        if value <= 0:
+            raise ValueError("epochs must be > 0")
+        return value
+
+    @field_validator("learning_rate")
+    @classmethod
+    def check_learning_rate(cls: type["TrainerConfig"], value: float) -> float:
+        """Validate that learning_rate is positive.
+
+        Args:
+            cls (TrainerConfig): The class reference.
+            value (float): The learning rate value to validate.
+
+        Returns:
+            float: The validated learning rate.
+
+        Raises:
+            ValueError: If learning_rate is not greater than 0.
+        """
+        if value <= 0:
+            raise ValueError("learning_rate must be > 0")
+        return value
+
+    @field_validator("n_splits")
+    @classmethod
+    def check_n_splits(
+        cls: type["TrainerConfig"], value: int | None, info: ValidationInfo
+    ) -> int | None:
+        """Validate n_splits when cross-validation is enabled.
+
+        Args:
+            cls (TrainerConfig): The class reference.
+            value (int | None): The number of splits to validate.
+            info (ValidationInfo): The validation context containing other field values.
+
+        Returns:
+            int | None: The validated number of splits.
+
+        Raises:
+            ValueError: If n_splits is not greater than 1 when cross_validation is True.
+        """
+        cross_val = info.data.get("cross_validation")
+        if cross_val and value is not None and value <= 1:
+            raise ValueError("n_splits must be > 1 for cross-validation")
+        return value
 
     @field_validator("optimizer")
     @classmethod
-    def validate_optimizer(cls, v):
-        """
-        Validate optimizer name.
-
-        Ensures that the selected optimizer is supported by the training
-        pipeline.
+    def check_optimizer(cls: type["TrainerConfig"], value: str) -> str:
+        """Validate that optimizer is from the supported list.
 
         Args:
-            v (str): Optimizer name to validate.
+            cls (TrainerConfig): The class reference.
+            value (str): The optimizer name to validate.
 
         Returns:
-            str: Validated optimizer name.
+            str: The validated optimizer name.
 
         Raises:
-            ValueError: If optimizer is not supported.
+            ValueError: If optimizer is not in the supported list.
         """
         valid = {o.value for o in OptimizersEnum}
-        if v not in valid:
+        if value not in valid:
             raise ValueError(f"optimizer must be one of {valid}")
-        return v
+        return value
 
     @field_validator("criterion")
     @classmethod
-    def validate_criterion(cls, v):
-        """
-        Validate loss function name.
-
-        Ensures that the selected criterion is supported by the training
-        pipeline.
+    def check_criterion(cls: type["TrainerConfig"], value: str) -> str:
+        """Validate that criterion is from the supported list.
 
         Args:
-            v (str): Loss function name to validate.
+            cls (TrainerConfig): The class reference.
+            value (str): The criterion name to validate.
 
         Returns:
-            str: Validated loss function name.
+            str: The validated criterion name.
 
         Raises:
-            ValueError: If criterion is not supported.
+            ValueError: If criterion is not in the supported list.
         """
         valid = {c.value for c in CriterionEnum}
-        if v not in valid:
+        if value not in valid:
             raise ValueError(f"criterion must be one of {valid}")
-        return v
+        return value
 
     @field_validator("device")
     @classmethod
-    def validate_device(cls, v):
+    def check_device(cls: type["TrainerConfig"], value: str) -> str:
         """
-        Validate training device.
+        Validate computation device selection.
 
-        Ensures that the selected device is supported by PyTorch.
+        Ensures that the device is either 'cpu' or 'cuda'.
+        If 'cuda' is selected, verifies that CUDA is available.
 
         Args:
-            v (str): Device name to validate.
+            value (str): Device name.
 
         Returns:
             str: Validated device name.
 
         Raises:
-            ValueError: If device is not 'cpu' or 'cuda'.
+            ValueError: If device is invalid or CUDA is unavailable.
         """
         valid = {"cpu", "cuda"}
-        if v not in valid:
-            raise ValueError(f"device must be one of {valid}")
-        return v
+        if value not in valid:
+            raise ValueError("device must be 'cpu' or 'cuda'")
 
-    @field_validator("n_splits")
-    @classmethod
-    def validate_n_splits(cls, v, info):
-        """
-        Validate number of folds for cross-validation.
+        if value == "cuda" and not torch.cuda.is_available():
+            raise ValueError("CUDA selected but no GPU is available")
 
-        This validation is only enforced when cross-validation is enabled.
-
-        Args:
-            v (int): Number of folds.
-            info (ValidationInfo): Validation context containing other fields.
-
-        Returns:
-            int: Validated number of folds.
-
-        Raises:
-            ValueError: If n_splits <= 1 when cross_validation is enabled.
-        """
-        cross_val = info.data.get("cross_validation")
-        if cross_val is True and v <= 1:
-            raise ValueError("n_splits must be > 1 when cross_validation=True")
-        return v
+        return value
 
     @field_validator("task_type")
     @classmethod
-    def validate_task_type(cls, v):
+    def validate_task_type(cls: type["TrainerConfig"], value: TaskTypeEnum):
         """
         Validate task type.
 
@@ -265,10 +252,65 @@ class TrainerConfig(ModelTrainerConfig):
         Raises:
             ValueError: If task_type is not supported.
         """
-        valid_types = {TaskType.CLASSIFICATION, TaskType.REGRESSION}
-        if v not in valid_types:
+        valid_types = {TaskTypeEnum.CLASSIFICATION, TaskTypeEnum.REGRESSION}
+        if value not in valid_types:
             raise ValueError(f"task_type must be one of {valid_types}")
-        return v
+        return value
+
+    @field_validator("class_weight_strategy")
+    @classmethod
+    def validate_class_weight_strategy(cls, value: str) -> str:
+        """
+        Validate class weight strategy.
+
+        Ensures that the strategy is either 'balanced' or 'manual'.
+
+        Args:
+            value (str): Strategy name.
+
+        Returns:
+            str: Validated strategy name.
+
+        Raises:
+            ValueError: If strategy is not supported.
+        """
+        valid = {"balanced", "manual"}
+        if value not in valid:
+            raise ValueError(f"class_weight_strategy must be one of {valid}")
+        return value
+
+    @model_validator(mode="after")
+    def validate_class_weights(self) -> "TrainerConfig":
+        """
+        Validate manual class weights configuration.
+
+        Ensures that when class weighting is enabled and the strategy
+        is set to 'manual', a valid dictionary of class weights is provided.
+
+        The dictionary must:
+            - Have integer keys (class labels)
+            - Have strictly positive float values (weights)
+
+        Returns:
+            TrainerConfig: The validated configuration instance.
+
+        Raises:
+            ValueError: If manual weights are missing or invalid.
+        """
+        if self.use_class_weights:
+            if self.class_weight_strategy == "manual":
+                if not self.manual_class_weights:
+                    raise ValueError(
+                        "manual_class_weights must be provided when strategy='manual'"
+                    )
+
+                for k, v in self.manual_class_weights.items():
+                    if not isinstance(k, int):
+                        raise ValueError("manual_class_weights keys must be int")
+                    if v <= 0:
+                        raise ValueError("manual_class_weights values must be > 0")
+
+        return self
 
 
 @dataclass
@@ -302,9 +344,9 @@ class TrainOutput:
     and metadata describing the training execution.
 
     Attributes:
-        history (dict[str, list[Any]]): Training history containing tracked loss values per epoch.
+        history (dict[str, list[float]]): Training history containing tracked loss values per epoch.
         model_type (str | None): Name of the trained model class.
-        trainer_config (Any | None): Trainer configuration used during training.
+        trainer_config (TrainerConfig | None): Trainer configuration used during training.
         training_completed (bool): Flag indicating whether training finished successfully.
     """
 
@@ -315,10 +357,10 @@ class TrainOutput:
     y_val: list[np.ndarray] = field(default_factory=list)
 
     model_name: str | None = None
-    trainer_config: Any | None = None
+    trainer_config: TrainerConfig | None = None
     training_completed: bool = False
 
-    history: dict[str, list[Any]] | None = None
+    history: dict[str, list[float]] | None = None
 
 
 class ModelTrainer(BaseStep):
@@ -343,7 +385,7 @@ class ModelTrainer(BaseStep):
         self.shuffle_train = config.shuffle_train
         self.history = self._get_artifacts_history_dict()
 
-    def pre_process(self, data: Any) -> TrainInput:
+    def pre_process(self, data: TrainInput) -> TrainInput:
         """
         Validate and standardize the training input.
 
@@ -351,7 +393,7 @@ class ModelTrainer(BaseStep):
         TrainInput structure and validates basic consistency rules.
 
         Args:
-            data (Any): Input object expected to be a TrainInput instance.
+            data (TrainInput): Input object expected to be a TrainInput instance.
 
         Returns:
             TrainInput: Validated training input container.
@@ -459,14 +501,16 @@ class ModelTrainer(BaseStep):
         else:
             self._train_with_auto_split(x_train, y_train)
 
-    def _train_with_cross_validation(self, x_train: Any, y_train: Any) -> None:
+    def _train_with_cross_validation(
+        self, x_train: ArrayLike, y_train: ArrayLike
+    ) -> None:
         """Train using k-fold cross-validation.
 
         Args:
             x_train: Training features.
             y_train: Training labels.
         """
-        if self.config.task_type == TaskType.CLASSIFICATION:
+        if self.config.task_type == TaskTypeEnum.CLASSIFICATION:
             kf = StratifiedKFold(
                 n_splits=self.n_splits,
                 shuffle=self.config.shuffle_train,
@@ -508,7 +552,7 @@ class ModelTrainer(BaseStep):
             )
 
     def _train_with_validation(
-        self, x_train: Any, y_train: Any, x_val: Any, y_val: Any
+        self, x_train: ArrayLike, y_train: ArrayLike, x_val: ArrayLike, y_val: ArrayLike
     ) -> None:
         """Train using provided validation data.
 
@@ -522,7 +566,7 @@ class ModelTrainer(BaseStep):
 
         self._update_train_history(results, x_train, y_train, x_val, y_val)
 
-    def _train_with_auto_split(self, x_train: Any, y_train: Any) -> None:
+    def _train_with_auto_split(self, x_train: ArrayLike, y_train: ArrayLike) -> None:
         """Train with automatic train/validation split.
 
         Args:
@@ -536,8 +580,12 @@ class ModelTrainer(BaseStep):
         self._update_train_history(results, x_train, y_train, x_val, y_val)
 
     def _call_training_strategy(
-        self, x_train: Any, y_train: Any, x_val: Any = None, y_val: Any = None
-    ) -> dict[str, list[Any]]:
+        self,
+        x_train: ArrayLike,
+        y_train: ArrayLike,
+        x_val: ArrayLike | None = None,
+        y_val: ArrayLike | None = None,
+    ) -> dict[str, list[float]]:
         """Delegate training to the strategy.
 
         Args:
@@ -601,10 +649,13 @@ class ModelTrainer(BaseStep):
         )
         return X_train, X_val, y_train, y_val
 
-    def _get_optimizer(self, model: Any, optimizer: str) -> torch.optim.Optimizer:
+    def _get_optimizer(
+        self, model: BaseModels, optimizer: str
+    ) -> torch.optim.Optimizer:
         """Create and return the specified PyTorch optimizer.
 
         Args:
+            model (BaseModels): PyTorch model instance.
             optimizer (str): Name of the optimizer to create. Must be one of:
                 "adam", "adamw", "sgd", "rmsprop".
 
@@ -615,7 +666,14 @@ class ModelTrainer(BaseStep):
         Raises:
             ValueError: If the optimizer name is not recognized.
         """
+        if not isinstance(model, SupportsOptimizerParams):
+            raise TypeError(
+                f"Optimizer can only be created for models exposing "
+                f"'get_params()'. Received: {type(model).__name__}"
+            )
+
         model_params = model.get_params()
+
         if optimizer == OptimizersEnum.ADAM.value:
             return optim.Adam(params=model_params, lr=self.lr)
         elif optimizer == OptimizersEnum.ADAMW.value:
@@ -699,7 +757,7 @@ class ModelTrainer(BaseStep):
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
-    def _select_rows(self, data, idx):
+    def _select_rows(self, data: ArrayLike, idx: int):
         """Select rows from data using provided indices.
 
         Handles both pandas DataFrames/Series and other indexable data structures.
@@ -717,7 +775,10 @@ class ModelTrainer(BaseStep):
             return data[idx]
 
     def assess(
-        self, x: Any, y: Any, assessment_config: ModelAssessmentConfig | None = None
+        self,
+        x: ArrayLike,
+        y: ArrayLike,
+        assessment_config: ModelAssessmentConfig | None = None,
     ) -> AssessmentOutput:
         """Evaluate the trained model using ModelAssessment.
 
@@ -725,8 +786,8 @@ class ModelTrainer(BaseStep):
         and evaluates the current model on the provided test data.
 
         Args:
-            x (Any): Input features for evaluation.
-            y (Any): Target labels for evaluation.
+            x (ArrayLike): Input features for evaluation.
+            y (ArrayLike): Target labels for evaluation.
             assessment_config (ModelAssessmentConfig | None, optional):
                 Configuration for the assessment process. If None, creates
                 a default configuration based on the task type.
@@ -742,7 +803,7 @@ class ModelTrainer(BaseStep):
             >>> # Custom assessment configuration
             >>> config = ModelAssessmentConfig(
             ...     metrics=["accuracy", "f1", "precision", "recall"],
-            ...     task_type=TaskType.CLASSIFICATION
+            ...     task_type=TaskTypeEnum.CLASSIFICATION
             ... )
             >>> results = trainer.assess(X_test, y_test, assessment_config=config)
 
@@ -760,9 +821,9 @@ class ModelTrainer(BaseStep):
                     else ["explained_variance"]
                 ),
                 task_type=(
-                    TaskType.CLASSIFICATION
+                    TaskTypeEnum.CLASSIFICATION
                     if self._is_classification_task()
-                    else TaskType.REGRESSION
+                    else TaskTypeEnum.REGRESSION
                 ),
             )
 
@@ -795,7 +856,7 @@ class ModelTrainer(BaseStep):
             precise control, specify the task_type explicitly in the
             assessment_config parameter of the assess() method.
         """
-        return self.config.task_type == TaskType.CLASSIFICATION
+        return self.config.task_type == TaskTypeEnum.CLASSIFICATION
 
     def _update_train_history(self, results, x_train, y_train, x_val, y_val):
         """
@@ -840,7 +901,7 @@ class ModelTrainer(BaseStep):
         self.history["x_val"].append(x_val)
         self.history["y_val"].append(y_val)
 
-    def _get_artifacts_history_dict(self) -> dict[str, list[Any]]:
+    def _get_artifacts_history_dict(self) -> Mapping[str, list]:
         """
         Initialize and return the training artifacts history structure.
 
@@ -850,7 +911,7 @@ class ModelTrainer(BaseStep):
         per key.
 
         Returns:
-            dict[str, list[Any]]: Initialized history dictionary containing empty
+            Mapping[str, list]: Initialized history dictionary containing empty
             lists for:
                 - "models": Trained model instances.
                 - "train_losses": Training loss values per run or fold.

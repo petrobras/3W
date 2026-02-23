@@ -6,6 +6,7 @@ from .correlation_heatmap import CorrelationHeatmap
 from .plot_fft import PlotFFT
 from .seasonal_decomposition import SeasonalDecompositionPlot
 from .wavelet_spectrogram import WaveletSpectrogramPlot
+from .three_w_chart import ThreeWChart
 
 __all__ = [
     "BaseVisualizer",
@@ -16,4 +17,5 @@ __all__ = [
     "PlotFFT",
     "SeasonalDecompositionPlot",
     "WaveletSpectrogramPlot",
+    "ThreeWChart",
 ]

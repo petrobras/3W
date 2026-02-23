@@ -11,6 +11,10 @@ __pycache__/
 html/
 *.html
 
+# Overrides
+!toolkit/ThreeWToolkit/reports/html/
+!toolkit/ThreeWToolkit/reports/html/**
+
 # VS Code configuration
 .vscode/
 

@@ -7,10 +7,10 @@
 [black]: https://github.com/psf/black
 [black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
 [semver]: https://semver.org
-[semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
+[semver-shield]: https://img.shields.io/badge/semver-2.0.1-blue
 
 <h1>
-  <img src="../../images/3w_logo.png" width="45" style="vertical-align: middle; margin-right: 10px;" />
+  <img src="https://raw.githubusercontent.com/petrobras/3W/main/images/3w_logo.png" width="45" style="vertical-align: middle; margin-right: 10px;" />
   3W Toolkit
 </h1>
 
@@ -36,8 +36,8 @@ In the oil & gas sector, the widespread availability of low-cost sensors has dri
 In this context, we present 3WToolkit+, a modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation. Building upon the experience with the original 3WToolkit system and leveraging the Petrobras <a href="https://github.com/petrobras/3W">3W Dataset</a>, 3WToolkit introduces enhanced functionalities, such as advanced data imputation, deep feature extraction, synthetic data augmentation, and high-performance computing capabilities for model training.
 
 <p align="center">
-  <img src="../../images/petrobras_logo.png" width="150" style="margin-right: 30px;" />
-  <img src="../../images/coppe_logo.png" width="150" />
+  <img src="https://raw.githubusercontent.com/petrobras/3W/main/images/petrobras_logo.png" width="150" style="margin-right: 30px;" />
+  <img src="https://raw.githubusercontent.com/petrobras/3W/main/images/coppe_logo.png" width="150" />
 </p>
 
 The development of the 3WToolkit+ is the result of a collaborative partnership between Petrobras, with a focus on the CENPES research center, and the COPPE/Universidade Federal do Rio de Janeiro (UFRJ). This joint effort brings together complementary strengths: COPPE/UFRJ contributes decades of proven expertise in signal processing and machine learning model development, while CENPES offers access to highly specialized technical knowledge and real-world operational challenges in the oil and gas sector. This synergy ensures that 3WToolkit+ is both scientifically rigorous and practically relevant, addressing complex scenarios with robust and scalable AI-based solutions for time-series analysis and fault detection in oil well operations.
@@ -48,7 +48,7 @@ The following image illustrates the high-level architecture of the 3W Toolkit, d
 
 The schema below illustrates the main classes of the toolkit. 
 
-<img width="1200" src="../../images/3w_classes_in_groups.jpg">
+<img width="1200" src="https://raw.githubusercontent.com/petrobras/3W/main/images/3w_classes_in_groups.jpg">
 
 To better understand how the system is organized, we can divide all classes into two main abstraction layers: **`Application`** and **`Core`**.
 

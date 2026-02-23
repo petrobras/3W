@@ -15,10 +15,10 @@ if [ "${CI}" = true ]; then
     # In CI, only check code formatting and linting with Ruff
     black --check ${LINT}
     ruff check ${LINT} 
-    ruff format --check ${LINT}
+    uv run black --check .
 else
     # Locally, automatically fix formatting issues with Ruff
     black ${LINT}
-    ruff format ${LINT}
+    uv run black .
     ruff check --fix ${LINT}
 fi

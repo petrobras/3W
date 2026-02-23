@@ -1,7 +1,6 @@
 import torch
 import logging
 import pandas as pd
-from typing import Any
 from pydantic import BaseModel
 
 from .models.mlp import MLPConfig
@@ -17,8 +16,13 @@ from .core.base_preprocessing import (
     WindowingConfig,
 )
 from .core.base_step import BaseStep
-from .dataset.parquet_dataset import ParquetDataset
-from .feature_extraction.extract_exponential_statistics_features import (
+from .dataset import ParquetDataset, ParquetDatasetConfig
+
+from .feature_extraction import (
+    ExtractWaveletFeatures,
+    WaveletConfig,
+    ExtractStatisticalFeatures,
+    StatisticalConfig,
     EWStatisticalConfig,
     ExtractEWStatisticalFeatures,
 )
@@ -33,9 +37,13 @@ from .feature_extraction.extract_wavelet_features import (
 from .models.sklearn_models import SklearnModels, SklearnModelsConfig
 from .preprocessing._data_processing import (
     ImputeMissing,
+    ImputeMissingConfig,
     Normalize,
+    NormalizeConfig,
     RenameColumns,
+    RenameColumnsConfig,
     Windowing,
+    WindowingConfig,
 )
 from .trainer.trainer import ModelTrainer, TrainerConfig, TrainInput
 
@@ -53,8 +61,8 @@ class Pipeline:
 
     Attributes:
         step_data_loader (ParquetDataset | None): Data loading component
-        step_preprocessing (list[Any]): List of preprocessing steps
-        step_feat_extraction (list[Any]): List of feature extraction steps
+        step_preprocessing (list[BaseStep]): List of preprocessing steps
+        step_feat_extraction (list[BaseStep]): List of feature extraction steps
         step_model_training (ModelTrainer | None): Model training component
         step_model_assessment (ModelAssessment | None): Model assessment component
     """
@@ -70,8 +78,8 @@ class Pipeline:
         """
         # Initialize class attributes
         self.step_data_loader: ParquetDataset | None = None
-        self.step_preprocessing: list[Any] = []
-        self.step_feat_extraction: list[Any] = []
+        self.step_preprocessing: list[BaseStep] = []
+        self.step_feat_extraction: list[BaseStep] = []
         self.step_model_training: ModelTrainer | None = None
         self.step_model_assessment: ModelAssessment | None = None
 
@@ -376,7 +384,7 @@ class Pipeline:
 
         return batch_prep
 
-    def run_step_preprocessing(self, batch: dict) -> dict[Any, Any]:
+    def run_step_preprocessing(self, batch: dict) -> dict:
         """
         Execute preprocessing steps on the batch data.
 
@@ -448,7 +456,7 @@ class Pipeline:
                     label_step_config.normalize = False
                     label_step = Windowing(label_step_config)
 
-                    windowed_label = label_step(labels_series)
+                    windowed_label: pd.DataFrame = label_step(labels_series)
                     windowed_label.drop(columns=["win"], inplace=True)
 
                     new_labels.append(windowed_label.mode(axis=1)[0].values)
@@ -508,12 +516,10 @@ class Pipeline:
                 if not is_windowing_applied:
                     window_size = WindowingConfig.window_size
                 else:
-                    cls: Windowing = next(
-                        c
-                        for c in self.step_preprocessing
-                        if c.__class__.__name__ == "Windowing"
+                    windowing_step = next(
+                        c for c in self.step_preprocessing if isinstance(c, Windowing)
                     )
-                    window_size = cls.config.window_size
+                    window_size = windowing_step.config.window_size
                 step.window_size = window_size
             step.is_windowed = True
             step.label_column = "label"
@@ -523,9 +529,7 @@ class Pipeline:
 
         return df
 
-    def _check_and_apply_windowing(
-        self, batch: dict[Any, Any]
-    ) -> tuple[bool, pd.DataFrame]:
+    def _check_and_apply_windowing(self, batch: dict) -> tuple[bool, pd.DataFrame]:
         """
         Ensure that windowing has been applied to the batch.
 
@@ -560,7 +564,7 @@ class Pipeline:
                 WindowingConfig(window="boxcar", pad_last_window=True)
             )
 
-            all_dfs = []
+            all_dfs: list[pd.DataFrame] = []
             # Process each file in the batch
             for idx_data_file in range(len(batch["signals"])):
                 # Get signal data for this file
@@ -574,7 +578,7 @@ class Pipeline:
                 labels_series = pd.Series(file_labels)
 
                 df_signal = windowing(df_signal)
-                df_label = label_windowing(labels_series)
+                df_label: pd.DataFrame = label_windowing(labels_series)
 
                 # Clean up: remove windowing index column if present
                 df_signal = df_signal.drop("win", axis=1, errors="ignore")
@@ -589,7 +593,7 @@ class Pipeline:
             return is_windowing_applied, df_batch
 
         else:
-            all_dfs = []
+            all_dfs_else: list[pd.DataFrame] = []
 
             for idx_data_file in range(len(batch["signals"])):
                 signal_data = batch["signals"][idx_data_file]
@@ -600,9 +604,9 @@ class Pipeline:
 
                 df_signal["label"] = batch["labels"][idx_data_file]
 
-                all_dfs.append(df_signal)
+                all_dfs_else.append(df_signal)
 
             # Concatenate all files into a single DataFrame for feature extraction
-            df_batch = pd.concat(all_dfs, axis=0, ignore_index=True)
+            df_batch = pd.concat(all_dfs_else, axis=0, ignore_index=True)
 
             return is_windowing_applied, df_batch

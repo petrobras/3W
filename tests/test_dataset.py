@@ -8,7 +8,6 @@ from ThreeWToolkit.dataset import ParquetDataset
 from ThreeWToolkit.core.base_dataset import EventPrefixEnum, ParquetDatasetConfig
 from ThreeWToolkit.utils.data_utils import GLOBAL_AVERAGES
 
-
 _NUM_ROWS = 10
 _NUM_CLASSES = 3
 _NUM_EVENTS = 1

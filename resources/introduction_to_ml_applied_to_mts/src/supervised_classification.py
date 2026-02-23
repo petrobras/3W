@@ -34,7 +34,6 @@ import matplotlib.pyplot as plt
 # Local imports
 from .data_augmentation import quick_balance_classes
 
-
 # ============================================================
 # UTILITY FUNCTIONS FOR STUDENT NOTEBOOKS
 # ============================================================

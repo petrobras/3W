@@ -1,6 +1,6 @@
+from pathlib import Path
 from typing import Type
 from abc import ABC, abstractmethod
-from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
 
 from .enums import ModelTypeEnum
@@ -23,7 +23,16 @@ class ModelsConfig(BaseModel):
 
     @field_validator("model_type")
     @classmethod
-    def check_model_type(cls, v, info):
+    def check_model_type(cls: type["ModelsConfig"], value: ModelTypeEnum):
+        """Validate that model_type is supported.
+
+        Args:
+            cls (ModelsConfig): The class reference.
+            value (ModelTypeEnum): The model type to validate.
+
+        Returns:
+            ModelTypeEnum | str: Validated model type.
+        """
         allowed = {
             ModelTypeEnum.MLP,
             ModelTypeEnum.LOGISTIC_REGRESSION,
@@ -35,10 +44,9 @@ class ModelsConfig(BaseModel):
             ModelTypeEnum.SVM,
         }
 
-        if v not in allowed:
-            raise NotImplementedError(f"model_type {v} not implemented yet.")
-
-        return v
+        if value not in allowed:
+            raise NotImplementedError(f"model_type {value} not implemented yet.")
+        return value
 
     def setup(self, **kwargs) -> "BaseModels":
         """Instantiate the model specified in target_.

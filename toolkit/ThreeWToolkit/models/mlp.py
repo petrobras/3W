@@ -3,7 +3,7 @@ import torch
 
 from pathlib import Path
 from pydantic import Field, field_validator
-from typing import Iterable, Any, Type, TypeAlias
+from typing import Iterable, Type, TypeAlias
 
 from ..core.base_models import ModelsConfig, BaseModels
 from ..utils.model_recorder import ModelRecorder
@@ -16,7 +16,7 @@ from ..core.base_prediction_strategies import PredictionStrategy
 # Type alias for PyTorch model parameters
 ParamsT: TypeAlias = (
     Iterable[torch.Tensor]
-    | Iterable[dict[str, Any]]
+    | Iterable[dict[str, torch.Tensor | int | float | str | bool]]
     | Iterable[tuple[str, torch.Tensor]]
 )
 
@@ -112,11 +112,12 @@ class MLPConfig(ModelsConfig):
 
     @field_validator("input_size")
     @classmethod
-    def check_input_size(cls, v):
+    def check_input_size(cls: type["MLPConfig"], input_size: int | None):
         """Validate that `input_size` is positive if specified.
 
         Args:
-            v (tuple[int, ...]): The input size to validate.
+            cls (MLPConfig): The class reference.
+            input_size (int | None): The input size to validate.
 
         Returns:
             int | None: The validated input size.
@@ -124,17 +125,18 @@ class MLPConfig(ModelsConfig):
         Raises:
             ValueError: If `input_size` is specified but not positive.
         """
-        if v is not None and v <= 0:
+        if input_size is not None and input_size <= 0:
             raise ValueError("`input_size` must be > 0 when specified")
-        return v
+        return input_size
 
     @field_validator("activation_function")
     @classmethod
-    def check_activation_function(cls, v):
+    def check_activation_function(cls: type["MLPConfig"], activation_function: str):
         """Validate that the activation function is supported.
 
         Args:
-            v (str): The activation function name to validate.
+            cls (MLPConfig): The class reference.
+            activation_function (str): The activation function name to validate.
 
         Returns:
             str: The validated activation function name.
@@ -147,17 +149,18 @@ class MLPConfig(ModelsConfig):
             ActivationFunctionEnum.SIGMOID.value,
             ActivationFunctionEnum.TANH.value,
         }
-        if v not in valid:
+        if activation_function not in valid:
             raise ValueError(f"activation_function must be one of {valid}")
-        return v
+        return activation_function
 
     @field_validator("hidden_sizes")
     @classmethod
-    def check_hidden_sizes(cls, v):
+    def check_hidden_sizes(cls: type["MLPConfig"], hidden_sizes: tuple):
         """Validate that hidden sizes are positive integers.
 
         Args:
-            v (tuple): The hidden layer sizes to validate.
+            cls (MLPConfig): The class reference.
+            hidden_sizes (tuple): The hidden layer sizes to validate.
 
         Returns:
             tuple: The validated hidden layer sizes.
@@ -165,9 +168,11 @@ class MLPConfig(ModelsConfig):
         Raises:
             ValueError: If any hidden size is not a positive integer.
         """
-        if not v or not all(isinstance(h, int) and h > 0 for h in v):
+        if not hidden_sizes or not all(
+            isinstance(h, int) and h > 0 for h in hidden_sizes
+        ):
             raise ValueError("hidden_sizes must be a tuple of positive integers")
-        return v
+        return hidden_sizes
 
     def is_input_size_dynamic(self) -> bool:
         """Check if input size will be inferred dynamically.

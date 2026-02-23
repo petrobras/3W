@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+NB_DIR="${1:-docs/notebooks/}"  # If not set, default to docs/notebooks
+
+echo "Testing notebooks from $NB_DIR"
+
+TEMPDIR="$(mktemp -d)"
+trap 'rm -rf -- "$TEMPDIR"' EXIT
+
+echo "Saving executed notebooks to $TEMPDIR"
+
+
+for nb in $(find $NB_DIR -name "*.ipynb"); do
+    echo -e "\033[0;33mTesting $nb.\033[0m"
+    jupyter-nbconvert $nb --to notebook --execute --output-dir $TEMPDIR
+    echo -e "\033[0;32m$nb executed successfully.\033[0m"
+done
