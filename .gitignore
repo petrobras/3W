@@ -164,3 +164,4 @@ cython_debug/
 # Data persistence folder
 processed_data/
 output/
+*/download/
