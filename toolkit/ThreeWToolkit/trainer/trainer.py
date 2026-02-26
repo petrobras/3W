@@ -1,8 +1,9 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import pandas as pd
 import numpy as np
+import torch
+import logging
+import torch.nn as nn
+import torch.optim as optim
 
 from typing import Callable, Mapping, TypeAlias
 from pydantic import Field, ValidationInfo, field_validator, model_validator
@@ -27,6 +28,8 @@ from ..assessment.model_assess import (
 )
 
 ArrayLike: TypeAlias = pd.DataFrame | pd.Series | np.ndarray
+
+logger = logging.getLogger(__name__)
 
 
 class TrainerConfig(ModelTrainerConfig):
@@ -525,6 +528,8 @@ class ModelTrainer(BaseStep):
 
         splits = list(kf.split(x_train, y_train))
 
+        logger.info("Cross-validation enabled | n_splits=%d", self.n_splits)
+
         pbar = tqdm(
             enumerate(splits),
             total=self.n_splits,
@@ -534,6 +539,7 @@ class ModelTrainer(BaseStep):
         )
 
         for fold, (train_idx, val_idx) in pbar:
+            logger.info("Fold %d/%d started", fold + 1, self.n_splits)
             pbar.set_description_str(f"[Pipeline] Training Fold {fold + 1}")
 
             # Split data
@@ -562,6 +568,8 @@ class ModelTrainer(BaseStep):
             x_val: Validation features.
             y_val: Validation labels.
         """
+        logger.info("Using provided validation set")
+
         results = self._call_training_strategy(x_train, y_train, x_val, y_val)
 
         self._update_train_history(results, x_train, y_train, x_val, y_val)
@@ -573,6 +581,8 @@ class ModelTrainer(BaseStep):
             x_train: Training features.
             y_train: Training labels.
         """
+        logger.info("Using auto split set")
+
         x_train, x_val, y_train, y_val = self._holdout(x_train, y_train)
 
         results = self._call_training_strategy(x_train, y_train, x_val, y_val)
@@ -621,6 +631,8 @@ class ModelTrainer(BaseStep):
                 self.config.criterion,
                 y_train=y_train,
             )
+
+        logger.info("Training started")
 
         return strategy.train(model, x_train, y_train, x_val, y_val, **strategy_kwargs)
 

@@ -1,11 +1,14 @@
 import torch
 import torch.nn as nn
+import logging
 
 from typing import Any, Callable
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm.auto import tqdm
 
 from ...core.base_training_strategies import TrainingStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class EpochTrainingStrategy(TrainingStrategy):
@@ -83,6 +86,15 @@ class EpochTrainingStrategy(TrainingStrategy):
         if val_loader is not None:
             history["val_loss"] = []
 
+        logger.info(
+            "EpochStrategy train initialized | model=%s | device=%s | lr=%s | epochs=%d | batch=%d",
+            type(model).__name__,
+            device,
+            optimizer.param_groups[0]["lr"],
+            epochs,
+            batch_size,
+        )
+
         pbar = tqdm(
             range(epochs),
             desc="[Pipeline] Training",
@@ -90,7 +102,7 @@ class EpochTrainingStrategy(TrainingStrategy):
             colour="#00b4d8",
         )
 
-        for _ in pbar:
+        for epoch in pbar:
             avg_train_loss = self._train_epoch(
                 model=model,
                 train_loader=train_loader,
@@ -112,10 +124,25 @@ class EpochTrainingStrategy(TrainingStrategy):
                 pbar.set_postfix(
                     train_loss=f"{avg_train_loss:.4f}", val_loss=f"{val_loss:.4f}"
                 )
+                logger.info(
+                    "Epoch %d/%d | train_loss=%.6f | val_loss=%.6f",
+                    epoch + 1,
+                    epochs,
+                    avg_train_loss,
+                    val_loss,
+                )
             else:
                 pbar.set_postfix(train_loss=f"{avg_train_loss:.4f}")
+                logger.info(
+                    "Epoch %d/%d | train_loss=%.6f",
+                    epoch + 1,
+                    epochs,
+                    avg_train_loss,
+                )
 
         history["model"] = model
+
+        logger.info("Training finished | history_len=%d", len(history["train_loss"]))
 
         return history
 

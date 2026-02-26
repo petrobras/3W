@@ -1,5 +1,7 @@
 from pathlib import Path
 from importlib import resources
+from datetime import datetime
+from .logging_config import setup_default_logging
 
 package = "ThreeWToolkit"
 # We define the project root as the directory where the toolkit is installed (i.e. the parent directory of ThreeWToolkit).
@@ -12,6 +14,10 @@ REPORTS_DIR = OUTPUT_DIR / "reports"  # Directory for generated PDFs
 
 # Define the path to the mock visualization objects plot folder
 PLOTS_DIR = OUTPUT_DIR / "3w_plots"
+
+LOGS_DIR = OUTPUT_DIR / "logs"
+_run_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+setup_default_logging(LOGS_DIR, run_id=_run_id)
 
 # Define the path to the LaTeX and HTML template documents directory
 REPORTS_DIR = PROJECT_ROOT / package / "reports"
