@@ -6,6 +6,12 @@ This notebook performs an initial exploration and visualization of the 3W Datase
 
 **🎓 Educational Use**: This resource is designed for educational purposes and can be utilized in **machine learning courses, workshops, tutorials, and academic programs** focusing on time series analysis, fault detection, and industrial applications.
 
+## 🎬 Workshop Presentation
+
+The material in this notebook was presented at the **4th Workshop on 3W** (Day 1). A full recording of the session is available on YouTube:
+
+**[▶ Watch the workshop recording](https://www.youtube.com/watch?v=Lso2vjMqYM8&list=PLrdqjADUU50kf0kjnM-JngcyU0mEFL6U1)**
+
 ## 📋 Usage Instructions
 
 ### Prerequisites

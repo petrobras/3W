@@ -2,6 +2,12 @@
 
 Welcome to the comprehensive tutorial series for the **3WToolkit v2.0.0**! This collection of Jupyter notebooks provides a step-by-step guide to understanding and using the toolkit's powerful features for time-series analysis, fault detection, and machine learning applications targeting not only the 3W Toolkit for oil well operations, but also for machine learning tasks in general.
 
+## 🎬 Workshop Presentation
+
+The material in this notebook was presented at the **4th Workshop on 3W** (Day4). A full recording of the session is available on YouTube:
+
+**[▶ Watch the workshop recording ](https://www.youtube.com/watch?v=AtRAWJ_7fPk&list=PLrdqjADUU50kf0kjnM-JngcyU0mEFL6U1)**
+
 ## 📚 Tutorial Series Overview
 
 This tutorial series consists of 8 progressive notebooks that will take you from basic concepts to advanced pipeline integration:

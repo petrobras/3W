@@ -8,6 +8,14 @@ This resource contains a comprehensive machine learning pipeline for the **3W Da
 
 **Multivariate Time Series (MTS)** refers to time-ordered data with multiple variables/sensors measured simultaneously over time. In the 3W dataset context, this includes multiple sensor readings (pressure, temperature, flow rates, etc.) from oil well operations captured at regular intervals.
 
+
+## 🎬 Workshop Presentation
+
+The material in this notebook was presented at the **4th Workshop on 3W** (Days 2 and 3). A full recording of the session is available on YouTube:
+
+**[▶ Watch the workshop recording Part #1](https://www.youtube.com/watch?v=0ugu1piqtxc&list=PLrdqjADUU50kf0kjnM-JngcyU0mEFL6U1)**
+**[▶ Watch the workshop recording Part #2](https://www.youtube.com/watch?v=o5KZyREfPKs&list=PLrdqjADUU50kf0kjnM-JngcyU0mEFL6U1)**
+
 ## ⚠️ **Configuration Disclaimer**
 
 > **📋 Important Note**: All configurations shown in this documentation (sensor variables, data shapes, window sizes, etc.) are **examples for demonstration purposes**. The pipeline is **fully configurable** and can be adapted to:

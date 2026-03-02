@@ -440,6 +440,8 @@ class ModelTrainer(BaseStep):
         """
         self._set_seed()
 
+        logger.info("Training started")
+
         # Perform training
         self.train(
             x_train=data.x_train,

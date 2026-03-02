@@ -28,7 +28,6 @@ class StatisticalConfig:
             "max",
         ],
         multivariate=True,
-        is_windowed=True,
         label_column="label",
     ):
         if overlap < 0 or overlap >= 1:
@@ -44,7 +43,6 @@ class StatisticalConfig:
         self.eps = eps
         self.selected_features = selected_features
         self.multivariate = multivariate
-        self.is_windowed = is_windowed
         self.label_column = label_column
 
 
@@ -99,8 +97,9 @@ class TestExtractStatisticalFeatures:
 
     def test_basic_extraction_all_features(self, windowed_data_with_labels):
         """Tests basic extraction with all default features."""
-        config = StatisticalConfig(is_windowed=True)
+        config = StatisticalConfig()
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -131,8 +130,9 @@ class TestExtractStatisticalFeatures:
 
     def test_mean_calculation(self, windowed_data_with_labels):
         """Tests that mean is calculated correctly."""
-        config = StatisticalConfig(is_windowed=True, selected_features=["mean"])
+        config = StatisticalConfig(selected_features=["mean"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -144,8 +144,9 @@ class TestExtractStatisticalFeatures:
 
     def test_std_calculation(self, windowed_data_with_labels):
         """Tests that standard deviation is calculated correctly."""
-        config = StatisticalConfig(is_windowed=True, selected_features=["std"])
+        config = StatisticalConfig(selected_features=["std"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -156,9 +157,10 @@ class TestExtractStatisticalFeatures:
     def test_quantiles_calculation(self, windowed_data_with_labels):
         """Tests quantile calculations (min, quartiles, median, max)."""
         config = StatisticalConfig(
-            is_windowed=True, selected_features=["min", "1qrt", "med", "3qrt", "max"]
+            selected_features=["min", "1qrt", "med", "3qrt", "max"]
         )
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -180,8 +182,9 @@ class TestExtractStatisticalFeatures:
         }
         df = pd.DataFrame(data)
 
-        config = StatisticalConfig(is_windowed=True, selected_features=["skew"])
+        config = StatisticalConfig(selected_features=["skew"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(df)
 
@@ -199,8 +202,9 @@ class TestExtractStatisticalFeatures:
         }
         df = pd.DataFrame(data)
 
-        config = StatisticalConfig(is_windowed=True, selected_features=["kurt"])
+        config = StatisticalConfig(selected_features=["kurt"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(df)
 
@@ -210,10 +214,9 @@ class TestExtractStatisticalFeatures:
 
     def test_constant_values_handling(self, constant_value_data):
         """Tests handling of constant values (zero std)."""
-        config = StatisticalConfig(
-            is_windowed=True, selected_features=["mean", "std", "skew", "kurt"]
-        )
+        config = StatisticalConfig(selected_features=["mean", "std", "skew", "kurt"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(constant_value_data)
 
@@ -229,8 +232,9 @@ class TestExtractStatisticalFeatures:
 
     def test_multivariate_extraction(self, multivariate_windowed_data):
         """Tests feature extraction for multivariate data."""
-        config = StatisticalConfig(is_windowed=True, selected_features=["mean", "std"])
+        config = StatisticalConfig(selected_features=["mean", "std"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(multivariate_windowed_data)
 
@@ -246,8 +250,9 @@ class TestExtractStatisticalFeatures:
     def test_selected_features_subset(self, windowed_data_with_labels):
         """Tests that only selected features are computed."""
         selected = ["mean", "max"]
-        config = StatisticalConfig(is_windowed=True, selected_features=selected)
+        config = StatisticalConfig(selected_features=selected)
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -261,10 +266,9 @@ class TestExtractStatisticalFeatures:
     def test_offset_application(self, windowed_data_with_labels):
         """Tests that offset correctly skips initial windows."""
         offset = 2
-        config = StatisticalConfig(
-            is_windowed=True, offset=offset, selected_features=["mean"]
-        )
+        config = StatisticalConfig(offset=offset, selected_features=["mean"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -290,7 +294,7 @@ class TestExtractStatisticalFeatures:
             }
         )
 
-        config = StatisticalConfig(is_windowed=False)
+        config = StatisticalConfig()
         extractor = ExtractStatisticalFeatures(config)
 
         with pytest.raises(ValueError, match="Data is not windowed"):
@@ -309,8 +313,9 @@ class TestExtractStatisticalFeatures:
 
     def test_empty_data_raises_error(self):
         """Tests that empty DataFrame raises appropriate error."""
-        config = StatisticalConfig(is_windowed=True)
+        config = StatisticalConfig()
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         empty_df = pd.DataFrame()
 
@@ -319,8 +324,9 @@ class TestExtractStatisticalFeatures:
 
     def test_no_variables_found_raises_error(self):
         """Tests error when no valid variable columns are found."""
-        config = StatisticalConfig(is_windowed=True)
+        config = StatisticalConfig()
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         # DataFrame with wrong column format
         invalid_data = pd.DataFrame(
@@ -333,10 +339,10 @@ class TestExtractStatisticalFeatures:
     def test_offset_exceeds_data_length(self, windowed_data_with_labels):
         """Tests that offset larger than data raises error."""
         config = StatisticalConfig(
-            is_windowed=True,
             offset=100,  # Much larger than data
         )
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         with pytest.raises(ValueError, match="Offset .* is larger than data length"):
             extractor(windowed_data_with_labels)
@@ -352,10 +358,9 @@ class TestExtractStatisticalFeatures:
             }
         )
 
-        config = StatisticalConfig(
-            is_windowed=True, label_column=None, selected_features=["mean"]
-        )
+        config = StatisticalConfig(label_column=None, selected_features=["mean"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -365,16 +370,18 @@ class TestExtractStatisticalFeatures:
 
     def test_type_error_on_non_dataframe_input(self):
         """Tests that non-DataFrame input raises TypeError."""
-        config = StatisticalConfig(is_windowed=True)
+        config = StatisticalConfig()
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         with pytest.raises(TypeError, match="Input data must be a pandas DataFrame"):
             extractor([1, 2, 3, 4])  # List instead of DataFrame
 
     def test_nan_handling_warning(self, windowed_data_with_labels):
         """Tests that NaN values are handled and warning is shown."""
-        config = StatisticalConfig(is_windowed=True, selected_features=["mean"])
+        config = StatisticalConfig(selected_features=["mean"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         # Introduce NaN
         data_with_nan = windowed_data_with_labels.copy()
@@ -398,8 +405,9 @@ class TestExtractStatisticalFeatures:
             }
         )
 
-        config = StatisticalConfig(is_windowed=True, selected_features=["max"])
+        config = StatisticalConfig(selected_features=["max"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -419,8 +427,9 @@ class TestExtractStatisticalFeatures:
             }
         )
 
-        config = StatisticalConfig(is_windowed=True, selected_features=["mean", "std"])
+        config = StatisticalConfig(selected_features=["mean", "std"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -429,10 +438,9 @@ class TestExtractStatisticalFeatures:
 
     def test_feature_ordering_consistency(self, multivariate_windowed_data):
         """Tests that feature ordering is consistent across variables."""
-        config = StatisticalConfig(
-            is_windowed=True, selected_features=["mean", "std", "max"]
-        )
+        config = StatisticalConfig(selected_features=["mean", "std", "max"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(multivariate_windowed_data)
 
@@ -461,11 +469,11 @@ class TestExtractStatisticalFeatures:
 
         # With large eps, should return 0 for skew/kurt
         config_large_eps = StatisticalConfig(
-            is_windowed=True,
             selected_features=["skew", "kurt"],
             eps=1.0,  # Large eps
         )
         extractor_large = ExtractStatisticalFeatures(config_large_eps)
+        extractor_large.is_windowed = True
         result_large = extractor_large(data)
 
         assert result_large["var1_skew"].iloc[0] == 0.0
@@ -502,8 +510,9 @@ class TestExtractStatisticalFeatures:
             }
         )
 
-        config = StatisticalConfig(is_windowed=True, selected_features=["mean", "std"])
+        config = StatisticalConfig(selected_features=["mean", "std"])
         extractor = ExtractStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 

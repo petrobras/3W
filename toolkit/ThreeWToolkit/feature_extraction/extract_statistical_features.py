@@ -41,7 +41,7 @@ class ExtractStatisticalFeatures(BaseStep):
             config.selected_features if config.selected_features else self.FEATURES
         )
         self.multivariate = getattr(config, "multivariate", True)
-        self.is_windowed = getattr(config, "is_windowed", False)
+        self.is_windowed = False
         self.label_column = getattr(config, "label_column", None)
 
     def _identify_variables(self, data: pd.DataFrame) -> dict:
@@ -227,7 +227,7 @@ class ExtractStatisticalFeatures(BaseStep):
         if not self.is_windowed:
             raise ValueError(
                 "Data is not windowed. Please use the Windowing class to window your data first, "
-                "then set is_windowed=True in the config when initializing ExtractStatisticalFeatures."
+                "then set extractor.is_windowed = True on the ExtractStatisticalFeatures instance."
             )
 
         # Identify variables

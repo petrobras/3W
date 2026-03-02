@@ -32,7 +32,6 @@ class EWStatisticalConfig:
         eps=1e-10,
         decay=0.9,
         selected_features=None,
-        is_windowed=True,
         label_column="label",
     ):
         if overlap < 0 or overlap >= 1:
@@ -55,7 +54,6 @@ class EWStatisticalConfig:
             if selected_features is not None
             else self.DEFAULT_FEATURES
         )
-        self.is_windowed = is_windowed
         self.label_column = label_column
 
 
@@ -107,8 +105,9 @@ class TestExtractEWStatisticalFeatures:
 
     def test_basic_extraction_all_features(self, windowed_data_with_labels):
         """Tests basic extraction with all default features."""
-        config = EWStatisticalConfig(is_windowed=True, window_size=4)
+        config = EWStatisticalConfig(window_size=4)
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -140,9 +139,10 @@ class TestExtractEWStatisticalFeatures:
     def test_ew_mean_calculation(self, windowed_data_with_labels):
         """Tests that exponentially weighted mean is calculated correctly."""
         config = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.9, selected_features=["ew_mean"]
+            window_size=4, decay=0.9, selected_features=["ew_mean"]
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -158,9 +158,10 @@ class TestExtractEWStatisticalFeatures:
     def test_ew_std_calculation(self, windowed_data_with_labels):
         """Tests exponentially weighted standard deviation."""
         config = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.9, selected_features=["ew_std"]
+            window_size=4, decay=0.9, selected_features=["ew_std"]
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -179,9 +180,10 @@ class TestExtractEWStatisticalFeatures:
         df = pd.DataFrame(data)
 
         config = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.9, selected_features=["ew_skew"]
+            window_size=4, decay=0.9, selected_features=["ew_skew"]
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(df)
 
@@ -200,9 +202,10 @@ class TestExtractEWStatisticalFeatures:
         df = pd.DataFrame(data)
 
         config = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.9, selected_features=["ew_kurt"]
+            window_size=4, decay=0.9, selected_features=["ew_kurt"]
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(df)
 
@@ -212,12 +215,12 @@ class TestExtractEWStatisticalFeatures:
     def test_ew_quantiles_calculation(self, windowed_data_with_labels):
         """Tests exponentially weighted quantile calculations."""
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             decay=0.9,
             selected_features=["ew_min", "ew_1qrt", "ew_med", "ew_3qrt", "ew_max"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -238,12 +241,12 @@ class TestExtractEWStatisticalFeatures:
     def test_constant_values_handling(self, constant_value_data):
         """Tests handling of constant values (zero std)."""
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             decay=0.9,
             selected_features=["ew_mean", "ew_std", "ew_skew", "ew_kurt"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(constant_value_data)
 
@@ -260,12 +263,12 @@ class TestExtractEWStatisticalFeatures:
     def test_multivariate_extraction(self, multivariate_windowed_data):
         """Tests feature extraction for multivariate data."""
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             decay=0.9,
             selected_features=["ew_mean", "ew_std"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(multivariate_windowed_data)
 
@@ -282,9 +285,10 @@ class TestExtractEWStatisticalFeatures:
         """Tests that only selected features are computed."""
         selected = ["ew_mean", "ew_max"]
         config = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.9, selected_features=selected
+            window_size=4, decay=0.9, selected_features=selected
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -298,16 +302,18 @@ class TestExtractEWStatisticalFeatures:
         """Tests that different decay values produce different results."""
         # High decay (more uniform weights)
         config_high = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.95, selected_features=["ew_mean"]
+            window_size=4, decay=0.95, selected_features=["ew_mean"]
         )
         extractor_high = ExtractEWStatisticalFeatures(config_high)
+        extractor_high.is_windowed = True
         result_high = extractor_high(windowed_data_with_labels)
 
         # Low decay (more weight concentrated on recent values)
         config_low = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.5, selected_features=["ew_mean"]
+            window_size=4, decay=0.5, selected_features=["ew_mean"]
         )
         extractor_low = ExtractEWStatisticalFeatures(config_low)
+        extractor_low.is_windowed = True
         result_low = extractor_low(windowed_data_with_labels)
 
         # For increasing sequence [1,2,3,4], lower decay concentrates more weight
@@ -318,13 +324,13 @@ class TestExtractEWStatisticalFeatures:
         """Tests that offset correctly skips initial windows."""
         offset = 2
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             decay=0.9,
             offset=offset,
             selected_features=["ew_mean"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -347,8 +353,9 @@ class TestExtractEWStatisticalFeatures:
             }
         )
 
-        config = EWStatisticalConfig(is_windowed=False, window_size=4)
+        config = EWStatisticalConfig(window_size=4)
         extractor = ExtractEWStatisticalFeatures(config)
+        # is_windowed defaults to False, so no need to set it
 
         with pytest.raises(ValueError, match="Data is not windowed"):
             extractor(data)
@@ -372,8 +379,9 @@ class TestExtractEWStatisticalFeatures:
 
     def test_empty_data_raises_error(self):
         """Tests that empty DataFrame raises appropriate error."""
-        config = EWStatisticalConfig(is_windowed=True, window_size=4)
+        config = EWStatisticalConfig(window_size=4)
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         empty_df = pd.DataFrame()
 
@@ -382,8 +390,9 @@ class TestExtractEWStatisticalFeatures:
 
     def test_no_variables_found_raises_error(self):
         """Tests error when no valid variable columns are found."""
-        config = EWStatisticalConfig(is_windowed=True, window_size=4)
+        config = EWStatisticalConfig(window_size=4)
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         invalid_data = pd.DataFrame(
             {"col1": [1, 2, 3], "col2": [4, 5, 6], "label": [100, 101, 102]}
@@ -394,8 +403,9 @@ class TestExtractEWStatisticalFeatures:
 
     def test_offset_exceeds_data_length(self, windowed_data_with_labels):
         """Tests that offset larger than data raises error."""
-        config = EWStatisticalConfig(is_windowed=True, window_size=4, offset=100)
+        config = EWStatisticalConfig(window_size=4, offset=100)
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         with pytest.raises(ValueError, match="Offset .* is larger than data length"):
             extractor(windowed_data_with_labels)
@@ -412,12 +422,12 @@ class TestExtractEWStatisticalFeatures:
         )
 
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             label_column=None,
             selected_features=["ew_mean"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -427,8 +437,9 @@ class TestExtractEWStatisticalFeatures:
 
     def test_type_error_on_non_dataframe_input(self):
         """Tests that non-DataFrame input raises TypeError."""
-        config = EWStatisticalConfig(is_windowed=True, window_size=4)
+        config = EWStatisticalConfig(window_size=4)
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         with pytest.raises(TypeError, match="Input data must be a pandas DataFrame"):
             extractor([1, 2, 3, 4])
@@ -436,9 +447,10 @@ class TestExtractEWStatisticalFeatures:
     def test_nan_handling_warning(self, windowed_data_with_labels):
         """Tests that NaN values are handled."""
         config = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.9, selected_features=["ew_mean"]
+            window_size=4, decay=0.9, selected_features=["ew_mean"]
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         # Introduce NaN
         data_with_nan = windowed_data_with_labels.copy()
@@ -463,9 +475,10 @@ class TestExtractEWStatisticalFeatures:
         )
 
         config = EWStatisticalConfig(
-            is_windowed=True, window_size=4, decay=0.9, selected_features=["ew_max"]
+            window_size=4, decay=0.9, selected_features=["ew_max"]
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -485,12 +498,12 @@ class TestExtractEWStatisticalFeatures:
         )
 
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             decay=0.9,
             selected_features=["ew_mean", "ew_std"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -509,13 +522,13 @@ class TestExtractEWStatisticalFeatures:
         )
 
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             decay=0.9,
             eps=1e-10,
             selected_features=["ew_skew", "ew_kurt"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -541,12 +554,12 @@ class TestExtractEWStatisticalFeatures:
     def test_feature_ordering_consistency(self, multivariate_windowed_data):
         """Tests that feature ordering is consistent across variables."""
         config = EWStatisticalConfig(
-            is_windowed=True,
             window_size=4,
             decay=0.9,
             selected_features=["ew_mean", "ew_std", "ew_max"],
         )
         extractor = ExtractEWStatisticalFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(multivariate_windowed_data)
 

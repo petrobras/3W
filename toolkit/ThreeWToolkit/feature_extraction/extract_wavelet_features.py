@@ -37,7 +37,7 @@ class ExtractWaveletFeatures(BaseStep):
         self.offset = config.offset
         self.wavelet = config.wavelet
 
-        self.is_windowed = getattr(config, "is_windowed", False)
+        self.is_windowed = False
         self.label_column = getattr(config, "label_column", None)
 
         # Initialize wavelet filter matrix
@@ -239,7 +239,7 @@ class ExtractWaveletFeatures(BaseStep):
         if not self.is_windowed:
             raise ValueError(
                 "Data is not windowed. Please use the Windowing class to window your data first, "
-                "then set is_windowed=True in the config when initializing ExtractWaveletFeatures."
+                "then set extractor.is_windowed = True on the ExtractWaveletFeatures instance."
             )
 
         # Identify variables

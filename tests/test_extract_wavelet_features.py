@@ -16,7 +16,6 @@ class WaveletConfig:
         overlap=0.0,
         offset=0,
         wavelet="db1",
-        is_windowed=True,
         label_column="label",
     ):
         if overlap < 0 or overlap >= 1:
@@ -30,7 +29,6 @@ class WaveletConfig:
         self.overlap = overlap
         self.offset = offset
         self.wavelet = wavelet
-        self.is_windowed = is_windowed
         self.label_column = label_column
 
 
@@ -81,8 +79,9 @@ class TestExtractWaveletFeatures:
 
     def test_basic_extraction_univariate(self, windowed_data_with_labels):
         """Tests basic wavelet feature extraction for univariate data."""
-        config = WaveletConfig(level=2, is_windowed=True)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -105,8 +104,9 @@ class TestExtractWaveletFeatures:
 
     def test_multivariate_extraction(self, multivariate_windowed_data):
         """Tests wavelet feature extraction for multivariate data."""
-        config = WaveletConfig(level=2, is_windowed=True)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(multivariate_windowed_data)
 
@@ -121,8 +121,9 @@ class TestExtractWaveletFeatures:
     def test_offset_application(self, windowed_data_with_labels):
         """Tests that offset parameter correctly skips initial windows."""
         offset = 2
-        config = WaveletConfig(level=2, offset=offset, is_windowed=True)
+        config = WaveletConfig(level=2, offset=offset)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -145,7 +146,7 @@ class TestExtractWaveletFeatures:
             }
         )
 
-        config = WaveletConfig(level=2, is_windowed=False)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
 
         with pytest.raises(ValueError, match="Data is not windowed"):
@@ -165,8 +166,9 @@ class TestExtractWaveletFeatures:
 
     def test_output_column_names_format(self, windowed_data_with_labels):
         """Tests that output columns follow the expected naming convention."""
-        config = WaveletConfig(level=2, is_windowed=True)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(windowed_data_with_labels)
 
@@ -178,8 +180,9 @@ class TestExtractWaveletFeatures:
 
     def test_empty_data_raises_error(self):
         """Tests that empty DataFrame raises appropriate error."""
-        config = WaveletConfig(level=2, is_windowed=True)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         empty_df = pd.DataFrame()
 
@@ -188,8 +191,9 @@ class TestExtractWaveletFeatures:
 
     def test_no_variables_found_raises_error(self):
         """Tests error when no valid variable columns are found."""
-        config = WaveletConfig(level=2, is_windowed=True)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         # DataFrame with wrong column format
         invalid_data = pd.DataFrame(
@@ -201,8 +205,9 @@ class TestExtractWaveletFeatures:
 
     def test_window_size_mismatch_handling(self):
         """Tests handling of windows with incorrect size."""
-        config = WaveletConfig(level=2, is_windowed=True)  # Expects window_size=4
+        config = WaveletConfig(level=2)  # Expects window_size=4
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         # Create data with wrong window size (only 3 columns)
         data = pd.DataFrame(
@@ -219,17 +224,18 @@ class TestExtractWaveletFeatures:
         config = WaveletConfig(
             level=2,
             offset=100,  # Much larger than data
-            is_windowed=True,
         )
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         with pytest.raises(ValueError, match="Offset .* is larger than data length"):
             extractor(windowed_data_with_labels)
 
     def test_nan_handling_warning(self, windowed_data_with_labels):
         """Tests that NaN values trigger a warning."""
-        config = WaveletConfig(level=2, is_windowed=True)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         # Introduce NaN
         data_with_nan = windowed_data_with_labels.copy()
@@ -241,8 +247,9 @@ class TestExtractWaveletFeatures:
 
     def test_feature_names_generation(self):
         """Tests that feature names are correctly generated for different levels."""
-        config = WaveletConfig(level=3, is_windowed=True)
+        config = WaveletConfig(level=3)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         expected_names = ["A3", "D3", "A2", "D2", "A1", "D1", "A0"]
         assert extractor.feat_names == expected_names
@@ -250,8 +257,9 @@ class TestExtractWaveletFeatures:
     def test_different_wavelet_types(self, windowed_data_with_labels):
         """Tests that different wavelet types work correctly."""
         for wavelet in ["db1", "db2", "sym2", "coif1"]:
-            config = WaveletConfig(level=2, wavelet=wavelet, is_windowed=True)
+            config = WaveletConfig(level=2, wavelet=wavelet)
             extractor = ExtractWaveletFeatures(config)
+            extractor.is_windowed = True
 
             result = extractor(windowed_data_with_labels)
             assert not result.empty
@@ -268,8 +276,9 @@ class TestExtractWaveletFeatures:
             }
         )
 
-        config = WaveletConfig(level=2, is_windowed=True, label_column=None)
+        config = WaveletConfig(level=2, label_column=None)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         result = extractor(data)
 
@@ -279,8 +288,9 @@ class TestExtractWaveletFeatures:
 
     def test_type_error_on_non_dataframe_input(self):
         """Tests that non-DataFrame input raises TypeError."""
-        config = WaveletConfig(level=2, is_windowed=True)
+        config = WaveletConfig(level=2)
         extractor = ExtractWaveletFeatures(config)
+        extractor.is_windowed = True
 
         with pytest.raises(TypeError, match="Input data must be a pandas DataFrame"):
             extractor([1, 2, 3, 4])  # List instead of DataFrame
