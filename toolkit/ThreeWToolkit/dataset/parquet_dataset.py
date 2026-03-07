@@ -1,30 +1,96 @@
-import random
 import shutil
 import zipfile
-import pandas as pd
-
 from pathlib import Path
-
+from typing import Any
 from pandas import read_parquet
-
-from ..core.base_step import BaseStep
-from ..core.base_dataset import ParquetDatasetConfig
+from pydantic import BaseModel, Field, field_validator
+from typing import Literal
+from ThreeWToolkit.core.enums import EventPrefixEnum
+import pandas as pd
 from ..utils.downloader import get_figshare_data
-from ..utils.data_utils import default_data_processing
+import torch.nn as nn
+from dataclasses import dataclass, field
 
 DATASET_VALIDATION_RULES = {
     "2.0.0": {"total_parquet_files": 2228},
 }
 
 
-class ParquetDataset(
-    BaseStep[
-        dict[str, pd.DataFrame | Path] | None,
-        dict[str, pd.DataFrame | Path] | None,
-        dict[str, pd.DataFrame | Path] | None,
-        dict[str, pd.DataFrame | Path],
-    ]
-):
+class ParquetDatasetConfig(BaseModel):
+    """
+    Configuration schema for loading a Parquet dataset.
+    Defines the dataset location, splits, filtering options, and preprocessing behavior.
+    """
+
+    path: str | Path = Field(..., description="Path to the dataset directory or file.")
+    split: Literal[None, "train", "val", "test", "list"] = Field(
+        default=None,
+        description="Dataset split to load. If None, load all available files.",
+    )
+    file_list: (list[str] | list[Path]) | None = Field(
+        default=None,
+        description='List of files to load if split=="list". Must be explicitly provided.',
+    )
+    event_type: list[EventPrefixEnum] | None = Field(
+        default=None,
+        description="Event types to include. (e.g., simulated, real, ...)",
+    )
+    target_class: list[int] | None = Field(
+        default=None,
+        description="Event classes to include. (e.g., 0, 1, 2, ...). Loads all classes if `None`.",
+    )
+    columns: list[str] | None = Field(
+        default=None,
+        description="Specific data columns to load. Loads all columns if `None`.",
+    )
+    target_column: str | None = Field(
+        default="class",
+        description="Target column used for supervised tasks.",
+    )
+    force_download: bool = Field(
+        default=False,
+        description="If True, dataset is downloaded even if it already exists. In this case, \
+            existing files will be overwritten.",
+    )
+    shuffle: bool = Field(
+        default=False,
+        description="If True, shuffle dataset files before loading.",
+    )
+    version: str = Field(
+        default="2.0.0",
+        description="Dataset version to load. (e.g., 2.0.0, 2.0.1, ...)",
+    )
+    target_: type = Field(default_factory=lambda: ParquetDataset)
+
+    @field_validator("file_list")
+    @classmethod
+    def validate_file_list(cls, v, info):
+        """
+        Ensure that `file_list` is only provided when `split=="list"`.
+        Raise a ValueError otherwise.
+        """
+        split = info.data.get("split")
+        if split == "list" and v is None:
+            raise ValueError('file_list must be provided if split is "list".')
+        elif split != "list" and v is not None:
+            raise ValueError(f'file_list must not be provided if split="{split}".')
+        return v
+
+    @field_validator("event_type")
+    @classmethod
+    def validate_event_type(cls, v):
+        """
+        Ensure that all event types are valid members of EventPrefixEnum.
+        Raise a ValueError if an unknown type is provided.
+        """
+        if v is not None:
+            for t in v:
+                if t not in list(EventPrefixEnum):
+                    raise ValueError(f"Unknown event_type: {t}")
+        return v
+
+
+class ParquetDataset(nn.Module):
     """
     Dataset handler for Parquet files.
 
@@ -33,15 +99,6 @@ class ParquetDataset(
     """
 
     def __init__(self, config: ParquetDatasetConfig):
-        """
-        Initialize the ParquetDataset with the given configuration.
-
-        Args:
-            config (ParquetDatasetConfig): Configuration object for the dataset.
-
-        Raises:
-            ValueError: If dataset version or options are invalid.
-        """
         self.config = config
 
         # Check if dataset version is valid
@@ -97,7 +154,7 @@ class ParquetDataset(
         # Collect parquet files
         root = Path(self.config.path)
 
-        # Check if dataset
+        # Check dataset integrity
         print("[ParquetDataset] Validating dataset integrity...")
         pass_validation, error_messages = self.validate_dataset_integrity()
         if not pass_validation:
@@ -127,27 +184,12 @@ class ParquetDataset(
                 )
             self.files_events = [Path(p) for p in self.config.file_list]
 
-        # Remove target column from feature names if necessary
-        if self.config.columns:
-            self.feature_names = self.config.columns.copy()
-            if self.config.target_column in self.feature_names:
-                self.feature_names.remove(self.config.target_column)
-            print(f">> {self.feature_names}")
-
     def _check_event_type(self, event: Path) -> bool:
         """
         Check if the event file name matches one of the requested event types.
-        Supports both enum members and strings.
         """
         if isinstance(self.config.event_type, list):
-            return any(
-                event.name.startswith(
-                    event_type_value.value
-                    if hasattr(event_type_value, "value")
-                    else event_type_value
-                )
-                for event_type_value in self.config.event_type
-            )
+            return any(event.name.startswith(t.value) for t in self.config.event_type)
         else:  # Default: accept all
             return True
 
@@ -170,12 +212,9 @@ class ParquetDataset(
             if self._check_event_type(e) and self._check_event_class(e)
         ]
 
-    def is_dataset_extracted_correctly(self) -> bool:
+    def is_dataset_extracted_correctly(self):
         """
         Check if the dataset is already extracted by checking the number of parquet files.
-
-        Returns:
-            bool: True if the number of extracted files matches the expectation, False otherwise.
         """
         extracted_files = list(Path(self.config.path).rglob("*.parquet"))
         total_expected_files = DATASET_VALIDATION_RULES[self.config.version][
@@ -205,143 +244,11 @@ class ParquetDataset(
 
         return pass_validation, error_messages
 
-    def iterbatches(self):
-        """
-        Iterate over batches of parquet files.
-
-        Returns:
-            Generator yielding dictionaries with:
-                - signals: dict[column -> list of signal arrays]
-                - labels: dict[target_column -> list of labels]
-                - file_names: dict[file_name -> list of file names]
-        """
-        total_files = len(self)
-        shuffled_ids = list(range(total_files))
-        random.seed(self.config.seed)
-        random.shuffle(shuffled_ids)
-
-        for idx in range(0, total_files, self.config.files_per_batch):
-            batch_ids = shuffled_ids[idx : idx + self.config.files_per_batch]
-            batch_files = [self[i] for i in batch_ids]
-
-            dict_signals = {}
-            dict_labels = {}
-            dict_file_names = {}
-            for file_data in batch_files:
-                # Extract signals
-                for col_name in self.config.columns:
-                    samples_col = list(file_data["signal"][col_name])
-                    dict_signals.setdefault(col_name, []).append(samples_col)
-                # Extract labels
-                labels = list(file_data["label"][self.config.target_column])
-                dict_labels.setdefault(self.config.target_column, []).append(labels)
-                # Extract file names
-                file_name = file_data["file_name"]
-                dict_file_names.setdefault(file_name, []).append(file_name)
-
-            yield dict(
-                signals=dict_signals,
-                labels=dict_labels,
-                file_names=dict_file_names,
-            )
-
-    def iterfiles(self):
-        """
-        Iterate over individual parquet files one by one.
-        """
-        total_files = len(self)
-        for idx in range(total_files):
-            yield self[idx]
-
-    def pre_process(
-        self, data: dict[str, pd.DataFrame | Path] | None = None
-    ) -> dict[str, pd.DataFrame | Path] | None:
-        """
-        Clean or preprocess data if required by configuration.
-
-        Args:
-            data: Input data dictionary containing file information.
-
-        Returns:
-            dict[str, pd.DataFrame | Path] | None: Processed data dictionary.
-
-        Raises:
-            ValueError: If file_name is invalid when clean_data is True.
-        """
-        if self.config.clean_data and data is not None:
-            # NOTE: Currently assuming that the parent folder name corresponds to the target value
-            file_name = data.get("file_name")
-            if file_name is not None and isinstance(file_name, Path):
-                fill_target_value = int(file_name.parent.name)
-            else:
-                raise ValueError("file_name must be a Path when clean_data is True")
-
-            data = default_data_processing(
-                data,
-                target_column=self.config.target_column,
-                fill_target_value=fill_target_value,
-            )
-        return data
-
-    def run(
-        self, data: dict[str, pd.DataFrame | Path] | None = None
-    ) -> dict[str, pd.DataFrame | Path] | None:
-        """
-        Run the dataset step. Only checks are performed.
-
-        If the pipeline calls `.run()` directly, return a DataLoader.
-        Otherwise, this could return (X_tensor, y_tensor) and let `post_process`
-        handle DataLoader creation. For compatibility, we return the input data.
-        """
-        if data is None:
-            return None
-        if "signal" not in data:
-            raise ValueError("[ParquetDataset] 'signal' key not found in data.")
-        signal = data["signal"]
-        if not isinstance(signal, pd.DataFrame):
-            raise ValueError("[ParquetDataset] 'signal' must be a pandas DataFrame.")
-        if signal.empty:
-            raise ValueError("[ParquetDataset] Empty file or invalid columns.")
-
-        # Only check label if target_column is defined
-        if self.config.target_column is not None:
-            if "label" not in data:
-                raise ValueError("[ParquetDataset] No target column found.")
-            label = data["label"]
-            if not isinstance(label, (pd.Series, pd.DataFrame)):
-                raise ValueError(
-                    "[ParquetDataset] 'label' column must be a pandas Series or DataFrame."
-                )
-
-            if label.empty:
-                raise ValueError("[ParquetDataset] Target column is empty.")
-
-            if len(label) != len(signal):
-                raise ValueError(
-                    "[ParquetDataset] Target column has different length than signal."
-                )
-
-        return data
-
-    def post_process(
-        self, data: dict[str, pd.DataFrame | Path] | None
-    ) -> dict[str, pd.DataFrame | Path]:
-        """
-        Finalize dataset processing.
-        If you want to use the BaseStep flow (pre -> run -> post),
-        return the DataLoader here when `run` returns (X, y).
-        Since `run` already returns a DataLoader-compatible object,
-        this method currently acts as an identity function.
-        """
-        if data is None:
-            raise ValueError("Data cannot be None in post_process")
-        return data
-
     def __len__(self) -> int:
         """Return the number of events in the dataset."""
         return len(self.files_events)
 
-    def __getitem__(self, idx: int) -> dict[str, pd.DataFrame | Path]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         """
         Load and process one dataset file.
 
@@ -349,12 +256,11 @@ class ParquetDataset(
             idx (int): Index of the file.
 
         Returns:
-            dict[str, pd.DataFrame | Path]: Dictionary containing signals, labels, and file name.
+            dict[str, Any]: Dictionary containing signals, labels, and file name.
         """
-        data = self.load_data(idx)
-        return self.__call__(data)
+        return self.load_file(idx)
 
-    def load_data(self, idx: int) -> dict[str, pd.DataFrame | Path]:
+    def load_file(self, idx: int) -> dict[str, Any]:
         """
         Load a parquet file and separate signals and labels.
 
@@ -362,31 +268,27 @@ class ParquetDataset(
             idx (int): File index.
 
         Returns:
-            dict[str, pd.DataFrame | Path]:
+            dict[str, Any]:
                 - signal: DataFrame of input signals
                 - label: DataFrame of labels (if target_column is defined)
                 - file_name: Path to the file
         """
         file_name = self.files_events[idx]
         path = Path(self.config.path) / file_name
-        ret: dict[str, pd.DataFrame | Path] = {}
+        ret: dict[str, Any] = {}
 
-        ret["signal"] = read_parquet(
-            path, columns=self.config.columns, engine="pyarrow"
+        # Concatenate columns + labels to read
+        all_columns = (
+            self.config.columns + [self.config.target_column]
+            if self.config.target_column and self.config.columns
+            else self.config.columns or [self.config.target_column]
+            if self.config.target_column
+            else None
         )
 
-        if self.config.target_column is not None:
-            # Drop target column from signals if present
-            signal = ret["signal"]
-            if (
-                isinstance(signal, pd.DataFrame)
-                and self.config.target_column in signal.columns
-            ):
-                signal.drop(columns=[self.config.target_column], inplace=True)
-
-            # Load target column separately
-            ret["label"] = read_parquet(
-                path, columns=[self.config.target_column], engine="pyarrow"
-            )
+        # Read single parquet file and create dict with signal, label and file_name
+        parquet_file = read_parquet(path, columns=all_columns, engine="pyarrow")
+        ret["signal"] = pd.DataFrame(parquet_file[self.config.columns])
+        ret["label"] = pd.DataFrame(parquet_file[self.config.target_column])
         ret["file_name"] = file_name
         return ret
