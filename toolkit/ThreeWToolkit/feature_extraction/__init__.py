@@ -1,15 +1,15 @@
-from .extract_statistical_features import ExtractStatisticalFeatures, StatisticalConfig
-from .extract_exponential_statistics_features import (
-    ExtractEWStatisticalFeatures,
-    EWStatisticalConfig,
-)
-from .extract_wavelet_features import ExtractWaveletFeatures, WaveletConfig
+from .statistical import StatisticalConfig, StatisticalFeatures
+from .windowing import WindowingConfig, Windowing
+from .exponential_statistics import EWStatisticalFeatures, EWStatisticalConfig
+from .wavelet import WaveletConfig, WaveletFeatures
 
 __all__ = [
-    "ExtractStatisticalFeatures",
     "StatisticalConfig",
-    "ExtractEWStatisticalFeatures",
+    "StatisticalFeatures",
     "EWStatisticalConfig",
-    "ExtractWaveletFeatures",
+    "EWStatisticalFeatures",
     "WaveletConfig",
+    "WaveletFeatures",
+    "WindowingConfig",
+    "Windowing",
 ]

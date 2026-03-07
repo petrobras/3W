@@ -1,12 +1,65 @@
 import numpy as np
 import pandas as pd
+from pydantic import Field, field_validator
 import pywt
+from typing import ClassVar
 
-from ..core.base_feature_extractor import WaveletConfig
-from ..core.base_step import BaseStep
+from ..core.base_feature_extractor import (
+    OverlapOffsetMixin,
+    FeatureSelectionMixin,
+    BaseFeatureExtractor,
+    BaseFeatureExtractorConfig,
+)
 
 
-class ExtractWaveletFeatures(BaseStep):
+class WaveletConfig(
+    OverlapOffsetMixin, FeatureSelectionMixin, BaseFeatureExtractorConfig
+):
+    """Configuration for the Wavelet feature extractor."""
+
+    level: int = 1
+    wavelet: str = "haar"
+    target: type = Field(default_factory=lambda: WaveletFeatures)
+    AVAILABLE_WAVELETS: ClassVar[list[str]] = [
+        "haar",
+        "db1",
+        "db2",
+        "db3",
+        "db4",
+        "db5",
+        "db6",
+        "db7",
+        "db8",
+        "db9",
+        "db10",
+        "bior2.2",
+        "bior4.4",
+        "coif2",
+        "coif4",
+        "dmey",
+    ]
+
+    @field_validator("level")
+    @classmethod
+    def check_level_is_positive(cls, v):
+        """Validates that the wavelet level is a positive integer."""
+        if v < 1:
+            raise ValueError("Wavelet level must be a positive integer (>= 1).")
+        return v
+
+    @field_validator("wavelet")
+    @classmethod
+    def check_wavelet_name(cls, v):
+        """Validates that the wavelet name is supported."""
+        if v not in cls.AVAILABLE_WAVELETS:
+            raise ValueError(
+                f"Wavelet '{v}' is not supported. "
+                f"Available wavelets: {cls.AVAILABLE_WAVELETS}"
+            )
+        return v
+
+
+class WaveletFeatures(BaseFeatureExtractor):
     """
     Extracts wavelet features from windowed time series data using Stationary Wavelet Transform (SWT).
 
@@ -37,7 +90,7 @@ class ExtractWaveletFeatures(BaseStep):
         self.offset = config.offset
         self.wavelet = config.wavelet
 
-        self.is_windowed = False
+        self.is_windowed = getattr(config, "is_windowed", False)
         self.label_column = getattr(config, "label_column", None)
 
         # Initialize wavelet filter matrix
@@ -239,7 +292,7 @@ class ExtractWaveletFeatures(BaseStep):
         if not self.is_windowed:
             raise ValueError(
                 "Data is not windowed. Please use the Windowing class to window your data first, "
-                "then set extractor.is_windowed = True on the ExtractWaveletFeatures instance."
+                "then set is_windowed=True in the config when initializing ExtractWaveletFeatures."
             )
 
         # Identify variables
