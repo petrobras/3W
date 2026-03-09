@@ -60,6 +60,7 @@ dev = [
     "black>=26.1.0",
     "ruff>=0.14.13",
     "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
     "flake8",
     "jupyter",
     "uv",

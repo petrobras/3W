@@ -165,23 +165,27 @@ class ExtractEWStatisticalFeatures(BaseStep):
         if "ew_std" in self.selected_features:
             # Calculate weighted variance
             mean_expanded = np.expand_dims(ew_mean, axis=-1)
-            variance = self._apply_weights(
-                np.power(data_array - mean_expanded, 2), axis=-1
-            )
+            with np.errstate(invalid="ignore"):
+                variance = self._apply_weights(
+                    np.power(data_array - mean_expanded, 2), axis=-1
+                )
             ew_std = np.sqrt(variance)
             stats_dict["ew_std"] = ew_std
         else:
             # Calculate std anyway as it's needed for standardization
             mean_expanded = np.expand_dims(ew_mean, axis=-1)
-            variance = self._apply_weights(
-                np.power(data_array - mean_expanded, 2), axis=-1
-            )
+            with np.errstate(invalid="ignore"):
+                variance = self._apply_weights(
+                    np.power(data_array - mean_expanded, 2), axis=-1
+                )
             ew_std = np.sqrt(variance)
 
         # Standardized data for skewness and kurtosis
         mean_expanded = np.expand_dims(ew_mean, axis=-1)
         std_expanded = np.expand_dims(ew_std, axis=-1)
-        standardized_data = (data_array - mean_expanded) / (std_expanded + self.eps)
+
+        with np.errstate(invalid="ignore", divide="ignore"):
+            standardized_data = (data_array - mean_expanded) / (std_expanded + self.eps)
 
         # Exponentially weighted skewness
         if "ew_skew" in self.selected_features:
@@ -341,19 +345,22 @@ class ExtractEWStatisticalFeatures(BaseStep):
             raise ValueError("No data to post-process")
 
         # Check for NaN or infinite values
-        if data.select_dtypes(include=[np.number]).isnull().any().any():
+        numeric_data = data.select_dtypes(include=[np.number])
+
+        if numeric_data.isnull().any().any():
             print(
                 "Warning: NaN values detected in extracted exponentially weighted features"
             )
 
-        if np.isinf(data.select_dtypes(include=[np.number]).values).any():
+        if np.isinf(numeric_data.values).any():
             print(
                 "Warning: Infinite values detected in extracted exponentially weighted features"
             )
             # Replace infinities with finite extreme values
-            numeric_cols = data.select_dtypes(include=[np.number]).columns
+            numeric_cols = numeric_data.columns
             data[numeric_cols] = data[numeric_cols].replace(
-                [np.inf, -np.inf], [np.finfo(np.float64).max, np.finfo(np.float64).min]
+                [np.inf, -np.inf],
+                [np.finfo(np.float64).max, np.finfo(np.float64).min],
             )
 
         return data

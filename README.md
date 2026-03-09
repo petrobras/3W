@@ -3,6 +3,7 @@
 [![CC BY 4.0][cc-by-shield]][cc-by]
 [![Code style][black-shield]][black]
 [![Versioning][semver-shield]][semver]
+[![Coverage Status][coveralls-shield]][coveralls]
 
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
@@ -12,6 +13,8 @@
 [black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
+[coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev
+[coveralls-shield]: https://coveralls.io/repos/github/rafaelpadilla/3W/badge.svg?branch=dev
 
 # Table of Content
 
@@ -102,6 +105,8 @@ In the 3W Project, three types of versions will be managed as follows.
 * The version of the 3W Project will be updated whenever, and only when, there is a new commit in the `main` branch of the repository, regardless of the updated resource: 3W Toolkit, 3W Dataset, 3W Project's documentation, example of use, etc;
 * We will only use annotated tags and for each tag there will be a release in the remote repository (GitHub);
 * Content for each release will be automatically generated with functionality provided by GitHub.
+
+For detailed versioning rules, including SemVer guidelines for the 3W Toolkit, see [VERSIONING.md](VERSIONING.md).
 
 ## Questions
 
