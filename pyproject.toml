@@ -43,7 +43,7 @@ dependencies = [
     "pyarrow>=20.0.0",
     "pylatex>=1.4.2",
     "statsmodels>=0.14.5",
-    "requests<=2.35.5",
+    "requests>=2.31,<3",
 ]
 
 [project.urls]
@@ -61,14 +61,11 @@ dev = [
     "ruff>=0.14.13",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
-    "flake8",
     "jupyter",
     "uv",
     "types-requests>=2.32.4.20250611",
     "coverage>=7.8.1",
-    "pytest-mock>=3.14.1",
-    "astroid>=4.1.1",
-    "asttokens>=3.0.1"
+    "pytest-mock>=3.14.1"
 ]
 docs = [
     "mkdocs",
@@ -100,6 +97,10 @@ line-length = 88
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311", "py312"]
 
 [tool.mypy]
 python_version = "3.10"
