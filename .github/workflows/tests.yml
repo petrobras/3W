@@ -1,9 +1,14 @@
 name: Tests and Coverage
+
 on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout
@@ -17,10 +22,18 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10.11'
+          python-version: ${{ matrix.python-version }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.python-version }}
 
       - name: Show versions
         run: |
@@ -43,6 +56,7 @@ jobs:
         run: uv run ./bin/test
 
       - name: Upload coverage to Coveralls
+        if: matrix.python-version == '3.10'
         uses: coverallsapp/github-action@v2.3.6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
