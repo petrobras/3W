@@ -8,11 +8,6 @@ from ThreeWToolkit.assessment.strategies.sklearn_prediction_strategy import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def mock_model(predictions=None, probas=None, has_predict=True, has_predict_proba=True):
     model = MagicMock()
     if has_predict:
@@ -31,11 +26,6 @@ def mock_model(predictions=None, probas=None, has_predict=True, has_predict_prob
 def make_X(as_df=False, n=3, cols=2):
     data = np.random.rand(n, cols).astype(np.float32)
     return pd.DataFrame(data, columns=[f"f{i}" for i in range(cols)]) if as_df else data
-
-
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
 
 
 class TestSklearnPredictionStrategy:

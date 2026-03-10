@@ -10,11 +10,6 @@ from ThreeWToolkit.assessment.strategies.torch_prediction_strategy import (
 from ThreeWToolkit.core.enums import TaskTypeEnum
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def simple_model(input_size=4, output_size=1):
     return nn.Sequential(nn.Linear(input_size, output_size))
 
@@ -23,11 +18,6 @@ def make_loader(n=8, input_size=4, batch_size=4):
     x = torch.rand(n, input_size)
     y = torch.zeros(n)
     return DataLoader(TensorDataset(x, y), batch_size=batch_size)
-
-
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
 
 
 class TestTorchPredictionStrategy:
