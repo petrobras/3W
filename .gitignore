@@ -18,6 +18,9 @@ html/
 # VS Code configuration
 .vscode/
 
+#
+uv.lock
+
 # Distribution / packaging
 .Python
 build/

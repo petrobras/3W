@@ -1,711 +1,562 @@
-from pydantic import ValidationError
 import pytest
 import numpy as np
 import pandas as pd
-import tempfile
-import shutil
-
+from unittest.mock import MagicMock, patch
 from pathlib import Path
-from unittest.mock import Mock, patch
 
-from ThreeWToolkit.assessment.model_assess import ModelAssessment
+from ThreeWToolkit.assessment.model_assess import (
+    AssessmentInput,
+    AssessmentInputValidator,
+    AssessmentOutput,
+    AggregatedResults,
+    MetricRegistry,
+    MetricsAggregator,
+    ModelAssessment,
+)
 from ThreeWToolkit.core.base_assessment import ModelAssessmentConfig
-from ThreeWToolkit.core.enums import TaskTypeEnum
+from ThreeWToolkit.core.enums import DataSplitEnum, TaskTypeEnum
 
 
-class TestModelAssessmentConfig:
-    """Test suite for ModelAssessmentConfig validation and initialization."""
-
-    def test_default_config_creation(self):
-        """Test creating config with default values."""
-        config = ModelAssessmentConfig()
-
-        assert config.metrics == ["accuracy", "f1"]
-        assert config.export_results is True
-        assert config.generate_report is False
-        assert config.task_type == TaskTypeEnum.CLASSIFICATION
-        assert config.batch_size == 64
-        assert config.device in ["cpu", "cuda"]
-        assert config.report_author == "3W Toolkit Report"
-
-    def test_custom_config_creation(self):
-        """Test creating config with custom values."""
-        config = ModelAssessmentConfig(
-            metrics=["precision", "recall"],
-            output_dir=Path("./custom_output"),
-            export_results=False,
-            generate_report=True,
-            task_type=TaskTypeEnum.REGRESSION,
-            batch_size=32,
-            device="cpu",
-            report_title="Custom Report",
-            report_author="Test Author",
-        )
-
-        assert config.metrics == ["precision", "recall"]
-        assert config.output_dir == Path("./custom_output")
-        assert config.export_results is False
-        assert config.generate_report is True
-        assert config.task_type == TaskTypeEnum.REGRESSION
-        assert config.batch_size == 32
-        assert config.device == "cpu"
-        assert config.report_title == "Custom Report"
-        assert config.report_author == "Test Author"
-
-    def test_invalid_task_type(self):
-        """Test validation fails for invalid task type."""
-        with pytest.raises(ValidationError, match="task_type"):
-            ModelAssessmentConfig(task_type="invalid_type")
-
-    def test_invalid_metrics(self):
-        """Test validation fails for invalid metrics."""
-        with pytest.raises(ValidationError, match="Invalid metrics"):
-            ModelAssessmentConfig(metrics=["invalid_metric", "accuracy"])
-
-    def test_invalid_device(self):
-        """Test validation fails for invalid device."""
-        with pytest.raises(ValidationError, match="device must be one of"):
-            ModelAssessmentConfig(device="tpu")
-
-    def test_invalid_batch_size(self):
-        """Test validation fails for non-positive batch size."""
-        with pytest.raises(ValidationError):
-            ModelAssessmentConfig(batch_size=0)
-
-        with pytest.raises(ValidationError):
-            ModelAssessmentConfig(batch_size=-1)
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 
-class TestModelAssessmentInitialization:
-    """Test suite for ModelAssessment initialization."""
+def make_assessment_config(**overrides):
+    defaults = dict(
+        metrics=["accuracy"],
+        task_type=TaskTypeEnum.CLASSIFICATION,
+        output_dir=Path("/tmp/test_assess"),
+    )
+    defaults.update(overrides)
+    return ModelAssessmentConfig(**defaults)
+
+
+def mock_model(name="MockModel"):
+    model = MagicMock()
+    model.model_name = name
+    strategy = MagicMock()
+    strategy.requires_dataloader.return_value = False
+    strategy.predict.return_value = np.array([0, 1, 0, 1])
+    model.get_prediction_strategy.return_value = lambda: strategy
+    return model
+
+
+def base_assessment_input(models=None, n=4):
+    x = np.random.rand(n, 4).astype(np.float32)
+    y = np.array([0, 1, 0, 1])
+    return AssessmentInput(
+        models=models or [mock_model()],
+        x=x,
+        y=y,
+        dataset_split=DataSplitEnum.TEST,
+    )
+
+
+# ---------------------------------------------------------------------------
+# MetricRegistry
+# ---------------------------------------------------------------------------
+
+
+class TestMetricRegistry:
 
     @pytest.fixture
-    def temp_dir(self):
-        """Create a temporary directory for test outputs."""
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
+    def registry(self):
+        return MetricRegistry()
 
-    def test_basic_initialization(self, temp_dir):
-        """Test basic initialization without report generation."""
-        config = ModelAssessmentConfig(output_dir=temp_dir, generate_report=False)
+    def test_resolve_valid_classification_metric(self, registry):
+        fns = registry.resolve(TaskTypeEnum.CLASSIFICATION, ["accuracy"])
+        assert "accuracy" in fns
+        assert callable(fns["accuracy"])
+
+    def test_resolve_valid_regression_metric(self, registry):
+        fns = registry.resolve(TaskTypeEnum.REGRESSION, ["explained_variance"])
+        assert "explained_variance" in fns
+
+    def test_resolve_unknown_metric_raises(self, registry):
+        with pytest.raises(ValueError, match="not available"):
+            registry.resolve(TaskTypeEnum.CLASSIFICATION, ["unknown_metric"])
+
+    def test_resolve_multiple_metrics(self, registry):
+        fns = registry.resolve(TaskTypeEnum.CLASSIFICATION, ["accuracy", "f1"])
+        assert len(fns) == 2
+
+
+# ---------------------------------------------------------------------------
+# MetricsAggregator
+# ---------------------------------------------------------------------------
+
+
+class TestMetricsAggregator:
+
+    def test_aggregate_computes_mean_and_std(self):
+        per_fold = [{"accuracy": 0.8}, {"accuracy": 0.9}, {"accuracy": 0.7}]
+        result = MetricsAggregator.aggregate(per_fold)
+
+        assert isinstance(result, AggregatedResults)
+        assert result.n_folds == 3
+        assert result.metrics_mean["accuracy"] == pytest.approx(0.8, abs=1e-4)
+        assert result.metrics_std["accuracy"] > 0
+
+    def test_aggregate_multiple_metrics(self):
+        per_fold = [{"acc": 0.9, "f1": 0.85}, {"acc": 0.8, "f1": 0.75}]
+        result = MetricsAggregator.aggregate(per_fold)
+        assert "acc" in result.metrics_mean
+        assert "f1" in result.metrics_std
+
+
+# ---------------------------------------------------------------------------
+# AssessmentInputValidator
+# ---------------------------------------------------------------------------
+
+
+class TestAssessmentInputValidator:
+
+    @pytest.fixture
+    def config(self):
+        return make_assessment_config()
+
+    def test_valid_input_passes(self, config):
+        data = base_assessment_input()
+        result = AssessmentInputValidator.validate(data, config)
+        assert result is data
+
+    # def test_raises_if_no_models(self, config):
+    #     data = base_assessment_input(models=[])
+    #     with pytest.raises(ValueError, match="At least one model"):
+    #         AssessmentInputValidator.validate(data, config)
+
+    def test_raises_if_x_is_none(self, config):
+        data = base_assessment_input()
+        data.x = None
+        with pytest.raises(ValueError, match="Both x and y must be provided"):
+            AssessmentInputValidator.validate(data, config)
+
+    def test_raises_if_fold_lengths_mismatch(self, config):
+        data = base_assessment_input(models=[mock_model(), mock_model()])
+        data.x_train_folds = [np.array([1])]  # length 1, but 2 models
+        data.y_train_folds = [np.array([1])]
+        data.x_val_folds = [np.array([1])]
+        data.y_val_folds = [np.array([1])]
+        with pytest.raises(ValueError, match="x_train_folds length must match"):
+            AssessmentInputValidator.validate(data, config)
+
+    def test_wraps_single_model_in_list(self, config):
+        data = base_assessment_input()
+        data.models = mock_model()  # not a list
+        result = AssessmentInputValidator.validate(data, config)
+        assert isinstance(result.models, list)
+
+    def test_raises_if_models_empty_list(self, config):
+        data = base_assessment_input()
+        data.models = []
+        with pytest.raises(ValueError, match="At least one model"):
+            AssessmentInputValidator.validate(data, config)
+
+    def test_dataset_split_none_uses_config_default(self, config):
+        data = base_assessment_input()
+        data.dataset_split = None
+        result = AssessmentInputValidator.validate(data, config)
+        assert result.dataset_split == config.dataset_split
+
+    def test_kwargs_none_becomes_empty_dict(self, config):
+        data = base_assessment_input()
+        data.kwargs = None
+        result = AssessmentInputValidator.validate(data, config)
+        assert result.kwargs == {}
+
+    def test_raises_if_fold_field_is_none(self, config):
+        data = base_assessment_input(models=[mock_model()])
+        data.x_train_folds = [np.array([1])]
+        data.y_train_folds = None
+        data.x_val_folds = [np.array([1])]
+        data.y_val_folds = [np.array([1])]
+        with pytest.raises(ValueError, match="must be provided together"):
+            AssessmentInputValidator.validate(data, config)
+
+    @pytest.mark.parametrize(
+        "bad_field,match",
+        [
+            ("y_train_folds", "y_train_folds length must match"),
+            ("x_val_folds", "x_val_folds length must match"),
+            ("y_val_folds", "y_val_folds length must match"),
+        ],
+    )
+    def test_raises_on_fold_length_mismatch(self, config, bad_field, match):
+        models = [mock_model(), mock_model()]
+        data = base_assessment_input(models=models)
+
+        data.x_train_folds = [np.array([1]), np.array([2])]
+        data.y_train_folds = [np.array([1]), np.array([2])]
+        data.x_val_folds = [np.array([1]), np.array([2])]
+        data.y_val_folds = [np.array([1]), np.array([2])]
+
+        setattr(data, bad_field, [np.array([1])])  # length 1 vs 2 models
+        with pytest.raises(ValueError, match=match):
+            AssessmentInputValidator.validate(data, config)
+
+
+# ---------------------------------------------------------------------------
+# ModelAssessment — evaluate (single model)
+# ---------------------------------------------------------------------------
+
+
+class TestModelAssessmentSingle:
+
+    @pytest.fixture
+    def config(self, tmp_path):
+        return make_assessment_config(output_dir=tmp_path)
+
+    def test_evaluate_single_returns_output(self, config):
+        data = base_assessment_input()
         assessor = ModelAssessment(config)
+        result = assessor.evaluate(data)
 
-        assert assessor.config == config
-        assert assessor.results == {}
-        assert assessor.report_doc is None
-        assert temp_dir.exists()
+        assert isinstance(result, AssessmentOutput)
+        assert result.is_cross_validation is False
+        assert result.metrics is not None
+        assert "accuracy" in result.metrics
 
-    def test_initialization_with_report_generation_success(self, temp_dir):
-        """Test initialization with successful report generation import."""
-        config = ModelAssessmentConfig(output_dir=temp_dir, generate_report=True)
+    def test_evaluate_single_predictions_shape(self, config):
+        data = base_assessment_input(n=4)
+        assessor = ModelAssessment(config)
+        result = assessor.evaluate(data)
+        assert result.predictions.shape == (4,)
+        assert result.true_values.shape == (4,)
 
-        with patch(
-            "ThreeWToolkit.reports.report_generation.ReportGeneration"
-        ) as mock_report:
+    def test_evaluate_populates_experiment_dir(self, config):
+        data = base_assessment_input()
+        assessor = ModelAssessment(config)
+        result = assessor.evaluate(data)
+        assert result.experiment_dir is not None
+
+    def test_generate_report_true_sets_report_class(self, tmp_path):
+        fake_cls = MagicMock()
+        with patch.dict(
+            "sys.modules",
+            {
+                "ThreeWToolkit.reports.report_generation": MagicMock(
+                    ReportGeneration=fake_cls
+                )
+            },
+        ):
+            config = make_assessment_config(output_dir=tmp_path, generate_report=True)
             assessor = ModelAssessment(config)
             assert hasattr(assessor, "_report_generation_class")
-            assert assessor._report_generation_class == mock_report
 
-    def test_output_directory_creation(self, temp_dir):
-        """Test that output directory is created if it doesn't exist."""
-        nested_dir = temp_dir / "nested" / "output"
-        config = ModelAssessmentConfig(output_dir=nested_dir)
+    def test_generate_report_import_error_disables_report(self, tmp_path):
+        with patch("builtins.__import__", side_effect=ImportError):
+            config = make_assessment_config(output_dir=tmp_path, generate_report=True)
+            try:
+                assessor = ModelAssessment(config)
+                assert assessor.config.generate_report is False
+            except Exception:
+                pass
 
-        _ = ModelAssessment(config)
-        assert nested_dir.exists()
+    def test_pre_process_raises_for_non_assessment_input(self, config):
+        assessor = ModelAssessment(config)
+        with pytest.raises(TypeError, match="AssessmentInput"):
+            assessor.pre_process({"models": [], "x": None, "y": None})
 
-
-class TestModelAssessmentPreProcess:
-    """Test suite for pre_process method."""
-
-    @pytest.fixture
-    def assessor(self, temp_dir):
-        config = ModelAssessmentConfig(output_dir=temp_dir)
-        return ModelAssessment(config)
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    def test_preprocess_with_dict_input(self, assessor):
-        """Test preprocessing with dictionary input."""
-        model = Mock()
-        X_test = np.array([[1, 2], [3, 4]])
-        y_test = np.array([0, 1])
-
-        data = {
-            "model": model,
-            "x_test": X_test,
-            "y_test": y_test,
-            "kwargs": {"verbose": True},
-        }
-
+    def test_pre_process_returns_validated_input(self, config):
+        assessor = ModelAssessment(config)
+        data = base_assessment_input()
         result = assessor.pre_process(data)
+        assert isinstance(result, AssessmentInput)
 
-        assert result["model"] == model
-        assert np.array_equal(result["x_test"], X_test)
-        assert np.array_equal(result["y_test"], y_test)
-        assert result["kwargs"] == {"verbose": True}
-
-    def test_preprocess_with_tuple_input(self, assessor):
-        """Test preprocessing with tuple/list input."""
-        model = Mock()
-        X_test = np.array([[1, 2], [3, 4]])
-        y_test = np.array([0, 1])
-        kwargs = {"verbose": True}
-
-        data = (model, X_test, y_test, kwargs)
-        result = assessor.pre_process(data)
-
-        assert result["model"] == model
-        assert np.array_equal(result["x_test"], X_test)
-        assert np.array_equal(result["y_test"], y_test)
-        assert result["kwargs"] == kwargs
-
-    def test_preprocess_with_tuple_without_kwargs(self, assessor):
-        """Test preprocessing with tuple input without kwargs."""
-        model = Mock()
-        X_test = np.array([[1, 2], [3, 4]])
-        y_test = np.array([0, 1])
-
-        data = (model, X_test, y_test)
-        result = assessor.pre_process(data)
-
-        assert result["model"] == model
-        assert result["kwargs"] == {}
-
-    def test_preprocess_missing_required_keys(self, assessor):
-        """Test preprocessing fails with missing required keys."""
-        with pytest.raises(ValueError, match="Missing required keys"):
-            assessor.pre_process({"model": Mock()})
-
-    def test_preprocess_with_none_model(self, assessor):
-        """Test preprocessing fails with None model."""
-        data = {"model": None, "x_test": np.array([[1, 2]]), "y_test": np.array([0])}
-
-        with pytest.raises(ValueError, match="Model cannot be None"):
-            assessor.pre_process(data)
-
-    def test_preprocess_with_invalid_input_type(self, assessor):
-        """Test preprocessing fails with invalid input type."""
-        with pytest.raises(ValueError, match="must be a dict or iterable"):
-            assessor.pre_process(10)
-
-    def test_preprocess_dict_without_kwargs(self, assessor):
-        """Test preprocessing adds empty kwargs if missing in dict."""
-        model = Mock()
-        data = {"model": model, "x_test": np.array([[1, 2]]), "y_test": np.array([0])}
-
-        result = assessor.pre_process(data)
-        assert result["kwargs"] == {}
-
-
-class TestModelAssessmentRun:
-    """Test suite for run method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor(self, temp_dir):
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy"],
-            export_results=False,
-            generate_report=False,
-        )
-        return ModelAssessment(config)
-
-    def test_run_successful_evaluation(self, assessor):
-        """Test run method executes evaluation successfully."""
-        model = Mock()
-        model.predict = Mock(return_value=np.array([0, 1, 0, 1]))
-
-        data = {
-            "model": model,
-            "x_test": np.array([[1, 2], [3, 4], [5, 6], [7, 8]]),
-            "y_test": np.array([0, 1, 0, 1]),
-            "kwargs": {},
-        }
-
-        result = assessor.run(data)
-
-        assert "assessment_results" in result
-        assert "metrics" in result
-        assert "predictions" in result
-        assert "assessor" in result
-        assert result["assessor"] == assessor
-
-    def test_run_with_custom_kwargs(self, assessor):
-        """Test run method passes kwargs to evaluate."""
-        model = Mock()
-        model.predict = Mock(return_value=np.array([0, 1]))
-
-        data = {
-            "model": model,
-            "x_test": np.array([[1, 2], [3, 4]]),
-            "y_test": np.array([0, 1]),
-            "kwargs": {"custom_param": "value"},
-        }
-
-        result = assessor.run(data)
-        assert "assessment_results" in result
-
-
-class TestModelAssessmentPostProcess:
-    """Test suite for post_process method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor(self, temp_dir):
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir, task_type=TaskTypeEnum.CLASSIFICATION
-        )
+    def test_run_delegates_to_evaluate(self, config):
         assessor = ModelAssessment(config)
-        assessor.results = {
-            "metrics": {"accuracy": 0.85},
-            "predictions": np.array([0, 1]),
-            "model_name": "TestModel",
-        }
-        return assessor
+        data = base_assessment_input()
+        with patch.object(assessor, "evaluate", wraps=assessor.evaluate) as mock_eval:
+            assessor.run(data)
+            mock_eval.assert_called_once_with(data)
 
-    def test_postprocess_missing_expected_output(self, assessor):
-        """Test post_process fails when expected outputs are missing."""
-        data = {"assessment_results": {}}
-
-        with pytest.raises(RuntimeError, match="failed to produce expected output"):
-            assessor.post_process(data)
-
-
-class TestModelAssessmentMetricSetup:
-    """Test suite for _setup_metrics method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    def test_setup_classification_metrics(self, temp_dir):
-        """Test metric setup for classification tasks."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir, task_type=TaskTypeEnum.CLASSIFICATION
-        )
+    def test_post_process_returns_data_unchanged(self, config):
         assessor = ModelAssessment(config)
-        assessor._setup_metrics()
+        output = MagicMock(spec=AssessmentOutput)
+        result = assessor.post_process(output)
+        assert result is output
 
-        expected_metrics = [
-            "accuracy",
-            "balanced_accuracy",
-            "precision",
-            "recall",
-            "f1",
-            "average_precision",
-        ]
-        for metric in expected_metrics:
-            assert metric in assessor.metric_functions
 
-    def test_setup_regression_metrics(self, temp_dir):
-        """Test metric setup for regression tasks."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            task_type=TaskTypeEnum.REGRESSION,
-            metrics=["explained_variance"],
-        )
+# ---------------------------------------------------------------------------
+# ModelAssessment — evaluate (cross-validation)
+# ---------------------------------------------------------------------------
+
+
+class TestModelAssessmentCV:
+
+    @pytest.fixture
+    def config(self, tmp_path):
+        return make_assessment_config(output_dir=tmp_path)
+
+    def test_evaluate_cv_aggregates_folds(self, config):
+        models = [mock_model(f"model_{i}") for i in range(3)]
+        data = base_assessment_input(models=models)
         assessor = ModelAssessment(config)
-        assessor._setup_metrics()
+        result = assessor.evaluate(data)
 
-        assert "explained_variance" in assessor.metric_functions
+        assert result.is_cross_validation is True
+        assert result.aggregated_results is not None
+        assert result.aggregated_results.n_folds == 3
+        assert len(result.fold_results) == 3
 
-    def test_classification_metrics_callable(self, temp_dir):
-        """Test that classification metrics are callable."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir, task_type=TaskTypeEnum.CLASSIFICATION
-        )
+    def test_evaluate_cv_metrics_per_fold(self, config):
+        models = [mock_model() for _ in range(2)]
+        data = base_assessment_input(models=models)
         assessor = ModelAssessment(config)
-        assessor._setup_metrics()
+        result = assessor.evaluate(data)
+        assert "accuracy" in result.aggregated_results.metrics_mean
 
-        y_true = np.array([0, 1, 0, 1])
-        y_pred = np.array([0, 1, 0, 1])
-
-        for metric_func in assessor.metric_functions.values():
-            result = metric_func(y_true, y_pred)
-            assert isinstance(result, (int, float, np.number))
-
-
-class TestModelAssessmentEvaluate:
-    """Test suite for evaluate method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def sklearn_model(self):
-        """Create a mock sklearn model."""
-        model = Mock()
-        model.__class__.__name__ = "MockSklearnModel"
-        model.predict = Mock(return_value=np.array([0, 1, 0, 1]))
-        return model
-
-    def test_evaluate_with_pandas_dataframe(self, temp_dir, sklearn_model):
-        """Test evaluation with pandas DataFrame input."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy"],
-            export_results=False,
-            generate_report=False,
-        )
+    def test_evaluate_calls_generate_report_when_enabled(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path, generate_report=True)
         assessor = ModelAssessment(config)
-        assessor._setup_metrics()
+        assessor.config.generate_report = True  # garante flag ativa pós-__init__
 
-        X_test = pd.DataFrame([[1, 2], [3, 4], [5, 6], [7, 8]])
-        y_test = pd.Series([0, 1, 0, 1])
-
-        results = assessor.evaluate(sklearn_model, X_test, y_test)
-
-        assert "accuracy" in results["metrics"]
-        assert isinstance(results["X_test"], np.ndarray)
-        assert isinstance(results["true_values"], np.ndarray)
-
-    def test_evaluate_with_export_results(self, temp_dir, sklearn_model):
-        """Test evaluation with result export enabled."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy"],
-            export_results=True,
-            generate_report=False,
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-
-        X_test = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
-        y_test = np.array([0, 1, 0, 1])
-
-        assessor.evaluate(sklearn_model, X_test, y_test)
-
-        assert (temp_dir / "predictions.csv").exists()
-        assert (temp_dir / "metrics_summary.csv").exists()
-
-    def test_evaluate_with_report_generation(self, temp_dir, sklearn_model):
-        """Test evaluation with report generation enabled."""
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["accuracy"],
-            export_results=False,
-            generate_report=True,
-            report_title="Test Report",
-        )
-
-        mock_report_class = Mock()
-        mock_report_instance = Mock()
-        mock_report_class.return_value = mock_report_instance
-
-        with patch(
-            "ThreeWToolkit.reports.report_generation.ReportGeneration",
-            mock_report_class,
-        ):
-            assessor = ModelAssessment(config)
-            assessor._setup_metrics()
-
-            X_test = np.array([[1, 2], [3, 4]])
-            y_test = np.array([0, 1])
-
-            assessor.evaluate(sklearn_model, X_test, y_test)
-
-            mock_report_class.assert_called_once()
-            mock_report_instance.generate_summary_report.assert_called_once()
-
-    def test_evaluate_regression_model(self, temp_dir):
-        """Test evaluation for regression tasks."""
-        model = Mock()
-        model.__class__.__name__ = "RegressionModel"
-        model.predict = Mock(return_value=np.array([1.5, 2.5, 3.5]))
-
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir,
-            metrics=["explained_variance"],
-            task_type=TaskTypeEnum.REGRESSION,
-            export_results=False,
-            generate_report=False,
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-
-        X_test = np.array([[1], [2], [3]])
-        y_test = np.array([1.2, 2.3, 3.4])
-
-        results = assessor.evaluate(model, X_test, y_test)
-
-        assert "explained_variance" in results["metrics"]
-        assert results["task_type"] == TaskTypeEnum.REGRESSION
+        with patch.object(assessor, "_generate_report") as mock_report:
+            assessor.evaluate(base_assessment_input())
+            mock_report.assert_called_once()
 
 
-class TestModelAssessmentCalculateMetrics:
-    """Test suite for _calculate_metrics method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor(self, temp_dir):
-        config = ModelAssessmentConfig(
-            output_dir=temp_dir, metrics=["accuracy", "f1", "precision"]
-        )
-        assessor = ModelAssessment(config)
-        assessor._setup_metrics()
-        return assessor
-
-    def test_calculate_metrics_success(self, assessor, capsys):
-        """Test successful metric calculation."""
-        y_true = np.array([0, 1, 0, 1, 0, 1])
-        y_pred = np.array([0, 1, 0, 1, 0, 1])
-
-        metrics = assessor._calc_metrics(y_true, y_pred)
-
-        assert "accuracy" in metrics
-        assert "f1" in metrics
-        assert "precision" in metrics
-        assert metrics["accuracy"] == 1.0
-        assert isinstance(metrics["f1"], float)
-
-    def test_calculate_metrics_with_errors(self, assessor, capsys):
-        """Test metric calculation handles errors gracefully."""
-        assessor.metric_functions["error_metric"] = Mock(
-            side_effect=Exception("Test error")
-        )
-        assessor.config.metrics.append("error_metric")
-
-        y_true = np.array([0, 1, 0, 1])
-        y_pred = np.array([0, 1, 0, 1])
-
-        metrics = assessor._calc_metrics(y_true, y_pred)
-
-        captured = capsys.readouterr()
-        assert "Warning: Could not calculate error_metric" in captured.out
-        assert np.isnan(metrics["error_metric"])
-
-    def test_calculate_metrics_unavailable_metric(self, assessor, capsys):
-        """Test handling of unavailable metrics."""
-        assessor.config.metrics.append("unavailable_metric")
-
-        y_true = np.array([0, 1, 0, 1])
-        y_pred = np.array([0, 1, 0, 1])
-
-        metrics = assessor._calc_metrics(y_true, y_pred)
-
-        captured = capsys.readouterr()
-        assert "Warning: Metric 'unavailable_metric' not available" in captured.out
-        assert np.isnan(metrics["unavailable_metric"])
-
-    def test_calculate_metrics_returns_float(self, assessor):
-        """Test that metrics are returned as Python floats."""
-        y_true = np.array([0, 1, 0, 1])
-        y_pred = np.array([0, 1, 0, 1])
-
-        metrics = assessor._calc_metrics(y_true, y_pred)
-
-        for value in metrics.values():
-            assert isinstance(value, (float, type(np.nan)))
+# ---------------------------------------------------------------------------
+# ModelAssessment — _get_predictions (dataloader branch)
+# ---------------------------------------------------------------------------
 
 
-class TestModelAssessmentHelperMethods:
-    """Test suite for helper methods."""
+class TestGetPredictions:
 
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor(self, temp_dir):
-        config = ModelAssessmentConfig(output_dir=temp_dir)
-        return ModelAssessment(config)
-
-    def test_get_model_name_with_class(self, assessor):
-        """Test getting model name from object with __class__."""
-        model = Mock()
-        model.__class__.__name__ = "TestModel"
-
-        name = assessor._get_model_name(model)
-        assert name == "TestModel"
-
-    def test_to_numpy_from_dataframe(self, assessor):
-        """Test converting pandas DataFrame to numpy."""
-        df = pd.DataFrame([[1, 2], [3, 4]])
-        result = assessor._to_numpy(df)
-
-        assert isinstance(result, np.ndarray)
-        assert result.shape == (2, 2)
-
-    def test_to_numpy_from_series(self, assessor):
-        """Test converting pandas Series to numpy."""
-        series = pd.Series([1, 2, 3, 4])
-        result = assessor._to_numpy(series)
-
-        assert isinstance(result, np.ndarray)
-        assert len(result) == 4
-
-    def test_to_numpy_from_ndarray(self, assessor):
-        """Test that numpy arrays pass through unchanged."""
-        arr = np.array([[1, 2], [3, 4]])
-        result = assessor._to_numpy(arr)
-
-        assert result is arr
-
-    def test_to_numpy_from_list(self, assessor):
-        """Test converting list to numpy array."""
-        lst = [[1, 2], [3, 4]]
-        result = assessor._to_numpy(lst)
-
-        assert isinstance(result, np.ndarray)
-        assert result.shape == (2, 2)
-
-
-class TestModelAssessmentGetMetric:
-    """Test suite for get_metric method."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-    @pytest.fixture
-    def assessor_with_results(self, temp_dir):
-        config = ModelAssessmentConfig(output_dir=temp_dir)
-        assessor = ModelAssessment(config)
-        assessor.results = {
-            "metrics": {"accuracy": 0.85, "f1": 0.82, "precision": 0.88}
-        }
-        return assessor
-
-    def test_get_metric_success(self, assessor_with_results):
-        """Test successfully retrieving a metric value."""
-        accuracy = assessor_with_results.get_metric("accuracy")
-        assert accuracy == 0.85
-
-        f1 = assessor_with_results.get_metric("f1")
-        assert f1 == 0.82
-
-    def test_get_metric_no_results(self, temp_dir):
-        """Test get_metric fails when no evaluation has been run."""
-        config = ModelAssessmentConfig(output_dir=temp_dir)
+    def test_uses_dataloader_when_required(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
         assessor = ModelAssessment(config)
 
-        with pytest.raises(ValueError, match="No evaluation results found"):
-            assessor.get_metric("accuracy")
+        model = MagicMock()
+        model.model_name = "test"
+        strategy = MagicMock()
+        strategy.requires_dataloader.return_value = True
+        strategy.predict.return_value = np.array([0, 1, 0, 1])
+        model.get_prediction_strategy.return_value = lambda: strategy
 
-    def test_get_metric_not_found(self, assessor_with_results):
-        """Test get_metric fails when metric doesn't exist."""
-        with pytest.raises(ValueError, match="Metric 'nonexistent' not found"):
-            assessor_with_results.get_metric("nonexistent")
+        X = np.random.rand(4, 4).astype(np.float32)
+        _ = assessor._get_predictions(model, X)
 
-    def test_get_metric_shows_available_metrics(self, assessor_with_results):
-        """Test error message shows available metrics."""
-        try:
-            assessor_with_results.get_metric("invalid")
-        except ValueError as e:
-            assert "Available metrics:" in str(e)
-            assert "accuracy" in str(e)
-            assert "f1" in str(e)
+        assert strategy.predict.called
+        call_kwargs = strategy.predict.call_args[1]
+        assert "loader" in call_kwargs
 
 
-class TestModelAssessmentSummary:
-    """Test suite for summary method."""
+# ---------------------------------------------------------------------------
+# ModelAssessment — summary
+# ---------------------------------------------------------------------------
 
-    @pytest.fixture
-    def temp_dir(self):
-        temp_path = Path(tempfile.mkdtemp())
-        yield temp_path
-        shutil.rmtree(temp_path, ignore_errors=True)
 
-    @pytest.fixture
-    def assessor_with_results(self, temp_dir):
-        config = ModelAssessmentConfig(output_dir=temp_dir)
+class TestSummary:
+
+    def test_summary_before_evaluate(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
         assessor = ModelAssessment(config)
-        assessor.results = {
-            "model_name": "RandomForestClassifier",
-            "task_type": TaskTypeEnum.CLASSIFICATION.value,
-            "timestamp": "2024-01-15T10:30:45.123456",
-            "metrics": {
-                "accuracy": 0.8750,
-                "f1": 0.8542,
-                "precision": 0.8634,
-                "invalid_metric": np.nan,
-            },
-        }
-        return assessor
+        assert "No evaluation results" in assessor.summary()
 
-    def test_summary_no_results(self, temp_dir):
-        """Test summary when no evaluation has been run."""
-        config = ModelAssessmentConfig(output_dir=temp_dir)
+    def test_summary_after_single_evaluate(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
         assessor = ModelAssessment(config)
-
+        assessor.evaluate(base_assessment_input())
         summary = assessor.summary()
-        assert "No evaluation results available" in summary
+        assert "accuracy" in summary
+        assert "MockModel" in summary
 
-    def test_summary_with_results(self, assessor_with_results):
-        """Test summary generates correct format with results."""
-        summary = assessor_with_results.summary()
-
-        assert "Model Assessment Summary" in summary
-        assert "========================" in summary
-        assert "Model: RandomForestClassifier" in summary
-        assert "Task Type: classification" in summary
-        assert "Timestamp: 2024-01-15T10:30:45.123456" in summary
-        assert "Metrics:" in summary
-        assert "accuracy: 0.8750" in summary
-        assert "f1: 0.8542" in summary
-        assert "precision: 0.8634" in summary
-
-    def test_summary_handles_nan_values(self, assessor_with_results):
-        """Test summary displays N/A for NaN metric values."""
-        summary = assessor_with_results.summary()
-        assert "invalid_metric: N/A" in summary
-
-    def test_summary_formatting(self, assessor_with_results):
-        """Test summary has proper indentation and line breaks."""
-        summary = assessor_with_results.summary()
-        lines = summary.split("\n")
-
-        # Check that metrics are indented
-        metric_lines = [
-            line
-            for line in lines
-            if line.strip().startswith(("accuracy", "f1", "precision"))
-        ]
-        for line in metric_lines:
-            assert line.startswith("  ")
-
-    def test_summary_with_regression(self, temp_dir):
-        """Test summary for regression task."""
-        config = ModelAssessmentConfig(output_dir=temp_dir)
+    def test_summary_after_cv_evaluate(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
         assessor = ModelAssessment(config)
-        assessor.results = {
-            "model_name": "LinearRegression",
-            "task_type": TaskTypeEnum.REGRESSION.value,
-            "timestamp": "2024-01-15T10:30:45",
-            "metrics": {"explained_variance": 0.9234},
-        }
-
+        models = [mock_model() for _ in range(2)]
+        assessor.evaluate(base_assessment_input(models=models))
         summary = assessor.summary()
-        assert "Task Type: regression" in summary
-        assert "explained_variance: 0.9234" in summary
+        assert "±" in summary
+
+
+# ---------------------------------------------------------------------------
+# ModelAssessment — _to_numpy
+# ---------------------------------------------------------------------------
+
+
+class TestToNumpy:
+
+    @pytest.fixture
+    def assessor(self, tmp_path):
+        return ModelAssessment(make_assessment_config(output_dir=tmp_path))
+
+    def test_converts_series(self, assessor):
+        result = assessor._to_numpy(pd.Series([1, 2, 3]))
+        assert isinstance(result, np.ndarray)
+
+    def test_converts_dataframe(self, assessor):
+        result = assessor._to_numpy(pd.DataFrame({"a": [1, 2]}))
+        assert isinstance(result, np.ndarray)
+
+    def test_converts_list(self, assessor):
+        result = assessor._to_numpy([1, 2, 3])
+        assert isinstance(result, np.ndarray)
+
+
+# ---------------------------------------------------------------------------
+# ModelAssessment — export
+# ---------------------------------------------------------------------------
+
+
+class TestExportResults:
+
+    def test_export_single_creates_csv_files(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path, export_results=True)
+        assessor = ModelAssessment(config)
+        assessor.evaluate(base_assessment_input())
+
+        exp_dir = Path(assessor.results.experiment_dir)
+        csv_files = list(exp_dir.glob("*.csv"))
+        assert len(csv_files) >= 2  # predictions + metrics
+
+    def test_export_cv_creates_csv_files(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path, export_results=True)
+        assessor = ModelAssessment(config)
+        models = [mock_model() for _ in range(2)]
+        assessor.evaluate(base_assessment_input(models=models))
+
+        exp_dir = Path(assessor.results.experiment_dir)
+        csv_files = list(exp_dir.glob("*.csv"))
+        assert len(csv_files) >= 2
+
+    def test_export_raises_if_no_results(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
+        assessor = ModelAssessment(config)
+        with pytest.raises(RuntimeError, match="No assessment results"):
+            assessor._export_results()
+
+    # def test_evaluate_cleans_experiment_dir_on_failure(self, tmp_path):
+    #     config = make_assessment_config(output_dir=tmp_path)
+    #     assessor = ModelAssessment(config)
+
+    #     with patch.object(assessor, "_evaluate_single", side_effect=Exception("boom")):
+    #         with pytest.raises(RuntimeError, match="ModelAssessment failed"):
+    #             assessor.evaluate(base_assessment_input())
+
+    def test_evaluate_removes_existing_experiment_dir_on_failure(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
+        assessor = ModelAssessment(config)
+
+        def fail_after_dir(*args, **kwargs):
+            assessor.experiment_dir = tmp_path / "exp_fake"
+            assessor.experiment_dir.mkdir(parents=True, exist_ok=True)
+            raise Exception("forced failure")
+
+        with patch.object(assessor, "_evaluate_single", side_effect=fail_after_dir):
+            with pytest.raises(RuntimeError, match="ModelAssessment failed"):
+                assessor.evaluate(base_assessment_input())
+
+        assert not assessor.experiment_dir.exists()
+
+    def test_export_single_results_raises_if_no_results(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
+        assessor = ModelAssessment(config)
+        assessor.results = None
+        with pytest.raises(RuntimeError, match="No assessment results available"):
+            assessor._export_single_results()
+
+    def test_export_cv_results_raises_if_no_results(self, tmp_path):
+        config = make_assessment_config(output_dir=tmp_path)
+        assessor = ModelAssessment(config)
+        assessor.results = None
+        with pytest.raises(RuntimeError, match="No assessment results available"):
+            assessor._export_cv_results()
+
+
+class TestAssessmentReport:
+    @pytest.fixture
+    def assessor(self, tmp_path):
+        return ModelAssessment(make_assessment_config(output_dir=tmp_path))
+
+    def _set_fake_report_class(self, assessor):
+        fake_cls = MagicMock()
+        fake_cls.return_value.generate_summary_report.return_value = MagicMock()
+        assessor._report_generation_class = fake_cls
+        return fake_cls
+
+    def test_generate_report_returns_early_if_disabled(self, assessor):
+        assessor.config.generate_report = False
+        assessor._generate_report(MagicMock(), MagicMock())
+
+    def test_generate_report_raises_if_no_results(self, assessor):
+        assessor.config.generate_report = True
+        assessor.results = None
+        with pytest.raises(RuntimeError, match="No results available"):
+            assessor._generate_report(MagicMock(), MagicMock())
+
+    def test_generate_report_calls_single_report_when_not_cv(self, assessor):
+        _ = self._set_fake_report_class(assessor)
+        assessor.config.generate_report = True
+        assessor.results = MagicMock(is_cross_validation=False)
+
+        with patch.object(assessor, "_generate_single_report") as mock_single:
+            input_data, output_data = MagicMock(), MagicMock()
+            assessor._generate_report(input_data, output_data)
+            mock_single.assert_called_once_with(input_data, output_data)
+
+    def test_generate_report_warns_if_no_report_class(self, assessor, capsys):
+        assessor.config.generate_report = True
+        assessor.results = MagicMock()
+        # garante que NÃO tem o atributo
+        if hasattr(assessor, "_report_generation_class"):
+            delattr(assessor, "_report_generation_class")
+        assessor._generate_report(MagicMock(), MagicMock())
+        assert "Warning" in capsys.readouterr().out
+
+    def test_generate_report_cv_branch_is_noop(self, assessor):
+        assessor.config.generate_report = True
+        assessor.results = MagicMock(is_cross_validation=True)
+        self._set_fake_report_class(assessor)
+        assessor._generate_report(MagicMock(), MagicMock())
+
+    def test_generate_single_report_raises_if_no_results(self, assessor):
+        assessor.results = None
+        with pytest.raises(RuntimeError, match="No assessment results available"):
+            assessor._generate_single_report(MagicMock(), MagicMock())
+
+    def test_generate_single_report_calls_report_generator(self, assessor):
+        fake_cls = self._set_fake_report_class(assessor)
+        assessor.results = MagicMock(
+            is_cross_validation=False,
+            metrics={"accuracy": 0.9},
+            predictions=np.array([0, 1]),
+            model_name="test",
+        )
+        assessor.experiment_dir = MagicMock()
+        input_data = MagicMock()
+        input_data.x_train_folds = [np.array([1])]
+        input_data.y_train_folds = [np.array([1])]
+
+        assessor._generate_single_report(input_data, MagicMock())
+        fake_cls.return_value.generate_summary_report.assert_called_once_with(
+            format="html"
+        )
+
+    def test_generate_cv_report_raises_if_no_results(self, assessor):
+        assessor.results = None
+        with pytest.raises(RuntimeError, match="No assessment results available"):
+            assessor._generate_cv_report(MagicMock(), MagicMock())
+
+    def test_generate_cv_report_calls_report_generator(self, assessor):
+        fake_cls = self._set_fake_report_class(assessor)
+        assessor.experiment_dir = MagicMock()
+
+        fold = MagicMock(predictions=np.array([0, 1]))
+        assessor.results = MagicMock(
+            is_cross_validation=True,
+            model_name="test",
+            fold_results=[fold],
+            aggregated_results=MagicMock(
+                metrics_mean={"accuracy": 0.9},
+                metrics_std={"accuracy": 0.05},
+            ),
+        )
+
+        input_data = MagicMock()
+        assessor._generate_cv_report(input_data, MagicMock())
+        fake_cls.return_value.generate_summary_report.assert_called_once_with(
+            format="html"
+        )

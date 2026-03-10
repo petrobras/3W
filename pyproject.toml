@@ -67,6 +67,8 @@ dev = [
     "types-requests>=2.32.4.20250611",
     "coverage>=7.8.1",
     "pytest-mock>=3.14.1",
+    "astroid>=4.1.1",
+    "asttokens>=3.0.1"
 ]
 docs = [
     "mkdocs",

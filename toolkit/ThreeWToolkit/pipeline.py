@@ -16,7 +16,7 @@ from .core.base_preprocessing import (
     WindowingConfig,
 )
 from .core.base_step import BaseStep
-from .dataset import ParquetDataset, ParquetDatasetConfig
+from .dataset import ParquetDataset
 
 from .feature_extraction import (
     ExtractWaveletFeatures,
@@ -26,24 +26,13 @@ from .feature_extraction import (
     EWStatisticalConfig,
     ExtractEWStatisticalFeatures,
 )
-from .feature_extraction.extract_statistical_features import (
-    ExtractStatisticalFeatures,
-    StatisticalConfig,
-)
-from .feature_extraction.extract_wavelet_features import (
-    ExtractWaveletFeatures,
-    WaveletConfig,
-)
+
 from .models.sklearn_models import SklearnModels, SklearnModelsConfig
 from .preprocessing._data_processing import (
     ImputeMissing,
-    ImputeMissingConfig,
     Normalize,
-    NormalizeConfig,
     RenameColumns,
-    RenameColumnsConfig,
     Windowing,
-    WindowingConfig,
 )
 from .trainer.trainer import ModelTrainer, TrainerConfig, TrainInput
 

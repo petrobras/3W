@@ -433,31 +433,31 @@ class ModelAssessment(BaseStep):
         Raises:
             RuntimeError: If evaluation fails and cleanup is required.
         """
-        # Extract models
-        models = data.models
-
-        # Convert inputs to NumPy arrays
-        X_array = self._to_numpy(data.x)
-        y_array = self._to_numpy(data.y).flatten()
-
-        # Resolve metric functions based on task type
-        metric_fns = self.metric_registry.resolve(
-            task_type=self.config.task_type, metrics=self.config.metrics
-        )
-
-        # Determine whether this is a cross-validation scenario
-        is_cross_validation = len(models) > 1
-
-        if is_cross_validation:
-            results = self._evaluate_cv(
-                models, X_array, y_array, metric_fns, data.dataset_split
-            )
-        else:
-            results = self._evaluate_single(
-                models[0], X_array, y_array, metric_fns, data.dataset_split
-            )
-
         try:
+            # Extract models
+            models = data.models
+
+            # Convert inputs to NumPy arrays
+            X_array = self._to_numpy(data.x)
+            y_array = self._to_numpy(data.y).flatten()
+
+            # Resolve metric functions based on task type
+            metric_fns = self.metric_registry.resolve(
+                task_type=self.config.task_type, metrics=self.config.metrics
+            )
+
+            # Determine whether this is a cross-validation scenario
+            is_cross_validation = len(models) > 1
+
+            if is_cross_validation:
+                results = self._evaluate_cv(
+                    models, X_array, y_array, metric_fns, data.dataset_split
+                )
+            else:
+                results = self._evaluate_single(
+                    models[0], X_array, y_array, metric_fns, data.dataset_split
+                )
+
             # Create output directory for results and reports
             self.experiment_timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 

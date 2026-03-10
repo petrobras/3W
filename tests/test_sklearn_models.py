@@ -1,3 +1,6 @@
+from ThreeWToolkit.assessment.strategies.sklearn_prediction_strategy import (
+    SklearnPredictionStrategy,
+)
 import pytest
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
@@ -6,6 +9,18 @@ from sklearn.datasets import make_classification
 
 from ThreeWToolkit.core.enums import ModelTypeEnum
 from ThreeWToolkit.models.sklearn_models import SklearnModels, SklearnModelsConfig
+
+
+@pytest.fixture
+def base_config():
+    return SklearnModelsConfig(
+        model_type=ModelTypeEnum.LOGISTIC_REGRESSION, random_seed=42
+    )
+
+
+@pytest.fixture
+def base_model(base_config):
+    return SklearnModels(base_config)
 
 
 class TestSklearnModels:
@@ -32,6 +47,16 @@ class TestSklearnModels:
             random_state=42,
         )
         return X, y
+
+    def test_model_name(self, base_model):
+        assert base_model.model_name == base_model.model_class.__class__.__name__
+
+    def test_forward_returns_none(self, base_model):
+        x = np.array([1, 2, 3])
+
+        result = base_model.forward(x)
+
+        assert result is None
 
     def test_initialization_with_random_seed(self):
         """Tests that a model is correctly instantiated with a random_seed."""
@@ -99,3 +124,6 @@ class TestSklearnModels:
         bad_path = tmp_path / "model.txt"
         with pytest.raises(ValueError):
             model.save(bad_path)
+
+    def test_get_prediction_strategy(self, base_model):
+        assert base_model.get_prediction_strategy() is SklearnPredictionStrategy
