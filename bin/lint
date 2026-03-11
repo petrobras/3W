@@ -14,11 +14,9 @@ mypy ${LINT}
 if [ "${CI}" = true ]; then
     # In CI, only check code formatting and linting with Ruff
     black --check ${LINT}
-    ruff check ${LINT} 
-    uv run black --check .
+    ruff check ${LINT}
 else
     # Locally, automatically fix formatting issues with Ruff
     black ${LINT}
-    uv run black .
     ruff check --fix ${LINT}
 fi
