@@ -16,7 +16,6 @@ from ThreeWToolkit.assessment.model_assess import (
 from ThreeWToolkit.core.base_assessment import ModelAssessmentConfig
 from ThreeWToolkit.core.enums import DataSplitEnum, TaskTypeEnum
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
