@@ -33,7 +33,7 @@ class EWStatisticalConfig(
         "ew_3qrt",
         "ew_max",
     ]
-    target: type = Field(default_factory=lambda: EWStatisticalFeatures)
+    target_: type = Field(default_factory=lambda: EWStatisticalFeatures)
 
     @field_validator("decay")
     @classmethod

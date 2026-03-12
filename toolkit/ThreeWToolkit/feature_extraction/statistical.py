@@ -23,7 +23,7 @@ class StatisticalConfig(
 ):
     """Configuration for Statistical feature extractor."""
 
-    target: type = Field(default_factory=lambda: StatisticalFeatures)
+    target_: type = Field(default_factory=lambda: StatisticalFeatures)
 
     AVAILABLE_FEATURES: ClassVar[list[str]] = [
         "mean",

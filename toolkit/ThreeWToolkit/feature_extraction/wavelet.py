@@ -19,7 +19,7 @@ class WaveletConfig(
 
     level: int = 1
     wavelet: str = "haar"
-    target: type = Field(default_factory=lambda: WaveletFeatures)
+    target_: type = Field(default_factory=lambda: WaveletFeatures)
     AVAILABLE_WAVELETS: ClassVar[list[str]] = [
         "haar",
         "db1",

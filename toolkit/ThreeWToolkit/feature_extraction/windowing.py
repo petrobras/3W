@@ -16,7 +16,7 @@ class WindowingConfig(BaseFeatureExtractorConfig):
     fftbins: bool = True
     pad_last_window: bool = True
     pad_value: float = 0.0
-    target: type = Field(default_factory=lambda: Windowing)
+    target_: type = Field(default_factory=lambda: Windowing)
 
     @field_validator("window")
     def validate_window(cls, v):
@@ -108,22 +108,22 @@ class Windowing(BaseFeatureExtractor):
         """
         self.config = config
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Apply windowing to the input time series data.
 
         Args:
-            df (pd.DataFrame): DataFrame with time index, signal columns, and a label column (e.g., 'class').
+            data (pd.DataFrame): DataFrame with time index, signal columns, and a label column (e.g., 'class').
 
         Returns:
             pd.DataFrame: DataFrame containing windowed signals and corresponding labels.
         """
-        self._check_window_size_vs_data(df)
+        self._check_window_size_vs_data(data)
 
         # Assume the label column is the last column
-        target_col = df.columns[-1]
-        signal_cols = [col for col in df.columns if col != target_col]
-        n_samples = len(df)
+        target_col = data.columns[-1]
+        signal_cols = [col for col in data.columns if col != target_col]
+        n_samples = len(data)
         step = int(self.config.window_size * (1 - self.config.overlap))
         if step < 1:
             step = 1
@@ -133,8 +133,9 @@ class Windowing(BaseFeatureExtractor):
             self.config.window, self.config.window_size, fftbins=self.config.fftbins
         )
 
-        signal_data = df[signal_cols].values
-        label_data = np.asarray(df[target_col].values)
+        # Convert to numpy arrays for safe slicing and math
+        signal_data = data[signal_cols].to_numpy()
+        label_data = data[target_col].to_numpy()
 
         windows = []
         for start in range(0, n_samples, step):
@@ -142,7 +143,6 @@ class Windowing(BaseFeatureExtractor):
             if end > n_samples:
                 if not self.config.pad_last_window:
                     break
-                # Pad the window
                 pad_size = end - n_samples
                 window_signals = np.pad(
                     signal_data[start:n_samples],
@@ -180,15 +180,15 @@ class Windowing(BaseFeatureExtractor):
 
         return pd.DataFrame(windows, columns=col_names)
 
-    def _check_window_size_vs_data(self, values: pd.DataFrame):
+    def _check_window_size_vs_data(self, data: pd.DataFrame):
         """
         This method ensures that the configured window size does not exceed
         the available data length, which would make windowing impossible.
 
         Args:
-            values (pd.DataFrame): Input data DataFrame with "signal" and "label" columns
+            data (pd.DataFrame): Input data DataFrame with "signal" and "label" columns
         """
-        n_samples = len(values)
+        n_samples = len(data)
         if self.config.window_size > n_samples:
             raise ValueError(
                 "`window_size` must be smaller than or equal to the length of X."
