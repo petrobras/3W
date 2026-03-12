@@ -13,6 +13,7 @@ from ThreeWToolkit.models.sklearn_models import SklearnModels, SklearnModelsConf
 
 @pytest.fixture
 def base_config():
+    """Creates a default configuration for sklearn models."""
     return SklearnModelsConfig(
         model_type=ModelTypeEnum.LOGISTIC_REGRESSION, random_seed=42
     )
@@ -20,24 +21,36 @@ def base_config():
 
 @pytest.fixture
 def base_model(base_config):
+    """Creates a SklearnModels instance using the base configuration."""
     return SklearnModels(base_config)
 
 
 class TestSklearnModels:
-    """
-    Unit tests for the SklearnModels class.
+    """Unit tests for the SklearnModels wrapper class.
+
+    This test suite verifies correct initialization, parameter handling,
+    model persistence, and prediction strategy integration for sklearn models.
     """
 
     @pytest.fixture
     def binary_data(self):
-        """Provides simple binary classification data."""
+        """Provides a small binary classification dataset.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: Feature matrix and target labels.
+        """
         X = np.array([[1, 2], [2, 3], [3, 4], [4, 5]])
         y = np.array([0, 0, 1, 1])
         return X, y
 
     @pytest.fixture
     def multiclass_data(self):
-        """Provides multiclass classification data."""
+        """Provides a multiclass classification dataset.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: Feature matrix and target labels
+            generated with sklearn.make_classification.
+        """
         X, y = make_classification(
             n_samples=100,
             n_features=10,
@@ -49,9 +62,15 @@ class TestSklearnModels:
         return X, y
 
     def test_model_name(self, base_model):
+        """Ensures the model_name property matches the underlying sklearn class."""
         assert base_model.model_name == base_model.model_class.__class__.__name__
 
     def test_forward_returns_none(self, base_model):
+        """Ensures the forward method returns None for sklearn-based models.
+
+        The forward interface exists for compatibility with other model types
+        but is not used for sklearn estimators.
+        """
         x = np.array([1, 2, 3])
 
         result = base_model.forward(x)
@@ -77,6 +96,7 @@ class TestSklearnModels:
         assert isinstance(model.model_class, KNeighborsClassifier)
 
     def test_get_and_set_params(self):
+        """Ensures model parameters can be retrieved and updated correctly."""
         config = SklearnModelsConfig(
             model_type=ModelTypeEnum.DECISION_TREE,
             random_seed=42,
@@ -92,6 +112,10 @@ class TestSklearnModels:
         assert params2["max_depth"] == 10
 
     def test_save_and_load(self, binary_data, tmp_path):
+        """Ensures trained models can be saved and loaded correctly.
+
+        After loading, predictions should match the original model.
+        """
         X, y = binary_data
         config = SklearnModelsConfig(
             model_type=ModelTypeEnum.RANDOM_FOREST,
@@ -113,6 +137,7 @@ class TestSklearnModels:
         )
 
     def test_save_invalid_extension_raises(self, binary_data, tmp_path):
+        """Ensures saving with an invalid file extension raises an error."""
         X, y = binary_data
         config = SklearnModelsConfig(
             model_type=ModelTypeEnum.RANDOM_FOREST,
@@ -126,4 +151,5 @@ class TestSklearnModels:
             model.save(bad_path)
 
     def test_get_prediction_strategy(self, base_model):
+        """Ensures the correct prediction strategy is returned."""
         assert base_model.get_prediction_strategy() is SklearnPredictionStrategy
