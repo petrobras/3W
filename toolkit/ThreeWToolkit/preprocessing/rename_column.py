@@ -1,11 +1,11 @@
 import pandas as pd
-from ..core.base_step import BaseStep
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import Field, ValidationInfo, field_validator
+from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 
 
-class RenameColumnsConfig(BaseModel):
+class RenameColumnsConfig(BasePreprocessingConfig):
     columns_map: dict[str, str]
-    target: type = Field(default_factory=lambda: RenameColumns)
+    target_: type = Field(default_factory=lambda: RenameColumns)
 
     @field_validator("columns_map")
     def validate_columns_exist(cls, columns_map: dict[str, str], info: ValidationInfo):
@@ -51,7 +51,7 @@ class RenameColumnsConfig(BaseModel):
         return columns_map
 
 
-class RenameColumns(BaseStep):
+class RenameColumns(BasePreprocessing):
     """
     A simple data processing step that renames DataFrame columns according to a mapping.
 
@@ -71,7 +71,7 @@ class RenameColumns(BaseStep):
         """
         self.config = config
 
-    def run(self, data: dict) -> dict:
+    def transform(self, data: dict) -> dict:
         """
         Rename columns according to the configured mapping.
 

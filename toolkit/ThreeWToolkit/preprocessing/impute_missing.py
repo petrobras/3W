@@ -1,18 +1,18 @@
 import pandas as pd
-from ..core.base_step import BaseStep
 from typing import Literal
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 from collections import defaultdict
+from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 
 
-class ImputeMissingConfig(BaseModel):
+class ImputeMissingConfig(BasePreprocessingConfig):
     strategy: Literal["mean", "median", "constant", "ffill", "bfill", "interpolate"] = (
         "interpolate"
     )
     fill_value: int | float | None = None
     columns: list[str] | None = None
     interpolate_method: Literal["linear", "nearest", "zero"] = "linear"
-    target: type = Field(default_factory=lambda: ImputeMissing)
+    target_: type = Field(default_factory=lambda: ImputeMissing)
 
     @field_validator("fill_value")
     def check_fill_value_for_constant(cls, v, info: ValidationInfo):
@@ -31,7 +31,7 @@ class ImputeMissingConfig(BaseModel):
         return v
 
 
-class ImputeMissing(BaseStep):
+class ImputeMissing(BasePreprocessing):
     """
     A data processing step that handles missing values in signal columns using various imputation strategies.
 
@@ -57,7 +57,7 @@ class ImputeMissing(BaseStep):
         self.config = config
         self.collected = defaultdict(lambda: {"sum": 0.0, "count": 0, "values": []})
 
-    def collect_statistics(self, data: dict) -> None:
+    def fit(self, data: dict) -> None:
         """
         Collect statistics from a single event for imputation.
 
@@ -91,7 +91,7 @@ class ImputeMissing(BaseStep):
                 elif self.config.strategy == "median":
                     self.collected[col]["values"].extend(values.tolist())
 
-    def compute_statistics(self) -> None:
+    def compute(self) -> None:
         """
         Compute imputation values from collected statistics.
         Only needed for mean, median, constant.
@@ -110,7 +110,7 @@ class ImputeMissing(BaseStep):
             else:
                 self.impute_values[col] = 0.0
 
-    def run(self, data: dict) -> dict:
+    def transform(self, data: dict) -> dict:
         """
         Execute the missing value imputation on the specified columns.
 

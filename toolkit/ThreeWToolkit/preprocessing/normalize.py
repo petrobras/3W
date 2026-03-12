@@ -1,20 +1,20 @@
 import numpy as np
 import pandas as pd
-from ..core.base_step import BaseStep
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import Field
 from collections import defaultdict
+from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 
 
-class NormalizeConfig(BaseModel):
+class NormalizeConfig(BasePreprocessingConfig):
     norm: Literal["l1", "l2", "max"] = "l2"
     axis: Literal[0, 1] = 0
     copy_values: bool = True
     return_norm_values: bool = False
-    target: type = Field(default_factory=lambda: Normalize)
+    target_: type = Field(default_factory=lambda: Normalize)
 
 
-class Normalize(BaseStep):
+class Normalize(BasePreprocessing):
     """
     A data processing step that normalizes signal data using z-score normalization.
 
@@ -40,7 +40,7 @@ class Normalize(BaseStep):
         self.config = config
         self.collected = defaultdict(lambda: {"sum": 0.0, "sum_sq": 0.0, "count": 0})
 
-    def collect_statistics(self, data: dict) -> None:
+    def fit(self, data: dict) -> None:
         """
         Collect statistics from a single event for aggregation.
 
@@ -59,7 +59,7 @@ class Normalize(BaseStep):
             self.collected[col]["sum_sq"] += (values**2).sum()
             self.collected[col]["count"] += len(values)
 
-    def compute_statistics(self) -> None:
+    def compute(self) -> None:
         """
         Compute global statistics from all collected data.
 
@@ -78,7 +78,7 @@ class Normalize(BaseStep):
                 self.statistics[col] = {"mean": 0.0, "std": 1.0}
         pass
 
-    def run(self, data: dict) -> dict:
+    def transform(self, data: dict) -> dict:
         """
         Apply normalization to the 'signal' data using computed statistics.
 
