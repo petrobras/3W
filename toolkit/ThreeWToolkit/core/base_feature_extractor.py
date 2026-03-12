@@ -1,20 +1,37 @@
 from pydantic import BaseModel, field_validator
 import pandas as pd
+from abc import ABC, abstractmethod
+from .base_instantiable import Instantiable
 
 
-class BaseFeatureExtractorConfig(BaseModel):
+class BaseFeatureExtractorConfig(BaseModel, Instantiable):
     """Base configuration for feature extractors."""
 
+    target_: type["BaseFeatureExtractor"]
 
-class BaseFeatureExtractor:
+
+class BaseFeatureExtractor(ABC):
     """Base class for feature extractors."""
 
     def __init__(self, config: BaseFeatureExtractorConfig):
         self.config = config
 
-    def fit(self, values: pd.DataFrame) -> pd.DataFrame:
-        """Fit the feature extractor to the data."""
-        raise NotImplementedError("Subclasses must implement the fit method.")
+    # @abstractmethod
+    # def fit(self, data: pd.DataFrame) -> pd.DataFrame:
+    #     """If needed, fit the feature extractor to the data.
+    #     By default, this does nothing, as some methods won't need fitting."""
+    #     return data
+
+    @abstractmethod
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Transform the data using the fitted feature extractor
+        or directly if no fitting is needed."""
+        raise NotImplementedError("Subclasses must implement the transform method.")
+
+    # def fit_and_transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    #     """Convenience method to fit and transform the data in one step."""
+    #     self.fit(data)
+    #     return self.transform(data)
 
 
 class OverlapOffsetMixin(BaseModel):
