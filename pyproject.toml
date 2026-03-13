@@ -44,6 +44,7 @@ dependencies = [
     "pylatex>=1.4.2",
     "statsmodels>=0.14.5",
     "requests>=2.31,<3",
+    "black[jupyter]>=26.1.0",
 ]
 
 [project.urls]
