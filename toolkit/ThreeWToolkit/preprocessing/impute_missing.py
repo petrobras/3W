@@ -6,6 +6,10 @@ from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 
 
 class ImputeMissingConfig(BasePreprocessingConfig):
+    nan_column_fraction_threshold: float = Field(
+        default=0.6,
+        description="Drop columns that are all-NaN in more than this fraction of events.",
+    )
     strategy: Literal["mean", "median", "constant", "ffill", "bfill", "interpolate"] = (
         "interpolate"
     )
@@ -55,7 +59,12 @@ class ImputeMissing(BasePreprocessing):
             config (ImputeMissingConfig): Configuration containing strategy, columns, and fill_value
         """
         self.config = config
-        self.collected = defaultdict(lambda: {"sum": 0.0, "count": 0, "values": []})
+        self._collected = defaultdict(lambda: {"sum": 0.0, "count": 0, "values": []})
+        self._nan_columns = set()
+        self._nan_column_counts = defaultdict(
+            int
+        )  # column name -> count of all-NaN events
+        self._fit_event_count = 0
 
     def fit(self, data: dict) -> None:
         """
@@ -67,12 +76,18 @@ class ImputeMissing(BasePreprocessing):
         Args:
             data (dict): Input event data containing 'signal' DataFrame
         """
-        if self.config.strategy in ["ffill", "bfill", "interpolate"]:
-            return  # No global collection for time-series strategies
-
         signal_df = data.get("signal")
         if signal_df is None or not isinstance(signal_df, pd.DataFrame):
-            return  # Skip if no signal data
+            return
+
+        # Track columns that are all-NaN in this event
+        all_nan_cols = set(signal_df.columns[signal_df.isna().all()])
+        for col in all_nan_cols:
+            self._nan_column_counts[col] += 1
+        self._fit_event_count += 1
+
+        if self.config.strategy in ["ffill", "bfill", "interpolate"]:
+            return  # No global collection for time-series strategies
 
         cols_to_collect = (
             self.config.columns
@@ -86,21 +101,39 @@ class ImputeMissing(BasePreprocessing):
             ):
                 values = signal_df[col].dropna()
                 if self.config.strategy == "mean":
-                    self.collected[col]["sum"] += values.sum()
-                    self.collected[col]["count"] += len(values)
+                    self._collected[col]["sum"] += values.sum()
+                    self._collected[col]["count"] += len(values)
                 elif self.config.strategy == "median":
-                    self.collected[col]["values"].extend(values.tolist())
+                    self._collected[col]["values"].extend(values.tolist())
 
     def compute(self) -> None:
         """
         Compute imputation values from collected statistics.
-        Only needed for mean, median, constant.
+        Only needed for mean, median, constant. Also determines columns to drop based on all-NaN fraction.
         """
+        # Determine columns to drop based on threshold
+        threshold = self.config.nan_column_fraction_threshold
+        drop_cols = set()
+        if self._fit_event_count > 0:
+            for col, count in self._nan_column_counts.items():
+                frac = count / self._fit_event_count
+                if frac > threshold:
+                    drop_cols.add(col)
+                    print(
+                        f"threshold: {threshold}, column: {col}, all-NaN fraction: {frac:.2f}"
+                    )
+        self._nan_columns = drop_cols
+        print(
+            f"[ImputeMissing] Columns to drop (all-NaN in >{threshold * 100:.1f}% events): {self._nan_columns}"
+        )
+
         if self.config.strategy in ["ffill", "bfill", "interpolate"]:
             return  # No computation for time-series strategies
 
         self.impute_values = {}
-        for col, stats in self.collected.items():
+        for col, stats in self._collected.items():
+            if col in self._nan_columns:
+                continue  # Skip columns that will be dropped
             if self.config.strategy == "mean" and stats["count"] > 0:
                 self.impute_values[col] = stats["sum"] / stats["count"]
             elif self.config.strategy == "median" and stats["values"]:
@@ -114,6 +147,8 @@ class ImputeMissing(BasePreprocessing):
         """
         Execute the missing value imputation on the specified columns.
 
+        Also drops events (rows) where the label column is NaN.
+
         For time-series strategies (ffill, bfill, interpolate): apply per-event.
         For global strategies (mean, median, constant): use pre-computed values.
 
@@ -124,23 +159,34 @@ class ImputeMissing(BasePreprocessing):
             dict: Event data with imputed 'signal' DataFrame
         """
         signal_df = data.get("signal")
-        if signal_df is None or not isinstance(signal_df, pd.DataFrame):
+        label_df = data.get("label")
+        if (
+            signal_df is None
+            or not isinstance(signal_df, pd.DataFrame)
+            or label_df is None
+            or not isinstance(label_df, pd.DataFrame)
+        ):
             return data
+
+        data_copy = signal_df.copy()
+
+        # Drop columns based in the all-NaN fraction threshold
+        if self._nan_columns:
+            data_copy = data_copy.drop(columns=list(self._nan_columns), errors="ignore")
 
         # Determine which columns to impute
         cols_to_impute = (
             self.config.columns
             if self.config.columns is not None
-            else signal_df.columns.tolist()
+            else data_copy.columns.tolist()
         )
 
         # Filter to valid columns
-        valid_cols = [col for col in cols_to_impute if col in signal_df.columns]
+        valid_cols = [col for col in cols_to_impute if col in data_copy.columns]
         if not valid_cols:
             return data
 
-        # Create a copy and impute
-        data_copy = signal_df.copy()
+        # apply imputation strategy
         if self.config.strategy == "ffill":
             for col in valid_cols:
                 data_copy[col] = data_copy[col].ffill()
@@ -154,7 +200,6 @@ class ImputeMissing(BasePreprocessing):
                 data_copy[col] = data_copy[col].interpolate(
                     method=self.config.interpolate_method
                 )
-
         else:  # mean, median, constant
             if not hasattr(self, "impute_values"):
                 raise ValueError(
@@ -164,8 +209,30 @@ class ImputeMissing(BasePreprocessing):
                 if col in self.impute_values:
                     data_copy[col] = data_copy[col].fillna(self.impute_values[col])
 
-        # Return the event dict with imputed signal
+        # Drop rows where the 'label' column is missing (NaN or <NA>)
+        if "class" in label_df.columns:
+            label_df = label_df.loc[~pd.isna(label_df["class"])]
+            data_copy = data_copy.loc[label_df.index]
+
+        # if a column is entire nan, drop the rows where that column is nan (since we can't impute it)
+        if data_copy.isna().all().any():
+            all_nan_cols = data_copy.columns[data_copy.isna().all()].tolist()
+            print(
+                f"[ImputeMissing] Warning: The following columns are still all-NaN after imputation: {all_nan_cols}. Dropping rows where these columns are NaN."
+            )
+            data_copy = data_copy.dropna(subset=all_nan_cols)
+
+            # should also drop in the labels
+            label_df = label_df.loc[data_copy.index]
+
         result = data.copy()
         result["signal"] = data_copy
+        result["label"] = label_df
+
+        if data_copy.isna().any().any():
+            print(
+                "[ImputeMissing] Warning: After imputation, there are still missing values in the signal data."
+            )
+            print(data_copy.head())
 
         return result
