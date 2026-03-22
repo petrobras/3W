@@ -5,8 +5,10 @@ from ThreeWToolkit.preprocessing import (
     NormalizeConfig,
     ImputeMissingConfig,
     RenameColumnsConfig,
+    RemapClassConfig,
     ImputeMissing,
     RenameColumns,
+    RemapClass,
 )
 from ThreeWToolkit.feature_extraction import (
     WindowingConfig,
@@ -33,7 +35,13 @@ class TransformDatasetConfig(BaseTransformConfig):
     """
 
     pre_processing: (
-        Sequence[NormalizeConfig | ImputeMissingConfig | RenameColumnsConfig] | None
+        Sequence[
+            NormalizeConfig
+            | ImputeMissingConfig
+            | RenameColumnsConfig
+            | RemapClassConfig
+        ]
+        | None
     ) = Field(
         default=None,
         description="List of preprocessing steps to apply to the dataset.",
@@ -73,7 +81,7 @@ class TransformDataset(BaseTransform):
             for idx in range(len(dataset)):
                 data = dataset[idx]
                 step.fit(data)
-                step.compute()
+            step.compute()
 
     def transform(self, dataset: Any) -> pd.DataFrame:
         """
@@ -100,14 +108,30 @@ class TransformDataset(BaseTransform):
         all_features = []
         for idx in tqdm(range(len(preprocessed_dataset))):
             data = preprocessed_dataset[idx]
-            df = pd.concat([data["signal"], data["label"]], axis=1)
+            signal = data.get("signal")
+            label = data.get("label")
+            # Ensure both are DataFrames
+            if signal is not None and not isinstance(signal, pd.DataFrame):
+                signal = pd.DataFrame(signal)
+            if label is not None and not isinstance(label, pd.DataFrame):
+                label = pd.DataFrame(label)
+            # Only concat non-empty DataFrames
+            dfs = [df for df in [signal, label] if df is not None and not df.empty]
+            if not dfs:
+                continue
+            df = pd.concat(dfs, axis=1)
+            print(df.head())
 
             if self.feature_extraction_step is not None:
                 features_df = self.feature_extraction_step.transform(df)
                 all_features.append(features_df)
 
-        final_df = pd.concat(all_features, ignore_index=True)
-        print(
-            f"final number of rows: {final_df.shape[0]}, final number of columns: {final_df.shape[1]}"
-        )
-        return final_df
+        if all_features:
+            final_df = pd.concat(all_features, ignore_index=True)
+            print(
+                f"final number of rows: {final_df.shape[0]}, final number of columns: {final_df.shape[1]}"
+            )
+            return final_df
+        else:
+            print("No features extracted from dataset.")
+            return pd.DataFrame()
