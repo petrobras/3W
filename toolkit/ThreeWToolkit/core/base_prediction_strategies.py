@@ -1,7 +1,10 @@
 import numpy as np
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from sklearn.base import BaseEstimator
+from torch import nn
+
 from .enums import TaskTypeEnum
 
 
@@ -15,7 +18,7 @@ class PredictionStrategy(ABC):
     @abstractmethod
     def predict(
         self,
-        model: Any,
+        model: nn.Module | BaseEstimator,
         task: TaskTypeEnum | None = None,
         **kwargs,
     ) -> np.ndarray:
@@ -35,6 +38,7 @@ class PredictionStrategy(ABC):
         """
         pass
 
+    @property
     def requires_dataloader(self) -> bool:
         """Check if the prediction strategy requires a DataLoader.
 

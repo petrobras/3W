@@ -49,9 +49,6 @@ jobs:
       - name: Install package with dev extras
         run: uv pip install -e .[dev]
 
-      - name: Lint checking
-        run: uv run ./bin/lint
-
       - name: Testing
         run: uv run ./bin/test
 

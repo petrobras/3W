@@ -315,7 +315,7 @@ class Pipeline:
             dfs_final = pd.concat(dfs, ignore_index=True, axis=0)
 
             x_train, x_test, y_train, y_test = self.step_model_training._holdout(
-                X=dfs_final.iloc[:, :-1],
+                x=dfs_final.iloc[:, :-1],
                 y=dfs_final["label"].astype(int),
                 test_size=self.step_model_training.test_size,
             )

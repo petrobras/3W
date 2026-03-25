@@ -40,7 +40,9 @@ class TestFitOnceStrategy:
     returns the expected training history.
     """
 
-    def test_train_calls_fit_with_correct_args(self, strategy, mock_model):
+    def test_train_calls_fit_with_correct_args(
+        self, strategy: FitOnceStrategy, mock_model: MagicMock
+    ):
         """Ensures that the strategy calls the model ``fit`` method with the correct arguments."""
         x = np.array([[1, 2], [3, 4]])
         y = np.array([0, 1])
@@ -49,7 +51,9 @@ class TestFitOnceStrategy:
 
         mock_model.model_class.fit.assert_called_once_with(x, y)
 
-    def test_train_returns_model_in_history(self, strategy, mock_model):
+    def test_train_returns_model_in_history(
+        self, strategy: FitOnceStrategy, mock_model: MagicMock
+    ):
         """Verifies that the returned history dictionary contains the trained model."""
         x = np.array([[1, 2], [3, 4]])
         y = np.array([0, 1])
@@ -58,7 +62,9 @@ class TestFitOnceStrategy:
 
         assert history["model"] is mock_model
 
-    def test_train_ignores_validation_data(self, strategy, mock_model):
+    def test_train_ignores_validation_data(
+        self, strategy: FitOnceStrategy, mock_model: MagicMock
+    ):
         """Ensures that validation data is ignored by the strategy.
 
         The FitOnceStrategy performs a single ``fit`` call and therefore
@@ -73,7 +79,7 @@ class TestFitOnceStrategy:
 
         mock_model.model_class.fit.assert_called_once_with(x_train, y_train)
 
-    def test_train_raises_if_model_has_no_model_class(self, strategy):
+    def test_train_raises_if_model_has_no_model_class(self, strategy: FitOnceStrategy):
         """Ensures that an error is raised when the model lacks ``model_class``."""
         bad_model = MagicMock(spec=[])
         with pytest.raises(AttributeError):

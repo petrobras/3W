@@ -187,9 +187,6 @@ class EpochTrainingStrategy(TrainingStrategy):
         Raises:
             ValueError: If the model is not initialized.
         """
-        if model is None:
-            raise ValueError("Model must be initialized before training.")
-
         model.train()
         running_loss = 0.0
 
@@ -228,9 +225,6 @@ class EpochTrainingStrategy(TrainingStrategy):
         Raises:
             ValueError: If the model is not initialized.
         """
-        if model is None:
-            raise ValueError("Model must be initialized before validation.")
-
         model.eval()
         running_loss = 0.0
 
@@ -280,7 +274,7 @@ class EpochTrainingStrategy(TrainingStrategy):
 
     def _create_dataloader(
         self,
-        X: Any,
+        x: Any,
         y: Any,
         batch_size: int,
         shuffle: bool = True,
@@ -288,7 +282,7 @@ class EpochTrainingStrategy(TrainingStrategy):
         """Create a DataLoader from input features and labels.
 
         Args:
-            X: Input features (NumPy array or torch.Tensor).
+            x: Input features (NumPy array or torch.Tensor).
             y: Target labels (NumPy array or torch.Tensor).
             batch_size: Number of samples per batch.
             shuffle: Whether to shuffle the dataset.
@@ -296,12 +290,12 @@ class EpochTrainingStrategy(TrainingStrategy):
         Returns:
             DataLoader: PyTorch DataLoader instance.
         """
-        if not isinstance(X, torch.Tensor):
-            X = torch.as_tensor(X.values, dtype=torch.float32)
+        if not isinstance(x, torch.Tensor):
+            x = torch.as_tensor(x.values, dtype=torch.float32)
         if not isinstance(y, torch.Tensor):
             y = torch.as_tensor(y.values)
 
-        dataset = TensorDataset(X, y)
+        dataset = TensorDataset(x, y)
         return DataLoader(
             dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True
         )

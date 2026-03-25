@@ -15,7 +15,6 @@ from sklearn.utils.class_weight import compute_class_weight
 
 from ..core.base_step import BaseStep
 from ..core.base_models import BaseModels
-from ..core.protocols import SupportsOptimizerParams
 from ..core.base_model_trainer import ModelTrainerConfig
 from ..core.enums import OptimizersEnum, CriterionEnum, TaskTypeEnum
 from ..models.mlp import MLPConfig
@@ -533,12 +532,12 @@ class ModelTrainer(BaseStep):
         return strategy.train(model, x_train, y_train, x_val, y_val, **strategy_kwargs)
 
     def _holdout(
-        self, X: ArrayLike, y: ArrayLike, test_size=None
+        self, x: ArrayLike, y: ArrayLike, test_size=None
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Split dataset using holdout.
 
         Args:
-            X: Features.
+            x: Features.
             y: Targets.
             test_size: Fraction for validation split.
 
@@ -549,7 +548,7 @@ class ModelTrainer(BaseStep):
             test_size = self.val_size
 
         X_train, X_val, y_train, y_val = train_test_split(
-            X,
+            x,
             y,
             test_size=test_size,
             shuffle=self.shuffle_train,
@@ -574,12 +573,6 @@ class ModelTrainer(BaseStep):
         Raises:
             ValueError: If the optimizer name is not recognized.
         """
-        if not isinstance(model, SupportsOptimizerParams):
-            raise TypeError(
-                f"Optimizer can only be created for models exposing "
-                f"'get_params()'. Received: {type(model).__name__}"
-            )
-
         model_params = model.get_params()
 
         if optimizer == OptimizersEnum.ADAM.value:
@@ -665,7 +658,7 @@ class ModelTrainer(BaseStep):
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
-    def _select_rows(self, data: ArrayLike, idx: int):
+    def _select_rows(self, data: ArrayLike, idx: list[int]):
         """Select rows from data using provided indices.
 
         Handles both pandas DataFrames/Series and other indexable data structures.

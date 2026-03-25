@@ -1,5 +1,6 @@
 import shutil
 import torch
+import logging
 import numpy as np
 import pandas as pd
 
@@ -25,6 +26,8 @@ from ..metrics import (
 )
 
 from pylatex import Document
+
+logger = logging.getLogger(__name__)
 
 
 class MetricRegistry:
@@ -89,9 +92,9 @@ class FoldResults:
         metrics (dict[str, float]): Calculated metrics for the fold.
         model_name (str): Name of the evaluated model.
         timestamp (str): ISO timestamp when the fold was evaluated.
-        X_train (np.ndarray | None): Training features for the fold.
+        x_train (np.ndarray | None): Training features for the fold.
         y_train (np.ndarray | None): Training labels for the fold.
-        X_val (np.ndarray | None): Validation features for the fold.
+        x_val (np.ndarray | None): Validation features for the fold.
         y_val (np.ndarray | None): Validation labels for the fold.
     """
 
@@ -102,9 +105,9 @@ class FoldResults:
     model_name: str
     timestamp: str
 
-    X_train: np.ndarray | None = None
+    x_train: np.ndarray | None = None
     y_train: np.ndarray | None = None
-    X_val: np.ndarray | None = None
+    x_val: np.ndarray | None = None
     y_val: np.ndarray | None = None
 
 
@@ -344,8 +347,8 @@ class ModelAssessment(BaseStep):
 
                 self._report_generation_class = ReportGeneration
             except ImportError:
-                print(
-                    "Warning: ReportGeneration class not available. Report generation disabled."
+                logger.warning(
+                    "ReportGeneration class not available. Report generation disabled."
                 )
                 self.config.generate_report = False
 
@@ -438,7 +441,7 @@ class ModelAssessment(BaseStep):
             models = data.models
 
             # Convert inputs to NumPy arrays
-            X_array = self._to_numpy(data.x)
+            x_array = self._to_numpy(data.x)
             y_array = self._to_numpy(data.y).flatten()
 
             # Resolve metric functions based on task type
@@ -451,11 +454,11 @@ class ModelAssessment(BaseStep):
 
             if is_cross_validation:
                 results = self._evaluate_cv(
-                    models, X_array, y_array, metric_fns, data.dataset_split
+                    models, x_array, y_array, metric_fns, data.dataset_split
                 )
             else:
                 results = self._evaluate_single(
-                    models[0], X_array, y_array, metric_fns, data.dataset_split
+                    models[0], x_array, y_array, metric_fns, data.dataset_split
                 )
 
             # Create output directory for results and reports
@@ -504,14 +507,14 @@ class ModelAssessment(BaseStep):
             ) from exc
 
         # Print summary
-        print(self.summary())
+        logger.info(self.summary())
 
         return output
 
     def _evaluate_single(
         self,
         model: BaseModels,
-        X: np.ndarray,
+        x: np.ndarray,
         y: np.ndarray,
         metric_fns: dict[str, Callable],
         dataset_split: DataSplitEnum,
@@ -520,7 +523,7 @@ class ModelAssessment(BaseStep):
 
         Args:
             model (BaseModels): Trained model instance.
-            X (np.ndarray): Input features.
+            x (np.ndarray): Input features.
             y (np.ndarray): Ground truth labels.
             metric_fns (dict[str, Callable]): Metric functions.
             dataset_split (DataSplitEnum): Dataset split identifier.
@@ -528,7 +531,7 @@ class ModelAssessment(BaseStep):
         Returns:
             AssessmentOutput: Evaluation results for a single model.
         """
-        preds = self._get_predictions(model, X)
+        preds = self._get_predictions(model, x)
         metrics = {k: float(fn(y, preds)) for k, fn in metric_fns.items()}
 
         return AssessmentOutput(
@@ -546,7 +549,7 @@ class ModelAssessment(BaseStep):
     def _evaluate_cv(
         self,
         models: list[BaseModels],
-        X: np.ndarray,
+        x: np.ndarray,
         y: np.ndarray,
         metric_fns: dict[str, Callable],
         dataset_split: DataSplitEnum,
@@ -555,7 +558,7 @@ class ModelAssessment(BaseStep):
 
         Args:
             models (list[BaseModels]): Models trained on different folds.
-            X (np.ndarray): Evaluation features.
+            x (np.ndarray): Evaluation features.
             y (np.ndarray): Ground truth labels.
             metric_fns (dict[str, Callable]): Metric functions.
             dataset_split (DataSplitEnum): Dataset split identifier.
@@ -567,7 +570,7 @@ class ModelAssessment(BaseStep):
         metrics_per_fold = []
 
         for idx, model in enumerate(models):
-            preds = self._get_predictions(model, X)
+            preds = self._get_predictions(model, x)
             metrics = {k: float(fn(y, preds)) for k, fn in metric_fns.items()}
 
             fold_results.append(
@@ -595,7 +598,7 @@ class ModelAssessment(BaseStep):
             config=self.config.model_dump(),
         )
 
-    def _get_predictions(self, model: BaseModels, X: np.ndarray) -> np.ndarray:
+    def _get_predictions(self, model: BaseModels, x: np.ndarray) -> np.ndarray:
         """Generate predictions using the model's prediction strategy.
 
         Automatically selects between dataloader-based or array-based
@@ -603,7 +606,7 @@ class ModelAssessment(BaseStep):
 
         Args:
             model (BaseModels): Trained model.
-            X (np.ndarray): Input features.
+            x (np.ndarray): Input features.
 
         Returns:
             np.ndarray: Model predictions.
@@ -614,10 +617,10 @@ class ModelAssessment(BaseStep):
         """
         strategy = model.get_prediction_strategy()()
 
-        if strategy.requires_dataloader():
+        if strategy.requires_dataloader:
             # Create DataLoader when required by the strategy
             dataset = TensorDataset(
-                torch.tensor(X, dtype=torch.float32), torch.zeros(len(X))
+                torch.tensor(x, dtype=torch.float32), torch.zeros(len(x))
             )
             loader = DataLoader(dataset, batch_size=self.config.batch_size)
 
@@ -625,7 +628,7 @@ class ModelAssessment(BaseStep):
                 model, self.config.task_type, loader=loader, device=self.config.device
             )
 
-        return strategy.predict(model, self.config.task_type, X=X)
+        return strategy.predict(model, self.config.task_type, x=x)
 
     def _to_numpy(self, data: pd.Series | pd.DataFrame | ArrayLike) -> np.ndarray:
         """Convert pandas or array-like data to NumPy format.
@@ -658,8 +661,8 @@ class ModelAssessment(BaseStep):
                 is returned instead.
 
         Example:
-            >>> assessor.evaluate(model, X_test, y_test)
-            >>> print(assessor.summary())
+            >>> assessor.evaluate(model, x_test, y_test)
+            >>> logger.info(assessor.summary())
             Model Assessment Summary
             ========================
             Model: RandomForestClassifier
@@ -721,7 +724,7 @@ class ModelAssessment(BaseStep):
         else:
             self._export_single_results()
 
-        print(f"Results exported to {self.experiment_dir}")
+        logger.info(f"Results exported to {self.experiment_dir}")
 
     def _export_single_results(self) -> None:
         """Export results from a single evaluation run.
@@ -848,7 +851,7 @@ class ModelAssessment(BaseStep):
             raise RuntimeError("No results available to generate report.")
 
         if not hasattr(self, "_report_generation_class"):
-            print("Warning: ReportGeneration not available.")
+            logger.warning("ReportGeneration not available.")
             return
 
         if self.results.is_cross_validation:

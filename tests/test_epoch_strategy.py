@@ -5,11 +5,10 @@ import numpy as np
 import pandas as pd
 
 from torch.utils.data import DataLoader
-from unittest.mock import MagicMock
 from ThreeWToolkit.trainer.strategies.epoch_strategy import EpochTrainingStrategy
 
 
-def simple_model(input_size=4, output_size=1):
+def simple_model(input_size: int = 4, output_size: int = 1):
     """Creates a simple feedforward neural network for testing purposes.
 
     The model consists of a single hidden layer with ReLU activation and is
@@ -25,27 +24,27 @@ def simple_model(input_size=4, output_size=1):
     return nn.Sequential(nn.Linear(input_size, 8), nn.ReLU(), nn.Linear(8, output_size))
 
 
-def make_tensors(n=20, input_size=4):
+def make_tensors(n_samples: int = 20, input_size: int = 4):
     """Generates random tensor datasets for testing.
 
     The inputs are sampled from a uniform distribution and the targets are
     binary class labels.
 
     Args:
-        n (int, optional): Number of samples to generate. Defaults to 20.
+        n_samples (int, optional): Number of samples to generate. Defaults to 20.
         input_size (int, optional): Number of features per sample. Defaults to 4.
 
     Returns:
         tuple[torch.Tensor, torch.Tensor]: A tuple containing:
-            - x: Input tensor of shape (n, input_size)
-            - y: Target tensor of shape (n,)
+            - x: Input tensor of shape (n_samples, input_size)
+            - y: Target tensor of shape (n_samples,)
     """
-    x = torch.rand(n, input_size)
-    y = torch.randint(0, 2, (n,))
+    x = torch.rand(n_samples, input_size)
+    y = torch.randint(0, 2, (n_samples,))
     return x, y
 
 
-def make_dataframes(n=20, input_size=4):
+def make_dataframes(n_samples: int = 20, input_size: int = 4):
     """Generates random pandas datasets for testing.
 
     This utility mirrors ``make_tensors`` but returns pandas structures
@@ -53,20 +52,20 @@ def make_dataframes(n=20, input_size=4):
     compatibility.
 
     Args:
-        n (int, optional): Number of samples to generate. Defaults to 20.
+        n_samples (int, optional): Number of samples to generate. Defaults to 20.
         input_size (int, optional): Number of features per sample. Defaults to 4.
 
     Returns:
         tuple[pandas.DataFrame, pandas.Series]: A tuple containing:
-            - x: Feature matrix as a DataFrame with shape (n, input_size)
-            - y: Target labels as a Series with length n
+            - x: Feature matrix as a DataFrame with shape (n_samples, input_size)
+            - y: Target labels as a Series with length n_samples
     """
-    x = pd.DataFrame(np.random.rand(n, input_size).astype(np.float32))
-    y = pd.Series(np.random.randint(0, 2, n))
+    x = pd.DataFrame(np.random.rand(n_samples, input_size).astype(np.float32))
+    y = pd.Series(np.random.randint(0, 2, n_samples))
     return x, y
 
 
-def default_kwargs(model, epochs=2):
+def default_kwargs(model: nn.Module, epochs: int = 2):
     """Creates a default set of training keyword arguments for tests.
 
     This helper function builds a minimal configuration dictionary
@@ -113,15 +112,15 @@ class TestEpochTrainingStrategy:
         """Creates a fresh instance of EpochTrainingStrategy for each test."""
         return EpochTrainingStrategy()
 
-    def test_requires_optimizer(self, strategy):
+    def test_requires_optimizer(self, strategy: EpochTrainingStrategy):
         """Verify that the training strategy declares optimizer as required."""
         assert strategy.requires_optimizer is True
 
-    def test_requires_criterion(self, strategy):
+    def test_requires_criterion(self, strategy: EpochTrainingStrategy):
         """Verify that the training strategy declares criterion as required."""
         assert strategy.requires_criterion is True
 
-    def test_train_raises_if_model_is_none(self, strategy):
+    def test_train_raises_if_model_is_none(self, strategy: EpochTrainingStrategy):
         """
         Ensure that training fails when the model argument is None.
 
@@ -131,7 +130,7 @@ class TestEpochTrainingStrategy:
         with pytest.raises(AssertionError):
             strategy.train(None, x, y, **default_kwargs(simple_model()))
 
-    def test_train_raises_if_no_optimizer(self, strategy):
+    def test_train_raises_if_no_optimizer(self, strategy: EpochTrainingStrategy):
         """
         Ensure that training raises an error if no optimizer is provided.
         """
@@ -148,7 +147,7 @@ class TestEpochTrainingStrategy:
                 batch_size=8,
             )
 
-    def test_train_raises_if_no_criterion(self, strategy):
+    def test_train_raises_if_no_criterion(self, strategy: EpochTrainingStrategy):
         """
         Ensure that training raises an error if the loss criterion is missing.
         """
@@ -160,7 +159,9 @@ class TestEpochTrainingStrategy:
                 model, x, y, epochs=1, optimizer=optimizer, device="cpu", batch_size=8
             )
 
-    def test_train_returns_history_without_validation(self, strategy):
+    def test_train_returns_history_without_validation(
+        self, strategy: EpochTrainingStrategy
+    ):
         """
         Verify that training returns a history dictionary when no validation set is provided.
         """
@@ -173,7 +174,9 @@ class TestEpochTrainingStrategy:
         assert "val_loss" not in history
         assert len(history["train_loss"]) == 2
 
-    def test_train_returns_history_with_validation(self, strategy):
+    def test_train_returns_history_with_validation(
+        self, strategy: EpochTrainingStrategy
+    ):
         """
         Verify that validation loss is included in the history when validation data is provided.
         """
@@ -187,7 +190,7 @@ class TestEpochTrainingStrategy:
         assert "val_loss" in history
         assert len(history["val_loss"]) == len(history["train_loss"])
 
-    def test_train_loss_is_positive_float(self, strategy):
+    def test_train_loss_is_positive_float(self, strategy: EpochTrainingStrategy):
         """
         Ensure that all training losses returned are non-negative floats.
         """
@@ -196,7 +199,7 @@ class TestEpochTrainingStrategy:
         history = strategy.train(model, x, y, **default_kwargs(model))
         assert all(isinstance(v, float) and v >= 0 for v in history["train_loss"])
 
-    def test_train_accepts_dataframes(self, strategy):
+    def test_train_accepts_dataframes(self, strategy: EpochTrainingStrategy):
         """
         Verify that the training strategy accepts pandas DataFrame and Series as inputs.
         """
@@ -205,7 +208,7 @@ class TestEpochTrainingStrategy:
         history = strategy.train(model, x, y, **default_kwargs(model))
         assert len(history["train_loss"]) == 2
 
-    def test_train_model_in_history_is_nn_module(self, strategy):
+    def test_train_model_in_history_is_nn_module(self, strategy: EpochTrainingStrategy):
         """
         Ensure that the returned history includes the trained PyTorch model instance.
         """
@@ -214,7 +217,7 @@ class TestEpochTrainingStrategy:
         history = strategy.train(model, x, y, **default_kwargs(model))
         assert isinstance(history["model"], nn.Module)
 
-    def test_compute_loss_single_output(self, strategy):
+    def test_compute_loss_single_output(self, strategy: EpochTrainingStrategy):
         """
         Verify loss computation for single-output regression models.
         """
@@ -223,7 +226,7 @@ class TestEpochTrainingStrategy:
         loss = strategy._compute_loss(outputs, targets, nn.MSELoss())
         assert loss.item() >= 0
 
-    def test_compute_loss_multiclass(self, strategy):
+    def test_compute_loss_multiclass(self, strategy: EpochTrainingStrategy):
         """
         Verify loss computation for multi-class classification tasks.
         """
@@ -232,7 +235,7 @@ class TestEpochTrainingStrategy:
         loss = strategy._compute_loss(outputs, targets, nn.CrossEntropyLoss())
         assert loss.item() >= 0
 
-    def test_compute_loss_bce_with_logits(self, strategy):
+    def test_compute_loss_bce_with_logits(self, strategy: EpochTrainingStrategy):
         """
         Verify loss computation when using BCEWithLogitsLoss.
         """
@@ -241,7 +244,9 @@ class TestEpochTrainingStrategy:
         loss = strategy._compute_loss(outputs, targets, nn.BCEWithLogitsLoss())
         assert loss.item() >= 0
 
-    def test_compute_loss_1d_output_gets_unsqueezed(self, strategy):
+    def test_compute_loss_1d_output_gets_unsqueezed(
+        self, strategy: EpochTrainingStrategy
+    ):
         """
         Ensure that 1D outputs are automatically reshaped when required.
         """
@@ -250,7 +255,7 @@ class TestEpochTrainingStrategy:
         loss = strategy._compute_loss(outputs, targets, nn.MSELoss())
         assert loss.item() >= 0
 
-    def test_create_dataloader_from_tensors(self, strategy):
+    def test_create_dataloader_from_tensors(self, strategy: EpochTrainingStrategy):
         """
         Verify that a DataLoader can be created from torch tensors.
         """
@@ -260,7 +265,7 @@ class TestEpochTrainingStrategy:
         xb, _ = next(iter(loader))
         assert xb.shape[1] == 4
 
-    def test_create_dataloader_from_dataframes(self, strategy):
+    def test_create_dataloader_from_dataframes(self, strategy: EpochTrainingStrategy):
         """
         Verify that pandas inputs are converted correctly to tensors in the DataLoader.
         """
@@ -268,21 +273,3 @@ class TestEpochTrainingStrategy:
         loader = strategy._create_dataloader(x, y, batch_size=5)
         xb, _ = next(iter(loader))
         assert xb.dtype == torch.float32
-
-    def test_train_epoch_raises_if_model_none(self, strategy):
-        """
-        Ensure that _train_epoch raises an error if the model is not initialized.
-        """
-        x, y = make_tensors()
-        loader = strategy._create_dataloader(x, y, batch_size=8)
-        with pytest.raises(ValueError, match="Model must be initialized"):
-            strategy._train_epoch(None, loader, nn.MSELoss(), MagicMock(), "cpu")
-
-    def test_calculate_val_loss_raises_if_model_none(self, strategy):
-        """
-        Ensure that validation loss calculation fails when the model is None.
-        """
-        x, y = make_tensors()
-        loader = strategy._create_dataloader(x, y, batch_size=8)
-        with pytest.raises(ValueError, match="Model must be initialized"):
-            strategy._calculate_val_loss(None, loader, nn.MSELoss(), "cpu")

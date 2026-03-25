@@ -4,6 +4,8 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import pydantic
+
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 from ThreeWToolkit.trainer.trainer import (
@@ -16,7 +18,7 @@ from ThreeWToolkit.models.mlp import MLPConfig
 from ThreeWToolkit.core.enums import TaskTypeEnum
 
 
-def mlp_config(input_size=8, output_size=1):
+def mlp_config(input_size: int = 8, output_size: int = 1):
     """
     Creates a default MLPConfig used in trainer tests.
     """
@@ -55,20 +57,20 @@ def base_trainer_config(**overrides):
     return TrainerConfig(**defaults)
 
 
-def make_data(n=40, input_size=8):
+def make_data(n_samples: int = 40, input_size: int = 8):
     """
     Generates synthetic tabular data for training tests.
 
     Args:
-        n (int): Number of samples.
+        n_samples (int): Number of samples.
         input_size (int): Number of input features.
 
     Returns:
         A tuple (x, y) containing a DataFrame of features
         and a Series of target values.
     """
-    x = pd.DataFrame(np.random.rand(n, input_size).astype(np.float32))
-    y = pd.Series(np.random.rand(n).astype(np.float32))
+    x = pd.DataFrame(np.random.rand(n_samples, input_size).astype(np.float32))
+    y = pd.Series(np.random.rand(n_samples).astype(np.float32))
     return x, y
 
 
@@ -90,7 +92,9 @@ class TestTrainerConfig:
             ("learning_rate", 0.0, "learning_rate"),
         ],
     )
-    def test_non_positive_fields_raise(self, field, value, match):
+    def test_non_positive_fields_raise(
+        self, field: str, value: float | int, match: str
+    ):
         """Ensures non-positive numeric fields raise validation errors."""
         with pytest.raises(pydantic.ValidationError, match=match):
             base_trainer_config(**{field: value})
@@ -188,23 +192,23 @@ class TestModelTrainerPreProcess:
         """Creates a trainer instance for preprocessing tests."""
         return ModelTrainer(base_trainer_config())
 
-    def test_valid_train_input_passes(self, trainer):
+    def test_valid_train_input_passes(self, trainer: ModelTrainer):
         """Ensures valid TrainInput passes preprocessing."""
         x, y = make_data()
         result = trainer.pre_process(TrainInput(x_train=x, y_train=y))
         assert result.x_train is x
 
-    def test_raises_if_not_train_input(self, trainer):
+    def test_raises_if_not_train_input(self, trainer: ModelTrainer):
         """Ensures non-TrainInput objects raise TypeError."""
         with pytest.raises(TypeError, match="TrainInput"):
-            trainer.pre_process({"x_train": [], "y_train": []})
+            trainer.pre_process(cast(TrainInput, {"x_train": [], "y_train": []}))
 
-    def test_raises_if_x_train_is_none(self, trainer):
+    def test_raises_if_x_train_is_none(self, trainer: ModelTrainer):
         """Ensures missing training data raises validation error."""
         with pytest.raises(ValueError, match="x_train and y_train must not be None"):
             trainer.pre_process(TrainInput(x_train=None, y_train=pd.Series([1])))
 
-    def test_raises_if_only_x_val_provided(self, trainer):
+    def test_raises_if_only_x_val_provided(self, trainer: ModelTrainer):
         """Ensures validation data must be provided as a pair."""
         x, y = make_data()
         with pytest.raises(
@@ -225,13 +229,13 @@ class TestModelTrainerTrainRouting:
             base_trainer_config(criterion="mse", task_type=TaskTypeEnum.REGRESSION)
         )
 
-    def test_train_with_auto_split(self, trainer):
+    def test_train_with_auto_split(self, trainer: ModelTrainer):
         """Ensures training works with automatic validation split."""
         x, y = make_data()
         trainer.train(x, y)
         assert len(trainer.history["models"]) == 1
 
-    def test_train_with_explicit_validation(self, trainer):
+    def test_train_with_explicit_validation(self, trainer: ModelTrainer):
         """Ensures training works with explicitly provided validation data."""
         x_train, y_train = make_data(30)
         x_val, y_val = make_data(10)
@@ -290,25 +294,21 @@ class TestGetOptimizer:
             ("rmsprop", torch.optim.RMSprop),
         ],
     )
-    def test_optimizer_types(self, trainer, opt_name, opt_cls):
+    def test_optimizer_types(
+        self, trainer: ModelTrainer, opt_name: str, opt_cls: type[nn.Module]
+    ):
         """Ensures that the correct optimizer class is returned."""
         model = self._model()
         trainer.config = base_trainer_config(optimizer=opt_name)
         opt = trainer._get_optimizer(model, opt_name)
         assert isinstance(opt, opt_cls)
 
-    def test_optmizer_type_is_invalid(self, trainer):
+    def test_optmizer_type_is_invalid(self, trainer: ModelTrainer):
         """Ensures an error is raised when an unknown optimizer is requested."""
         model = self._model()
         trainer.config = base_trainer_config(optimizer="adam")
         with pytest.raises(ValueError, match="Unknown optimizer"):
             trainer._get_optimizer(model, "invalid")
-
-    def test_raises_for_model_without_get_params(self, trainer):
-        """Ensures an error is raised if the model does not expose parameters."""
-        bad_model = MagicMock(spec=[])  # sem get_params
-        with pytest.raises(TypeError, match="get_params"):
-            trainer._get_optimizer(bad_model, "adam")
 
 
 class TestGetFnCost:
@@ -328,12 +328,14 @@ class TestGetFnCost:
             ("mae", nn.L1Loss),
         ],
     )
-    def test_criterion_types(self, trainer, criterion, expected_cls):
+    def test_criterion_types(
+        self, trainer: ModelTrainer, criterion: str, expected_cls: type[nn.Module]
+    ):
         """Ensures the correct loss function class is returned."""
         loss_fn = trainer._get_fn_cost(criterion)
         assert isinstance(loss_fn, expected_cls)
 
-    def test_unknown_criterion_raises(self, trainer):
+    def test_unknown_criterion_raises(self, trainer: ModelTrainer):
         """Ensures an error is raised for an unknown loss function."""
         with pytest.raises(ValueError, match="Unknown criterion"):
             trainer._get_fn_cost("huber")
@@ -403,13 +405,13 @@ class TestSelectRows:
         """Returns a ModelTrainer instance."""
         return ModelTrainer(base_trainer_config())
 
-    def test_select_rows_dataframe(self, trainer):
+    def test_select_rows_dataframe(self, trainer: ModelTrainer):
         """Ensures rows are correctly selected from a DataFrame."""
         df = pd.DataFrame({"a": [1, 2, 3]})
         result = trainer._select_rows(df, [0, 2])
         assert list(result["a"]) == [1, 3]
 
-    def test_select_rows_numpy(self, trainer):
+    def test_select_rows_numpy(self, trainer: ModelTrainer):
         """Ensures rows are correctly selected from a NumPy array."""
         arr = np.array([10, 20, 30])
         result = trainer._select_rows(arr, [1, 2])
@@ -443,7 +445,9 @@ class TestRunAndPostProcess:
 class TestAssessMethod:
     """Tests for the assess method integration with ModelAssessment."""
 
-    def _trained_trainer(self, task_type=TaskTypeEnum.REGRESSION, criterion="mse"):
+    def _trained_trainer(
+        self, task_type: TaskTypeEnum = TaskTypeEnum.REGRESSION, criterion: str = "mse"
+    ):
         cfg = base_trainer_config(criterion=criterion, task_type=task_type)
         trainer = ModelTrainer(cfg)
         x, y = make_data()

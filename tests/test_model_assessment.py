@@ -1,6 +1,8 @@
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
+import logging
+
 from unittest.mock import MagicMock, patch
 from pathlib import Path
 
@@ -675,17 +677,19 @@ class TestAssessmentReport:
             assessor._generate_report(input_data, output_data)
             mock_single.assert_called_once_with(input_data, output_data)
 
-    def test_generate_report_warns_if_no_report_class(self, assessor, capsys):
+    def test_generate_report_warns_if_no_report_class(self, assessor, caplog):
         """
         Ensures a warning is printed when report generation class is unavailable.
         """
+        caplog.set_level(logging.WARNING)
+
         assessor.config.generate_report = True
         assessor.results = MagicMock()
 
         if hasattr(assessor, "_report_generation_class"):
             delattr(assessor, "_report_generation_class")
         assessor._generate_report(MagicMock(), MagicMock())
-        assert "Warning" in capsys.readouterr().out
+        assert "WARNING" in caplog.text
 
     def test_generate_report_cv_branch_is_noop(self, assessor):
         """

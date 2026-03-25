@@ -18,9 +18,6 @@ html/
 # VS Code configuration
 .vscode/
 
-#
-uv.lock
-
 # Distribution / packaging
 .Python
 build/
@@ -172,3 +169,5 @@ cython_debug/
 processed_data/
 output/
 */download/
+
+uv.lock
