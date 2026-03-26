@@ -1,6 +1,7 @@
-import pandas as pd
 from pydantic import Field, ValidationInfo, field_validator
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
+from ..core.dataset_outputs import DatasetOutputs
+import pandas as pd
 
 
 class RenameColumnsConfig(BasePreprocessingConfig):
@@ -71,22 +72,17 @@ class RenameColumns(BasePreprocessing):
         """
         self.config = config
 
-    def transform(self, data: dict) -> dict:
+    def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
         Rename columns according to the configured mapping.
 
-        This method applies the column renaming using pandas' rename method with the
-        mapping provided in the configuration.
-
         Args:
-            data (pd.DataFrame): DataFrame with columns to be renamed
+            data: DatasetOutputs object containing signal DataFrame
 
         Returns:
-            dict: Event data with renamed columns
+            DatasetOutputs: Data with renamed signal columns
         """
-        signal_df = data.get("signal")
-        if signal_df is None or not isinstance(signal_df, pd.DataFrame):
-            return data  # Return unchanged if no signal data
+        signal_df = data.signal
 
         if signal_df.columns.duplicated().any():
             duplicated = (
@@ -100,7 +96,5 @@ class RenameColumns(BasePreprocessing):
         if missing:
             raise ValueError(f"Columns not found in DataFrame: {missing}")
 
-        signal_df = signal_df.rename(columns=self.config.columns_map)
-        result = data.copy()
-        result["signal"] = signal_df
-        return result
+        data.signal = signal_df.rename(columns=self.config.columns_map)
+        return data

@@ -62,25 +62,19 @@ class TransformDataset(BaseTransform):
                 data = step.transform(data)
             preprocessed_dataset.append(data)
 
-        # here we have a list of dicts
-        #   ['signal', 'label', 'file_name']
-
-        # should we transform it to a dataframe before passing to feature extraction steps?
-        # For this we would loop first by feature extraction steps
-
-        # or should we do it by event and then concatenate the results?
-        # For this we would loop first by events and then by feature extraction steps,
-        # but it would be more computationally expensive
+        # here we have a list of DatasetOutputs objects
         all_features = []
         for idx in tqdm(range(len(preprocessed_dataset))):
             data = preprocessed_dataset[idx]
             signal = data.get("signal")
             label = data.get("label")
-            # Ensure both are DataFrames
+
+            # Ensure both are DataFrames for concat
             if signal is not None and not isinstance(signal, pd.DataFrame):
                 signal = pd.DataFrame(signal)
             if label is not None and not isinstance(label, pd.DataFrame):
                 label = pd.DataFrame(label)
+
             # Only concat non-empty DataFrames
             dfs = [df for df in [signal, label] if df is not None and not df.empty]
             if not dfs:
@@ -92,8 +86,12 @@ class TransformDataset(BaseTransform):
                 features_df = self.feature_extraction_step.transform(df)
                 all_features.append(features_df)
 
-        final_df = pd.concat(all_features, ignore_index=True)
-        print(
-            f"final number of rows: {final_df.shape[0]}, final number of columns: {final_df.shape[1]}"
-        )
-        return final_df
+        if all_features:
+            final_df = pd.concat(all_features, ignore_index=True)
+            print(
+                f"final number of rows: {final_df.shape[0]}, final number of columns: {final_df.shape[1]}"
+            )
+            return final_df
+        else:
+            print("No features extracted from dataset.")
+            return pd.DataFrame()

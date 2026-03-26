@@ -6,6 +6,7 @@ from pandas import read_parquet
 from pydantic import BaseModel, Field, field_validator
 from typing import Literal
 from ThreeWToolkit.core.enums import EventPrefixEnum
+from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 import pandas as pd
 from ..utils.downloader import get_figshare_data
 import torch.nn as nn
@@ -246,7 +247,7 @@ class ParquetDataset(nn.Module):
         """Return the number of events in the dataset."""
         return len(self.files_events)
 
-    def __getitem__(self, idx: int) -> dict[str, Any]:
+    def __getitem__(self, idx: int) -> DatasetOutputs:
         """
         Load and process one dataset file.
 
@@ -254,11 +255,11 @@ class ParquetDataset(nn.Module):
             idx (int): Index of the file.
 
         Returns:
-            dict[str, Any]: Dictionary containing signals, labels, and file name.
+            DatasetOutputs: Structured object containing signals, labels, and metadata.
         """
         return self.load_file(idx)
 
-    def load_file(self, idx: int) -> dict[str, Any]:
+    def load_file(self, idx: int) -> DatasetOutputs:
         """
         Load a parquet file and separate signals and labels.
 
@@ -266,27 +267,36 @@ class ParquetDataset(nn.Module):
             idx (int): File index.
 
         Returns:
-            dict[str, Any]:
+            DatasetOutputs: Structured object containing:
                 - signal: DataFrame of input signals
-                - label: DataFrame of labels (if target_column is defined)
-                - file_name: Path to the file
+                - label: Series of labels (if target_column is defined)
+                - metadata: Dict with file_name and other info
         """
         file_name = self.files_events[idx]
         path = Path(self.config.path) / file_name
-        ret: dict[str, Any] = {}
 
         # Concatenate columns + labels to read
         all_columns = (
             self.config.columns + [self.config.target_column]
             if self.config.target_column and self.config.columns
-            else self.config.columns or [self.config.target_column]
+            else (
+                self.config.columns or [self.config.target_column]
+                if self.config.target_column
+                else None
+            )
+        )
+
+        # Read single parquet file
+        parquet_file = read_parquet(path, columns=all_columns, engine="pyarrow")
+
+        # Extract signal and label
+        signal_df = pd.DataFrame(parquet_file[self.config.columns])
+        label_series = (
+            parquet_file[self.config.target_column]
             if self.config.target_column
             else None
         )
 
-        # Read single parquet file and create dict with signal, label and file_name
-        parquet_file = read_parquet(path, columns=all_columns, engine="pyarrow")
-        ret["signal"] = pd.DataFrame(parquet_file[self.config.columns])
-        ret["label"] = pd.DataFrame(parquet_file[self.config.target_column])
-        ret["file_name"] = file_name
-        return ret
+        return DatasetOutputs(
+            signal=signal_df, label=label_series, metadata={"file_name": file_name}
+        )

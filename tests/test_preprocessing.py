@@ -5,19 +5,11 @@ import numpy as np
 from pandas.testing import assert_series_equal, assert_frame_equal
 from numpy.testing import assert_allclose
 
-from ThreeWToolkit.core.base_preprocessing import (
-    ImputeMissingConfig,
-    NormalizeConfig,
-    RenameColumnsConfig,
-    WindowingConfig,
+from ThreeWToolkit.preprocessing import (
+        ImputeMissingConfig,
+        NormalizeConfig,
+        RenameColumnsConfig,
 )
-from ThreeWToolkit.preprocessing._data_processing import (
-    ImputeMissing,
-    Normalize,
-    RenameColumns,
-    Windowing,
-)
-
 
 class TestImputeMissingData:
     def test_impute_mean_dataframe(self):
@@ -25,7 +17,7 @@ class TestImputeMissingData:
         Test that imputing with strategy 'mean' replaces NaNs in all DataFrame columns with the column mean.
         """
         df = pd.DataFrame({"a": [1.0, np.nan, 3.0], "b": [4.0, 5.0, 6.0]})
-        imp_missing = ImputeMissing(ImputeMissingConfig(strategy="mean"))
+        imp_missing = ImputeMissingConfig(strategy="mean").build()
         result = imp_missing(data=df)
         expected_result = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
 

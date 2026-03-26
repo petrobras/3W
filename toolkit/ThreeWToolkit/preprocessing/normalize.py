@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import Field
 from collections import defaultdict
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
+from ..core.dataset_outputs import DatasetOutputs
 
 
 class NormalizeConfig(BasePreprocessingConfig):
@@ -40,21 +41,17 @@ class Normalize(BasePreprocessing):
         self.config = config
         self.collected = defaultdict(lambda: {"sum": 0.0, "sum_sq": 0.0, "count": 0})
 
-    def fit(self, data: dict) -> None:
+    def fit(self, data: DatasetOutputs) -> None:
         """
         Collect statistics from a single event for aggregation.
 
-        Accumulates sum, sum of squares, and count for each column in the 'signal' DataFrame across events.
-
         Args:
-            data (dict): Input event data containing 'signal' DataFrame
+            data: DatasetOutputs object containing signal DataFrame
         """
-        signal_df = data.get("signal")
-        if signal_df is None or not isinstance(signal_df, pd.DataFrame):
-            return  # Skip if no signal data
+        signal_df = data.signal
 
         for col in signal_df.columns:
-            values = signal_df[col].dropna()  # Handle NaN values
+            values = signal_df[col].dropna()
             self.collected[col]["sum"] += values.sum()
             self.collected[col]["sum_sq"] += (values**2).sum()
             self.collected[col]["count"] += len(values)

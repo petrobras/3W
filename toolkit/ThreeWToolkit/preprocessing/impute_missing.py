@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import Field, ValidationInfo, field_validator
 from collections import defaultdict
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
+from ..core.dataset_outputs import DatasetOutputs
 
 
 class ImputeMissingConfig(BasePreprocessingConfig):
