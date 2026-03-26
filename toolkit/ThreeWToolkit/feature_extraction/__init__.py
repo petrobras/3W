@@ -3,10 +3,10 @@ from .windowing import WindowingConfig, Windowing
 from .exponential_statistics import EWStatisticalFeatures, EWStatisticalConfig
 from .wavelet import WaveletConfig, WaveletFeatures
 from .adapters import (
-    ConcatAdapter,
-    SequentialAdapter,
-    ConcatAdapterConfig,
-    SequentialAdapterConfig,
+    ConcatFeatureAdapter,
+    ConcatFeatureAdapterConfig,
+    SequentialFeatureAdapter,
+    SequentialFeatureAdapterConfig,
 )
 
 __all__ = [
@@ -18,8 +18,8 @@ __all__ = [
     "WaveletFeatures",
     "WindowingConfig",
     "Windowing",
-    "ConcatAdapter",
-    "ConcatAdapterConfig",
-    "SequentialAdapter",
-    "SequentialAdapterConfig",
+    "ConcatFeatureAdapter",
+    "ConcatFeatureAdapterConfig",
+    "SequentialFeatureAdapter",
+    "SequentialFeatureAdapterConfig",
 ]

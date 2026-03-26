@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-import pandas as pd
 from abc import ABC, abstractmethod
 from .base_instantiable import Instantiable
 

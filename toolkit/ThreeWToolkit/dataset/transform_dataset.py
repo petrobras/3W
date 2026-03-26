@@ -1,29 +1,7 @@
 from typing import Any
-from pydantic import BaseModel, Field, field_validator
-from typing import Sequence
-from ThreeWToolkit.preprocessing import (
-    NormalizeConfig,
-    ImputeMissingConfig,
-    RenameColumnsConfig,
-    RemapClassConfig,
-    ImputeMissing,
-    RenameColumns,
-    RemapClass,
-)
-from ThreeWToolkit.feature_extraction import (
-    WindowingConfig,
-    Windowing,
-    StatisticalConfig,
-    StatisticalFeatures,
-    WaveletConfig,
-    WaveletFeatures,
-    EWStatisticalConfig,
-    EWStatisticalFeatures,
-)
-from ..core.base_feature_extractor import (
-    BaseFeatureExtractor,
-    BaseFeatureExtractorConfig,
-)
+from pydantic import Field
+from ..core.base_preprocessing import BasePreprocessingConfig
+from ..core.base_feature_extractor import BaseFeatureExtractorConfig
 from ..core.base_transform import BaseTransform, BaseTransformConfig
 import pandas as pd
 from tqdm import tqdm
@@ -31,18 +9,10 @@ from tqdm import tqdm
 
 class TransformDatasetConfig(BaseTransformConfig):
     """
-    Configuration for processing a dataset.
+    Configuration for transforming a dataset.
     """
 
-    pre_processing: (
-        Sequence[
-            NormalizeConfig
-            | ImputeMissingConfig
-            | RenameColumnsConfig
-            | RemapClassConfig
-        ]
-        | None
-    ) = Field(
+    pre_processing: BasePreprocessingConfig | None = Field(
         default=None,
         description="List of preprocessing steps to apply to the dataset.",
     )
@@ -60,12 +30,8 @@ class TransformDataset(BaseTransform):
         super().__init__(config)
         self.config = config
 
-        # Create preprocessing steps based on available configs
-        self.pre_processing_steps = []
         if self.config.pre_processing is not None:
-            for step_config in self.config.pre_processing:
-                step_instance = step_config.build()
-                self.pre_processing_steps.append(step_instance)
+            self.pre_processing_step = self.config.pre_processing.build()
 
         if self.config.feature_extraction is not None:
             self.feature_extraction_step = self.config.feature_extraction.build()
@@ -77,7 +43,7 @@ class TransformDataset(BaseTransform):
         so it will be slow if there are many steps that require statistics collection,
         but it will ensure that the statistics are collected in the correct order.
         """
-        for step in self.pre_processing_steps:
+        for step in self.feature_extraction_step:
             for idx in range(len(dataset)):
                 data = dataset[idx]
                 step.fit(data)
@@ -92,7 +58,7 @@ class TransformDataset(BaseTransform):
         preprocessed_dataset = []
         for idx in tqdm(range(len(dataset))):
             data = dataset[idx]
-            for step in self.pre_processing_steps:
+            for step in self.feature_extraction_step:
                 data = step.transform(data)
             preprocessed_dataset.append(data)
 
@@ -126,12 +92,8 @@ class TransformDataset(BaseTransform):
                 features_df = self.feature_extraction_step.transform(df)
                 all_features.append(features_df)
 
-        if all_features:
-            final_df = pd.concat(all_features, ignore_index=True)
-            print(
-                f"final number of rows: {final_df.shape[0]}, final number of columns: {final_df.shape[1]}"
-            )
-            return final_df
-        else:
-            print("No features extracted from dataset.")
-            return pd.DataFrame()
+        final_df = pd.concat(all_features, ignore_index=True)
+        print(
+            f"final number of rows: {final_df.shape[0]}, final number of columns: {final_df.shape[1]}"
+        )
+        return final_df

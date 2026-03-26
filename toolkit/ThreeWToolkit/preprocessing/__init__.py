@@ -2,6 +2,11 @@ from .impute_missing import ImputeMissingConfig, ImputeMissing
 from .normalize import NormalizeConfig, Normalize
 from .rename_column import RenameColumnsConfig, RenameColumns
 from .remap import RemapClassConfig, RemapClass
+from .fill_labels import FillLabelsConfig, FillLabels
+from .adapters import (
+    SequentialPreprocessingAdapter,
+    SequentialPreprocessingAdapterConfig,
+)
 
 __all__ = [
     "ImputeMissingConfig",
@@ -12,4 +17,8 @@ __all__ = [
     "RenameColumns",
     "RemapClassConfig",
     "RemapClass",
+    "FillLabelsConfig",
+    "FillLabels",
+    "SequentialPreprocessingAdapter",
+    "SequentialPreprocessingAdapterConfig",
 ]

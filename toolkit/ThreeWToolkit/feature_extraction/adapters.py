@@ -8,17 +8,17 @@ from ..core.base_feature_extractor import (
 from pydantic import Field
 
 
-class SequentialAdapterConfig(BaseFeatureExtractorConfig):
+class SequentialFeatureAdapterConfig(BaseFeatureExtractorConfig):
     transforms: list[BaseFeatureExtractorConfig]
-    target_: type = Field(default_factory=lambda: SequentialAdapter)
+    target_: type = Field(default_factory=lambda: SequentialFeatureAdapter)
 
 
-class ConcatAdapterConfig(BaseFeatureExtractorConfig):
+class ConcatFeatureAdapterConfig(BaseFeatureExtractorConfig):
     transforms: list[BaseFeatureExtractorConfig]
-    target_: type = Field(default_factory=lambda: ConcatAdapter)
+    target_: type = Field(default_factory=lambda: ConcatFeatureAdapter)
 
 
-class SequentialAdapter(BaseFeatureExtractor):
+class SequentialFeatureAdapter(BaseFeatureExtractor):
     """
     Applies a list of transformations sequentially to the input data.
     Each transformation should be a callable that takes and returns data.
@@ -28,7 +28,7 @@ class SequentialAdapter(BaseFeatureExtractor):
 
     def __init__(
         self,
-        config: SequentialAdapterConfig,
+        config: SequentialFeatureAdapterConfig,
     ):
         self.config = config
         self.feature_extraction_steps = []
@@ -42,7 +42,7 @@ class SequentialAdapter(BaseFeatureExtractor):
         return data
 
 
-class ConcatAdapter(BaseFeatureExtractor):
+class ConcatFeatureAdapter(BaseFeatureExtractor):
     """
     Applies a list of transformations to the input data and concatenates their outputs.
     Each transformation should be a callable that takes and returns data.
@@ -51,7 +51,7 @@ class ConcatAdapter(BaseFeatureExtractor):
 
     feature_extraction_steps: list = []
 
-    def __init__(self, config: ConcatAdapterConfig):
+    def __init__(self, config: ConcatFeatureAdapterConfig):
         self.config = config
         self.feature_extraction_steps = []
         for step_config in self.config.transforms:

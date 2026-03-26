@@ -209,11 +209,6 @@ class ImputeMissing(BasePreprocessing):
                 if col in self.impute_values:
                     data_copy[col] = data_copy[col].fillna(self.impute_values[col])
 
-        # Drop rows where the 'label' column is missing (NaN or <NA>)
-        if "class" in label_df.columns:
-            label_df = label_df.loc[~pd.isna(label_df["class"])]
-            data_copy = data_copy.loc[label_df.index]
-
         # if a column is entire nan, drop the rows where that column is nan (since we can't impute it)
         if data_copy.isna().all().any():
             all_nan_cols = data_copy.columns[data_copy.isna().all()].tolist()
