@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from abc import ABC, abstractmethod
+from .base_dataset import BaseDataset
 from .base_instantiable import Instantiable
 from .dataset_outputs import DatasetOutputs
 
@@ -21,10 +22,7 @@ class BasePreprocessing(ABC):
         """Transform the data using the fitted preprocessing step."""
         raise NotImplementedError("Subclasses must implement the transform method.")
 
-    def fit(self, data: DatasetOutputs) -> None:
-        """If needed, fit the preprocessing step to the data."""
-        pass
-
-    def compute(self) -> None:
-        """Compute statistics after fitting. Override if needed."""
+    @abstractmethod
+    def fit(self, data: BaseDataset) -> None:
+        """If needed, fit the preprocessing step to the dataset."""
         pass

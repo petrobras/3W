@@ -1,4 +1,6 @@
 from typing import Any
+from ThreeWToolkit.core.base_dataset import BaseDataset
+from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 from pydantic import Field
 from ..core.base_preprocessing import BasePreprocessingConfig
 from ..core.base_feature_extractor import BaseFeatureExtractorConfig
@@ -7,10 +9,9 @@ import pandas as pd
 from tqdm import tqdm
 
 
-class TransformDatasetConfig(BaseTransformConfig):
-    """
-    Configuration for transforming a dataset.
-    """
+
+class TransformConfig(BaseTransformConfig):
+    """ Configuration for transforming a dataset. """
 
     pre_processing: BasePreprocessingConfig | None = Field(
         default=None,
@@ -24,10 +25,9 @@ class TransformDatasetConfig(BaseTransformConfig):
 
 
 class TransformDataset(BaseTransform):
-    """ """
+    """ Class for fitting preprocessing and feature extraction steps on a dataset and applying the transformations. """
 
-    def __init__(self, config: TransformDatasetConfig):
-        super().__init__(config)
+    def __init__(self, config: TransformConfig):
         self.config = config
 
         if self.config.pre_processing is not None:
@@ -36,62 +36,23 @@ class TransformDataset(BaseTransform):
         if self.config.feature_extraction is not None:
             self.feature_extraction_step = self.config.feature_extraction.build()
 
-    def fit(self, dataset: Any) -> None:
+    def fit(self, dataset: BaseDataset) -> None:
         """
         Fit preprocessing and feature extraction steps on the dataset, collecting necessary statistics.
         It needs to run through the entire list of events in the order given by the user,
         so it will be slow if there are many steps that require statistics collection,
         but it will ensure that the statistics are collected in the correct order.
         """
-        for step in self.feature_extraction_step:
-            for idx in range(len(dataset)):
-                data = dataset[idx]
-                step.fit(data)
-            step.compute()
-
-    def transform(self, dataset: Any) -> pd.DataFrame:
-        """
-        Apply the fitted preprocessing and feature extraction steps to the dataset, using the collected statistics.
-        This method is useful for applying the collected statistics from the training set to the validation and test sets,
-        ensuring that the same transformations are applied consistently across all splits.
-        """
-        preprocessed_dataset = []
-        for idx in tqdm(range(len(dataset))):
+        for idx in range(len(dataset)):
             data = dataset[idx]
-            for step in self.feature_extraction_step:
-                data = step.transform(data)
-            preprocessed_dataset.append(data)
+            self.pre_processing_step.fit(data)
+        self.pre_processing_step.compute()
 
-        # here we have a list of DatasetOutputs objects
-        all_features = []
-        for idx in tqdm(range(len(preprocessed_dataset))):
-            data = preprocessed_dataset[idx]
-            signal = data.get("signal")
-            label = data.get("label")
+    def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
+        """ Apply the fitted preprocessing and feature extraction steps to a single event. """
 
-            # Ensure both are DataFrames for concat
-            if signal is not None and not isinstance(signal, pd.DataFrame):
-                signal = pd.DataFrame(signal)
-            if label is not None and not isinstance(label, pd.DataFrame):
-                label = pd.DataFrame(label)
-
-            # Only concat non-empty DataFrames
-            dfs = [df for df in [signal, label] if df is not None and not df.empty]
-            if not dfs:
-                continue
-            df = pd.concat(dfs, axis=1)
-            print(df.head())
-
-            if self.feature_extraction_step is not None:
-                features_df = self.feature_extraction_step.transform(df)
-                all_features.append(features_df)
-
-        if all_features:
-            final_df = pd.concat(all_features, ignore_index=True)
-            print(
-                f"final number of rows: {final_df.shape[0]}, final number of columns: {final_df.shape[1]}"
-            )
-            return final_df
-        else:
-            print("No features extracted from dataset.")
-            return pd.DataFrame()
+        if self.pre_processing_step is not None:
+            data = self.pre_processing_step.transform(data)
+        if self.feature_extraction_step is not None:
+            data = self.feature_extraction_step.transform(data)
+        return data

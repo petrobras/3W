@@ -1,11 +1,12 @@
 from pydantic import Field
+from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
-import pandas as pd
+from pydantic import Field
 
 
 class RemapClassConfig(BasePreprocessingConfig):
-    class_map: dict | None = None
+    class_map: dict | None = Field(default=None, description="Mapping from original class labels to new class labels. If None, it will be generated in fit() by collecting all unique classes across events.")
     target_: type = Field(default_factory=lambda: RemapClass)
 
 
@@ -18,45 +19,22 @@ class RemapClass(BasePreprocessing):
 
     def __init__(self, config: RemapClassConfig):
         self.config = config
-        self.class_map = config.class_map
-        self.original_map = None
-        self._fit_required = self.class_map is None
-        self._seen_classes = set() if self._fit_required else None
 
-    def fit(self, data: DatasetOutputs) -> None:
+    def fit(self, data: BaseDataset) -> None:
         """
         Collect all unique classes from the label Series if class_map is not provided.
         """
-        if not self._fit_required:
+        if self.config.class_map is not None:
+            self.class_map = self.config.class_map
             return
 
-        if data.label is not None and self._seen_classes is not None:
-            self._seen_classes.update(data.label.unique())
+        unique_classes = set()
+        # collect unique classes across all events
+        for event in data:
+            if event.label is not None:
+                unique_classes.update(event.label.dropna().unique())
+        self.class_map = {c: i for i, c in enumerate(sorted(unique_classes))}
 
-    def compute(self) -> None:
-        """
-        After fit, build the class_map and original_map.
-        """
-        if not self._fit_required:
-            return
-        if not self._seen_classes:
-            raise ValueError("No classes were seen during fit. Cannot build class_map.")
-
-        print("[RemapClass] Initial classes seen:", self._seen_classes)
-
-        for c in self._seen_classes:
-            if pd.isna(c):
-                raise ValueError(
-                    "[RemapClass] NA value detected in class labels. "
-                    "Please handle missing values with ImputeMissing before using RemapClass."
-                )
-
-        # Map classes to 0..N-1
-        class_map = {c: i for i, c in enumerate(sorted(self._seen_classes))}
-        print("[RemapClass] Final class_map:", class_map)
-        self.class_map = class_map
-        self.original_map = {v: k for k, v in class_map.items()}
-        self._fit_required = False
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
@@ -68,10 +46,8 @@ class RemapClass(BasePreprocessing):
         Returns:
             DatasetOutputs: Transformed data with remapped labels
         """
-        if self.class_map is None:
-            raise ValueError(
-                "RemapClass: class_map is not set. Call fit and compute first."
-            )
+        if self.config.class_map is None:
+            raise ValueError("RemapClass: class_map is not set. Call fit first.")
 
         if data.label is not None:
             data.label = data.label.map(self.class_map)

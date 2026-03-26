@@ -6,6 +6,7 @@ from ..core.base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
 )
+from ..core.dataset_outputs import DatasetOutputs
 
 
 class WindowingConfig(BaseFeatureExtractorConfig):
@@ -108,36 +109,36 @@ class Windowing(BaseFeatureExtractor):
         """
         self.config = config
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
         Apply windowing to the input time series data.
 
         Args:
-            data (pd.DataFrame): DataFrame with time index, signal columns, and a label column (e.g., 'class').
+            data: DatasetOutputs with signal and label data
 
         Returns:
-            pd.DataFrame: DataFrame containing windowed signals and corresponding labels.
+            DatasetOutputs: Windowed signals with corresponding labels
         """
-        self._check_window_size_vs_data(data)
+        self._check_window_size_vs_data(data.signal)
 
-        # Assume the label column is the last column
-        target_col = data.columns[-1]
-        signal_cols = [col for col in data.columns if col != target_col]
-        n_samples = len(data)
+        signal_cols = list(data.signal.columns)
+        n_samples = len(data.signal)
         step = int(self.config.window_size * (1 - self.config.overlap))
         if step < 1:
             step = 1
 
-        # Precompute window function
+        # Precompute window function for signals
         win = get_window(
             self.config.window, self.config.window_size, fftbins=self.config.fftbins
         )
 
-        # Convert to numpy arrays for safe slicing and math
-        signal_data = data[signal_cols].to_numpy()
-        label_data = data[target_col].to_numpy()
+        # Convert to numpy arrays
+        signal_data = data.signal.to_numpy()
+        label_data = data.label.to_numpy() if data.label is not None else None
 
         windows = []
+        window_labels = []
+
         for start in range(0, n_samples, step):
             end = start + self.config.window_size
             if end > n_samples:
@@ -150,45 +151,63 @@ class Windowing(BaseFeatureExtractor):
                     mode="constant",
                     constant_values=self.config.pad_value,
                 )
-                window_labels = np.pad(
-                    label_data[start:n_samples],
-                    pad_width=(0, pad_size),
-                    mode="constant",
-                    constant_values=label_data[n_samples - 1] if n_samples > 0 else 0,
-                )
+                if label_data is not None:
+                    window_label_data = np.pad(
+                        label_data[start:n_samples],
+                        pad_width=(0, pad_size),
+                        mode="constant",
+                        constant_values=(
+                            label_data[n_samples - 1] if n_samples > 0 else 0
+                        ),
+                    )
+                else:
+                    window_label_data = None
             else:
                 window_signals = signal_data[start:end]
-                window_labels = label_data[start:end]
+                window_label_data = (
+                    label_data[start:end] if label_data is not None else None
+                )
 
-            # Apply window function
+            # Apply window function to signals
             windowed = window_signals * win.reshape(-1, 1)
             windowed_flat = windowed.T.flatten()
+            windows.append(windowed_flat)
 
-            # Use mode of label in window
-            mode_series = pd.Series(window_labels).mode()
-            label = mode_series[0] if len(mode_series) > 0 else 0
+            # Use mode of label in window (boxcar aggregation)
+            if window_label_data is not None:
+                mode_series = pd.Series(window_label_data).mode()
+                label = mode_series[0] if len(mode_series) > 0 else 0
+                window_labels.append(label)
 
-            window_row = np.append(windowed_flat, label)
-            windows.append(window_row)
-
-        # Generate column names using original variable names + label class
+        # Generate column names
         col_names = []
         for col in signal_cols:
             for t in range(self.config.window_size):
                 col_names.append(f"{col}_t{t}")
-        col_names.append("label")
 
-        return pd.DataFrame(windows, columns=col_names)
+        windows_array = np.array(windows)
 
-    def _check_window_size_vs_data(self, data: pd.DataFrame):
+        if self.config.normalize:
+            mean = windows_array.mean(axis=0, keepdims=True)
+            std = windows_array.std(axis=0, keepdims=True)
+            std[std == 0] = 1
+            windows_array = (windows_array - mean) / std
+
+        signal_df = pd.DataFrame(windows_array, columns=col_names)
+        label_series = pd.Series(window_labels, name="label") if window_labels else None
+
+        return DatasetOutputs(
+            signal=signal_df, label=label_series, metadata=data.metadata.copy()
+        )
+
+    def _check_window_size_vs_data(self, signal_df: pd.DataFrame) -> None:
         """
-        This method ensures that the configured window size does not exceed
-        the available data length, which would make windowing impossible.
+        Ensure window size does not exceed data length.
 
         Args:
-            data (pd.DataFrame): Input data DataFrame with "signal" and "label" columns
+            signal_df: Signal DataFrame
         """
-        n_samples = len(data)
+        n_samples = len(signal_df)
         if self.config.window_size > n_samples:
             raise ValueError(
                 "`window_size` must be smaller than or equal to the length of X."
