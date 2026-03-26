@@ -1,5 +1,10 @@
 import pytest
 import numpy as np
+
+from pathlib import Path
+from ThreeWToolkit.assessment.strategies.sklearn_prediction_strategy import (
+    SklearnPredictionStrategy,
+)
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.datasets import make_classification
@@ -8,22 +13,47 @@ from ThreeWToolkit.core.enums import ModelTypeEnum
 from ThreeWToolkit.models.sklearn_models import SklearnModels, SklearnModelsConfig
 
 
+@pytest.fixture
+def base_config():
+    """Creates a default configuration for sklearn models."""
+    return SklearnModelsConfig(
+        model_type=ModelTypeEnum.LOGISTIC_REGRESSION, random_seed=42
+    )
+
+
+@pytest.fixture
+def base_model(base_config: SklearnModelsConfig):
+    """Creates a SklearnModels instance using the base configuration."""
+    return SklearnModels(base_config)
+
+
 class TestSklearnModels:
-    """
-    Unit tests for the SklearnModels class.
+    """Unit tests for the SklearnModels wrapper class.
+
+    This test suite verifies correct initialization, parameter handling,
+    model persistence, and prediction strategy integration for sklearn models.
     """
 
     @pytest.fixture
     def binary_data(self):
-        """Provides simple binary classification data."""
+        """Provides a small binary classification dataset.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: Feature matrix and target labels.
+        """
         X = np.array([[1, 2], [2, 3], [3, 4], [4, 5]])
         y = np.array([0, 0, 1, 1])
         return X, y
 
     @pytest.fixture
     def multiclass_data(self):
-        """Provides multiclass classification data."""
-        X, y = make_classification(
+        """Provides a multiclass classification dataset.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: Feature matrix and target labels
+            generated with sklearn.make_classification.
+        """
+        x, y = make_classification(
             n_samples=100,
             n_features=10,
             n_informative=5,
@@ -31,7 +61,11 @@ class TestSklearnModels:
             n_clusters_per_class=1,
             random_state=42,
         )
-        return X, y
+        return x, y
+
+    def test_model_name(self, base_model: SklearnModels):
+        """Ensures the model_name property matches the underlying sklearn class."""
+        assert base_model.model_name == base_model.model_class.__class__.__name__
 
     def test_initialization_with_random_seed(self):
         """Tests that a model is correctly instantiated with a random_seed."""
@@ -52,6 +86,7 @@ class TestSklearnModels:
         assert isinstance(model.model_class, KNeighborsClassifier)
 
     def test_get_and_set_params(self):
+        """Ensures model parameters can be retrieved and updated correctly."""
         config = SklearnModelsConfig(
             model_type=ModelTypeEnum.DECISION_TREE,
             random_seed=42,
@@ -66,15 +101,19 @@ class TestSklearnModels:
         params2 = model.get_params()
         assert params2["max_depth"] == 10
 
-    def test_save_and_load(self, binary_data, tmp_path):
-        X, y = binary_data
+    def test_save_and_load(self, binary_data: tuple, tmp_path: Path):
+        """Ensures trained models can be saved and loaded correctly.
+
+        After loading, predictions should match the original model.
+        """
+        x, y = binary_data
         config = SklearnModelsConfig(
             model_type=ModelTypeEnum.RANDOM_FOREST,
             random_seed=42,
         )
 
         model = SklearnModels(config)
-        model.model_class.fit(X, y)
+        model.model_class.fit(x, y)
 
         path = tmp_path / "model.pkl"
         model.save(path)
@@ -83,19 +122,24 @@ class TestSklearnModels:
         new_model.load(path)
 
         np.testing.assert_array_equal(
-            model.model_class.predict(X),
-            new_model.model_class.predict(X),
+            model.model_class.predict(x),
+            new_model.model_class.predict(x),
         )
 
-    def test_save_invalid_extension_raises(self, binary_data, tmp_path):
-        X, y = binary_data
+    def test_save_invalid_extension_raises(self, binary_data: tuple, tmp_path: Path):
+        """Ensures saving with an invalid file extension raises an error."""
+        x, y = binary_data
         config = SklearnModelsConfig(
             model_type=ModelTypeEnum.RANDOM_FOREST,
             random_seed=42,
         )
         model = SklearnModels(config)
-        model.model_class.fit(X, y)
+        model.model_class.fit(x, y)
 
         bad_path = tmp_path / "model.txt"
         with pytest.raises(ValueError):
             model.save(bad_path)
+
+    def test_get_prediction_strategy(self, base_model: SklearnModels):
+        """Ensures the correct prediction strategy is returned."""
+        assert base_model.get_prediction_strategy() is SklearnPredictionStrategy

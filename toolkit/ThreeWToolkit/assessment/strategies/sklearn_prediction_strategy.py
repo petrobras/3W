@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from typing import Any
+from sklearn.base import BaseEstimator
 
 from ...core.base_prediction_strategies import PredictionStrategy
 from ...core.enums import TaskTypeEnum
@@ -15,7 +15,7 @@ class SklearnPredictionStrategy(PredictionStrategy):
     """
 
     def predict(
-        self, model: Any, task: TaskTypeEnum | None = None, **kwargs
+        self, model: BaseEstimator, task: TaskTypeEnum | None = None, **kwargs
     ) -> np.ndarray:
         """Generate predictions using a scikit-learn model.
 
@@ -24,7 +24,7 @@ class SklearnPredictionStrategy(PredictionStrategy):
             task (TaskTypeEnum | None): Task type indicating how predictions
                 should be interpreted. Defaults to TaskTypeEnum.CLASSIFICATION.
             **kwargs: Additional keyword arguments:
-                X (np.ndarray): Input feature matrix.
+                x (np.ndarray): Input feature matrix.
 
         Returns:
             np.ndarray: Array containing model predictions.
@@ -32,21 +32,21 @@ class SklearnPredictionStrategy(PredictionStrategy):
         Raises:
             ValueError: If input data is missing or the model is invalid.
         """
-        X = kwargs.get("X")
+        x = kwargs.get("x")
 
-        if X is None:
-            raise ValueError("Input data must be provided via 'X'.")
+        if x is None:
+            raise ValueError("Input data must be provided via 'x'.")
 
         if not hasattr(model.model_class, "predict"):
             raise ValueError("Model must implement a 'predict' method.")
 
-        X = self._ensure_dataframe(X, kwargs)
-        y_pred = model.model_class.predict(X)
+        x = self._ensure_dataframe(x, kwargs)
+        y_pred = model.model_class.predict(x)
 
         # Explicit casting to numpy array for consistency
         return np.asarray(y_pred)
 
-    def predict_proba(self, model: Any, **kwargs) -> np.ndarray:
+    def predict_proba(self, model: BaseEstimator, **kwargs) -> np.ndarray:
         """Generate class probability estimates using a scikit-learn model.
 
         This method is only applicable to classification models that implement
@@ -57,7 +57,7 @@ class SklearnPredictionStrategy(PredictionStrategy):
             model (Any): Trained scikit-learn classification model implementing
                 `predict_proba`.
             **kwargs: Additional keyword arguments:
-                X (np.ndarray): Input feature matrix of shape (N, D).
+                x (np.ndarray): Input feature matrix of shape (N, D).
 
         Returns:
             np.ndarray: Array of class probabilities with shape:
@@ -65,23 +65,25 @@ class SklearnPredictionStrategy(PredictionStrategy):
                 - (N, C) for multiclass classification
 
         Raises:
-            ValueError: If input data is not provided via `X`.
+            ValueError: If input data is not provided via `x`.
             NotImplementedError: If the model does not support `predict_proba`.
         """
-        X = kwargs.get("X")
+        x = kwargs.get("x")
 
-        if X is None:
-            raise ValueError("Input data must be provided via 'X'.")
+        if x is None:
+            raise ValueError("Input data must be provided via 'x'.")
 
         if not hasattr(model.model_class, "predict_proba"):
             raise NotImplementedError(
                 "This scikit-learn model does not support predict_proba."
             )
 
-        X = self._ensure_dataframe(X, kwargs)
-        return np.asarray(model.model_class.predict_proba(X))
+        x = self._ensure_dataframe(x, kwargs)
+        return np.asarray(model.model_class.predict_proba(x))
 
-    def _ensure_dataframe(self, x: Any, kwargs: dict) -> Any:
+    def _ensure_dataframe(
+        self, x: pd.DataFrame | pd.Series | np.ndarray, kwargs: dict
+    ) -> pd.DataFrame:
         """
         Ensures input is in the correct format (DataFrame if possible).
         Preserves DataFrame structure to avoid feature name warnings.
@@ -97,8 +99,10 @@ class SklearnPredictionStrategy(PredictionStrategy):
             return x
         elif isinstance(x, pd.Series):
             return x.to_frame() if x.ndim == 1 else x
-        elif isinstance(x, np.ndarray) and hasattr(self, "_feature_names"):
+        elif isinstance(x, np.ndarray):
             feature_names = kwargs.get("feature_names")
             # If we stored feature names during fit, recreate DataFrame
-            return pd.DataFrame(x, columns=feature_names)
+            if feature_names is not None:
+                return pd.DataFrame(x, columns=feature_names)
+            return x
         return x

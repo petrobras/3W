@@ -103,10 +103,8 @@ class ParquetDataset(nn.Module):
 
         # Check if dataset version is valid
         if self.config.version not in DATASET_VALIDATION_RULES:
-            raise ValueError(
-                f"Dataset version {self.config.version} is not valid. \
-                Supported versions are: {list(DATASET_VALIDATION_RULES.keys())}"
-            )
+            raise ValueError(f"Dataset version {self.config.version} is not valid. \
+                Supported versions are: {list(DATASET_VALIDATION_RULES.keys())}")
 
         # TODO: Implement dataset splitting for train, val, test
         if self.config.split not in [None, "list"]:

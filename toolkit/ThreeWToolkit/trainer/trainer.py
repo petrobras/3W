@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from typing import Callable, Mapping, TypeAlias
-from pydantic import Field, ValidationInfo, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from dataclasses import dataclass, field
 
 from tqdm.auto import tqdm
@@ -15,7 +15,6 @@ from sklearn.utils.class_weight import compute_class_weight
 
 from ..core.base_step import BaseStep
 from ..core.base_models import BaseModels
-from ..core.protocols import SupportsOptimizerParams
 from ..core.base_model_trainer import ModelTrainerConfig
 from ..core.enums import OptimizersEnum, CriterionEnum, TaskTypeEnum
 from ..models.mlp import MLPConfig
@@ -91,86 +90,6 @@ class TrainerConfig(ModelTrainerConfig):
 
     deterministic: bool = Field(default=False)
 
-    @field_validator("batch_size")
-    @classmethod
-    def check_batch_size(cls: type["TrainerConfig"], value: int) -> int:
-        """Validate that batch_size is positive.
-
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (int): The batch size value to validate.
-
-        Returns:
-            int: The validated batch size.
-
-        Raises:
-            ValueError: If batch_size is not greater than 0.
-        """
-        if value <= 0:
-            raise ValueError("batch_size must be > 0")
-        return value
-
-    @field_validator("epochs")
-    @classmethod
-    def check_epochs(cls: type["TrainerConfig"], value: int) -> int:
-        """Validate that epochs is positive.
-
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (int): The number of epochs to validate.
-
-        Returns:
-            int: The validated number of epochs.
-
-        Raises:
-            ValueError: If epochs is not greater than 0.
-        """
-        if value <= 0:
-            raise ValueError("epochs must be > 0")
-        return value
-
-    @field_validator("learning_rate")
-    @classmethod
-    def check_learning_rate(cls: type["TrainerConfig"], value: float) -> float:
-        """Validate that learning_rate is positive.
-
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (float): The learning rate value to validate.
-
-        Returns:
-            float: The validated learning rate.
-
-        Raises:
-            ValueError: If learning_rate is not greater than 0.
-        """
-        if value <= 0:
-            raise ValueError("learning_rate must be > 0")
-        return value
-
-    @field_validator("n_splits")
-    @classmethod
-    def check_n_splits(
-        cls: type["TrainerConfig"], value: int | None, info: ValidationInfo
-    ) -> int | None:
-        """Validate n_splits when cross-validation is enabled.
-
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (int | None): The number of splits to validate.
-            info (ValidationInfo): The validation context containing other field values.
-
-        Returns:
-            int | None: The validated number of splits.
-
-        Raises:
-            ValueError: If n_splits is not greater than 1 when cross_validation is True.
-        """
-        cross_val = info.data.get("cross_validation")
-        if cross_val and value is not None and value <= 1:
-            raise ValueError("n_splits must be > 1 for cross-validation")
-        return value
-
     @field_validator("optimizer")
     @classmethod
     def check_optimizer(cls: type["TrainerConfig"], value: str) -> str:
@@ -238,28 +157,6 @@ class TrainerConfig(ModelTrainerConfig):
 
         return value
 
-    @field_validator("task_type")
-    @classmethod
-    def validate_task_type(cls: type["TrainerConfig"], value: TaskTypeEnum):
-        """
-        Validate task type.
-
-        Ensures that the task type is compatible with the training pipeline.
-
-        Args:
-            v (TaskType): Task type value.
-
-        Returns:
-            TaskType: Validated task type.
-
-        Raises:
-            ValueError: If task_type is not supported.
-        """
-        valid_types = {TaskTypeEnum.CLASSIFICATION, TaskTypeEnum.REGRESSION}
-        if value not in valid_types:
-            raise ValueError(f"task_type must be one of {valid_types}")
-        return value
-
     @field_validator("class_weight_strategy")
     @classmethod
     def validate_class_weight_strategy(cls, value: str) -> str:
@@ -300,18 +197,14 @@ class TrainerConfig(ModelTrainerConfig):
         Raises:
             ValueError: If manual weights are missing or invalid.
         """
-        if self.use_class_weights:
-            if self.class_weight_strategy == "manual":
-                if not self.manual_class_weights:
-                    raise ValueError(
-                        "manual_class_weights must be provided when strategy='manual'"
-                    )
+        if self.use_class_weights and self.class_weight_strategy == "manual":
+            if not self.manual_class_weights:
+                raise ValueError(
+                    "manual_class_weights must be provided when strategy='manual'"
+                )
 
-                for k, v in self.manual_class_weights.items():
-                    if not isinstance(k, int):
-                        raise ValueError("manual_class_weights keys must be int")
-                    if v <= 0:
-                        raise ValueError("manual_class_weights values must be > 0")
+            if any(v <= 0 for v in self.manual_class_weights.values()):
+                raise ValueError("manual_class_weights values must be > 0")
 
         return self
 
@@ -639,12 +532,12 @@ class ModelTrainer(BaseStep):
         return strategy.train(model, x_train, y_train, x_val, y_val, **strategy_kwargs)
 
     def _holdout(
-        self, X: ArrayLike, y: ArrayLike, test_size=None
+        self, x: ArrayLike, y: ArrayLike, test_size=None
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Split dataset using holdout.
 
         Args:
-            X: Features.
+            x: Features.
             y: Targets.
             test_size: Fraction for validation split.
 
@@ -655,7 +548,7 @@ class ModelTrainer(BaseStep):
             test_size = self.val_size
 
         X_train, X_val, y_train, y_val = train_test_split(
-            X,
+            x,
             y,
             test_size=test_size,
             shuffle=self.shuffle_train,
@@ -680,12 +573,6 @@ class ModelTrainer(BaseStep):
         Raises:
             ValueError: If the optimizer name is not recognized.
         """
-        if not isinstance(model, SupportsOptimizerParams):
-            raise TypeError(
-                f"Optimizer can only be created for models exposing "
-                f"'get_params()'. Received: {type(model).__name__}"
-            )
-
         model_params = model.get_params()
 
         if optimizer == OptimizersEnum.ADAM.value:
@@ -771,7 +658,7 @@ class ModelTrainer(BaseStep):
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
-    def _select_rows(self, data: ArrayLike, idx: int):
+    def _select_rows(self, data: ArrayLike, idx: list[int]):
         """Select rows from data using provided indices.
 
         Handles both pandas DataFrames/Series and other indexable data structures.

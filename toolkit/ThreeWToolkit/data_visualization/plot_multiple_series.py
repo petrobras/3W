@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 from .base_visualizer import BaseVisualizer
 
@@ -41,10 +42,16 @@ class PlotMultipleSeries(BaseVisualizer):
             None.
 
         Raises:
+            TypeError: If series_list or labels are not valid lists.
             ValueError: If series_list is empty.
             ValueError: If series_list and labels have different lengths.
-            TypeError: If series_list or labels are not valid lists.
         """
+        # Explicit type checks, as requested in the review
+        if not isinstance(series_list, list):
+            raise TypeError("series_list must be a list")
+        if not isinstance(labels, list):
+            raise TypeError("labels must be a list")
+
         if not series_list:
             raise ValueError("series_list must not be empty")
         if len(series_list) != len(labels):
@@ -74,7 +81,9 @@ class PlotMultipleSeries(BaseVisualizer):
             None.
         """
         if ax is None:
-            fig, ax = plt.subplots(figsize=(12, 6))
+            fig = Figure(figsize=(12, 6))
+            FigureCanvas(fig)
+            ax = fig.add_subplot(1, 1, 1)
         else:
             fig = cast(Figure, ax.get_figure())
 
@@ -85,6 +94,8 @@ class PlotMultipleSeries(BaseVisualizer):
         for i, (series, label) in enumerate(
             zip(self.series_list, self.labels, strict=True)
         ):
+            # Use dropna() only to check if the series is completely empty;
+            # keep the original series for plotting so NaNs still create gaps.
             clean_series = series.dropna()
             if clean_series.empty:
                 continue

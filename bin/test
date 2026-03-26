@@ -1,9 +1,12 @@
 #!/bin/bash
 set -ex
 
-cd $(dirname $0)/..
+cd "$(dirname "$0")/.."
 
-: "${RUN_SLOW_TESTS:=0}"  # If not set, default to 0
+: "${RUN_SLOW_TESTS:=0}"
 echo "RUN_SLOW_TESTS is set to $RUN_SLOW_TESTS"
 
-pytest tests
+pytest tests \
+  --cov=ThreeWToolkit \
+  --cov-report=term \
+  --cov-report=xml:coverage.xml

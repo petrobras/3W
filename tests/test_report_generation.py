@@ -127,16 +127,14 @@ def test_generate_summary_report_html(
         }
 
         # The template text has been corrected here (no hyphen in the image tag)
-        template_file.write_text(
-            """
+        template_file.write_text("""
 # {{ title }}
 - Metric: {{ calculated_metrics.Accuracy }}
 - Model: {{ model_type }}
 {% for name, plot in plot_data.items() %}
 ![{{ plot.alt }}]({{ plot.img_path }})
 {% endfor %}
-        """
-        )
+        """)
 
         markdown_output = report_generator_instance._generate_summary_report_html(
             template_name="report_template.html"

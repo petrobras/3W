@@ -113,10 +113,11 @@ class TorchPredictionStrategy(PredictionStrategy):
 
         return outputs.squeeze()
 
+    @property
     def requires_dataloader(self) -> bool:
         """Check if the prediction strategy requires a DataLoader.
 
         Returns:
-            bool: True because this strategy requires a DataLoader.
+            bool: True if a DataLoader is required, False otherwise.
         """
         return True

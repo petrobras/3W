@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Type
+from typing import Type, TypeVar, Generic
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, field_validator
 
 from .enums import ModelTypeEnum
 from .base_training_strategies import TrainingStrategy
 from .base_prediction_strategies import PredictionStrategy
+
+T = TypeVar("T")
 
 
 class ModelsConfig(BaseModel):
@@ -18,7 +20,9 @@ class ModelsConfig(BaseModel):
     """
 
     model_type: ModelTypeEnum = Field(..., description="Type of model to use.")
-    random_seed: int | None = Field(42, description="Random seed for reproducibility.")
+    random_seed: int | None = Field(
+        default=42, description="Random seed for reproducibility."
+    )
     target_: type["BaseModels"]
 
     @field_validator("model_type")
@@ -77,7 +81,7 @@ class ModelsConfig(BaseModel):
             raise RuntimeError("Failed to instantiate model") from e
 
 
-class BaseModels(ABC):
+class BaseModels(ABC, Generic[T]):
     """
     Abstract base class for all models.
 
@@ -100,7 +104,7 @@ class BaseModels(ABC):
         self.config = config
 
     @abstractmethod
-    def forward(self, x):
+    def forward(self, x: T):
         """Forward pass through the model.
 
         Args:
@@ -130,6 +134,11 @@ class BaseModels(ABC):
         Returns:
             Loaded model instance.
         """
+        pass
+
+    @abstractmethod
+    def get_params(self):
+        """Return model parameters."""
         pass
 
     @abstractmethod

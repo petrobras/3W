@@ -80,7 +80,7 @@ class SklearnModels(BaseModels):
     def model_name(self) -> str:
         return self.model_class.__class__.__name__
 
-    def forward(self, x: ArrayLike) -> None:
+    def forward(self, x: ArrayLike):
         """
         Sklearn model not implements forward function.
         """

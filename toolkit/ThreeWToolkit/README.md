@@ -1,6 +1,7 @@
 [![Apache 2.0][apache-shield]][apache] 
 [![Code style][black-shield]][black]
 [![Versioning][semver-shield]][semver]
+[![Coverage Status][coveralls-shield]][coveralls]
 
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
@@ -8,6 +9,8 @@
 [black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.1-blue
+[coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev
+[coveralls-shield]: https://coveralls.io/repos/github/rafaelpadilla/3W/badge.svg?branch=dev
 
 <h1>
   <img src="https://raw.githubusercontent.com/petrobras/3W/main/images/3w_logo.png" width="45" style="vertical-align: middle; margin-right: 10px;" />
