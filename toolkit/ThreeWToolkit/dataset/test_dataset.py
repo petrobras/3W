@@ -1,32 +1,17 @@
 from ThreeWToolkit.dataset import (
-    ParquetDataset,
     ParquetDatasetConfig,
-    TransformDatasetConfig,
-    TransformDataset,
 )
-from ThreeWToolkit.preprocessing import (
-    NormalizeConfig,
-    RenameColumnsConfig,
-    ImputeMissingConfig,
-    RemapClassConfig,
-    FillLabelsConfig,
-    SequentialPreprocessingAdapterConfig,
-)
-from ThreeWToolkit.feature_extraction import (
-    WindowingConfig,
-    StatisticalConfig,
-    EWStatisticalConfig,
-    WaveletConfig,
-    ConcatFeatureAdapterConfig,
-    SequentialFeatureAdapterConfig,
-)
+from ..preprocessing import *
+from ..feature_extraction import *
+from ThreeWToolkit.dataset import TransformConfig, TransformDataset
+
 from ThreeWToolkit.core.enums import EventPrefixEnum
 from ThreeWToolkit.trainer.trainer import TrainerConfig, ModelTrainer
 from ThreeWToolkit.models.mlp import MLPConfig, MLP
 
 if __name__ == "__main__":
     config_train = ParquetDatasetConfig(
-        path="/home/eduardo/3W/dataset",
+        path="../../../dataset/",
         version="2.0.0",
         columns=["T-JUS-CKP", "T-MON-CKP"],  # ,
         target_column="class",
@@ -37,7 +22,7 @@ if __name__ == "__main__":
         # split="train", "test",
     )
     config_val = ParquetDatasetConfig(
-        path="/home/eduardo/3W/dataset",
+        path="../../../dataset/",
         version="2.0.0",
         columns=["T-JUS-CKP", "T-MON-CKP"],  # ,
         target_column="class",
@@ -47,40 +32,37 @@ if __name__ == "__main__":
         event_type=[EventPrefixEnum.DRAWN],
         # split="train", "test",
     )
-    ds_train = ParquetDataset(config_train)
-    # ds_val = ParquetDataset(config_val)
+    ds_train = config_train.build()
+    ds_val = config_val.build()
 
     # ((t1, v1), 2, 3, 4, 5) = Subset(ParquetDataset, n_folds=5)
 
-    process_cfg = TransformDatasetConfig(
-        pre_processing=SequentialPreprocessingAdapterConfig(
-            steps=[
-                # FillLabelsConfig(),
-                # ImputeMissingConfig(),
-                # NormalizeConfig(),
-                # RenameColumnsConfig(),
-                RemapClassConfig(),
-            ]
-        ),
-        feature_extraction=ConcatFeatureAdapterConfig(
-            transforms=[
-                # WindowingConfig(),
-                StatisticalConfig(),
-                # EWStatisticalConfig(),
-                # WaveletConfig(),
-            ]
-        ),
-    )
+    dataset_processor = TransformConfig(
+        pre_processing=SequentialPreprocessingAdapterConfig(steps=[ ImputeMissingConfig(), FillLabelsConfig(),]),
+        feature_extraction=ConcatFeatureAdapterConfig(steps=[ StatisticalConfig(),]),
+    ).build()
 
-    processed_ds = TransformDataset(process_cfg)
-    ds_train_transformed = processed_ds.fit_and_transform(ds_train)
+    dataset_processor.fit(ds_train)
 
-    print(f"Number of events after processing: {len(ds_train_transformed)}")
+    transformed_ds_train = dataset_processor.transform(ds_train)
+    print(f"Number of events after processing: {len(transformed_ds_train)}")
     print("--------------------")
 
-    ds_val_transformed = processed_ds.transform(ds_val)
-    print(f"Number of events after processing: {len(ds_val_transformed)}")
+    transformed_ds_valid = dataset_processor.transform(ds_val)
+
+
+    print(f"Number of events after processing: {len(transformed_ds_valid)}")
     print("--------------------")
+
+    print("Sample transformed event:")
+    sample_event = transformed_ds_train[0]
+    print(sample_event)
+
+    print("Sample validation event:")
+    sample_val_event = transformed_ds_valid[0]
+    print(sample_val_event)
+
+    exit(0)
 
     # get the x and y as dataframes
     y_train = ds_train_transformed["label"].astype(int)

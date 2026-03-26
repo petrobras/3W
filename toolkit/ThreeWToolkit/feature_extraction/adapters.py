@@ -10,12 +10,12 @@ from pydantic import Field
 
 
 class SequentialFeatureAdapterConfig(BaseFeatureExtractorConfig):
-    transforms: list[BaseFeatureExtractorConfig]
+    steps: list[BaseFeatureExtractorConfig]
     target_: type = Field(default_factory=lambda: SequentialFeatureAdapter)
 
 
 class ConcatFeatureAdapterConfig(BaseFeatureExtractorConfig):
-    transforms: list[BaseFeatureExtractorConfig]
+    steps: list[BaseFeatureExtractorConfig]
     target_: type = Field(default_factory=lambda: ConcatFeatureAdapter)
 
 
@@ -25,20 +25,17 @@ class SequentialFeatureAdapter(BaseFeatureExtractor):
     Each transformation should be a BaseFeatureExtractor instance.
     """
 
-    feature_extraction_steps: list = []
+    steps: list[BaseFeatureExtractor] = Field(default_factory=list)
 
     def __init__(
         self,
         config: SequentialFeatureAdapterConfig,
     ):
         self.config = config
-        self.feature_extraction_steps = []
-        for step_config in self.config.transforms:
-            step_instance = step_config.build()
-            self.feature_extraction_steps.append(step_instance)
+        self.steps = [step_config.build() for step_config in self.config.steps]
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
-        for transform in self.feature_extraction_steps:
+        for transform in self.steps:
             data = transform.transform(data)
         return data
 
@@ -49,33 +46,18 @@ class ConcatFeatureAdapter(BaseFeatureExtractor):
     Labels from the first non-None label are used.
     """
 
-    feature_extraction_steps: list = []
+    steps: list[BaseFeatureExtractor] = Field(default_factory=list)
 
     def __init__(self, config: ConcatFeatureAdapterConfig):
         self.config = config
-        self.feature_extraction_steps = []
-        for step_config in self.config.transforms:
-            step_instance = step_config.build()
-            self.feature_extraction_steps.append(step_instance)
+        self.steps = [step.build() for step in self.config.steps]
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
-        feature_dict = {}
-        final_label = None
 
-        for transform in self.feature_extraction_steps:
-            result = transform.transform(data)
-
-            # Collect unique signal columns
-            for col in result.signal.columns:
-                if col not in feature_dict:
-                    feature_dict[col] = result.signal[col].values
-
-            # Keep first non-None label
-            if final_label is None and result.label is not None:
-                final_label = result.label
-
-        features_df = pd.DataFrame(feature_dict)
+        outputs = [step.transform(data) for step in self.steps]
 
         return DatasetOutputs(
-            signal=features_df, label=final_label, metadata=data.metadata.copy()
+            signal=pd.concat([output.signal for output in outputs], axis=1),
+            label=outputs[0].label,
+            metadata=outputs[0].metadata.copy(),
         )

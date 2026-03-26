@@ -43,10 +43,8 @@ class TransformDataset(BaseTransform):
         so it will be slow if there are many steps that require statistics collection,
         but it will ensure that the statistics are collected in the correct order.
         """
-        for idx in range(len(dataset)):
-            data = dataset[idx]
-            self.pre_processing_step.fit(data)
-        self.pre_processing_step.compute()
+        if self.pre_processing_step is not None:
+            self.pre_processing_step.fit(dataset)
 
     def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
         """ Apply the fitted preprocessing and feature extraction steps to a single event. """

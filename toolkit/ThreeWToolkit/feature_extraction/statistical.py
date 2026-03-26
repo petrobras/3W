@@ -1,3 +1,4 @@
+from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 import numpy as np
 import pandas as pd
 
@@ -83,39 +84,29 @@ class StatisticalFeatures(BaseFeatureExtractor):
         self.offset = getattr(config, "offset", 0)
         self.eps = getattr(config, "eps", 1e-8)
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
-        Extract statistical features from windowed DataFrame.
-        Args:
-            data: DataFrame with windowed data (columns: varX_tY, label optional)
-        Returns:
-            DataFrame with extracted features (one row per window)
         """
-        if not isinstance(data, pd.DataFrame):
-            raise TypeError("Input data must be a pandas DataFrame")
-        if data.empty:
-            raise ValueError("Input data is empty")
 
         # Apply offset if needed
         if self.offset > 0:
-            if self.offset >= len(data):
+            if self.offset >= len(data.signal):
                 raise ValueError(
-                    f"Offset ({self.offset}) is larger than data length ({len(data)})"
+                    f"Offset ({self.offset}) is larger than data length ({len(data.signal)})."
                 )
-            data = data.iloc[self.offset :].copy()
+            data.signal = data.signal.iloc[self.offset :].copy()
 
         # Identify signal columns (exclude label)
-        columns = data.columns.tolist()
+        columns = data.signal.columns.tolist()
         label_col = self.label_column or (
             columns[-1] if columns[-1].lower() == "class" else None
         )
         signal_cols = [col for col in columns if col != label_col]
-        print(signal_cols)
 
         # Compute features for each signal column independently
         features = {}
         for col in signal_cols:
-            arr = data[[col]].to_numpy()
+            arr = data.signal[[col]].to_numpy()
             arr = arr.reshape(-1, 1) if arr.ndim == 1 else arr
             if "mean" in self.selected_features:
                 features[f"{col}_mean"] = np.mean(arr, axis=1)
@@ -157,9 +148,8 @@ class StatisticalFeatures(BaseFeatureExtractor):
         # Build output DataFrame
         out_df = pd.DataFrame(features)
         # Add label if present
-        if label_col and label_col in data.columns:
+        if label_col and label_col in data.signal.columns:
             out_df[label_col] = data[label_col].values
 
-        print(f"Extracted features: {out_df.columns.tolist()}")
-
-        return out_df
+        data.signal = out_df
+        return data

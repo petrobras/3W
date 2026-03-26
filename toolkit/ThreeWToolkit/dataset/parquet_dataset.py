@@ -12,12 +12,14 @@ from ..utils.downloader import get_figshare_data
 import torch.nn as nn
 from dataclasses import dataclass, field
 
+from ..core.base_dataset import BaseDataset, BaseDatasetConfig
+
 DATASET_VALIDATION_RULES = {
     "2.0.0": {"total_parquet_files": 2228},
 }
 
 
-class ParquetDatasetConfig(BaseModel):
+class ParquetDatasetConfig(BaseDatasetConfig):
     """
     Configuration schema for loading a Parquet dataset.
     Defines the dataset location, splits, filtering options, and preprocessing behavior.
@@ -91,7 +93,7 @@ class ParquetDatasetConfig(BaseModel):
         return v
 
 
-class ParquetDataset(nn.Module):
+class ParquetDataset(BaseDataset):
     """
     Dataset handler for Parquet files.
 
@@ -298,5 +300,5 @@ class ParquetDataset(nn.Module):
         )
 
         return DatasetOutputs(
-            signal=signal_df, label=label_series, metadata={"file_name": file_name}
+                signal=signal_df, label=label_series, metadata={"file_name": file_name} # type: ignore
         )

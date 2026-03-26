@@ -1,7 +1,15 @@
 """ Definition for the base dataset class. """
 
 from abc import ABC, abstractmethod
-from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
+from pydantic import BaseModel
+
+from .dataset_outputs import DatasetOutputs
+from .base_instantiable import Instantiable
+
+
+class BaseDatasetConfig(BaseModel, Instantiable):
+    """Base configuration for datasets."""
+    target_: type["BaseDataset"]
 
 
 

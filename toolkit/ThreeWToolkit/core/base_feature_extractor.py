@@ -21,16 +21,6 @@ class BaseFeatureExtractor(ABC):
         """Transform the data using the feature extractor."""
         raise NotImplementedError("Subclasses must implement the transform method.")
 
-    @abstractmethod
-    def fit(self, data: DatasetOutputs) -> None:
-        """If needed, fit the preprocessing step to the data."""
-        pass
-
-    @abstractmethod
-    def compute(self) -> None:
-        """Compute statistics after fitting. Override if needed."""
-        pass
-
 
 class OverlapOffsetMixin(BaseModel):
     """Mixin with common validations for overlap and offset."""
