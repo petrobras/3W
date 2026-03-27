@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import warnings
 
 from scipy import stats
 from ..core.base_feature_extractor import (
@@ -15,8 +16,8 @@ _STATISTICAL_FEATURES = {
     # moments
     "std": lambda x: np.std(x, axis=1, ddof=0),
     "var": lambda x: np.var(x, axis=1, ddof=0),
-    "skew": lambda x: stats.skew(x, axis=1),
-    "kurt": lambda x: stats.kurtosis(x, axis=1),
+    "skew": lambda x: stats.moment(x, axis=1, order=3), # dont use stats.skew to avoid NaNs.
+    "kurt": lambda x: stats.moment(x, axis=1, order=4), # use moment instead which returns 0 for constant values
     # quantiles
     "min": lambda x: np.min(x, axis=1),
     "q25": lambda x: np.percentile(x, 25, axis=1),
@@ -61,7 +62,9 @@ class StatisticalFeatures(BaseFeatureExtractor):
         values = data.signal.values
 
         # compute statistics over the rows (windows) for each column independently
-        features = {s: _STATISTICAL_FEATURES[s](values) for s in self.config.features}
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning) # ignore warnings from constant values
+            features = {s: _STATISTICAL_FEATURES[s](values) for s in self.config.features}
 
         signal = pd.DataFrame(features, index=data.signal.index) # assemble multiindex DataFrame with features as cols
         signal = signal.unstack("variable") # unstack variable to get per-variable features in columns
