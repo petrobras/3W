@@ -55,29 +55,29 @@ class Normalize(BasePreprocessing):
         self.global_moment  = None
 
     def _compute_global_average(self, data: BaseDataset) -> None:
-        averages = []
+        sums = []
         counts   = []
         for event in data:
-            averages.append(event.signal.mean())
+            sums.append(event.signal.sum())
             counts.append(event.signal.count())
-        # compute weighted average of the averages
-        averages = pd.concat(averages, axis=1).transpose()
+        # compute average across all events
+        sums = pd.concat(sums, axis=1).transpose()
         counts = pd.concat(counts, axis=1).transpose()
 
-        self.global_average = (averages * counts).sum() / counts.sum()
+        self.global_average = sums.sum() / counts.sum()
 
     def _compute_global_moments(self, data: BaseDataset) -> None:
         moments = []
         counts  = []
         for event in data:
-            moments.append((event.signal - self.global_average).abs().pow(self.norm).mean())
+            moments.append((event.signal - self.global_average).abs().pow(self.norm).sum())
             counts.append(event.signal.count())
-        # compute weighted average of the moments
+        # compute average of the central dispersion measure across all events
         moments = pd.concat(moments, axis=1).transpose()
         counts = pd.concat(counts, axis=1).transpose()
 
-        self.global_moment = (moments * counts).sum() / counts.sum()
-        self.global_moment = self.global_moment.pow(1 / self.norm)
+        self.global_moment = moments.sum() / counts.sum()
+        self.global_moment = self.global_moment.pow(1 / self.norm) # take the root to get back to the original scale
 
     def _compute_global_max(self, data: BaseDataset) -> None:
         maxes = []
