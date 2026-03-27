@@ -7,10 +7,11 @@ CI="${CI:-true}"
 cd "$(dirname "$0")"/..
 
 LINT="toolkit tests"
-EXCLUDE_IPYNB='\.ipynb$'
+EXCLUDE_IPYNB_REGEX='\.ipynb$'
+EXCLUDE_IPYNB_GLOB='*.ipynb'
 
 # Run mypy for type checking
-mypy --exclude "${EXCLUDE_IPYNB}" ${LINT}
+mypy --exclude "${EXCLUDE_IPYNB_REGEX}" ${LINT}
 
 if [ "${CI}" = true ]; then
     # In CI, only check code formatting and linting with Ruff

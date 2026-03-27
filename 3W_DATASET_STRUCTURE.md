@@ -1,5 +1,7 @@
 The 3W Dataset consists of multiple Parquet files saved in the [dataset](dataset) directory and structured as follows. 
 
+This repository also includes exploratory studies conducted by collaborators, available in the [demos](dataset/demos) directory.
+
 There are two types of subdirectory: 
 
 * The [folds](dataset/folds) subdirectory holds all 3W Dataset configuration files. For each specific project released in the 3W Project there will be a file that will specify how and which data must be loaded for training and testing in multiple folds of experimentation. This scheme allows implementation of cross validation and hyperparameter optimization by the 3W Toolkit users. In addition, this scheme allows the user to choose some specific characteristics to the desired experiment. For example: whether or not simulated and/or hand-drawn intances should be considered in the training set. It is important to clarify that specifying which instances make up which folds will always be random but fixed in each configuration file. This is considered necessary so that results obtained for the same problem with different approaches can be compared;

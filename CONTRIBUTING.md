@@ -28,6 +28,7 @@ In this guide we present how you can propose each type of contributions that we 
     * [Levels for contributions](#levels-for-contributions)
     * [3W Dataset's structure](#3w-datasets-structure)
     * [3W Toolkit's structure](#3w-toolkits-structure)
+    * [Jupyter Notebooks](#jupyter-notebooks)
     * [Executing examples](#executing-examples)
 * [Proposing contributions](#proposing-contributions)
     * [Citation](#citation)
@@ -88,6 +89,22 @@ At level 1, the 3W Dataset consists of multiple Parquet files saved in subdirect
 ## 3W Toolkit's structure
 
 At level 2, the 3W Toolkit is implemented in sub-modules as discribed [here](3W_TOOLKIT_STRUCTURE.md).
+
+## Jupyter Notebooks 
+
+Jupyter Notebooks play an important role in the 3W Project as a way to demonstrate usage, explore datasets, and present complete experimental pipelines. To keep the project organized, please follow this structure:
+
+- **Toolkit demos**  
+  Add notebooks demonstrating how to use the toolkit in: `3W/toolkit/demos/`
+
+- **Dataset exploration**  
+  Add notebooks for dataset usage and analysis in: `3W/dataset/demos/`
+
+- **Benchmarks**  
+  Add complete and independent benchmarking projects in: `3W/benchmarks/`
+
+- **Technical documents**  
+  The `3W/docs/` folder is reserved for academic materials such as papers, theses in `.pdf` format. Do not place notebooks here.
 
 ## Executing examples
 

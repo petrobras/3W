@@ -19,6 +19,8 @@
 
 All 3W Dataset data files (files in the subdirectories of the [dataset](dataset) directory) are licensed under the [Creative Commons Attribution 4.0 International License][cc-by].
 
+In addition to the dataset itself, this repository includes exploratory studies conducted by collaborators, which can be found in the [demos](./demos) directory.
+
 # Release Notes
 
 Each subsection below contains release notes for a specific 3W Dataset version. Differences from the immediately previous version are highlighted.
