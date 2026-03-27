@@ -1,16 +1,13 @@
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Any
 from pandas import read_parquet
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 from typing import Literal
 from ThreeWToolkit.core.enums import EventPrefixEnum
 from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 import pandas as pd
 from ..utils.downloader import get_figshare_data
-import torch.nn as nn
-from dataclasses import dataclass, field
 
 from ..core.base_dataset import BaseDataset, BaseDatasetConfig
 
@@ -25,44 +22,49 @@ class ParquetDatasetConfig(BaseDatasetConfig):
     Defines the dataset location, splits, filtering options, and preprocessing behavior.
     """
 
-    path: str | Path = Field(..., description="Path to the dataset directory or file.")
-    split: Literal[None, "train", "val", "test", "list"] = Field(
+    path: Path = Field(..., description="Path to the dataset directory or file.")
+
+    split: Literal["train", "val", "test", "list"] | None = Field(
         default=None,
         description="Dataset split to load. If None, load all available files.",
     )
-    file_list: (list[str] | list[Path]) | None = Field(
+
+    file_list: list[str] | list[Path] | None = Field(
         default=None,
-        description='List of files to load if split=="list". Must be explicitly provided.',
+        description='List of files to load if split=="list".',
     )
+
     event_type: list[EventPrefixEnum] | None = Field(
         default=None,
         description="Event types to include. (e.g., simulated, real, ...)",
     )
+
     target_class: list[int] | None = Field(
         default=None,
         description="Event classes to include. (e.g., 0, 1, 2, ...). Loads all classes if `None`.",
     )
+
     columns: list[str] | None = Field(
         default=None,
         description="Specific data columns to load. Loads all columns if `None`.",
     )
+
     target_column: str | None = Field(
         default="class",
         description="Target column used for supervised tasks.",
     )
+
     force_download: bool = Field(
         default=False,
         description="If True, dataset is downloaded even if it already exists. In this case, \
             existing files will be overwritten.",
     )
-    shuffle: bool = Field(
-        default=False,
-        description="If True, shuffle dataset files before loading.",
-    )
-    version: str = Field(
+
+    version: Literal["2.0.0"] = Field(
         default="2.0.0",
         description="Dataset version to load. (e.g., 2.0.0, 2.0.1, ...)",
     )
+
     target_: type = Field(default_factory=lambda: ParquetDataset)
 
     @field_validator("file_list")
@@ -77,19 +79,6 @@ class ParquetDatasetConfig(BaseDatasetConfig):
             raise ValueError('file_list must be provided if split is "list".')
         elif split != "list" and v is not None:
             raise ValueError(f'file_list must not be provided if split="{split}".')
-        return v
-
-    @field_validator("event_type")
-    @classmethod
-    def validate_event_type(cls, v):
-        """
-        Ensure that all event types are valid members of EventPrefixEnum.
-        Raise a ValueError if an unknown type is provided.
-        """
-        if v is not None:
-            for t in v:
-                if t not in list(EventPrefixEnum):
-                    raise ValueError(f"Unknown event_type: {t}")
         return v
 
 
@@ -277,28 +266,30 @@ class ParquetDataset(BaseDataset):
         file_name = self.files_events[idx]
         path = Path(self.config.path) / file_name
 
-        # Concatenate columns + labels to read
-        all_columns = (
-            self.config.columns + [self.config.target_column]
-            if self.config.target_column and self.config.columns
-            else (
-                self.config.columns or [self.config.target_column]
-                if self.config.target_column
-                else None
-            )
-        )
-
         # Read single parquet file
-        parquet_file = read_parquet(path, columns=all_columns, engine="pyarrow")
+        parquet_file = read_parquet(path, engine="pyarrow")
 
-        # Extract signal and label
-        signal_df = pd.DataFrame(parquet_file[self.config.columns])
-        label_series = (
-            parquet_file[self.config.target_column]
-            if self.config.target_column
-            else None
-        )
+        # extract label column if defined, otherwise set to None
+        if self.config.target_column is not None:
+            if self.config.target_column not in parquet_file.columns:
+                raise ValueError(
+                    f"Target column '{self.config.target_column}' not found in file {file_name}."
+                )
 
-        return DatasetOutputs(
-                signal=signal_df, label=label_series, metadata={"file_name": file_name} # type: ignore
-        )
+            label_series = parquet_file[self.config.target_column]
+            parquet_file = parquet_file.drop(columns=[self.config.target_column])
+        else:
+            label_series = None
+
+        if self.config.columns is not None:
+            if not set(self.config.columns).issubset(set(parquet_file.columns)):
+                missing_cols = set(self.config.columns) - set(parquet_file.columns)
+                raise ValueError(
+                    f"Some specified columns are not found in file {file_name}: {missing_cols}"
+                )
+
+            signal_df = parquet_file[self.config.columns]
+        else: # load the remaining columns as signal if no specific columns are defined
+            signal_df = parquet_file
+
+        return DatasetOutputs(signal=signal_df, label=label_series, metadata={"file_name": file_name})

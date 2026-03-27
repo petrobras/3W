@@ -1,57 +1,45 @@
-from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 import numpy as np
 import pandas as pd
 
 from scipy import stats
 from ..core.base_feature_extractor import (
-    OverlapOffsetMixin,
-    EpsMixin,
-    WindowSizeMixin,
-    FeatureSelectionMixin,
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
 )
 from pydantic import Field, field_validator
-from typing import ClassVar
 
+from ..core.dataset_outputs import DatasetOutputs
 
-class StatisticalConfig(
-    OverlapOffsetMixin,
-    EpsMixin,
-    WindowSizeMixin,
-    FeatureSelectionMixin,
-    BaseFeatureExtractorConfig,
-):
+_STATISTICAL_FEATURES = {
+    "mean": lambda x: np.mean(x, axis=1),
+    # moments
+    "std": lambda x: np.std(x, axis=1, ddof=0),
+    "var": lambda x: np.var(x, axis=1, ddof=0),
+    "skew": lambda x: stats.skew(x, axis=1),
+    "kurt": lambda x: stats.kurtosis(x, axis=1),
+    # quantiles
+    "min": lambda x: np.min(x, axis=1),
+    "q25": lambda x: np.percentile(x, 25, axis=1),
+    "median": lambda x: np.median(x, axis=1),
+    "q75": lambda x: np.percentile(x, 75, axis=1),
+    "max": lambda x: np.max(x, axis=1),
+}
+
+class StatisticalConfig(BaseFeatureExtractorConfig,):
     """Configuration for Statistical feature extractor."""
+
+    features: list[str] = Field(default_factory=lambda: list(_STATISTICAL_FEATURES.keys()), description="List of statistical\
+            features to compute. Available features: " + ", ".join(_STATISTICAL_FEATURES.keys()))
 
     target_: type = Field(default_factory=lambda: StatisticalFeatures)
 
-    AVAILABLE_FEATURES: ClassVar[list[str]] = [
-        "mean",
-        "std",
-        "var",
-        "min",
-        "max",
-        "median",
-        "skew",
-        "kurt",
-        "q25",
-        "q75",
-        "range",
-        "iqr",
-    ]
-
-    @field_validator("selected_features")
+    @field_validator("features")
     @classmethod
-    def validate_selected_features(cls, v):
+    def validate_features(cls, v):
         """Validates that selected features are available."""
-        if v is not None:
-            invalid_features = set(v) - set(cls.AVAILABLE_FEATURES)
-            if invalid_features:
-                raise ValueError(
-                    f"Invalid features: {invalid_features}. "
-                    f"Available features: {cls.AVAILABLE_FEATURES}"
-                )
+        invalid_features = set(v) - set(_STATISTICAL_FEATURES)
+        if invalid_features:
+            raise ValueError(f"Invalid features: {invalid_features}.")
         return v
 
 
@@ -62,94 +50,21 @@ class StatisticalFeatures(BaseFeatureExtractor):
     Output: DataFrame (features per window)
     """
 
-    FEATURES = [
-        "mean",
-        "std",
-        "var",
-        "min",
-        "max",
-        "median",
-        "skew",
-        "kurt",
-        "q25",
-        "q75",
-        "range",
-        "iqr",
-    ]
-
     def __init__(self, config: StatisticalConfig):
         self.config = config
-        self.selected_features = config.selected_features or self.FEATURES
-        self.label_column = getattr(config, "label_column", None)
-        self.offset = getattr(config, "offset", 0)
-        self.eps = getattr(config, "eps", 1e-8)
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
+        Computes selected statistical features for each window in the input data.
         """
 
-        # Apply offset if needed
-        if self.offset > 0:
-            if self.offset >= len(data.signal):
-                raise ValueError(
-                    f"Offset ({self.offset}) is larger than data length ({len(data.signal)})."
-                )
-            data.signal = data.signal.iloc[self.offset :].copy()
+        values = data.signal.values
 
-        # Identify signal columns (exclude label)
-        columns = data.signal.columns.tolist()
-        label_col = self.label_column or (
-            columns[-1] if columns[-1].lower() == "class" else None
-        )
-        signal_cols = [col for col in columns if col != label_col]
+        # compute statistics over the rows (windows) for each column independently
+        features = {s: _STATISTICAL_FEATURES[s](values) for s in self.config.features}
 
-        # Compute features for each signal column independently
-        features = {}
-        for col in signal_cols:
-            arr = data.signal[[col]].to_numpy()
-            arr = arr.reshape(-1, 1) if arr.ndim == 1 else arr
-            if "mean" in self.selected_features:
-                features[f"{col}_mean"] = np.mean(arr, axis=1)
-            if "std" in self.selected_features:
-                features[f"{col}_std"] = np.std(arr, axis=1, ddof=0)
-            if "var" in self.selected_features:
-                features[f"{col}_var"] = np.var(arr, axis=1, ddof=0)
-            if "min" in self.selected_features:
-                features[f"{col}_min"] = np.min(arr, axis=1)
-            if "max" in self.selected_features:
-                features[f"{col}_max"] = np.max(arr, axis=1)
-            if "median" in self.selected_features:
-                features[f"{col}_median"] = np.median(arr, axis=1)
-            if "skew" in self.selected_features:
-                stds = np.std(arr, axis=1, ddof=0)
-                mask = stds > self.eps
-                skew = np.zeros(arr.shape[0])
-                if np.any(mask):
-                    skew[mask] = stats.skew(arr[mask], axis=1)
-                features[f"{col}_skew"] = skew
-            if "kurt" in self.selected_features:
-                stds = np.std(arr, axis=1, ddof=0)
-                mask = stds > self.eps
-                kurt = np.zeros(arr.shape[0])
-                if np.any(mask):
-                    kurt[mask] = stats.kurtosis(arr[mask], axis=1)
-                features[f"{col}_kurt"] = kurt
-            if "q25" in self.selected_features:
-                features[f"{col}_q25"] = np.percentile(arr, 25, axis=1)
-            if "q75" in self.selected_features:
-                features[f"{col}_q75"] = np.percentile(arr, 75, axis=1)
-            if "range" in self.selected_features:
-                features[f"{col}_range"] = np.ptp(arr, axis=1)
-            if "iqr" in self.selected_features:
-                q75 = np.percentile(arr, 75, axis=1)
-                q25 = np.percentile(arr, 25, axis=1)
-                features[f"{col}_iqr"] = q75 - q25
+        signal = pd.DataFrame(features, index=data.signal.index) # assemble multiindex DataFrame with features as cols
+        signal = signal.unstack("variable") # unstack variable to get per-variable features in columns
+        signal.columns = ['_'.join(col).strip() for col in signal.columns] # flatten multiindex columns
 
-        # Build output DataFrame
-        out_df = pd.DataFrame(features)
-        # Add label if present
-        if label_col and label_col in data.signal.columns:
-            out_df[label_col] = data[label_col].values
-
-        data.signal = out_df
-        return data
+        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata.copy()) #type: ignore

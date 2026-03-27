@@ -1,6 +1,10 @@
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 import pandas as pd
 from scipy.signal import get_window
+from scipy.stats import mode
+
+from typing import Literal
 from pydantic import Field, field_validator
 from ..core.base_feature_extractor import (
     BaseFeatureExtractor,
@@ -10,79 +14,54 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class WindowingConfig(BaseFeatureExtractorConfig):
-    window: str | tuple = "hann"
-    window_size: int = Field(default=100, gt=1)
-    overlap: float = Field(default=0.0, ge=0.0, lt=1.0)
-    normalize: bool = False
-    fftbins: bool = True
-    pad_last_window: bool = True
-    pad_value: float = 0.0
+    window: str | tuple = Field(
+            default="boxcar",
+            description="Window type for signal data. str or tuple of (window_name, param1, param2, ...).")
+
+    label_strategy: Literal["last", "mode"] = Field(
+            default="last",
+            description="Strategy for assigning labels to windows: 'last' uses the last label in the window,\
+                    while 'mode' uses the most frequent label (mode) in the window.")
+
+    window_size: int = Field(
+            default=128,
+            gt=1,
+            description="Number of time steps in each window. Utilize power of 2 sizes for wavelet decomposition.")
+
+    overlap: float = Field(
+            default=0.0,
+            ge=0.0, lt=1.0,
+            description="Fraction of overlap between windows (0.0 to <1.0).")
+
+    normalize: bool = Field(
+            default=False,
+            description="Whether to windows to unit scale.")
+
+    symmetric: bool = Field(
+            default=True,
+            description="Whether to use symmetric windows (True) or periodic windows (False).")
+
+    pad_last_window: bool = Field(
+            default=False,
+            description="Whether to pad the last window if it is smaller than `window_size`. If False, the last window will be dropped.")
+
+    pad_value: float = Field(
+            default=0.0,
+            description="Value to use for padding the last window if `pad_last_window` is True.")
+
     target_: type = Field(default_factory=lambda: Windowing)
 
     @field_validator("window")
-    def validate_window(cls, v):
-        WINDOWS_WITH_REQUIRED_PARAMS = {
-            "kaiser": 1,
-            "kaiser_bessel_derived": 1,
-            "gaussian": 1,
-            "general_cosine": 1,
-            "general_gaussian": 2,
-            "general_hamming": 1,
-            "dpss": 1,
-            "chebwin": 1,
-        }
-
-        WINDOWS_WITH_OPTIONAL_OR_NO_PARAMS = {
-            "boxcar",
-            "triang",
-            "blackman",
-            "hamming",
-            "hann",
-            "bartlett",
-            "flattop",
-            "parzen",
-            "bohman",
-            "blackmanharris",
-            "nuttall",
-            "barthann",
-            "cosine",
-            "lanczos",
-            "exponential",
-            "tukey",
-            "taylor",
-        }
-
-        ALL_WINDOW_NAMES = (
-            set(WINDOWS_WITH_REQUIRED_PARAMS) | WINDOWS_WITH_OPTIONAL_OR_NO_PARAMS
-        )
-
-        if isinstance(v, str):
-            if v not in ALL_WINDOW_NAMES:
-                raise ValueError(f"Invalid window name '{v}'.")
-            if v in WINDOWS_WITH_REQUIRED_PARAMS:
-                raise ValueError(
-                    f"Window '{v}' requires parameter(s); use a tuple like ('{v}', param)."
-                )
-
-        else:
-            if len(v) == 0 or not isinstance(v[0], str):
-                raise ValueError("Tuple window must start with a string window name.")
-
-            name = v[0]
-            params = v[1:]
-
-            if name not in ALL_WINDOW_NAMES:
-                raise ValueError(f"Unknown window name '{name}'.")
-
-            if name in WINDOWS_WITH_REQUIRED_PARAMS:
-                expected = WINDOWS_WITH_REQUIRED_PARAMS[name]
-                if len(params) < expected:
-                    raise ValueError(
-                        f"Window '{name}' requires {expected} parameter(s), got {len(params)}."
-                    )
+    def validate_window(cls, v: str | tuple):
+        try:
+            if isinstance(v, str):
+                get_window(v, 128) # try to create a window with no additional parameters
+            else:
+                get_window(v[0], 128, *v[1:]) # try to create a window with provided parameters
+        except Exception as e:
+            raise ValueError(f"Invalid window parameters: {e}")
 
         return v
-
 
 class Windowing(BaseFeatureExtractor):
     """
@@ -92,26 +71,48 @@ class Windowing(BaseFeatureExtractor):
     applying window functions for signal processing. It supports multiple variables
     and various window types from scipy.signal.
 
+    The signal is always padded to the left (beginning of the time series) to ensure that the windows cover the start of
+    the data. The last window can be optionally padded to ensure the entirety of the data is covered, or dropped if it
+    is smaller than the specified window size.
+
+    The signals are padded propagating the edge values.
+
     Attributes:
         config (WindowingConfig): Configuration object containing windowing parameters
     """
 
-    def __init__(
-        self,
-        config: WindowingConfig,
-    ):
+    def __init__(self, config: WindowingConfig,):
         """
         Initialize the Windowing step with the provided configuration.
 
         Args:
-            config (WindowingConfig): Configuration containing window parameters like size,
-                                    overlap, type, and padding options
+            config (WindowingConfig): Configuration object containing windowing parameters.
         """
         self.config = config
+
+        # make tuple if window is a string for consistent processing
+        if isinstance(self.config.window, str):
+            window_name = (self.config.window,)
+        else:
+            window_name = self.config.window
+
+        # create window function based on configuration
+        self.window = get_window(
+                window_name[0],
+                self.config.window_size,
+                *window_name[1:],
+                fftbins=not self.config.symmetric)
+
+        if self.config.normalize: # normalize window to unit L1
+            self.window = self.window / np.sum(self.window)
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
         Apply windowing to the input time series data.
+
+        The output dataframe will have a multi-index with levels "window" and "variable", where "window" indicates the
+        window number and "variable" indicates the original variable name. The columns will be the time steps within
+        each window.
 
         Args:
             data: DatasetOutputs with signal and label data
@@ -119,96 +120,50 @@ class Windowing(BaseFeatureExtractor):
         Returns:
             DatasetOutputs: Windowed signals with corresponding labels
         """
-        self._check_window_size_vs_data(data.signal)
 
-        signal_cols = list(data.signal.columns)
-        n_samples = len(data.signal)
+        # compute step size based on overlap
         step = int(self.config.window_size * (1 - self.config.overlap))
-        if step < 1:
-            step = 1
+        step = max(step, 1)  # ensure step is at least 1 to avoid infinite loops
 
-        # Precompute window function for signals
-        win = get_window(
-            self.config.window, self.config.window_size, fftbins=self.config.fftbins
-        )
+        col_names = data.signal.columns
+        signal = data.signal.values
 
-        # Convert to numpy arrays
-        signal_data = data.signal.to_numpy()
-        label_data = data.label.to_numpy() if data.label is not None else None
+        n_samples, n_channels = signal.shape
 
-        windows = []
-        window_labels = []
+        # prepare padding for the start/end of the data, if needed
+        padding_start = self.config.window_size - 1
 
-        for start in range(0, n_samples, step):
-            end = start + self.config.window_size
-            if end > n_samples:
-                if not self.config.pad_last_window:
-                    break
-                pad_size = end - n_samples
-                window_signals = np.pad(
-                    signal_data[start:n_samples],
-                    pad_width=((0, pad_size), (0, 0)),
-                    mode="constant",
-                    constant_values=self.config.pad_value,
-                )
-                if label_data is not None:
-                    window_label_data = np.pad(
-                        label_data[start:n_samples],
-                        pad_width=(0, pad_size),
-                        mode="constant",
-                        constant_values=(
-                            label_data[n_samples - 1] if n_samples > 0 else 0
-                        ),
-                    )
-                else:
-                    window_label_data = None
-            else:
-                window_signals = signal_data[start:end]
-                window_label_data = (
-                    label_data[start:end] if label_data is not None else None
-                )
+        if self.config.pad_last_window:
+            # We pad to the right so that ((window_size - 1) + n_samples + padding_end - window_size) % step == 0
+            padding_end = (step - ((n_samples - 1) % step)) % step
+        else:
+            padding_end = 0
 
-            # Apply window function to signals
-            windowed = window_signals * win.reshape(-1, 1)
-            windowed_flat = windowed.T.flatten()
-            windows.append(windowed_flat)
+        signal = np.pad(signal, [(padding_start, padding_end), (0, 0)], mode="edge")
 
-            # Use mode of label in window (boxcar aggregation)
-            if window_label_data is not None:
-                mode_series = pd.Series(window_label_data).mode()
-                label = mode_series[0] if len(mode_series) > 0 else 0
-                window_labels.append(label)
+        # sliding window view of the signal and labels
+        signal = sliding_window_view(signal, (self.config.window_size, n_channels))[::step, 0] # (N_win, window_size,
+                                                                                               #  n_channels)
+        # multiply by window function and transpose window to last dimension
+        signal = np.einsum("ijk,j->ikj", signal, self.window) # (N_win, n_channels, window_size)
+        
+        # lets assign a multi-index to the columns of the windowed signal for better interpretability
+        index = pd.MultiIndex.from_product((range(signal.shape[0]), col_names), names=["window", "variable"])
+        signal = pd.DataFrame(signal.reshape(-1, self.config.window_size), index=index) # (N_win * n_channels * window_size)
 
-        # Generate column names
-        col_names = []
-        for col in signal_cols:
-            for t in range(self.config.window_size):
-                col_names.append(f"{col}_t{t}")
+        if data.label is not None: # repeat for label series, if needed
+            label = data.label.values
+            label = np.pad(label, (padding_start, padding_end), mode="edge") # type: ignore
+            label = sliding_window_view(label, self.config.window_size)[::step] # (N_win, window_size)
 
-        windows_array = np.array(windows)
+            # assign labels to windows based on strategy
+            if self.config.label_strategy == "last":
+                label = label[:, -1] # take the last label in each window
+            elif self.config.label_strategy == "mode":
+                # take the mode of the labels in each window
+                label = mode(label, axis=1, nan_policy="omit", keepdims=False).mode
+            label = pd.Series(label, name="label")
+        else:
+            label = None
 
-        if self.config.normalize:
-            mean = windows_array.mean(axis=0, keepdims=True)
-            std = windows_array.std(axis=0, keepdims=True)
-            std[std == 0] = 1
-            windows_array = (windows_array - mean) / std
-
-        signal_df = pd.DataFrame(windows_array, columns=col_names)
-        label_series = pd.Series(window_labels, name="label") if window_labels else None
-
-        return DatasetOutputs(
-            signal=signal_df, label=label_series, metadata=data.metadata.copy()
-        )
-
-    def _check_window_size_vs_data(self, signal_df: pd.DataFrame) -> None:
-        """
-        Ensure window size does not exceed data length.
-
-        Args:
-            signal_df: Signal DataFrame
-        """
-        n_samples = len(signal_df)
-        if self.config.window_size > n_samples:
-            raise ValueError(
-                "`window_size` must be smaller than or equal to the length of X."
-            )
+        return DatasetOutputs(signal=signal, label=label, metadata=data.metadata.copy())
