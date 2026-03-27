@@ -2,60 +2,28 @@ import numpy as np
 import pandas as pd
 from pydantic import Field, field_validator
 import pywt
-from typing import ClassVar
 
-from ..core.base_feature_extractor import (
-    OverlapOffsetMixin,
-    FeatureSelectionMixin,
-    BaseFeatureExtractor,
-    BaseFeatureExtractorConfig,
-)
+from ..core.base_feature_extractor import BaseFeatureExtractor, BaseFeatureExtractorConfig
+from ..core.dataset_outputs import DatasetOutputs
 
 
-class WaveletConfig(
-    OverlapOffsetMixin, FeatureSelectionMixin, BaseFeatureExtractorConfig
-):
+class WaveletConfig(BaseFeatureExtractorConfig):
     """Configuration for the Wavelet feature extractor."""
 
-    level: int = 1
-    wavelet: str = "haar"
-    target_: type = Field(default_factory=lambda: WaveletFeatures)
-    AVAILABLE_WAVELETS: ClassVar[list[str]] = [
-        "haar",
-        "db1",
-        "db2",
-        "db3",
-        "db4",
-        "db5",
-        "db6",
-        "db7",
-        "db8",
-        "db9",
-        "db10",
-        "bior2.2",
-        "bior4.4",
-        "coif2",
-        "coif4",
-        "dmey",
-    ]
+    wavelet: str = Field(default="haar", description="Name of the wavelet to use for decomposition. Must be a valid wavelet name supported by PyWavelets.")
 
-    @field_validator("level")
-    @classmethod
-    def check_level_is_positive(cls, v):
-        """Validates that the wavelet level is a positive integer."""
-        if v < 1:
-            raise ValueError("Wavelet level must be a positive integer (>= 1).")
-        return v
+    level: int = Field(default=7, gt=1, description="Number of decomposition levels for wavelet transform. Must be a positive integer (>= 1).")
+
+    full: bool = Field(default=False, description="Whether to return both approximation and detail coefficients or only detail coefficients (False).")
+
+    target_: type = Field(default_factory=lambda: WaveletFeatures)
 
     @field_validator("wavelet")
     @classmethod
     def check_wavelet_name(cls, v):
         """Validates that the wavelet name is supported."""
-        if v not in cls.AVAILABLE_WAVELETS:
-            raise ValueError(
-                f"Wavelet '{v}' is not supported. "
-                f"Available wavelets: {cls.AVAILABLE_WAVELETS}"
-            )
+        if v not in pywt.wavelist(): # type: ignore
+            raise ValueError(f"Unknown wavelet: '{v}'.")
         return v
 
 
@@ -65,8 +33,9 @@ class WaveletFeatures(BaseFeatureExtractor):
 
     Supports both univariate and multivariate analysis using PyWavelets library.
 
-    IMPORTANT: Data must be already windowed. Each row should represent a window.
-    If data is not windowed, use the Windowing class first.
+    IMPORTANT: Data must be already windowed. Input data should be a multi-index dataframe where each row corresponds to
+    a window of data for a specific variable. The window size should match 2**level for proper wavelet decomposition.
+
 
     Input format: DataFrame with windowed data where each row is a window
     Output format:
@@ -81,17 +50,7 @@ class WaveletFeatures(BaseFeatureExtractor):
         Args:
             config: Configuration object with wavelet parameters
         """
-        super().__init__()
-
-        self.level = config.level
-        # Calculate window_size based on level (power of 2)
-        self.window_size = 2**self.level
-        self.overlap = config.overlap
-        self.offset = config.offset
-        self.wavelet = config.wavelet
-
-        self.is_windowed = getattr(config, "is_windowed", False)
-        self.label_column = getattr(config, "label_column", None)
+        self.config = config
 
         # Initialize wavelet filter matrix
         self._initialize_wavelet_filters()
@@ -102,261 +61,50 @@ class WaveletFeatures(BaseFeatureExtractor):
         Creates filter matrix for efficient batch processing.
         """
         # Create impulse response for filter matrix generation
-        impulse = np.zeros(self.window_size)
+        filter_size = 2 ** self.config.level
+        impulse = np.zeros(filter_size)
         impulse[-1] = 1
 
-        # Perform SWT decomposition to get coefficients
-        swt_coefficients = pywt.swt(impulse, self.wavelet, level=self.level)
+        # Perform SWT decomposition on impulse to get coefficients
+        swt_coefficients = pywt.swt(
+                impulse,
+                self.config.wavelet,
+                level=self.config.level,
+                trim_approx=not self.config.full)
 
-        # Stack coefficients to create filter matrix
-        filter_components = []
-        for level_coeffs in swt_coefficients:
-            for coeff in level_coeffs:  # approximation and detail coefficients
-                filter_components.append(coeff)
+        if self.config.full:
+            # Each level has both approximation and detail coefficients
+            self.features = [f"{f}{level}" for level in range(self.config.level, 0, -1) for f in ["A", "D"]] + ["A0"]
+            responses = [wave for level in swt_coefficients for wave in level] + [impulse]
+        else: # Approximation just for the last level, details for all levels
+            self.features = [f"A{self.config.level}"] + [f"D{level}" for level in range(self.config.level, 0, -1)] + ["A0"]
+            responses = swt_coefficients + [impulse]
 
-        # Add original signal as the last component (A0 level)
-        filter_components.append(impulse)
+        self.waves = np.array(responses) # Shape: (num_features, filter_size)
 
-        # Create filter matrix for matrix multiplication
-        self.wt_filter_matrix = np.stack(filter_components, axis=-1)
 
-        # Generate feature names
-        self.feat_names = []
-        for level in range(self.level, 0, -1):
-            self.feat_names.extend(
-                [f"A{level}", f"D{level}"]
-            )  # Approximation and Detail
-        self.feat_names.append("A0")  # Original approximation level
-
-    def _identify_variables(self, data: pd.DataFrame) -> dict:
+    def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
-        Identifies variables in the data based on naming pattern.
+        Apply wavelet transform to the input data. Input data should be a multi-index dataframe where each row
+        corresponds to a window of data for a specific variable. The window size should match 2**level for proper
+        wavelet decomposition.
 
         Args:
-            data: Input DataFrame
+            data: DatasetOutputs with signal and label data
 
         Returns:
-            Dictionary mapping variable numbers to their column names
+            DatasetOutputs with wavelet features in the signal and original labels
         """
-        columns = data.columns.tolist()
-        has_label = self.label_column is not None and self.label_column in columns
+        signal = data.signal.values # Shape: ((num_windows * num_features), window_size)
 
-        # Remove label from columns if it exists
-        if has_label:
-            columns = [col for col in columns if col != self.label_column]
+        if signal.shape[1] != 2**self.config.level:
+            raise ValueError(f"Input window size must be 2**level ({2**self.config.level}), but got {signal.shape[1]}.")
 
-        if not columns:
-            raise ValueError("No variable columns found in the data")
+        # Multiply each window by each wavelet filter using matrix multiplication to get the coefficients.
+        feats = np.einsum("ik,lk->il", signal, self.waves) # (num_windows * num_features, num_wavelet_features)
 
-        # Extract variable numbers using string manipulation
-        var_numbers = set()
+        signal = pd.DataFrame(feats, index=data.signal.index, columns=self.features) # assemble multiindex DataFrame with features as cols
+        signal = signal.unstack("variable") # unstack variable to get per-variable features in columns
+        signal.columns = ['_'.join(col).strip() for col in signal.columns] # flatten multiindex columns
 
-        for col in columns:
-            if col.startswith("var") and "_" in col:
-                # Extract the part between "var" and "_"
-                try:
-                    var_part = col[3:]  # Remove "var"
-                    underscore_pos = var_part.find("_")
-                    if underscore_pos > 0:
-                        var_number_str = var_part[:underscore_pos]
-                        if var_number_str.isdigit():
-                            var_numbers.add(int(var_number_str))
-                except (ValueError, IndexError):
-                    continue  # Ignore columns with invalid format
-
-        if not var_numbers:
-            raise ValueError("No variables with pattern 'varX_' found in columns")
-
-        # Organize variables by number
-        variables = {}
-        for var_num in sorted(var_numbers):
-            var_cols = [col for col in columns if col.startswith(f"var{var_num}_")]
-            if var_cols:  # Only add if there are columns for this variable
-                variables[var_num] = var_cols
-
-        return variables
-
-    def _extract_wavelet_features(self, data_array: np.ndarray, var_idx: int) -> dict:
-        """
-        Extract wavelet features from windowed data array.
-
-        Args:
-            data_array: 2D array where each row is a window
-            var_idx: Variable index for naming
-
-        Returns:
-            Dictionary with extracted wavelet features
-        """
-        if data_array.size == 0:
-            return {}
-
-        # If 1D, convert to 2D (1 window)
-        if data_array.ndim == 1:
-            data_array = data_array.reshape(1, -1)
-
-        # Check if window size matches the expected size
-        if data_array.shape[1] != self.window_size:
-            # If window is larger, truncate to window_size
-            if data_array.shape[1] > self.window_size:
-                data_array = data_array[:, : self.window_size]
-            else:
-                # If window is smaller, pad with zeros
-                padding_size = self.window_size - data_array.shape[1]
-                data_array = np.pad(
-                    data_array, ((0, 0), (0, padding_size)), mode="constant"
-                )
-
-        # Apply wavelet transform using matrix multiplication
-        # Shape: (num_windows, window_size) @ (window_size, num_features) = (num_windows, num_features)
-        wavelet_coeffs = np.dot(data_array, self.wt_filter_matrix)
-
-        # Create feature dictionary
-        features_dict = {}
-        for j, feat_name in enumerate(self.feat_names):
-            col_name = f"var{var_idx}_{feat_name}"
-            features_dict[col_name] = wavelet_coeffs[:, j]
-
-        return features_dict
-
-    def _apply_swt_decomposition(self, signal: np.ndarray) -> np.ndarray:
-        """
-        Apply Stationary Wavelet Transform decomposition to a single signal.
-
-        Args:
-            signal: 1D array representing a single window
-
-        Returns:
-            1D array with wavelet coefficients
-        """
-        if len(signal) != self.window_size:
-            # Pad or truncate to match expected window size
-            if len(signal) > self.window_size:
-                signal = signal[: self.window_size]
-            else:
-                signal = np.pad(
-                    signal, (0, self.window_size - len(signal)), mode="constant"
-                )
-
-        # Perform SWT decomposition
-        swt_coeffs = pywt.swt(signal, self.wavelet, level=self.level)
-
-        # Flatten coefficients
-        coefficients = []
-        for level_coeffs in swt_coeffs:
-            for coeff in level_coeffs:  # approximation and detail
-                coefficients.append(np.mean(coeff))  # Use mean as representative value
-
-        # Add original signal mean as A0
-        coefficients.append(np.mean(signal))
-
-        return np.array(coefficients)
-
-    def pre_process(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply initial preprocessing.
-
-        Args:
-            data: Input DataFrame
-
-        Returns:
-            Processed DataFrame
-        """
-        if not isinstance(data, pd.DataFrame):
-            raise TypeError("Input data must be a pandas DataFrame")
-
-        if data.empty:
-            raise ValueError("Input data is empty")
-
-        # Apply offset if specified
-        data_size = len(data)
-        if self.offset > 0:
-            if self.offset >= data_size:
-                raise ValueError(
-                    f"Offset ({self.offset}) is larger than data length ({data_size})"
-                )
-            data = data.iloc[self.offset :].copy()
-
-        return data
-
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Main step logic - wavelet feature extraction.
-
-        Args:
-            data: DataFrame with windowed data
-
-        Returns:
-            DataFrame with extracted wavelet features
-        """
-        # Check if data is windowed
-        if not self.is_windowed:
-            raise ValueError(
-                "Data is not windowed. Please use the Windowing class to window your data first, "
-                "then set is_windowed=True in the config when initializing ExtractWaveletFeatures."
-            )
-
-        # Identify variables
-        variables = self._identify_variables(data)
-
-        if not variables:
-            raise ValueError("No variables found in the data")
-
-        # Extract labels if they exist
-        labels = None
-        if self.label_column and self.label_column in data.columns:
-            labels = data[self.label_column].values
-
-        # Extract features for each variable
-        all_features = {}
-
-        for var_idx, var_columns in variables.items():
-            if not var_columns:
-                continue
-
-            # Get variable data
-            var_data = data[var_columns].values
-
-            # Extract wavelet features
-            var_features = self._extract_wavelet_features(var_data, var_idx)
-
-            # Add to result
-            all_features.update(var_features)
-
-        if not all_features:
-            raise ValueError("No features were extracted")
-
-        # Create result DataFrame
-        result_df = pd.DataFrame(all_features)
-
-        # Add labels if they exist
-        if labels is not None:
-            result_df["label"] = labels
-
-        return result_df
-
-    def post_process(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Post-process the data.
-
-        Args:
-            data: DataFrame with extracted features
-
-        Returns:
-            Final DataFrame
-        """
-        if data.empty:
-            raise ValueError("No data to post-process")
-
-        # Check for NaN or infinite values
-        if data.select_dtypes(include=[np.number]).isnull().any().any():
-            print("Warning: NaN values detected in extracted wavelet features")
-
-        if np.isinf(data.select_dtypes(include=[np.number]).values).any():
-            print("Warning: Infinite values detected in extracted wavelet features")
-            # Replace infinities with finite extreme values
-            numeric_cols = data.select_dtypes(include=[np.number]).columns
-            data[numeric_cols] = data[numeric_cols].replace(
-                [np.inf, -np.inf], [np.finfo(np.float64).max, np.finfo(np.float64).min]
-            )
-
-        return data
+        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata.copy()) # type: ignore
