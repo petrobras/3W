@@ -90,7 +90,7 @@ class CleanSignals(BasePreprocessing):
     """
 
     def __init__(self, config: CleanSignalsConfig):
-        self.config = config
+        self.config: CleanSignalsConfig = config
 
         self.average_bounds = None
         self.std_bounds = None

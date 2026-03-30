@@ -95,7 +95,7 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
         Args:
             config: Configuration object with exponential weighting parameters
         """
-        self.config = config
+        self.config: EWStatisticalConfig = config
 
         # Create exponential decay weights (recent values have higher weights)
         h = self.config.decay ** np.arange(

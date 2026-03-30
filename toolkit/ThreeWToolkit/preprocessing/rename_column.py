@@ -26,7 +26,7 @@ class RenameColumns(BasePreprocessing):
         Args:
             config (RenameColumnsConfig): Configuration containing the columns_map dictionary
         """
-        self.config = config
+        self.config: RenameColumnsConfig = config
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """

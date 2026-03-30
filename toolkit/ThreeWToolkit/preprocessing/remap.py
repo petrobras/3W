@@ -20,7 +20,7 @@ class RemapClass(BasePreprocessing):
     """
 
     def __init__(self, config: RemapClassConfig):
-        self.config = config
+        self.config: RemapClassConfig = config
 
     def fit(self, data: BaseDataset) -> None:
         """

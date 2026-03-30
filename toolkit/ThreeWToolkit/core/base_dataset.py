@@ -1,6 +1,7 @@
 """ Definition for the base dataset class. """
 
 from abc import ABC, abstractmethod
+from typing import Iterator
 from pydantic import BaseModel
 
 from .dataset_outputs import DatasetOutputs
@@ -25,3 +26,7 @@ class BaseDataset(ABC):
     def __getitem__(self, idx: int) -> DatasetOutputs:
         """Return the sample at the given index."""
         raise NotImplementedError("Subclasses must implement the __getitem__ method.")
+
+    def __iter__(self) -> Iterator[DatasetOutputs]:
+        """Return an iterator over the dataset."""
+        yield from (self[i] for i in range(len(self)))

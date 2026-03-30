@@ -71,7 +71,7 @@ class ImputeMissing(BasePreprocessing):
         Args:
             config (ImputeMissingConfig): Configuration containing strategy, columns, and fill_value
         """
-        self.config = config
+        self.config: ImputeMissingConfig = config
         self.global_average = None
 
     def fit(self, data: BaseDataset) -> None:

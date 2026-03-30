@@ -20,14 +20,14 @@ class SequentialPreprocessingAdapter(BasePreprocessing):
     """
 
     def __init__(self, config: SequentialPreprocessingAdapterConfig):
-        self.config = config
-        self.steps = [step_config.build() for step_config in self.config.steps]
+        self.config: SequentialPreprocessingAdapterConfig = config
+        self.steps: list[BasePreprocessing] = [step_config.build() for step_config in self.config.steps]
 
     def fit(self, data: BaseDataset) -> None:
         """ Fit each preprocessing step sequentially on the dataset, feeding the transformed data from the previous step
         to the next. """
 
-        fitted_steps = []
+        fitted_steps: list[BasePreprocessing] = []
         for step in self.steps:
 
             def _intermediate_transform(data: DatasetOutputs) -> DatasetOutputs:

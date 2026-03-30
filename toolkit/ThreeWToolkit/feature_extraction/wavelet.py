@@ -50,7 +50,7 @@ class WaveletFeatures(BaseFeatureExtractor):
         Args:
             config: Configuration object with wavelet parameters
         """
-        self.config = config
+        self.config: WaveletConfig = config
 
         # Initialize wavelet filter matrix
         self._initialize_wavelet_filters()

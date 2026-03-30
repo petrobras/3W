@@ -25,7 +25,7 @@ class FillLabels(BasePreprocessing):
     """
 
     def __init__(self, config: FillLabelsConfig):
-        self.config = config
+        self.config: FillLabelsConfig = config
 
     def fit(self, data: BaseDataset) -> None:
         """ No need to fit anything for this preprocessing step. """

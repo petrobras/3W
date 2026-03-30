@@ -52,7 +52,7 @@ class StatisticalFeatures(BaseFeatureExtractor):
     """
 
     def __init__(self, config: StatisticalConfig):
-        self.config = config
+        self.config: StatisticalConfig = config
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """

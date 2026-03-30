@@ -40,12 +40,12 @@ class Normalize(BasePreprocessing):
         Args:
             config (NormalizeConfig): Configuration containing norm type, axis, and other parameters
         """
-        self.config = config
+        self.config: NormalizeConfig = config
 
         if self.config.norm == "l1":
-            self.norm = 1
+            self.norm = 1.0
         elif self.config.norm == "l2":
-            self.norm = 2
+            self.norm = 2.0
         elif self.config.norm == "max":
             self.norm = np.inf
         else:

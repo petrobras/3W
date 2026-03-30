@@ -111,7 +111,7 @@ class Windowing(BaseFeatureExtractor):
         Args:
             config (WindowingConfig): Configuration object containing windowing parameters.
         """
-        self.config = config
+        self.config: WindowingConfig = config
 
         # make tuple if window is a string for consistent processing
         if isinstance(self.config.window, str):
