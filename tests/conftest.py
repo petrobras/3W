@@ -141,6 +141,7 @@ def create_mock_dataset(
     global_mean: float = 50.0,
     global_std: float = 15.0,
     nan_column_rate: float = 0.0,  # Probability that an entire sensor column is NaN (0.0 to 1.0)
+    nan_row_rate: float = 0.0,     # Probability that an entire time step (row) is NaN (0.0 to 1.0)
     all_nan_columns: list[int] | None = None,
     seed: int | None = 42,
 ) -> MockDataset:
@@ -192,6 +193,9 @@ def create_mock_dataset(
         # set entire columns to NaN based on nan_column_rate or all_nan_column
         nan_col_idx = np.random.rand(num_sensors) < nan_column_rate
         signal_data[:, nan_col_idx] = np.nan
+
+        nan_row_idx = np.random.rand(timesteps) < nan_row_rate
+        signal_data[nan_row_idx, :] = np.nan
 
         if all_nan_columns is not None:
             signal_data[:, all_nan_columns] = np.nan

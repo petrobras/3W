@@ -6,8 +6,6 @@ from ThreeWToolkit.core.base_dataset import BaseDataset
 from ThreeWToolkit.preprocessing import RemapClassConfig
 
 
-# Module-level fixtures
-
 @pytest.fixture
 def simple_dataset(mock_dataset_factory) -> BaseDataset:
     """Simple label series for remapping."""

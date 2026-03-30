@@ -1,152 +1,135 @@
 """Tests for ImputeMissing preprocessing class."""
 
 import pytest
-import pandas as pd
 import numpy as np
-from pandas.testing import assert_series_equal, assert_frame_equal
 
-from ThreeWToolkit.preprocessing import ImputeMissing, ImputeMissingConfig
+from ThreeWToolkit.core.base_dataset import BaseDataset
 
-
-# Module-level fixtures
-
-@pytest.fixture
-def simple_df_with_nan():
-    """DataFrame with NaN values in one column."""
-    return pd.DataFrame({"a": [1.0, np.nan, 3.0], "b": [4.0, 5.0, 6.0]})
+from ThreeWToolkit.preprocessing import NormalizeConfig
+from ThreeWToolkit.preprocessing import ImputeMissingConfig
 
 
 @pytest.fixture
-def multi_col_df_with_nan():
-    """DataFrame with NaN values in multiple columns."""
-    return pd.DataFrame(
-        {
-            "a": [np.nan, 2.0, np.nan],
-            "b": [5.0, np.nan, 7.0],
-            "c": [9.0, 10.0, 11.0],
-        }
-    )
-
-
-@pytest.fixture
-def simple_series_with_nan():
-    """Series with NaN values."""
-    return pd.Series([1.0, np.nan, 3.0])
-
-
-@pytest.fixture
-def df_with_non_numeric():
-    """DataFrame with non-numeric column."""
-    return pd.DataFrame({"a": [1.0, np.nan], "b": ["x", "y"]})
-
-
-# Tests for different imputation strategies
+def simple_dataset(mock_dataset_factory) -> BaseDataset:
+    """Simple dataset for normalization tests."""
+    return mock_dataset_factory(num_sensors=10)
 
 
 class TestImputeMissingStrategies:
     """Test different imputation strategies."""
 
-    def test_impute_mean_dataframe(self, simple_df_with_nan):
-        """Test that imputing with strategy 'mean' replaces NaNs with column mean."""
-        imp_missing = ImputeMissingConfig(strategy="mean").build()
-        result = imp_missing(data=simple_df_with_nan)
-        expected_result = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
+    def test_impute_missing_dataset_mean(self, simple_dataset):
+        """Test imputation with different strategies."""
 
-        assert_frame_equal(result, expected_result)
+        imputer = ImputeMissingConfig(strategy="mean").build()
+        imputer.fit(simple_dataset)
 
-    def test_impute_median_dataframe_specific_column(self):
-        """Test imputing with strategy 'median' on specified columns only."""
-        df = pd.DataFrame({"a": [1.0, np.nan, 3.0], "b": [np.nan, 5.0, 6.0]})
-        imp_missing = ImputeMissing(
-            ImputeMissingConfig(strategy="median", columns=["a"])
-        )
-        result = imp_missing(data=df)
-        expected_result = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [np.nan, 5.0, 6.0]})
+        # use a normalizer to check that the imputed values are close to the mean of the non-missing values
+        normalizer = NormalizeConfig(norm="l2").build()
+        normalizer.fit(simple_dataset)
 
-        assert_frame_equal(result, expected_result)
-
-    def test_impute_constant_series(self, simple_series_with_nan):
-        """Test imputing a Series with strategy 'constant' and fill value."""
-        imp_missing = ImputeMissing(
-            ImputeMissingConfig(strategy="constant", fill_value=99.0)
-        )
-        result = imp_missing(data=simple_series_with_nan)
-        expected_result = pd.Series([1.0, 99.0, 3.0], name="__temp__")
-
-        assert_series_equal(result, expected_result)
-
-    @pytest.mark.parametrize(
-        "strategy,fill_value,expected_a,expected_b",
-        [
-            ("mean", None, [2.0, 2.0, 2.0], [5.0, 6.0, 7.0]),
-            ("constant", -1, [-1, 2.0, -1], [5.0, -1, 7.0]),
-            ("constant", 0, [0, 2.0, 0], [5.0, 0, 7.0]),
-        ],
-    )
-    def test_impute_multiple_columns_parametrized(
-        self, multi_col_df_with_nan, strategy, fill_value, expected_a, expected_b
-    ):
-        """Test imputing multiple columns with different strategies."""
-        config_kwargs = {"strategy": strategy}
-        if fill_value is not None:
-            config_kwargs["fill_value"] = fill_value
-
-        imp_missing = ImputeMissing(ImputeMissingConfig(**config_kwargs))
-        result = imp_missing(data=multi_col_df_with_nan)
-
-        expected_result = pd.DataFrame(
-            {"a": expected_a, "b": expected_b, "c": [9.0, 10.0, 11.0]}
-        )
-
-        assert_frame_equal(result, expected_result, check_dtype=False)
-
-
-class TestImputeMissingEdgeCases:
-    """Test edge cases and error handling."""
-
-    def test_returns_input_when_column_not_found(self):
-        """Test that DataFrame is unchanged when specified columns don't exist."""
-        df = pd.DataFrame({"a": [1.0, np.nan]})
-
-        imp_missing = ImputeMissing(
-            ImputeMissingConfig(strategy="mean", columns=["missing_column"])
-        )
-        result = imp_missing(data=df.copy())
-
-        pd.testing.assert_frame_equal(result, df)
-
-    def test_raises_error_on_non_numeric_column(self, df_with_non_numeric):
-        """Test that TypeError is raised when imputing non-numeric columns."""
-        with pytest.raises(TypeError, match="Only numeric columns can be imputed"):
-            imp_missing = ImputeMissing(
-                ImputeMissingConfig(strategy="mean", columns=["b"])
+        for event in simple_dataset:
+            imputed = imputer.transform(event).signal
+            assert not imputed.isna().any().any(), (
+                "Imputed dataset should not contain any NaN values."
             )
-            _ = imp_missing(data=df_with_non_numeric)
 
-    def test_raises_error_if_fill_value_not_provided(self):
-        """Test that ValueError is raised if strategy='constant' without fill_value."""
-        df = pd.DataFrame({"a": [1.0, np.nan]})
+            original_na = event.signal.isna()
 
-        with pytest.raises(
-            ValueError, match="You must provide `fill_value` when strategy='constant'"
-        ):
-            imp_missing = ImputeMissing(ImputeMissingConfig(strategy="constant"))
-            _ = imp_missing(data=df)
+            # Check that imputed values are close to the mean of the non-missing values
+            for col in event.signal.columns:
+                assert np.isclose(
+                    imputed.loc[original_na[col], col], normalizer.global_average[col]
+                ).all()
 
-    @pytest.mark.parametrize(
-        "data",
-        [
-            pd.DataFrame({"a": [1.0, 2.0, 3.0]}),  # No NaN
-            pd.Series([1.0, 2.0, 3.0]),  # Series without NaN
-            pd.DataFrame({"a": [], "b": []}),  # Empty DataFrame
-        ],
-    )
-    def test_impute_on_data_without_nan(self, data):
-        """Test imputation on data without NaN values returns unchanged data."""
-        imp_missing = ImputeMissingConfig(strategy="mean").build()
-        result = imp_missing(data=data.copy())
+    def test_impute_missing_dataset_constant(self, simple_dataset):
+        """Test imputation with constant strategy."""
 
-        if isinstance(data, pd.DataFrame):
-            assert_frame_equal(result, data)
-        else:
-            assert_series_equal(result, data)
+        imputer = ImputeMissingConfig(strategy="constant", fill_value=42).build()
+        imputer.fit(simple_dataset)
+
+        for event in simple_dataset:
+            imputed = imputer.transform(event).signal
+            assert not imputed.isna().any().any(), (
+                "Imputed dataset should not contain any NaN values."
+            )
+
+            original_na = event.signal.isna()
+
+            # Check that imputed values are equal to the fill value
+            for col in event.signal.columns:
+                assert np.isclose(imputed.loc[original_na[col], col], 42).all()
+
+    def test_impute_missing_dataset_forward_fill(self, simple_dataset):
+        """Test imputation with forward fill strategy."""
+
+        imputer = ImputeMissingConfig(strategy="ffill").build()
+        imputer.fit(simple_dataset)
+
+        for event in simple_dataset:
+            imputed = imputer.transform(event).signal
+            assert not imputed.isna().any().any(), (
+                "Imputed dataset should not contain any NaN values."
+            )
+
+            original_na = event.signal.isna()
+
+            # Check that imputed values are equal to the previous non-missing value
+            for col in event.signal.columns:
+                for idx in np.where(original_na[col])[0]:
+                    if idx > 0:
+                        assert np.isclose(
+                            imputed.loc[idx, col], imputed.loc[idx - 1, col]
+                        ), (
+                            f"Imputed value at index {idx} should be equal to the previous non-missing value."
+                        )
+
+    def test_impute_missing_dataset_backward_fill(self, simple_dataset):
+        """Test imputation with backward fill strategy."""
+
+        imputer = ImputeMissingConfig(strategy="bfill").build()
+        imputer.fit(simple_dataset)
+
+        for event in simple_dataset:
+            imputed = imputer.transform(event).signal
+            assert not imputed.isna().any().any(), (
+                "Imputed dataset should not contain any NaN values."
+            )
+
+            original_na = event.signal.isna()
+
+            # Check that imputed values are equal to the next non-missing value
+            for col in event.signal.columns:
+                for idx in np.where(original_na[col])[0]:
+                    if idx < len(imputed) - 1:
+                        assert np.isclose(
+                            imputed.loc[idx, col], imputed.loc[idx + 1, col]
+                        ), (
+                            f"Imputed value at index {idx} should be equal to the next non-missing value."
+                        )
+
+    def test_impute_missing_dataset_interpolate(self, simple_dataset):
+        """Test imputation with interpolation strategy."""
+
+        imputer = ImputeMissingConfig(
+            strategy="interpolate", interpolate_method="linear"
+        ).build()
+        imputer.fit(simple_dataset)
+
+        for event in simple_dataset:
+            imputed = imputer.transform(event).signal
+            assert not imputed.isna().any().any(), (
+                "Imputed dataset should not contain any NaN values."
+            )
+
+            original_na = event.signal.isna()
+
+            # Check that imputed values are between the previous and next non-missing values
+            for col in event.signal.columns:
+                for idx in np.where(original_na[col])[0]:
+                    if idx > 0 and idx < len(imputed) - 1:
+                        prev_value = imputed.loc[idx - 1, col]
+                        next_value = imputed.loc[idx + 1, col]
+                        assert prev_value <= imputed.loc[idx, col] <= next_value, (
+                            f"Imputed value at index {idx} should be between the previous and next non-missing values."
+                        )

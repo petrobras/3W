@@ -3,7 +3,6 @@
 import pytest
 import pandas as pd
 import numpy as np
-from pandas.testing import assert_series_equal
 
 from ThreeWToolkit.preprocessing import FillLabels, FillLabelsConfig
 

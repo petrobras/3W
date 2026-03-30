@@ -8,7 +8,10 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class NormalizeConfig(BasePreprocessingConfig):
-    norm: Literal["l1", "l2", "max"] | float = Field(default="l2", description="Normalization method to apply. Can be 'l1', 'l2', 'max' for standard normalization, or a generic norm")
+    norm: Literal["l1", "l2", "max"] | float = Field(
+        default="l2",
+        description="Normalization method to apply. Can be 'l1', 'l2', 'max' for standard normalization, or a generic norm",
+    )
     target_: type = Field(default_factory=lambda: Normalize)
 
     @field_validator("norm")
@@ -33,7 +36,10 @@ class Normalize(BasePreprocessing):
         statistics (dict): Computed mean and std for each signal column
     """
 
-    def __init__(self, config: NormalizeConfig,):
+    def __init__(
+        self,
+        config: NormalizeConfig,
+    ):
         """
         Initialize the Normalize step with the provided configuration.
 
@@ -52,11 +58,11 @@ class Normalize(BasePreprocessing):
             self.norm = self.config.norm
 
         self.global_average = None
-        self.global_moment  = None
+        self.global_moment = None
 
     def _compute_global_average(self, data: BaseDataset) -> None:
         sums = []
-        counts   = []
+        counts = []
         for event in data:
             sums.append(event.signal.sum())
             counts.append(event.signal.count())
@@ -64,20 +70,24 @@ class Normalize(BasePreprocessing):
         sums = pd.concat(sums, axis=1).transpose()
         counts = pd.concat(counts, axis=1).transpose()
 
-        self.global_average = sums.sum() / counts.sum()
+        self.global_average = sums.mean() / counts.mean()
 
     def _compute_global_moments(self, data: BaseDataset) -> None:
         moments = []
-        counts  = []
+        counts = []
         for event in data:
-            moments.append((event.signal - self.global_average).abs().pow(self.norm).sum())
+            moments.append(
+                (event.signal - self.global_average).abs().pow(self.norm).sum()
+            )
             counts.append(event.signal.count())
         # compute average of the central dispersion measure across all events
         moments = pd.concat(moments, axis=1).transpose()
         counts = pd.concat(counts, axis=1).transpose()
 
-        self.global_moment = moments.sum() / counts.sum()
-        self.global_moment = self.global_moment.pow(1 / self.norm) # take the root to get back to the original scale
+        self.global_moment = moments.mean() / counts.mean()
+        self.global_moment = self.global_moment.pow(
+            1 / self.norm
+        )  # take the root to get back to the original scale
 
     def _compute_global_max(self, data: BaseDataset) -> None:
         maxes = []
@@ -114,8 +124,10 @@ class Normalize(BasePreprocessing):
             DatasetOutputs: Transformed data with normalized signal DataFrame
         """
         if self.global_average is None or self.global_moment is None:
-            raise ValueError("Normalize: fit must be called before transform to compute statistics.")
+            raise ValueError(
+                "Normalize: fit must be called before transform to compute statistics."
+            )
 
-        data.signal = (data.signal - self.global_average) / self.global_moment
+        signal = (data.signal - self.global_average) / self.global_moment
 
-        return data
+        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
