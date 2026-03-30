@@ -1,103 +1,82 @@
-from __future__ import annotations
-
 import logging
-
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from ..models.mlp import MLP
-    from ..models.sklearn_models import SklearnModels
+from ..core.base_models import BaseModels, BaseTorchModels, BaseSkLearnModels
+from ..constants import CHECKPOINT_DIR
+import torch
+import pickle
 
 logger = logging.getLogger(__name__)
 
 
 class ModelRecorder:
+    """Utility for saving and loading models to/from CHECKPOINT_DIR."""
+
     @staticmethod
-    def save_best_model(model: MLP | SklearnModels, filename: str | Path) -> None:
+    def save_model(model: BaseModels, filename: str | Path) -> Path:
         """
-        Save a model to disk depending on its type and file extension.
-        Supports PyTorch and scikit-learn (Pickle).
+        Save a model to CHECKPOINT_DIR. Supports PyTorch and scikit-learn.
 
         Parameters:
             model: Trained model object.
-            filename: File name where the model will be saved.
+            filename: File name (saved inside CHECKPOINT_DIR).
+
+        Returns:
+            Full path where model was saved.
         """
-        if isinstance(filename, (str, Path)):
-            path = Path(filename)
-            ext = path.suffix.lower()
-        else:
-            raise TypeError(
-                f"Invalid filename: `{filename}`. Expected a string or path-like object."
-            )
+        CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+        path = CHECKPOINT_DIR / Path(filename).name
 
-        # PyTorch
-        if ext in [".pt", ".pth"]:
+        if isinstance(model, BaseTorchModels):
             try:
-                import torch
-                from ..models.mlp import MLP
-
-                if isinstance(model, MLP):
-                    torch.save(model.state_dict(), filename)
+                torch.save(model.state_dict(), path)
             except Exception as e:
                 raise RuntimeError(f"Error saving PyTorch model: {e}")
 
-        # scikit-learn or generic Python object
-        elif ext in [".pkl", ".pickle"]:
+        elif isinstance(model, BaseSkLearnModels):
             try:
-                import pickle
-
-                with open(filename, "wb") as f:
+                with open(path, "wb") as f:
                     pickle.dump(model, f)
             except Exception as e:
                 raise RuntimeError(f"Error saving Pickle model: {e}")
 
         else:
-            raise ValueError(f"Unsupported file extension: {ext}")
+            raise ValueError(f"Unsupported model type: {type(model)}")
 
-        logger.info("Saving model to %s", path)
+        logger.info("Model saved to %s", path)
+        return path
 
     @staticmethod
-    def load_model(
-        filename: str | Path, model: MLP | SklearnModels | None = None
-    ) -> MLP | SklearnModels:
+    def load_model(filename: str | Path, model: BaseModels | None = None) -> BaseModels:
         """
-        Load a model from disk depending on its type and file extension.
-        Supports PyTorch (.pt, .pth) and scikit-learn/Pickle (.pkl, .pickle).
+        Load a model from CHECKPOINT_DIR. Supports PyTorch (.pt, .pth) and Pickle (.pkl).
 
         Parameters:
-            filename (str | Path):  Path pointing to the saved model file.
-            model (MLP | SklearnModels, optional):  An uninitialized model instance to load weights into. Required for PyTorch models.
-        """
-        if isinstance(filename, (str, Path)):
-            path = Path(filename)
-            ext = path.suffix.lower()
-        else:
-            raise TypeError(
-                f"Invalid filename: `{filename}`. Expected a string or path-like object."
-            )
+            filename: File name (looked up in CHECKPOINT_DIR if not absolute).
+            model: Model instance for loading PyTorch weights (optional).
 
-        # PyTorch
+        Returns:
+            Loaded model.
+        """
+        path = Path(filename)
+        if not path.is_absolute():
+            path = CHECKPOINT_DIR / path.name
+
+        ext = path.suffix.lower()
+
         if ext in [".pt", ".pth"]:
             try:
-                import torch
-                from ..models.mlp import MLP
-
                 if model is None:
-                    return torch.load(filename)
-                state_dict = torch.load(filename)
-                if isinstance(model, MLP):
+                    return torch.load(path)
+                state_dict = torch.load(path)
+                if isinstance(model, BaseTorchModels):
                     model.load_state_dict(state_dict)
                 return model
             except Exception as e:
                 raise RuntimeError(f"Error loading PyTorch model: {e}")
 
-        # scikit-learn or generic using Pickle
         elif ext in [".pkl", ".pickle"]:
             try:
-                import pickle
-
-                with open(filename, "rb") as f:
+                with open(path, "rb") as f:
                     return pickle.load(f)
             except Exception as e:
                 raise RuntimeError(f"Error loading Pickle model: {e}")
@@ -105,4 +84,4 @@ class ModelRecorder:
         else:
             raise ValueError(f"Unsupported file extension: {ext}")
 
-        logger.info("Loading model from %s", path)
+        logger.info("Model loaded from %s", path)
