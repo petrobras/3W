@@ -9,6 +9,8 @@ from ..core.base_dataset import BaseDataset
 from ..core.dataset_outputs import DatasetOutputs
 from ..core.base_feature_extractor import  BaseFeatureExtractor, BaseFeatureExtractorConfig
 
+from ..dataset.transformed_dataset import TransformedDataset
+
 _3W_CATEGORICAL_FEATURES = [ # List of categorical features to exclude from cleaning by default
     "ESTADO-DHSV",
     "ESTADO-M1",
@@ -40,7 +42,6 @@ class CleanSignalsConfig(BaseFeatureExtractorConfig):
     continuous signals.
 
     """
-
     average_iqr_threshold: float = Field(
         default=1.5,
         gt=0.0,
@@ -60,6 +61,12 @@ class CleanSignalsConfig(BaseFeatureExtractorConfig):
                      this threshold may be considered frozen, regardless of the IQR-based thresholds. Setting this to\
                      None will disable the absolute std threshold.")
 
+    missing_column_threshold: float = Field(
+        default=0.6,
+        description="Drop columns that are all-NaN in more than this fraction of events.\
+                     This filtering occurs after the IQR-based thresholding.")
+
+
     exclude_features: list[str] = Field(
         default = _3W_CATEGORICAL_FEATURES,
         description="List of feature names to exclude from cleaning. These features will not be processed by the\
@@ -78,6 +85,8 @@ class CleanSignals(BaseFeatureExtractor):
         self.average_bounds = None
         self.std_bounds = None
 
+        self.drop_list = None
+
     def fit(self, data: BaseDataset) -> None:
         """
         Fit the feature extractor to the data.
@@ -87,6 +96,15 @@ class CleanSignals(BaseFeatureExtractor):
         Args:
             data (DatasetOutputs): The input dataset outputs to fit on.
         """
+        # Compute distribution of means and std along the dataset
+        self._fit_iqr_thresholds(data)
+
+        # apply cleaning and fit columns thresholding
+        cleaned_data = TransformedDataset(data, self._filter_iqr_bounds)
+        self._fit_missing_thresholds(cleaned_data)
+
+    
+    def _fit_iqr_thresholds(self, data: BaseDataset) -> None:
         averages  = []
         stds = []
         for event in data:
@@ -110,9 +128,18 @@ class CleanSignals(BaseFeatureExtractor):
              lower_std_bound = lower_std_bound.clip(lower=self.config.absolute_std_threshold)
         self.std_bounds = (lower_std_bound, std_quantiles[1] + self.config.std_iqr_threshold * std_iqr)
 
+    def _fit_missing_thresholds(self, data: BaseDataset) -> None:
+        all_nans = []
+        for event in data:
+            all_nans.append(event.signal.isna().all())
+        all_nans = pd.concat(all_nans, axis=1).transpose()
+        
+        all_nan_percentage = all_nans.mean()
+        drop_cols = all_nan_percentage < self.config.missing_column_threshold
+        self.drop_list = drop_cols[drop_cols].index.tolist()
 
-    def transform(self, data: DatasetOutputs) -> DatasetOutputs:
-
+    
+    def _filter_iqr_bounds(self, data: DatasetOutputs) -> DatasetOutputs:
         if self.average_bounds is None or self.std_bounds is None:
             raise ValueError("The CleanSignals feature extractor must be fitted before calling transform.")
 
@@ -135,3 +162,17 @@ class CleanSignals(BaseFeatureExtractor):
         signal = signal.assign(**{col: np.nan for col in removed_columns})
 
         return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
+
+    def _filter_missing_cols(self, data: DatasetOutputs) -> DatasetOutputs:
+        if self.drop_list is None:
+            raise ValueError("The CleanSignals feature extractor must be fitted before calling transform.")
+
+        removed_columns = [col for col in self.drop_list if col not in self.config.exclude_features]
+        signal = data.signal.drop(columns=removed_columns)
+
+        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
+
+    def transform(self, data: DatasetOutputs) -> DatasetOutputs:
+        data = self._filter_iqr_bounds(data)
+        data = self._filter_missing_cols(data)
+        return data
