@@ -1,19 +1,36 @@
-from ThreeWToolkit.core.base_dataset import BaseDataset
 import pandas as pd
 from typing import Literal
 from pydantic import Field, ValidationInfo, field_validator
 
+from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
 
 
 class ImputeMissingConfig(BasePreprocessingConfig):
-    strategy: Literal["constant", "mean", "ffill", "bfill", "interpolate"] = (
-        "constant"
+    strategy: Literal["constant", "mean", "ffill", "bfill", "interpolate"] = Field(
+        default="constant",
+        description="Imputation strategy to use for filling missing values. Options include:\n"
+        "- 'constant': Fill missing values with a specified constant value (requires `fill_value`).\n"
+        "- 'mean': Fill missing values with the mean of the column (computed across all events during fit).\n"
+        "- 'ffill': Forward-fill missing values using the last valid observation (applied per-event).\n"
+        "- 'bfill': Backward-fill missing values using the next valid observation (applied per-event).\n"
+        "- 'interpolate': Fill missing values using interpolation (requires `interpolate_method`, applied per-event).",
     )
-    fill_value: float | None = 0.0
-    columns: list[str] | None = None
-    interpolate_method: Literal["linear", "nearest", "zero"] = "linear"
+    fill_value: float | None = Field(
+        default=0.0,
+        description="The constant value to use for filling missing values when strategy='constant'.\
+                     This field is required if strategy is set to 'constant'.",
+    )
+    # columns: list[str] | None = None
+    interpolate_method: Literal["linear", "nearest", "zero"] | None = Field(
+        default=None,
+        description="The interpolation method to use when strategy='interpolate'.\
+                     This field is required if strategy is set to 'interpolate'. Options include:\n"
+        "- 'linear': Linear interpolation (default)\n"
+        "- 'nearest': Nearest-neighbor interpolation\n"
+        "- 'zero': Step-wise interpolation (previous value)",
+    )
     target_: type = Field(default_factory=lambda: ImputeMissing)
 
     @field_validator("fill_value")
@@ -55,7 +72,6 @@ class ImputeMissing(BasePreprocessing):
             config (ImputeMissingConfig): Configuration containing strategy, columns, and fill_value
         """
         self.config = config
-        self.drop_columns = None
         self.global_average = None
 
     def fit(self, data: BaseDataset) -> None:
@@ -98,7 +114,7 @@ class ImputeMissing(BasePreprocessing):
             data.signal = data.signal.fillna(self.global_average)
             return data
 
-        if self.config.strategy == "interpolate":
+        if self.config.strategy == "interpolate" and self.config.interpolate_method is not None:
             data.signal = data.signal.interpolate(method=self.config.interpolate_method)
         if self.config.strategy == "ffill":
             data.signal = data.signal.ffill()
@@ -106,7 +122,7 @@ class ImputeMissing(BasePreprocessing):
             data.signal = data.signal.bfill()
 
         # if post-imputation there are still missing values, print a warning
-        if data.signal.isna().all().any(): # type: ignore
+        if data.signal.isna().all().any():  # type: ignore
             print(
                 "[ImputeMissing] Warning: After imputation, there are still missing values in the signal data."
             )
@@ -115,7 +131,7 @@ class ImputeMissing(BasePreprocessing):
 
     def _compute_global_average(self, data: BaseDataset) -> None:
         sums = []
-        counts   = []
+        counts = []
         for event in data:
             sums.append(event.signal.sum())
             counts.append(event.signal.count())
@@ -124,4 +140,3 @@ class ImputeMissing(BasePreprocessing):
         counts = pd.concat(counts, axis=1).transpose()
 
         self.global_average = sums.sum() / counts.sum()
-
