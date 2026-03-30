@@ -52,5 +52,8 @@ class RemapClass(BasePreprocessing):
 
         if data.label is not None:
             data.label = data.label.map(self.class_map)
+            if data.label.isna().any():
+                # If there are any labels that were not in the class_map, they will be NaN after mapping.
+                raise ValueError("Some labels were not in the class_map.")
 
         return data

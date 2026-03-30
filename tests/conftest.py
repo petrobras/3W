@@ -135,11 +135,13 @@ class MockDataset(BaseDataset):
 
 def create_mock_dataset(
     num_events: int = 120,
-    num_timesteps: int = 1024,
     num_sensors: int = 12,
+    num_timesteps_range: int | tuple[int, int] = (1024, 2048),
+    known_labels: list[int] = [0, 1, 2, 101, 102],
     global_mean: float = 50.0,
     global_std: float = 15.0,
-    nan_rate: float = 0.0,
+    nan_column_rate: float = 0.0,  # Probability that an entire sensor column is NaN (0.0 to 1.0)
+    all_nan_columns: list[int] | None = None,
     seed: int | None = 42,
 ) -> MockDataset:
     """
@@ -147,13 +149,17 @@ def create_mock_dataset(
 
     Args:
         num_events: Number of events/samples in the dataset
-        num_timesteps: Number of time steps per event
         num_sensors: Number of sensor columns
+        num_timesteps_range: Number of time steps per event (min, max) or fixed number if int
+        num_classes: Number of distinct classes in label series
+
         global_mean: Global mean for signal generation (across all events)
         global_std: Global standard deviation for signal generation
-        nan_rate: Probability of NaN values (0.0 to 1.0)
-        seed: Random seed for reproducibility (None for non-deterministic)
 
+        nan_column_rate: Probability that an entire sensor column is NaN (0.0 to 1.0)
+        all_nan_column: If specified, this sensor column index will be entirely NaN (overrides nan_column_rate)
+
+        seed: Random seed for reproducibility (None for non-deterministic)
     Returns:
         MockDataset with generated events
 
@@ -171,33 +177,40 @@ def create_mock_dataset(
     events = []
     for event_id in range(num_events):
         # Generate signal data from normal distribution with specified mean/std
-        signal_data = {}
-        for sensor_idx in range(num_sensors):
-            values = np.random.normal(
-                loc=global_mean + event_id * 10,  # Slight shift per event
-                scale=global_std,
-                size=num_timesteps,
+        if isinstance(num_timesteps_range, tuple):
+            timesteps = np.random.randint(
+                num_timesteps_range[0], num_timesteps_range[1]
             )
+        else:
+            timesteps = num_timesteps_range
 
-            # Add NaNs at specified rate
-            if nan_rate > 0:
-                nan_mask = np.random.random(num_timesteps) < nan_rate
-                values[nan_mask] = np.nan
+        signal_data = np.random.normal(
+            loc=global_mean,  # Slight shift per event
+            scale=global_std,
+            size=(timesteps, num_sensors),
+        )
+        # set entire columns to NaN based on nan_column_rate or all_nan_column
+        nan_col_idx = np.random.rand(num_sensors) < nan_column_rate
+        signal_data[:, nan_col_idx] = np.nan
 
-            signal_data[f"sensor{sensor_idx + 1}"] = values
+        if all_nan_columns is not None:
+            signal_data[:, all_nan_columns] = np.nan
 
-        # Create label series
-        label_transition_idx = np.random.randint(num_timesteps // 3, 2 * num_timesteps // 3)
-        label_value = np.zeros(num_timesteps, dtype=np.int64)
-        label_value[:label_transition_idx] = 0  # Class 0 for first part
-        label_value[label_transition_idx:] = event_id % 3 + 1  # Class 1 or 2 for second part, cycling through events
-        labels = pd.Series(label_value, name="label", dtype="Int64")
+        signal_data = pd.DataFrame(
+            signal_data, columns=[f"sensor_{i}" for i in range(num_sensors)]
+        )
+
+        # Generate label series with specified number of classes
+        label_transaction_idx = np.random.randint(timesteps // 3, 2 * timesteps // 3)
+        label_series = np.zeros(timesteps, dtype=int)
+        label_series[label_transaction_idx:] = known_labels[
+            event_id % len(known_labels)
+        ]
+        label_series = pd.Series(label_series, name="label")
 
         events.append(
             DatasetOutputs(
-                signal=pd.DataFrame(signal_data),
-                label=labels,
-                metadata={"event_id": event_id, "generated": True},
+                signal=signal_data, label=label_series, metadata={"event_id": event_id}
             )
         )
 
