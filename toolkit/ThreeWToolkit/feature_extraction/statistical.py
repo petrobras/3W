@@ -58,6 +58,8 @@ class StatisticalFeatures(BaseFeatureExtractor):
         """
         Computes selected statistical features for each window in the input data.
         """
+        if data.signal.index.names != ["window", "variable"]:
+            raise RuntimeError("StatisticalFeatures must operate on windowed data.")
 
         values = data.signal.values
 

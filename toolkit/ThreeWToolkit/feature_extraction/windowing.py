@@ -47,6 +47,13 @@ class WindowingConfig(BaseFeatureExtractorConfig):
         description="Whether to use symmetric windows (True) or periodic windows (False).",
     )
 
+    pad_start: bool = Field(
+        default=True,
+        description="Whether to pad the start of the signals, so that the first sample in an event becomes\
+                    the last sample of the first window. Combined with a fixed step, this synchronizes evaluations\
+                    with different window sizes.",
+    )
+
     pad_last_window: bool = Field(
         default=False,
         description="Whether to pad the last window if it is smaller than `window_size`. If False, the last window will be dropped.",
@@ -123,6 +130,13 @@ class Windowing(BaseFeatureExtractor):
         if self.config.normalize:  # normalize window to unit L1
             self.window = self.window / np.sum(self.window)
 
+        # compute step size based on overlap
+        step = int(self.config.window_size * (1 - self.config.overlap))
+        self.step = max(step, 1)  # ensure step is at least 1 to avoid infinite loops
+
+        # precalculate start padding, if needed
+        self.padding_start = self.config.window_size - 1 if self.config.pad_start else 0
+
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
         Apply windowing to the input time series data.
@@ -138,35 +152,42 @@ class Windowing(BaseFeatureExtractor):
             DatasetOutputs: Windowed signals with corresponding labels
         """
 
-        # compute step size based on overlap
-        step = int(self.config.window_size * (1 - self.config.overlap))
-        step = max(step, 1)  # ensure step is at least 1 to avoid infinite loops
-
-        col_names = data.signal.columns
         signal = data.signal.values
-
         n_samples, n_channels = signal.shape
 
-        # prepare padding for the start/end of the data, if needed
-        padding_start = self.config.window_size - 1
-
         if self.config.pad_last_window:
-            # We pad to the right so that ((window_size - 1) + n_samples + padding_end - window_size) % step == 0
-            padding_end = (step - ((n_samples - 1) % step)) % step
+            # We pad to the right so that (padding_start + n_samples + padding_end - window_size) % step == 0
+            padding_end = (
+                self.step
+                - (
+                    (self.padding_start + n_samples - self.config.window_size)
+                    % self.step
+                )
+            ) % self.step
         else:
-            padding_end = 0
+            padding_end = 0  # leave it as is
 
-        signal = np.pad(signal, [(padding_start, padding_end), (0, 0)], mode="edge")
+        signal = np.pad(
+            signal, [(self.padding_start, padding_end), (0, 0)], mode="edge"
+        )
 
         # sliding window view of the signal and labels
         signal = sliding_window_view(signal, (self.config.window_size, n_channels))[
-            ::step, 0
+            :: self.step, 0
         ]  # (N_win, window_size,
         #  n_channels)
         # multiply by window function and transpose window to last dimension
         signal = np.einsum(
             "ijk,j->ikj", signal, self.window
         )  # (N_win, n_channels, window_size)
+
+        # lets assign a multi-index to the columns of the windowed signal for better interpretability
+        index = pd.MultiIndex.from_product(
+            (range(signal.shape[0]), data.signal.columns), names=["window", "variable"]
+        )
+        signal = pd.DataFrame(
+            signal.reshape(-1, self.config.window_size), index=index
+        )  # (N_win * n_channels * window_size)
 
         # lets assign a multi-index to the columns of the windowed signal for better interpretability
         index = pd.MultiIndex.from_product(
@@ -178,9 +199,9 @@ class Windowing(BaseFeatureExtractor):
 
         if data.label is not None:  # repeat for label series, if needed
             label = data.label.values
-            label = np.pad(label, (padding_start, padding_end), mode="edge")  # type: ignore
+            label = np.pad(label, (self.padding_start, padding_end), mode="edge")  # type: ignore
             label = sliding_window_view(label, self.config.window_size)[
-                ::step
+                :: self.step
             ]  # (N_win, window_size)
 
             # assign labels to windows based on strategy
@@ -193,4 +214,4 @@ class Windowing(BaseFeatureExtractor):
         else:
             label = None
 
-        return DatasetOutputs(signal=signal, label=label, metadata=data.metadata.copy())
+        return DatasetOutputs(signal=signal, label=label, metadata=data.metadata)
