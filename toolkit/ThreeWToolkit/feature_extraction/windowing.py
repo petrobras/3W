@@ -189,14 +189,6 @@ class Windowing(BaseFeatureExtractor):
             signal.reshape(-1, self.config.window_size), index=index
         )  # (N_win * n_channels * window_size)
 
-        # lets assign a multi-index to the columns of the windowed signal for better interpretability
-        index = pd.MultiIndex.from_product(
-            (range(signal.shape[0]), col_names), names=["window", "variable"]
-        )
-        signal = pd.DataFrame(
-            signal.reshape(-1, self.config.window_size), index=index
-        )  # (N_win * n_channels * window_size)
-
         if data.label is not None:  # repeat for label series, if needed
             label = data.label.values
             label = np.pad(label, (self.padding_start, padding_end), mode="edge")  # type: ignore
