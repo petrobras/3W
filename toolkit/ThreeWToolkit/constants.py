@@ -10,6 +10,7 @@ PROJECT_ROOT = Path(str(resources.files(package))).parent
 
 # Source final output directories
 OUTPUT_DIR = PROJECT_ROOT / "output"
+CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
 REPORTS_DIR = OUTPUT_DIR / "reports"  # Directory for generated PDFs
 
 # Define the path to the mock visualization objects plot folder
