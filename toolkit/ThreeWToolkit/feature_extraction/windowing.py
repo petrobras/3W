@@ -15,45 +15,54 @@ from ..core.dataset_outputs import DatasetOutputs
 
 class WindowingConfig(BaseFeatureExtractorConfig):
     window: str | tuple = Field(
-            default="boxcar",
-            description="Window type for signal data. str or tuple of (window_name, param1, param2, ...).")
+        default="boxcar",
+        description="Window type for signal data. str or tuple of (window_name, param1, param2, ...).",
+    )
 
     label_strategy: Literal["last", "mode"] = Field(
-            default="last",
-            description="Strategy for assigning labels to windows: 'last' uses the last label in the window,\
-                    while 'mode' uses the most frequent label (mode) in the window.")
+        default="last",
+        description="Strategy for assigning labels to windows: 'last' uses the last label in the window,\
+                    while 'mode' uses the most frequent label (mode) in the window.",
+    )
 
     window_size: int = Field(
-            default=128,
-            gt=1,
-            description="Number of time steps in each window. Utilize power of 2 sizes for wavelet decomposition.")
+        default=128,
+        gt=1,
+        description="Number of time steps in each window. Utilize power of 2 sizes for wavelet decomposition.",
+    )
 
     overlap: float = Field(
-            default=0.0,
-            ge=0.0, lt=1.0,
-            description="Fraction of overlap between windows (0.0 to <1.0).")
+        default=0.0,
+        ge=0.0,
+        lt=1.0,
+        description="Fraction of overlap between windows (0.0 to <1.0).",
+    )
 
     normalize: bool = Field(
-            default=False,
-            description="Whether to windows to unit scale.")
+        default=False, description="Whether to windows to unit scale."
+    )
 
     symmetric: bool = Field(
-            default=True,
-            description="Whether to use symmetric windows (True) or periodic windows (False).")
+        default=True,
+        description="Whether to use symmetric windows (True) or periodic windows (False).",
+    )
 
     pad_start: bool = Field(
-            default=True,
-            description="Whether to pad the start of the signals, so that the first sample in an event becomes\
+        default=True,
+        description="Whether to pad the start of the signals, so that the first sample in an event becomes\
                     the last sample of the first window. Combined with a fixed step, this synchronizes evaluations\
-                    with different window sizes.")
+                    with different window sizes.",
+    )
 
     pad_last_window: bool = Field(
-            default=False,
-            description="Whether to pad the last window if it is smaller than `window_size`. If False, the last window will be dropped.")
+        default=False,
+        description="Whether to pad the last window if it is smaller than `window_size`. If False, the last window will be dropped.",
+    )
 
     pad_value: float = Field(
-            default=0.0,
-            description="Value to use for padding the last window if `pad_last_window` is True.")
+        default=0.0,
+        description="Value to use for padding the last window if `pad_last_window` is True.",
+    )
 
     target_: type = Field(default_factory=lambda: Windowing)
 
@@ -61,13 +70,18 @@ class WindowingConfig(BaseFeatureExtractorConfig):
     def validate_window(cls, v: str | tuple):
         try:
             if isinstance(v, str):
-                get_window(v, 128) # try to create a window with no additional parameters
+                get_window(
+                    v, 128
+                )  # try to create a window with no additional parameters
             else:
-                get_window(v[0], 128, *v[1:]) # try to create a window with provided parameters
+                get_window(
+                    v[0], 128, *v[1:]
+                )  # try to create a window with provided parameters
         except Exception as e:
             raise ValueError(f"Invalid window parameters: {e}")
 
         return v
+
 
 class Windowing(BaseFeatureExtractor):
     """
@@ -87,7 +101,10 @@ class Windowing(BaseFeatureExtractor):
         config (WindowingConfig): Configuration object containing windowing parameters
     """
 
-    def __init__(self, config: WindowingConfig,):
+    def __init__(
+        self,
+        config: WindowingConfig,
+    ):
         """
         Initialize the Windowing step with the provided configuration.
 
@@ -104,12 +121,13 @@ class Windowing(BaseFeatureExtractor):
 
         # create window function based on configuration
         self.window = get_window(
-                window_name[0],
-                self.config.window_size,
-                *window_name[1:],
-                fftbins=not self.config.symmetric)
+            window_name[0],
+            self.config.window_size,
+            *window_name[1:],
+            fftbins=not self.config.symmetric,
+        )
 
-        if self.config.normalize: # normalize window to unit L1
+        if self.config.normalize:  # normalize window to unit L1
             self.window = self.window / np.sum(self.window)
 
         # compute step size based on overlap
@@ -139,30 +157,48 @@ class Windowing(BaseFeatureExtractor):
 
         if self.config.pad_last_window:
             # We pad to the right so that (padding_start + n_samples + padding_end - window_size) % step == 0
-            padding_end = (self.step - ((self.padding_start + n_samples - self.config.window_size) % self.step)) % self.step
+            padding_end = (
+                self.step
+                - (
+                    (self.padding_start + n_samples - self.config.window_size)
+                    % self.step
+                )
+            ) % self.step
         else:
-            padding_end = 0 # leave it as is
+            padding_end = 0  # leave it as is
 
-        signal = np.pad(signal, [(self.padding_start, padding_end), (0, 0)], mode="edge")
+        signal = np.pad(
+            signal, [(self.padding_start, padding_end), (0, 0)], mode="edge"
+        )
 
         # sliding window view of the signal and labels
-        signal = sliding_window_view(signal, (self.config.window_size, n_channels))[::self.step, 0] # (N_win, window_size,
-                                                                                                    #  n_channels)
+        signal = sliding_window_view(signal, (self.config.window_size, n_channels))[
+            :: self.step, 0
+        ]  # (N_win, window_size,
+        #  n_channels)
         # multiply by window function and transpose window to last dimension
-        signal = np.einsum("ijk,j->ikj", signal, self.window) # (N_win, n_channels, window_size)
-        
-        # lets assign a multi-index to the columns of the windowed signal for better interpretability
-        index = pd.MultiIndex.from_product((range(signal.shape[0]), data.signal.columns), names=["window", "variable"])
-        signal = pd.DataFrame(signal.reshape(-1, self.config.window_size), index=index) # (N_win * n_channels * window_size)
+        signal = np.einsum(
+            "ijk,j->ikj", signal, self.window
+        )  # (N_win, n_channels, window_size)
 
-        if data.label is not None: # repeat for label series, if needed
+        # lets assign a multi-index to the columns of the windowed signal for better interpretability
+        index = pd.MultiIndex.from_product(
+            (range(signal.shape[0]), data.signal.columns), names=["window", "variable"]
+        )
+        signal = pd.DataFrame(
+            signal.reshape(-1, self.config.window_size), index=index
+        )  # (N_win * n_channels * window_size)
+
+        if data.label is not None:  # repeat for label series, if needed
             label = data.label.values
-            label = np.pad(label, (self.padding_start, padding_end), mode="edge") # type: ignore
-            label = sliding_window_view(label, self.config.window_size)[::self.step] # (N_win, window_size)
+            label = np.pad(label, (self.padding_start, padding_end), mode="edge")  # type: ignore
+            label = sliding_window_view(label, self.config.window_size)[
+                :: self.step
+            ]  # (N_win, window_size)
 
             # assign labels to windows based on strategy
             if self.config.label_strategy == "last":
-                label = label[:, -1] # take the last label in each window
+                label = label[:, -1]  # take the last label in each window
             elif self.config.label_strategy == "mode":
                 # take the mode of the labels in each window
                 label = mode(label, axis=1, nan_policy="omit", keepdims=False).mode

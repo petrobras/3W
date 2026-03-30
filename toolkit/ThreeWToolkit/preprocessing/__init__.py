@@ -1,5 +1,6 @@
 from .impute_missing import ImputeMissingConfig, ImputeMissing
 from .normalize import NormalizeConfig, Normalize
+from .clean_signals import CleanSignalsConfig, CleanSignals
 from .rename_column import RenameColumnsConfig, RenameColumns
 from .remap import RemapClassConfig, RemapClass
 from .fill_labels import FillLabelsConfig, FillLabels
@@ -19,6 +20,8 @@ __all__ = [
     "RemapClass",
     "FillLabelsConfig",
     "FillLabels",
+    "CleanSignalsConfig",
+    "CleanSignals",
     "SequentialPreprocessingAdapter",
     "SequentialPreprocessingAdapterConfig",
 ]

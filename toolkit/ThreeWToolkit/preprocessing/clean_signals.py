@@ -7,9 +7,9 @@ import pandas as pd
 
 from ..core.base_dataset import BaseDataset
 from ..core.dataset_outputs import DatasetOutputs
-from ..core.base_feature_extractor import (
-    BaseFeatureExtractor,
-    BaseFeatureExtractorConfig,
+from ..core.base_preprocessing import (
+    BasePreprocessing,
+    BasePreprocessingConfig,
 )
 
 from ..dataset.transformed_dataset import TransformedDataset
@@ -28,7 +28,7 @@ _3W_CATEGORICAL_FEATURES = [  # List of categorical features to exclude from cle
 ]
 
 
-class CleanSignalsConfig(BaseFeatureExtractorConfig):
+class CleanSignalsConfig(BasePreprocessingConfig):
     """
     Configuration for the CleanSignals feature extractor.
 
@@ -84,7 +84,7 @@ class CleanSignalsConfig(BaseFeatureExtractorConfig):
     target_: type = Field(default_factory=lambda: CleanSignals)
 
 
-class CleanSignals(BaseFeatureExtractor):
+class CleanSignals(BasePreprocessing):
     """
     Feature extractor for cleaning possibly frozen or out-of-range signals.
     """

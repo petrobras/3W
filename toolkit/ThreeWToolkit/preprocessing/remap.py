@@ -2,11 +2,13 @@ from pydantic import Field
 from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
-from pydantic import Field
 
 
 class RemapClassConfig(BasePreprocessingConfig):
-    class_map: dict | None = Field(default=None, description="Mapping from original class labels to new class labels. If None, it will be generated in fit() by collecting all unique classes across events.")
+    class_map: dict | None = Field(
+        default=None,
+        description="Mapping from original class labels to new class labels. If None, it will be generated in fit() by collecting all unique classes across events.",
+    )
     target_: type = Field(default_factory=lambda: RemapClass)
 
 
@@ -35,7 +37,6 @@ class RemapClass(BasePreprocessing):
                 unique_classes.update(event.label.dropna().unique())
         self.class_map = {c: i for i, c in enumerate(sorted(unique_classes))}
 
-
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
         """
         Remap class labels according to the class_map.
@@ -46,7 +47,7 @@ class RemapClass(BasePreprocessing):
         Returns:
             DatasetOutputs: Transformed data with remapped labels
         """
-        if self.config.class_map is None:
+        if self.class_map is None:
             raise ValueError("RemapClass: class_map is not set. Call fit first.")
 
         if data.label is not None:
