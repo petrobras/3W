@@ -11,19 +11,10 @@ from sklearn.metrics import (
     roc_auc_score as sk_roc_auc,
 )
 
-from ..utils.general_utils import GeneralUtils
-from ..core.base_metrics import (
-    AccuracyScoreConfig,
-    BalancedAccuracyScoreConfig,
-    AveragePrecisionScoreConfig,
-    PrecisionScoreConfig,
-    RecallScoreConfig,
-    F1ScoreConfig,
-    RocAucScoreConfig,
-)
+from pydantic import validate_call
 
 
-@GeneralUtils.validate_func_args_with_pydantic(AccuracyScoreConfig)
+@validate_call
 def accuracy_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -56,7 +47,7 @@ def accuracy_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(BalancedAccuracyScoreConfig)
+@validate_call
 def balanced_accuracy_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -87,7 +78,7 @@ def balanced_accuracy_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(AveragePrecisionScoreConfig)
+@validate_call
 def average_precision_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -123,7 +114,7 @@ def average_precision_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(PrecisionScoreConfig)
+@validate_call
 def precision_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -163,7 +154,7 @@ def precision_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(RecallScoreConfig)
+@validate_call
 def recall_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -203,7 +194,7 @@ def recall_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(F1ScoreConfig)
+@validate_call
 def f1_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -243,7 +234,7 @@ def f1_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(RocAucScoreConfig)
+@validate_call
 def roc_auc_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,

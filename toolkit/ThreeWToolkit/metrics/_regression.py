@@ -3,11 +3,10 @@ import pandas as pd
 
 from sklearn.metrics import explained_variance_score as sk_explained_variance
 
-from ..utils.general_utils import GeneralUtils
-from ..core.base_metrics import ExplainedVarianceScoreConfig
+from pydantic import validate_call
 
 
-@GeneralUtils.validate_func_args_with_pydantic(ExplainedVarianceScoreConfig)
+@validate_call
 def explained_variance_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
