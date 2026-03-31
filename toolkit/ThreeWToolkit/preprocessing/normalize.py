@@ -57,8 +57,8 @@ class Normalize(BasePreprocessing):
         else:
             self.norm = self.config.norm
 
-        self.global_average = None
-        self.global_moment = None
+        self.global_average: pd.Series | None = None
+        self.global_moment: pd.Series | None = None
 
     def _compute_global_average(self, data: BaseDataset) -> None:
         sums = []

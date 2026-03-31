@@ -204,7 +204,7 @@ class ModelAssessment:
     def _get_predictions(self, model: BaseModels, x: np.ndarray) -> np.ndarray:
         """Generate predictions by detecting model type."""
         if isinstance(model, nn.Module):
-            strategy = TorchPredictionStrategy()
+            strategy: TorchPredictionStrategy | SklearnPredictionStrategy = TorchPredictionStrategy()
             dataset = TensorDataset(
                 torch.tensor(x, dtype=torch.float32), torch.zeros(len(x))
             )
@@ -307,7 +307,7 @@ class ModelAssessment:
             X_test=x_test,
             y_test=y_test,
             predictions=r.predictions,
-            calculated_metrics=r.metrics,
+            calculated_metrics=r.metrics or {},
             plot_config=None,
             title=title,
             author=self.config.report_author,

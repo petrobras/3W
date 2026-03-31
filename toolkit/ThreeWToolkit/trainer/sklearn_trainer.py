@@ -5,7 +5,8 @@ import numpy as np
 from pydantic import Field, field_validator
 from ..core.base_trainer import BaseTrainer, BaseTrainerConfig
 from ..core.base_dataset import BaseDataset
-from ..models.sklearn_models import SklearnModelsConfig
+from ..core.base_models import BaseSkLearnModels
+from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,8 @@ class SklearnTrainerConfig(BaseTrainerConfig):
 
 class SklearnTrainer(BaseTrainer):
     """Scikit-learn trainer for classical ML models."""
+
+    model: SklearnModels
 
     def __init__(self, config: SklearnTrainerConfig):
         super().__init__(config)

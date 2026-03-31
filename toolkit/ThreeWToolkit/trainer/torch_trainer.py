@@ -1,7 +1,6 @@
 """TorchTrainer for training PyTorch models with datasets."""
 
 import logging
-from typing import Any
 
 import torch
 import torch.nn as nn
@@ -12,6 +11,7 @@ from tqdm.auto import tqdm
 
 from ..core.base_trainer import BaseTrainer, BaseTrainerConfig
 from ..core.base_dataset import BaseDataset
+from ..core.base_models import BaseTorchModels
 from ..core.enums import OptimizersEnum, CriterionEnum
 from ..models.mlp import MLPConfig
 
@@ -61,6 +61,8 @@ class TorchTrainerConfig(BaseTrainerConfig):
 
 class TorchTrainer(BaseTrainer):
     """PyTorch trainer for neural network models."""
+
+    model: BaseTorchModels
 
     def __init__(self, config: TorchTrainerConfig):
         super().__init__(config)
@@ -172,10 +174,13 @@ class TorchTrainer(BaseTrainer):
 
     def _execute_training(
         self, train_data: DataLoader, val_data: DataLoader | None
-    ) -> dict[str, Any]:
+    ) -> dict[str, list[float] | None]:
         """Execute epoch-based training loop."""
 
-        history = {"train_loss": [], "val_loss": [] if val_data else None}
+        history: dict[str, list[float] | None] = {
+            "train_loss": [],
+            "val_loss": [] if val_data else None,
+        }
 
         pbar = tqdm(
             range(self.config.epochs),
@@ -187,11 +192,15 @@ class TorchTrainer(BaseTrainer):
 
         for epoch in pbar:
             avg_train_loss = self._train_epoch(train_data)
-            history["train_loss"].append(avg_train_loss)
+            train_loss_list = history["train_loss"]
+            if train_loss_list is not None:
+                train_loss_list.append(avg_train_loss)
 
             if val_data is not None:
                 val_loss = self._validate_epoch(val_data)
-                history["val_loss"].append(val_loss)
+                val_loss_list = history["val_loss"]
+                if val_loss_list is not None:
+                    val_loss_list.append(val_loss)
                 pbar.set_postfix(
                     loss=f"{avg_train_loss:.4f}", val_loss=f"{val_loss:.4f}"
                 )

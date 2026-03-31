@@ -83,6 +83,8 @@ class BaseTrainer(ABC):
         result = trainer.train(train_dataset, val_dataset)
     """
 
+    model: BaseModels  # Set by subclass during training
+
     def __init__(self, config: BaseTrainerConfig):
         """
         Initialize the base trainer.
@@ -277,20 +279,20 @@ class BaseTrainer(ABC):
             return self.config.manual_class_weights
 
         # Collect all labels from dataset
-        labels = []
+        all_labels: list[int | float] = []
         for event in dataset:
             if event.label is None:
                 raise ValueError("Cannot compute class weights: dataset has no labels")
-            labels.extend(event.label.values)
+            all_labels.extend(event.label.values.tolist())
 
-        labels = np.array(labels)
-        unique_classes = np.unique(labels)
+        labels_array = np.array(all_labels)
+        unique_classes = np.unique(labels_array)
 
         # Compute balanced weights
         from sklearn.utils.class_weight import compute_class_weight
 
         weights = compute_class_weight(
-            class_weight="balanced", classes=unique_classes, y=labels
+            class_weight="balanced", classes=unique_classes, y=labels_array
         )
 
         class_weight_dict = {
