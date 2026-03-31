@@ -3,106 +3,85 @@
 import pytest
 import pandas as pd
 import numpy as np
-from pandas.testing import assert_frame_equal
 
-from ThreeWToolkit.feature_extraction import Windowing, WindowingConfig
+from ThreeWToolkit.core.base_dataset import BaseDataset
+from ThreeWToolkit.dataset.transformed_dataset import TransformedDataset
 
+from ThreeWToolkit.feature_extraction.windowing import WindowingConfig
 
-# Module-level fixtures
 
 @pytest.fixture
-def simple_timeseries():
-    """Simple time series data for windowing."""
-    return pd.DataFrame({
-        "sensor1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-        "sensor2": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0],
-    })
+def simple_dataset(mock_dataset_factory) -> BaseDataset:
+    """Simple dataset for normalization tests."""
+    return mock_dataset_factory(num_sensors=10)
 
 
 @pytest.fixture
 def multivariate_timeseries():
     """Multivariate time series for windowing tests."""
-    return pd.DataFrame({
-        "var1": np.arange(100),
-        "var2": np.arange(100, 200),
-        "var3": np.arange(200, 300),
-    })
+    return pd.DataFrame(
+        {
+            "var1": np.arange(100),
+            "var2": np.arange(100, 200),
+            "var3": np.arange(200, 300),
+        }
+    )
 
 
-# Tests for Windowing functionality
-
-
-class TestWindowingBasic:
+class TestWindowing:
     """Test basic windowing functionality."""
 
-    def test_windowing_no_overlap(self, simple_timeseries):
-        """Test windowing with 0% overlap."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+    @pytest.mark.parametrize("win_size", [64, 128, 256])
+    def test_window_size(self, simple_dataset, win_size):
 
-    def test_windowing_with_overlap(self, simple_timeseries):
-        """Test windowing with percentage overlap."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        windowing = WindowingConfig(window_size=win_size, overlap=0.5).build()
+        windowed_dataset = TransformedDataset(simple_dataset, windowing.transform)
 
-    @pytest.mark.parametrize(
-        "window_size,overlap",
-        [
-            (4, 0.0),
-            (4, 0.5),
-            (8, 0.25),
-            (16, 0.75),
-        ],
-    )
-    def test_various_window_configurations(
-        self, multivariate_timeseries, window_size, overlap
+        for original, windowed in zip(simple_dataset, windowed_dataset):
+            assert "window" in windowed.signal.index.names, (
+                "Expected 'window' in signal index names"
+            )
+            assert "variable" in windowed.signal.index.names, (
+                "Expected 'variable' in signal index names"
+            )
+            assert windowed.signal.shape[1] == win_size, (
+                f"Expected window size {win_size}, got {windowed.signal.shape[1]}"
+            )
+
+            windowed_vars = windowed.signal.index.get_level_values("variable").unique()
+            assert set(windowed_vars) == set(original.signal.columns), (
+                "Expected windowed variables to match original signal columns"
+            )
+
+    @pytest.mark.parametrize("win_size", [64, 128, 256])
+    @pytest.mark.parametrize("overlap", [0.0, 0.25, 0.5, 0.75])
+    @pytest.mark.parametrize("pad_start", [True, False])
+    @pytest.mark.parametrize("pad_last", [True, False])
+    def test_window_padding(
+        self, simple_dataset, win_size, overlap, pad_start, pad_last
     ):
-        """Test different window size and overlap combinations."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
 
+        windowing = WindowingConfig(
+            window_size=win_size,
+            overlap=overlap,
+            pad_start=pad_start,
+            pad_last_window=pad_last,
+        ).build()
+        windowed_dataset = TransformedDataset(simple_dataset, windowing.transform)
 
-class TestWindowingTypes:
-    """Test different window types."""
+        step = np.floor(win_size * (1.0 - overlap)).astype(int)
+        step = max(step, 1)  # ensure step is at least 1 to avoid infinite loops
 
-    @pytest.mark.parametrize(
-        "window_type",
-        ["boxcar", "hann", "hamming", "kaiser"],
-    )
-    def test_various_window_types(self, simple_timeseries, window_type):
-        """Test different window types from scipy."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        start_padding = win_size - 1 if pad_start else 0
 
+        for original, windowed in zip(simple_dataset, windowed_dataset):
+            n_samples = start_padding + original.signal.shape[0] - win_size
+            if pad_last:  # round up for last window if padding
+                expected_n_windows = int(np.ceil(n_samples / step) + 1)
+            else:  # round down for last window if no padding
+                expected_n_windows = int(np.floor(n_samples / step) + 1)
 
-class TestWindowingLabelAssignment:
-    """Test label assignment strategies."""
-
-    def test_label_assignment_last(self):
-        """Test 'last' label assignment strategy."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
-
-    def test_label_assignment_mode(self):
-        """Test 'mode' label assignment strategy."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
-
-
-class TestWindowingEdgeCases:
-    """Test edge cases for windowing."""
-
-    def test_padding_behavior(self):
-        """Test padding when data doesn't divide evenly into windows."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
-
-    def test_window_size_validation(self):
-        """Test validation of window size parameter."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
-
-    def test_multiindex_output_structure(self, simple_timeseries):
-        """Test that output has correct multi-index structure (window, variable)."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+            actual_windows = windowed.signal.index.get_level_values("window").nunique()
+            assert actual_windows == expected_n_windows, (
+                f"Expected {expected_n_windows} windows, got {actual_windows}"
+            )

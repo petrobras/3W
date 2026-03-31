@@ -131,7 +131,7 @@ class Windowing(BaseFeatureExtractor):
             self.window = self.window / np.sum(self.window)
 
         # compute step size based on overlap
-        step = int(self.config.window_size * (1 - self.config.overlap))
+        step = int(self.config.window_size * (1 - self.config.overlap)) # floor
         self.step = max(step, 1)  # ensure step is at least 1 to avoid infinite loops
 
         # precalculate start padding, if needed
@@ -174,8 +174,8 @@ class Windowing(BaseFeatureExtractor):
         # sliding window view of the signal and labels
         signal = sliding_window_view(signal, (self.config.window_size, n_channels))[
             :: self.step, 0
-        ]  # (N_win, window_size,
-        #  n_channels)
+        ]  # (N_win, window_size, n_channels)
+
         # multiply by window function and transpose window to last dimension
         signal = np.einsum(
             "ijk,j->ikj", signal, self.window

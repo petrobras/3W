@@ -1,6 +1,7 @@
-from ThreeWToolkit.core.base_dataset import BaseDataset
 from typing import Literal
 from pydantic import Field, field_validator, ValidationInfo
+
+from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
 

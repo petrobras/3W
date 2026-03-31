@@ -1,7 +1,6 @@
 """Tests for FillLabels preprocessing class."""
 
 import pytest
-import pandas as pd
 import numpy as np
 
 from ThreeWToolkit.core.base_dataset import BaseDataset
