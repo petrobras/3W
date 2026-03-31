@@ -5,8 +5,7 @@ import hashlib
 from tqdm import tqdm
 from pathlib import Path
 
-from ..utils.general_utils import GeneralUtils
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, validate_call
 
 FIGSHARE_BASE_URL = "https://api.figshare.com/v2"
 FIGSHARE_VERSION_IDS = {
@@ -103,7 +102,7 @@ class GetFigshareDataValidator(BaseModel):
         return chunk_size
 
 
-@GeneralUtils.validate_func_args_with_pydantic(GetFigshareDataValidator)
+@validate_call
 def get_figshare_data(
     path: Path, version: str = "2.0.0", chunk_size: int = 1024 * 1024
 ) -> list[Path]:
