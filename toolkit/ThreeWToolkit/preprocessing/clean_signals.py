@@ -14,18 +14,20 @@ from ..core.base_preprocessing import (
 
 from ..dataset.transformed_dataset import TransformedDataset
 
-_3W_CATEGORICAL_FEATURES = [  # List of categorical features to exclude from cleaning by default
-    "ESTADO-DHSV",
-    "ESTADO-M1",
-    "ESTADO-M2",
-    "ESTADO-PXO",
-    "ESTADO-SDV-GL",
-    "ESTADO-SDV-P",
-    "ESTADO-W1",
-    "ESTADO-W2",
-    "ESTADO-XO",
-    "state",
-]
+_3W_CATEGORICAL_FEATURES = (
+    [  # List of categorical features to exclude from cleaning by default
+        "ESTADO-DHSV",
+        "ESTADO-M1",
+        "ESTADO-M2",
+        "ESTADO-PXO",
+        "ESTADO-SDV-GL",
+        "ESTADO-SDV-P",
+        "ESTADO-W1",
+        "ESTADO-W2",
+        "ESTADO-XO",
+        "state",
+    ]
+)
 
 
 class CleanSignalsConfig(BasePreprocessingConfig):
@@ -47,14 +49,14 @@ class CleanSignalsConfig(BasePreprocessingConfig):
     """
 
     average_iqr_threshold: float = Field(
-        default=1.5,
+        default=3.0,
         gt=0.0,
         description="Threshold for identifying frozen signals based on the interquartile range (IQR) of the average.\
                      Signals with average IQR below this threshold may be considered frozen.",
     )
 
     std_iqr_threshold: float = Field(
-        default=1.5,
+        default=3.0,
         gt=0.0,
         description="Threshold for identifying frozen signals based on the interquartile range (IQR) of the standard\
         deviation. Signals with std IQR below this threshold may be considered frozen.",
@@ -92,10 +94,10 @@ class CleanSignals(BasePreprocessing):
     def __init__(self, config: CleanSignalsConfig):
         self.config: CleanSignalsConfig = config
 
-        self.average_bounds = None
-        self.std_bounds = None
+        self.average_bounds: tuple[pd.Series, pd.Series] | None = None
+        self.std_bounds: tuple[pd.Series, pd.Series] | None = None
 
-        self.drop_list = None
+        self.drop_list: list[str] = []
 
     def fit(self, data: BaseDataset) -> None:
         """
@@ -114,13 +116,13 @@ class CleanSignals(BasePreprocessing):
         self._fit_missing_thresholds(cleaned_data)
 
     def _fit_iqr_thresholds(self, data: BaseDataset) -> None:
-        averages = []
-        stds = []
+        _averages = []
+        _stds = []
         for event in data:
-            averages.append(event.signal.mean())
-            stds.append(event.signal.std())
-        averages = pd.concat(averages, axis=1).transpose()
-        stds = pd.concat(stds, axis=1).transpose()
+            _averages.append(event.signal.mean())
+            _stds.append(event.signal.std())
+        averages = pd.concat(_averages, axis=1).transpose()
+        stds = pd.concat(_stds, axis=1).transpose()
 
         # compute quantiles
         average_quantiles = (averages.quantile(0.25), averages.quantile(0.75))
@@ -145,13 +147,13 @@ class CleanSignals(BasePreprocessing):
         )
 
     def _fit_missing_thresholds(self, data: BaseDataset) -> None:
-        all_nans = []
+        _all_nans = []
         for event in data:
-            all_nans.append(event.signal.isna().all())
-        all_nans = pd.concat(all_nans, axis=1).transpose()
+            _all_nans.append(event.signal.isna().all())
+        all_nans = pd.concat(_all_nans, axis=1).transpose()
 
         all_nan_percentage = all_nans.mean()
-        drop_cols = all_nan_percentage < self.config.missing_column_threshold
+        drop_cols = all_nan_percentage >= self.config.missing_column_threshold
         self.drop_list = drop_cols[drop_cols].index.tolist()
 
     def _filter_iqr_bounds(self, data: DatasetOutputs) -> DatasetOutputs:

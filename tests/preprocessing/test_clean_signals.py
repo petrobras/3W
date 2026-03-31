@@ -1,83 +1,121 @@
 """Tests for CleanSignals preprocessing class."""
 
 import pytest
-import pandas as pd
 import numpy as np
 from pandas.testing import assert_frame_equal
 
-from ThreeWToolkit.preprocessing import CleanSignals, CleanSignalsConfig
-
-
-# Module-level fixtures
-
-@pytest.fixture
-def df_with_frozen_signals():
-    """DataFrame with frozen (constant) signals."""
-    return pd.DataFrame({
-        "normal": [1.0, 2.0, 3.0, 4.0, 5.0],
-        "frozen": [10.0, 10.0, 10.0, 10.0, 10.0],
-        "varying": [1.0, 1.5, 2.0, 2.5, 3.0],
-    })
+from ThreeWToolkit.core.base_dataset import BaseDataset
+from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
+from ThreeWToolkit.dataset.transformed_dataset import TransformedDataset
+from ThreeWToolkit.preprocessing import CleanSignalsConfig
 
 
 @pytest.fixture
-def df_with_outliers():
-    """DataFrame with outlier values."""
-    return pd.DataFrame({
-        "normal": [1.0, 2.0, 3.0, 4.0, 5.0],
-        "outlier": [1.0, 1.0, 1.0, 100.0, 1.0],
-    })
+def simple_dataset(mock_dataset_factory) -> BaseDataset:
+    """Simple dataset for normalization tests."""
+    return mock_dataset_factory(num_sensors=10)
 
 
-# Tests for CleanSignals functionality
+@pytest.fixture
+def df_with_missing_column(simple_dataset) -> BaseDataset:
+    """Dataset with a column that has 100% missing values."""
+    missing_column = "sensor_5"
+
+    def _introduce_missing_column(data: DatasetOutputs) -> DatasetOutputs:
+        signal = data.signal.assign(**{missing_column: np.nan})
+        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
+
+    return TransformedDataset(simple_dataset, _introduce_missing_column)
+
+
+@pytest.fixture
+def df_with_some_frozen_signals(simple_dataset) -> BaseDataset:
+    """Dataset with some frozen (constant) signals."""
+    frozen_column = "sensor_2"
+    num_frozen_events = 5
+    # Randomly select 5 events to freeze the signal for the specified column
+    frozen_event_indices = np.random.choice(
+        np.arange(len(simple_dataset)), size=num_frozen_events, replace=False
+    )
+
+    def _freeze_signal(data: DatasetOutputs) -> DatasetOutputs:
+        if data.metadata["event_id"] in frozen_event_indices:
+            signal = data.signal.assign(
+                **{frozen_column: 4200.0}
+            )  # low variance, out of range value
+            return DatasetOutputs(
+                signal=signal, label=data.label, metadata=data.metadata
+            )
+        else:
+            return data
+
+    return TransformedDataset(simple_dataset, _freeze_signal)
 
 
 class TestCleanSignalsIQRThresholds:
     """Test IQR threshold detection and filtering."""
 
-    def test_frozen_signal_detection(self, df_with_frozen_signals):
-        """Test detection and filtering of frozen (constant) signals."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+    def test_simple_dataset_no_frozen_signals(self, simple_dataset):
+        """Test that a simple dataset with no frozen signals passes through unchanged."""
 
-    def test_outlier_signal_detection(self, df_with_outliers):
-        """Test detection and filtering of signals with outliers."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        cleaner = CleanSignalsConfig(
+            exclude_features=[],
+        ).build()
+        cleaner.fit(simple_dataset)
 
-    @pytest.mark.parametrize(
-        "iqr_multiplier",
-        [1.5, 2.0, 3.0],
-    )
-    def test_various_iqr_thresholds(self, iqr_multiplier):
-        """Test CleanSignals with different IQR threshold multipliers."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        cleaned_dataset = TransformedDataset(simple_dataset, cleaner.transform)
 
+        # Since there are no frozen signals, the cleaned dataset should be the same as the original
+        for original, cleaned in zip(simple_dataset, cleaned_dataset):
+            assert_frame_equal(original.signal, cleaned.signal)
 
-class TestCleanSignalsCategoricalExclusion:
-    """Test categorical feature exclusion."""
+    def test_simple_dataset_with_all_frozen_signals(self, df_with_missing_column):
+        """Test that a dataset with one column of all NaN values is correctly identified and dropped."""
 
-    def test_categorical_columns_excluded(self):
-        """Test that categorical columns are excluded from cleaning."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        cleaner = CleanSignalsConfig(
+            exclude_features=[],
+        ).build()
+        cleaner.fit(df_with_missing_column)
 
-    def test_estado_columns_excluded(self):
-        """Test that ESTADO-* columns are excluded from cleaning."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        print(cleaner.drop_list)
 
+        cleaned_dataset = TransformedDataset(df_with_missing_column, cleaner.transform)
 
-class TestCleanSignalsMissingThresholds:
-    """Test missing value threshold filtering."""
+        # The column with all NaN values should be dropped
+        for _, cleaned in zip(df_with_missing_column, cleaned_dataset):
+            assert "sensor_5" not in cleaned.signal.columns
 
-    def test_high_missing_columns_dropped(self):
-        """Test that columns with >60% missing values are dropped."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+    def test_simple_dataset_with_some_frozen_signals(self, df_with_some_frozen_signals):
+        """Test that a dataset with some frozen signals is correctly identified and filtered."""
 
-    def test_custom_missing_threshold(self):
-        """Test custom missing value threshold."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        cleaner = CleanSignalsConfig(
+            exclude_features=[],
+        ).build()
+        cleaner.fit(df_with_some_frozen_signals)
+
+        cleaned_dataset = TransformedDataset(
+            df_with_some_frozen_signals, cleaner.transform
+        )
+
+        # The column with frozen signals should have NaN values in the cleaned dataset
+        has_nan = []
+        for _, cleaned in zip(df_with_some_frozen_signals, cleaned_dataset):
+            assert "sensor_2" in cleaned.signal.columns
+            has_nan.append(cleaned.signal["sensor_2"].isna().all())
+        assert (
+            sum(has_nan) == 5
+        ), "Exactly 5 events should have the frozen signal column set to NaN"
+
+    def test_exclude_features(self, df_with_missing_column):
+        """Test that excluded features are not dropped even if they meet the IQR-based criteria."""
+
+        cleaner = CleanSignalsConfig(
+            exclude_features=["sensor_5"],
+        ).build()
+        cleaner.fit(df_with_missing_column)
+
+        cleaned_dataset = TransformedDataset(df_with_missing_column, cleaner.transform)
+
+        # The frozen column should not be dropped since it's in the exclude_features list
+        for _, cleaned in zip(df_with_missing_column, cleaned_dataset):
+            assert "sensor_5" in cleaned.signal.columns

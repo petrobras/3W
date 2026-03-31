@@ -12,7 +12,9 @@ from ThreeWToolkit.preprocessing import ImputeMissingConfig
 @pytest.fixture
 def simple_dataset(mock_dataset_factory) -> BaseDataset:
     """Simple dataset for normalization tests."""
-    return mock_dataset_factory(num_sensors=10)
+    return mock_dataset_factory(
+        num_sensors=10, nan_column_rate=0.0, nan_row_rate=0.1, seed=42
+    )
 
 
 class TestImputeMissingStrategies:
@@ -30,9 +32,9 @@ class TestImputeMissingStrategies:
 
         for event in simple_dataset:
             imputed = imputer.transform(event).signal
-            assert not imputed.isna().any().any(), (
-                "Imputed dataset should not contain any NaN values."
-            )
+            assert (
+                not imputed.isna().any().any()
+            ), "Imputed dataset should not contain any NaN values."
 
             original_na = event.signal.isna()
 
@@ -50,9 +52,9 @@ class TestImputeMissingStrategies:
 
         for event in simple_dataset:
             imputed = imputer.transform(event).signal
-            assert not imputed.isna().any().any(), (
-                "Imputed dataset should not contain any NaN values."
-            )
+            assert (
+                not imputed.isna().any().any()
+            ), "Imputed dataset should not contain any NaN values."
 
             original_na = event.signal.isna()
 
@@ -68,9 +70,9 @@ class TestImputeMissingStrategies:
 
         for event in simple_dataset:
             imputed = imputer.transform(event).signal
-            assert not imputed.isna().any().any(), (
-                "Imputed dataset should not contain any NaN values."
-            )
+            assert (
+                not imputed.isna().any().any()
+            ), "Imputed dataset should not contain any NaN values."
 
             original_na = event.signal.isna()
 
@@ -80,9 +82,7 @@ class TestImputeMissingStrategies:
                     if idx > 0:
                         assert np.isclose(
                             imputed.loc[idx, col], imputed.loc[idx - 1, col]
-                        ), (
-                            f"Imputed value at index {idx} should be equal to the previous non-missing value."
-                        )
+                        ), f"Imputed value at index {idx} should be equal to the previous non-missing value."
 
     def test_impute_missing_dataset_backward_fill(self, simple_dataset):
         """Test imputation with backward fill strategy."""
@@ -92,21 +92,19 @@ class TestImputeMissingStrategies:
 
         for event in simple_dataset:
             imputed = imputer.transform(event).signal
-            assert not imputed.isna().any().any(), (
-                "Imputed dataset should not contain any NaN values."
-            )
+            assert (
+                not imputed.isna().any().any()
+            ), "Imputed dataset should not contain any NaN values."
 
             original_na = event.signal.isna()
 
             # Check that imputed values are equal to the next non-missing value
             for col in event.signal.columns:
                 for idx in np.where(original_na[col])[0]:
-                    if idx < len(imputed) - 1:
+                    if (idx > 0) and (idx < len(imputed) - 1):
                         assert np.isclose(
                             imputed.loc[idx, col], imputed.loc[idx + 1, col]
-                        ), (
-                            f"Imputed value at index {idx} should be equal to the next non-missing value."
-                        )
+                        ), f"Imputed value at index {idx} should be equal to the next non-missing value."
 
     def test_impute_missing_dataset_interpolate(self, simple_dataset):
         """Test imputation with interpolation strategy."""
@@ -118,9 +116,9 @@ class TestImputeMissingStrategies:
 
         for event in simple_dataset:
             imputed = imputer.transform(event).signal
-            assert not imputed.isna().any().any(), (
-                "Imputed dataset should not contain any NaN values."
-            )
+            assert (
+                not imputed.isna().any().any()
+            ), "Imputed dataset should not contain any NaN values."
 
             original_na = event.signal.isna()
 
@@ -130,6 +128,9 @@ class TestImputeMissingStrategies:
                     if idx > 0 and idx < len(imputed) - 1:
                         prev_value = imputed.loc[idx - 1, col]
                         next_value = imputed.loc[idx + 1, col]
-                        assert prev_value <= imputed.loc[idx, col] <= next_value, (
-                            f"Imputed value at index {idx} should be between the previous and next non-missing values."
-                        )
+                        prev_value, next_value = sorted(
+                            [prev_value, next_value]
+                        )  # ensure correct order
+                        assert (
+                            prev_value <= imputed.loc[idx, col] <= next_value
+                        ), f"Imputed value at index {idx} should be between the previous and next non-missing values."

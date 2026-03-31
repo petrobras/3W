@@ -6,10 +6,11 @@ from pandas.testing import assert_series_equal, assert_frame_equal
 from numpy.testing import assert_allclose
 
 from ThreeWToolkit.preprocessing import (
-        ImputeMissingConfig,
-        NormalizeConfig,
-        RenameColumnsConfig,
+    ImputeMissingConfig,
+    NormalizeConfig,
+    RenameColumnsConfig,
 )
+
 
 class TestImputeMissingData:
     def test_impute_mean_dataframe(self):

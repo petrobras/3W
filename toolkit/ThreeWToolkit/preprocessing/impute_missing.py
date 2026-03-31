@@ -72,7 +72,7 @@ class ImputeMissing(BasePreprocessing):
             config (ImputeMissingConfig): Configuration containing strategy, columns, and fill_value
         """
         self.config: ImputeMissingConfig = config
-        self.global_average = None
+        self.global_average: pd.Series | None = None
 
     def fit(self, data: BaseDataset) -> None:
         """
@@ -106,37 +106,47 @@ class ImputeMissing(BasePreprocessing):
             dict: Event data with imputed 'signal' DataFrame
         """
         if self.config.strategy == "constant":
-            data.signal = data.signal.fillna(self.config.fill_value)
-            return data
-        if self.config.strategy == "mean":
+            signal = data.signal.fillna(self.config.fill_value)
+        elif self.config.strategy == "mean":
             if self.global_average is None:
                 raise ValueError("Global average not computed. Call fit() first.")
-            data.signal = data.signal.fillna(self.global_average)
-            return data
+            signal = data.signal.fillna(self.global_average)
 
-        if self.config.strategy == "interpolate" and self.config.interpolate_method is not None:
-            data.signal = data.signal.interpolate(method=self.config.interpolate_method)
-        if self.config.strategy == "ffill":
-            data.signal = data.signal.ffill()
-        if self.config.strategy == "bfill":
-            data.signal = data.signal.bfill()
+        elif (
+            self.config.strategy == "interpolate"
+            and self.config.interpolate_method is not None
+        ):
+            signal = (
+                data.signal.interpolate(method=self.config.interpolate_method)
+                .bfill()
+                .ffill()
+            )  # interpolate
+            # then fill any remaining NaNs
+        elif self.config.strategy == "ffill":
+            signal = (
+                data.signal.ffill().bfill()
+            )  # forward-fill then backward-fill to handle leading NaNs
+        else:  # self.config.strategy == "bfill":
+            signal = (
+                data.signal.bfill().ffill()
+            )  # backward-fill then forward-fill to handle trailing NaNs
 
         # if post-imputation there are still missing values, print a warning
         if data.signal.isna().all().any():  # type: ignore
-            print(
-                "[ImputeMissing] Warning: After imputation, there are still missing values in the signal data."
+            raise RuntimeError(
+                "Imputation failed: some columns still contain all NaN values after imputation. Check your data and imputation strategy."
             )
 
-        return data
+        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
 
     def _compute_global_average(self, data: BaseDataset) -> None:
-        sums = []
-        counts = []
+        _sums = []
+        _counts = []
         for event in data:
-            sums.append(event.signal.sum())
-            counts.append(event.signal.count())
+            _sums.append(event.signal.sum())
+            _counts.append(event.signal.count())
         # compute weighted average of the sums
-        sums = pd.concat(sums, axis=1).transpose()
-        counts = pd.concat(counts, axis=1).transpose()
+        sums = pd.concat(_sums, axis=1).transpose()
+        counts = pd.concat(_counts, axis=1).transpose()
 
-        self.global_average = sums.sum() / counts.sum()
+        self.global_average = sums.mean() / counts.mean()

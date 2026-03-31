@@ -141,7 +141,7 @@ def create_mock_dataset(
     global_mean: float = 50.0,
     global_std: float = 15.0,
     nan_column_rate: float = 0.0,  # Probability that an entire sensor column is NaN (0.0 to 1.0)
-    nan_row_rate: float = 0.0,     # Probability that an entire time step (row) is NaN (0.0 to 1.0)
+    nan_row_rate: float = 0.0,  # Probability that an entire time step (row) is NaN (0.0 to 1.0)
     all_nan_columns: list[int] | None = None,
     seed: int | None = 42,
 ) -> MockDataset:
@@ -200,7 +200,7 @@ def create_mock_dataset(
         if all_nan_columns is not None:
             signal_data[:, all_nan_columns] = np.nan
 
-        signal_data = pd.DataFrame(
+        signal_data_out = pd.DataFrame(
             signal_data, columns=[f"sensor_{i}" for i in range(num_sensors)]
         )
 
@@ -210,11 +210,13 @@ def create_mock_dataset(
         label_series[label_transaction_idx:] = known_labels[
             event_id % len(known_labels)
         ]
-        label_series = pd.Series(label_series, name="label")
+        label_series_out = pd.Series(label_series, name="label")
 
         events.append(
             DatasetOutputs(
-                signal=signal_data, label=label_series, metadata={"event_id": event_id}
+                signal=signal_data_out,
+                label=label_series_out,
+                metadata={"event_id": event_id},
             )
         )
 

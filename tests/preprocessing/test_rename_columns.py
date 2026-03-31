@@ -1,11 +1,10 @@
 """Tests for RenameColumns preprocessing class."""
 
 import pytest
-import pandas as pd
-from pandas.testing import assert_frame_equal
 
 from ThreeWToolkit.core.base_dataset import BaseDataset
-from ThreeWToolkit.preprocessing import RenameColumns, RenameColumnsConfig
+from ThreeWToolkit.preprocessing import RenameColumnsConfig
+
 
 @pytest.fixture
 def simple_dataset(mock_dataset_factory) -> BaseDataset:
@@ -21,7 +20,7 @@ class TestRenameColumnsFunctionality:
         columns_map = {"sensor_0": "X", "sensor_1": "Y"}
         rename = RenameColumnsConfig(columns_map=columns_map).build()
 
-        rename.fit(simple_dataset) # should be no-op
+        rename.fit(simple_dataset)  # should be no-op
 
         for event in simple_dataset:
             event = rename.transform(event)
@@ -36,7 +35,7 @@ class TestRenameColumnsFunctionality:
         columns_map = {"sensor_0": "X", "sensor_999": "Z"}  # sensor_999 does not exist
         rename = RenameColumnsConfig(columns_map=columns_map).build()
 
-        rename.fit(simple_dataset) # should be no-op
+        rename.fit(simple_dataset)  # should be no-op
 
         for event in simple_dataset:
             with pytest.raises(ValueError):

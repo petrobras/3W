@@ -22,7 +22,7 @@ class MockPreprocessingConfig(BasePreprocessingConfig):
     """Mock preprocessing configuration for testing."""
 
     function: Callable[[pd.DataFrame], pd.DataFrame]
-    meta_tag: str  | None = None
+    meta_tag: str | None = None
     wants_tag: str | None = None
     target_: type = Field(default_factory=lambda: MockPreprocessing)
 
@@ -38,7 +38,9 @@ class MockPreprocessing(BasePreprocessing):
         for event in data:
             if self.config.wants_tag is not None:
                 if self.config.wants_tag not in event.metadata:
-                    raise ValueError(f"Required metadata tag '{self.config.wants_tag}' not found in data.")
+                    raise ValueError(
+                        f"Required metadata tag '{self.config.wants_tag}' not found in data."
+                    )
         self.fitted = True
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
@@ -66,44 +68,56 @@ class TestSequentialPreprocessingAdapter:
         sequential = SequentialPreprocessingAdapterConfig(
             steps=[
                 MockPreprocessingConfig(function=lambda df: df + 1, meta_tag="add_one"),
-                MockPreprocessingConfig(function=lambda df: df * 2, meta_tag="multiply_two", wants_tag="add_one"),
+                MockPreprocessingConfig(
+                    function=lambda df: df * 2,
+                    meta_tag="multiply_two",
+                    wants_tag="add_one",
+                ),
             ]
         ).build()
 
         sequential.fit(simple_dataset)
 
         for step in sequential.steps:
-            assert step.fitted, (
-                "Each step should be fitted after calling fit on the sequential adapter."
-            )
+            assert (
+                step.fitted
+            ), "Each step should be fitted after calling fit on the sequential adapter."
 
         for event in simple_dataset:
             transformed = sequential.transform(event)
             expected_signal = (event.signal + 1) * 2
-            assert np.isclose(transformed.signal, expected_signal).all(), (
-                "Transformed signal does not match expected output."
-            )
+            assert np.isclose(
+                transformed.signal, expected_signal
+            ).all(), "Transformed signal does not match expected output."
 
-            assert transformed.metadata.get("add_one") is True, "First step should add 'add_one' tag to metadata."
-            assert transformed.metadata.get("multiply_two") is True, "Second step should add 'multiply_two' tag to metadata."
+            assert (
+                transformed.metadata.get("add_one") is True
+            ), "First step should add 'add_one' tag to metadata."
+            assert (
+                transformed.metadata.get("multiply_two") is True
+            ), "Second step should add 'multiply_two' tag to metadata."
 
         # Invert order of transformations and test again
         sequential = SequentialPreprocessingAdapterConfig(
             steps=[
-                MockPreprocessingConfig(function=lambda df: df * 2, meta_tag="multiply_two"),
-                MockPreprocessingConfig(function=lambda df: df + 1, wants_tag="multiply_two"),
+                MockPreprocessingConfig(
+                    function=lambda df: df * 2, meta_tag="multiply_two"
+                ),
+                MockPreprocessingConfig(
+                    function=lambda df: df + 1, wants_tag="multiply_two"
+                ),
             ]
         ).build()
         sequential.fit(simple_dataset)
 
         for step in sequential.steps:
-            assert step.fitted, (
-                "Each step should be fitted after calling fit on the sequential adapter."
-            )
+            assert (
+                step.fitted
+            ), "Each step should be fitted after calling fit on the sequential adapter."
 
         for event in simple_dataset:
             transformed = sequential.transform(event).signal
             expected_signal = (event.signal * 2) + 1
-            assert np.isclose(transformed, expected_signal).all(), (
-                "Transformed signal does not match expected output."
-            )
+            assert np.isclose(
+                transformed, expected_signal
+            ).all(), "Transformed signal does not match expected output."
