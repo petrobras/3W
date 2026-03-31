@@ -132,7 +132,7 @@ class ImputeMissing(BasePreprocessing):
             )  # backward-fill then forward-fill to handle trailing NaNs
 
         # if post-imputation there are still missing values, print a warning
-        if data.signal.isna().all().any():  # type: ignore
+        if signal.isna().all().any():  # type: ignore
             raise RuntimeError(
                 "Imputation failed: some columns still contain all NaN values after imputation. Check your data and imputation strategy."
             )
