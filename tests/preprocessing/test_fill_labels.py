@@ -4,80 +4,111 @@ import pytest
 import pandas as pd
 import numpy as np
 
+from ThreeWToolkit.core.base_dataset import BaseDataset
+from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
+from ThreeWToolkit.dataset.transformed_dataset import TransformedDataset
 
-# Module-level fixtures
-
-
-@pytest.fixture
-def series_with_nan():
-    """Series with NaN values for label filling tests."""
-    return pd.Series([1.0, np.nan, 3.0, np.nan, 5.0])
+from ThreeWToolkit.preprocessing import FillLabelsConfig
 
 
 @pytest.fixture
-def series_all_nan():
-    """Series with all NaN values."""
-    return pd.Series([np.nan, np.nan, np.nan])
+def simple_dataset(mock_dataset_factory) -> BaseDataset:
+    """Simple dataset for normalization tests."""
+    return mock_dataset_factory(num_sensors=10)
+
+
+@pytest.fixture
+def dataset_with_nan_labels(simple_dataset):
+    """Dataset with some NaN values in labels."""
+    nan_ratio = 0.2
+
+    def _transform(data: DatasetOutputs) -> DatasetOutputs:
+        if data.label is None:
+            return data
+        _label = data.label.copy()
+        num_labels = len(_label)
+        nan_mask = np.random.rand(num_labels) < nan_ratio
+        _label[nan_mask] = np.nan
+        return DatasetOutputs(signal=data.signal, label=_label, metadata=data.metadata)
+
+    return TransformedDataset(simple_dataset, _transform)
 
 
 # Tests for FillLabels functionality
-
-
 class TestFillLabelsStrategies:
     """Test different fill strategies."""
 
-    def test_nearest_fill_strategy(self, series_with_nan):
-        """Test nearest interpolation + bfill + ffill strategy."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
-
-    def test_ffill_strategy(self, series_with_nan):
-        """Test forward-fill then backward-fill strategy."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
-
-    def test_bfill_strategy(self, series_with_nan):
-        """Test backward-fill then forward-fill strategy."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
-
-    def test_constant_fill_strategy(self, series_with_nan):
+    def test_constant_fill_strategy(self, dataset_with_nan_labels):
         """Test filling with a constant value."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+
+        fill_value = 999
+        fill_labels = FillLabelsConfig(
+            fill_method="constant", fill_value=fill_value
+        ).build()
+        fill_labels.fit(dataset_with_nan_labels)  # Noop
+
+        for original in dataset_with_nan_labels:
+            filled = fill_labels.transform(original)
+
+            assert original.label is not None, "Original labels should not be None."
+            assert filled.label is not None, "Filled labels should not be None."
+
+            assert not filled.label.isna().any(), (
+                "Filled labels should not contain NaN values."
+            )
+
+            nan_mask = original.label.isna()
+            assert (filled.label[nan_mask] == fill_value).all(), (
+                "Filled values should match the specified constant fill value."
+            )
 
     @pytest.mark.parametrize(
-        "strategy",
+        "fill_method",
         ["nearest", "ffill", "bfill"],
     )
-    def test_various_fill_strategies(self, series_with_nan, strategy):
-        """Test different fill strategies parametrized."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+    def test_nearest_fill_strategy(self, dataset_with_nan_labels, fill_method):
+        """Test nearest interpolation + bfill + ffill strategy."""
 
+        fill_labels = FillLabelsConfig(fill_method=fill_method).build()
 
-class TestFillLabelsEdgeCases:
-    """Test edge cases and error handling."""
+        fill_labels.fit(dataset_with_nan_labels)  # Noop
 
-    def test_all_nan_series(self, series_all_nan):
-        """Test filling when all values are NaN."""
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+        for original in dataset_with_nan_labels:
+            filled = fill_labels.transform(original)
 
-    def test_no_nan_series(self):
-        """Test filling when there are no NaN values."""
-        series = pd.Series([1.0, 2.0, 3.0])
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+            assert original.label is not None, "Original labels should not be None."
+            assert filled.label is not None, "Filled labels should not be None."
 
-    def test_single_nan_at_start(self):
-        """Test filling with NaN at the beginning."""
-        series = pd.Series([np.nan, 2.0, 3.0])
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+            assert not filled.label.isna().any(), (
+                "Filled labels should not contain NaN values."
+            )
 
-    def test_single_nan_at_end(self):
-        """Test filling with NaN at the end."""
-        series = pd.Series([1.0, 2.0, np.nan])
-        # TODO: Implement test
-        pytest.skip("API adaptation needed")
+            original_na_mask = original.label.isna()
+            nan_indices = original_na_mask[original_na_mask].index
+            non_nan_indices = original_na_mask[~original_na_mask].index
+
+            for idx in nan_indices:
+                nearest_left = max(non_nan_indices[non_nan_indices < idx], default=None)
+                nearest_right = min(
+                    non_nan_indices[non_nan_indices > idx], default=None
+                )
+
+                if nearest_left is None:  # always bfill
+                    assert filled.label[idx] == original.label[nearest_right]
+                elif nearest_right is None:  # always ffill
+                    assert filled.label[idx] == original.label[nearest_left]
+                else:
+                    if fill_method == "ffill":
+                        assert filled.label[idx] == original.label[nearest_left], (
+                            "Filled value should match nearest left non-NaN value for ffill strategy."
+                        )
+                    elif fill_method == "bfill":
+                        assert filled.label[idx] == original.label[nearest_right], (
+                            "Filled value should match nearest right non-NaN value for bfill strategy."
+                        )
+                    else:  # nearest
+                        assert (filled.label[idx] == original.label[nearest_left]) or (
+                            filled.label[idx] == original.label[nearest_right]
+                        ), (
+                            "Filled value should match either nearest left or right non-NaN value."
+                        )
