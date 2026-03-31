@@ -22,7 +22,7 @@ class ParquetDatasetConfig(BaseDatasetConfig):
     Defines the dataset location, splits, filtering options, and preprocessing behavior.
     """
 
-    path: Path = Field(..., description="Path to the dataset directory or file.")
+    path: Path | str = Field(..., description="Path to the dataset directory or file.")
 
     split: Literal["train", "val", "test", "list"] | None = Field(
         default=None,
@@ -66,6 +66,12 @@ class ParquetDatasetConfig(BaseDatasetConfig):
     )
 
     target_: type = Field(default_factory=lambda: ParquetDataset)
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, v: Path | str) -> Path:
+        """Convert str to Path if needed."""
+        return Path(v) if isinstance(v, str) else v
 
     @field_validator("file_list")
     @classmethod
