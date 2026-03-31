@@ -30,7 +30,7 @@ class TorchTrainerConfig(BaseTrainerConfig):
     device: str = Field(
         default="cuda" if torch.cuda.is_available() else "cpu", description="Device"
     )
-    shuffle: bool = Field(default=True, description="Shuffle training data")
+    shuffle: bool = Field(default=False, description="Shuffle training data")
     target_: type["TorchTrainer"] = Field(default_factory=lambda: TorchTrainer)
 
     @field_validator("optimizer")
@@ -65,7 +65,7 @@ class TorchTrainer(BaseTrainer):
     def __init__(self, config: TorchTrainerConfig):
         super().__init__(config)
         self.config: TorchTrainerConfig = config
-        self.criterion = self._create_criterion()
+        self._class_weights: torch.Tensor | None = None
 
         logger.info(
             "TorchTrainer initialized | device=%s | epochs=%d | batch_size=%d",
@@ -85,7 +85,8 @@ class TorchTrainer(BaseTrainer):
         optimizer_class = optimizer_map[self.config.optimizer.lower()]
         return optimizer_class(self.model.parameters(), lr=self.config.learning_rate)
 
-    def _create_criterion(self) -> nn.Module:
+    def _create_criterion(self, weights: torch.Tensor | None = None) -> nn.Module:
+        """Create loss function, optionally with class weights."""
         criterion_map = {
             CriterionEnum.CROSS_ENTROPY.value: nn.CrossEntropyLoss,
             CriterionEnum.MSE.value: nn.MSELoss,
@@ -93,6 +94,10 @@ class TorchTrainer(BaseTrainer):
         }
 
         criterion_class = criterion_map[self.config.criterion.lower()]
+
+        # Only CrossEntropyLoss supports class weights
+        if weights is not None and criterion_class == nn.CrossEntropyLoss:
+            return criterion_class(weight=weights)
         return criterion_class()
 
     def _prepare_data_for_training(self, dataset: BaseDataset) -> DataLoader:
@@ -130,7 +135,7 @@ class TorchTrainer(BaseTrainer):
             logger.info("Auto-detected input_size=%d", inferred_size)
             self.config.config_model.input_size = inferred_size
 
-        # Instantiate model and optimizer after input size is known
+        # Instantiate model after input size is known
         self.model = self.config.config_model.build()
         self.model = self.model.to(self.config.device)
         self.optimizer = self._create_optimizer()
@@ -140,6 +145,19 @@ class TorchTrainer(BaseTrainer):
             if labels_list
             else torch.zeros(X.shape[0], dtype=torch.long)
         )
+
+        # Compute class weights if enabled
+        if self.config.use_class_weights and labels_list:
+            class_weight_dict = self._compute_class_weights(dataset)
+            num_classes = max(class_weight_dict.keys()) + 1
+            weights = torch.zeros(num_classes, dtype=torch.float32)
+            for cls, weight in class_weight_dict.items():
+                weights[cls] = weight
+            self._class_weights = weights.to(self.config.device)
+            logger.info("Using class weights: %s", class_weight_dict)
+
+        # Create criterion with weights
+        self.criterion = self._create_criterion(self._class_weights)
 
         tensor_dataset = TensorDataset(X, y)
         dataloader = DataLoader(
