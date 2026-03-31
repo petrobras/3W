@@ -1,17 +1,14 @@
-from typing import Any
 from ThreeWToolkit.core.base_dataset import BaseDataset
 from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 from pydantic import Field
 from ..core.base_preprocessing import BasePreprocessingConfig
 from ..core.base_feature_extractor import BaseFeatureExtractorConfig
 from ..core.base_transform import BaseTransform, BaseTransformConfig
-import pandas as pd
-from tqdm import tqdm
-
+from ..preprocessing.remap import RemapClass
 
 
 class TransformConfig(BaseTransformConfig):
-    """ Configuration for transforming a dataset. """
+    """Configuration for transforming a dataset."""
 
     pre_processing: BasePreprocessingConfig | None = Field(
         default=None,
@@ -25,7 +22,7 @@ class TransformConfig(BaseTransformConfig):
 
 
 class TransformDataset(BaseTransform):
-    """ Class for fitting preprocessing and feature extraction steps on a dataset and applying the transformations. """
+    """Class for fitting preprocessing and feature extraction steps on a dataset and applying the transformations."""
 
     def __init__(self, config: TransformConfig):
         self.config = config
@@ -47,10 +44,21 @@ class TransformDataset(BaseTransform):
             self.pre_processing_step.fit(dataset)
 
     def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
-        """ Apply the fitted preprocessing and feature extraction steps to a single event. """
+        """Apply the fitted preprocessing and feature extraction steps to a single event."""
 
         if self.pre_processing_step is not None:
             data = self.pre_processing_step.transform(data)
         if self.feature_extraction_step is not None:
             data = self.feature_extraction_step.transform(data)
         return data
+
+    @property
+    def num_classes(self) -> int | None:
+        """Return the number of classes from the RemapClass step, if present."""
+        if not hasattr(self, "pre_processing_step") or self.pre_processing_step is None:
+            return None
+
+        for step in self.pre_processing_step.steps:
+            if isinstance(step, RemapClass) and hasattr(step, "class_map"):
+                return len(step.class_map)
+        return None
