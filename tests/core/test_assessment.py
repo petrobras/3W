@@ -1,15 +1,16 @@
 """Tests for BaseAssessment and BaseAssessmentVisualization."""
 
 import pytest
-from pathlib import Path
 from pydantic import ValidationError
 
 from ThreeWToolkit.core import (
-    ModelAssessmentConfig,
-    AssessmentVisualizationConfig,
     BaseAssessmentVisualization,
     TaskTypeEnum,
     DataSplitEnum,
+)
+from ThreeWToolkit.assessment import (
+    ModelAssessmentConfig,
+    AssessmentVisualizationConfig,
 )
 
 
@@ -126,8 +127,12 @@ class TestModelAssessmentConfig:
 
     def test_dataset_split_values(self):
         """Test all dataset split values."""
-        for split in [DataSplitEnum.TRAIN, DataSplitEnum.VALIDATION,
-                      DataSplitEnum.TEST, DataSplitEnum.CUSTOM]:
+        for split in [
+            DataSplitEnum.TRAIN,
+            DataSplitEnum.VALIDATION,
+            DataSplitEnum.TEST,
+            DataSplitEnum.CUSTOM,
+        ]:
             config = ModelAssessmentConfig(dataset_split=split)
             assert config.dataset_split == split
 
@@ -142,9 +147,7 @@ class TestAssessmentVisualizationConfig:
 
     def test_valid_class_names(self):
         """Test valid class names list."""
-        config = AssessmentVisualizationConfig(
-            class_names=["Normal", "Anomaly"]
-        )
+        config = AssessmentVisualizationConfig(class_names=["Normal", "Anomaly"])
         assert config.class_names == ["Normal", "Anomaly"]
 
     def test_empty_class_names_raises_error(self):
