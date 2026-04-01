@@ -8,12 +8,14 @@ from typing import Any
 import numpy as np
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
+from sklearn.utils.class_weight import compute_class_weight
 
 from .base_dataset import BaseDataset
 from .base_models import BaseModels
 from .base_instantiable import Instantiable
 from .dataset_outputs import DatasetOutputs
-from sklearn.utils.class_weight import compute_class_weight
+
+from .utils.data_splitter import KFoldSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,23 @@ class TrainingResult(BaseModel):
         default_factory=dict, description="Additional metadata about training."
     )
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class CrossValidationResult(BaseModel):
+    """
+    Container for cross-validation results.
+
+    Attributes:
+        fold_results: List of TrainingResult for each fold.
+        metadata: Additional metadata about cross-validation.
+    """
+
+    fold_results: list[TrainingResult] = Field(
+        ..., description="List of training results for each fold."
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata about cross-validation."
+    )
 
 
 class BaseTrainerConfig(BaseModel, Instantiable):
@@ -116,7 +135,45 @@ class BaseTrainer(ABC):
             config: Trainer configuration with common parameters.
         """
         self.config = config
+        # Set random seeds
+        self._set_random_seeds(self.config.seed)
         logger.info("Initialized %s with seed=%d", self.__class__.__name__, config.seed)
+
+
+    def cross_validate(
+        self,
+        train_dataset: BaseDataset,
+        num_folds: int = 5,
+        stratify_by: list[str] = [],
+    ) -> CrossValidationResult:
+        """ Perform cross-validation on the given dataset.
+        Args:
+            train_dataset: Dataset to perform cross-validation on.
+            num_folds: Number of folds for cross-validation.
+            stratify_by: List of metadata keys to stratify by.
+        Returns:
+            CrossValidationResult containing results for each fold and metadata.
+        """
+        
+        splitter = KFoldSplitter(num_splits=num_folds, stratify_by=stratify_by)
+        training_results = []
+        for fold_idx, (train_subset, val_subset) in enumerate(splitter.split_data(train_dataset)):
+            logger.info("Starting fold %d/%d", fold_idx + 1, num_folds)
+            result = self.train(train_subset, val_subset)
+            training_results.append(result)
+            logger.info("Completed fold %d/%d", fold_idx + 1, num_folds)
+        logger.info("Cross-validation completed with %d folds", num_folds)
+
+        return CrossValidationResult(
+            fold_results=training_results,
+            metadata={
+                "num_folds": num_folds,
+                "stratify_by": stratify_by,
+                "trainer_type": self.__class__.__name__,
+                "seed": self.config.seed,
+            },
+        )
+
 
     def train(
         self, train_dataset: BaseDataset, val_dataset: BaseDataset | None = None
@@ -146,9 +203,6 @@ class BaseTrainer(ABC):
             len(train_dataset),
             str(len(val_dataset)) if val_dataset else "None",
         )
-
-        # 1. Set random seeds
-        self._set_random_seeds(self.config.seed)
 
         # 2. Validate datasets
         self._validate_datasets(train_dataset, val_dataset)

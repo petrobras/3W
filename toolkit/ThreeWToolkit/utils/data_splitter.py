@@ -1,0 +1,62 @@
+"""Class for splitting data into training and testing sets."""
+
+from typing import Iterator
+
+from sklearn.model_selection import StratifiedKFold, KFold
+
+from pydantic import BaseModel, Field
+from ..core.base_dataset import BaseDataset
+from ..dataset.subset_dataset import SubsetDataset
+
+
+class KFoldSplitter(BaseModel):
+    """Utility class for splitting data into training and testing sets."""
+
+    num_splits: int = Field(
+        default=5,
+        ge=1,
+        description="Number of times to split the dataset (for cross-validation)",
+    )
+
+    stratify_by: list[str] = Field(
+        default_factory=list,
+        description="List of metadata keys to stratify by (e.g. ['event_class', 'event_type']). If empty, no stratification is applied.",
+    )
+
+    def split_data(
+        self, data: BaseDataset
+    ) -> Iterator[tuple[SubsetDataset, SubsetDataset]]:
+
+        if len(self.stratify_by) == 0:
+            # No stratification, just use KFold
+            splitter = KFold(n_splits=self.num_splits, shuffle=True)
+            for train_idx, test_idx in splitter.split(range(len(data))):
+                yield SubsetDataset(data, train_idx), SubsetDataset(data, test_idx)
+            return
+
+        # Assign a pseudo-label for each event based on the requested stratification criteria
+        event_pseudo_label = []
+        for event in data:
+            if not (all(key in event.metadata for key in self.stratify_by)):
+                missing_keys = [
+                    key for key in self.stratify_by if key not in event.metadata
+                ]
+                raise ValueError(
+                    f"Event metadata missing required keys for stratification: {missing_keys}"
+                )
+            pseudo_label = tuple(event.metadata[key] for key in self.stratify_by)
+            event_pseudo_label.append(pseudo_label)
+
+        # assign unique integer values to each unique combination of class/type for stratification
+        pseudo_label_to_int = {
+            label: idx for idx, label in enumerate(set(event_pseudo_label))
+        }
+
+        # map the pseudo labels to integers for stratification
+        stratify_y = [pseudo_label_to_int[label] for label in event_pseudo_label]
+        stratify_x = list(range(len(data)))  # dummy x
+
+        splitter = StratifiedKFold(n_splits=self.num_splits, shuffle=True)
+
+        for train_idx, test_idx in splitter.split(stratify_x, stratify_y):
+            yield SubsetDataset(data, train_idx), SubsetDataset(data, test_idx)

@@ -1,5 +1,9 @@
 """SubsetDataset for slicing datasets by indices."""
 
+from typing import Any
+import numpy as np
+import numpy.typing as npt
+
 from ..core.base_dataset import BaseDataset
 from ..core.dataset_outputs import DatasetOutputs
 
@@ -16,7 +20,7 @@ class SubsetDataset(BaseDataset):
     Similar to torch.utils.data.Subset but works with any BaseDataset.
     """
 
-    def __init__(self, dataset: BaseDataset, indices: list[int]):
+    def __init__(self, dataset: BaseDataset, indices: list[int] | npt.NDArray[np.integer[Any]]):
         """
         Initialize subset dataset.
 
@@ -28,7 +32,7 @@ class SubsetDataset(BaseDataset):
             ValueError: If indices are out of bounds or empty.
         """
         self.dataset = dataset
-        self.indices = list(indices)  # Convert to list if needed
+        self.indices = indices
 
         if not self.indices:
             raise ValueError("Indices list cannot be empty")
@@ -63,9 +67,3 @@ class SubsetDataset(BaseDataset):
         # Map subset index to original dataset index
         original_idx = self.indices[idx]
         return self.dataset[original_idx]
-
-    def __repr__(self) -> str:
-        return (
-            f"SubsetDataset(dataset={self.dataset.__class__.__name__}, "
-            f"size={len(self.indices)})"
-        )

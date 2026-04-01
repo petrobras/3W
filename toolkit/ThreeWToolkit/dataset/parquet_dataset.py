@@ -181,11 +181,33 @@ class ParquetDataset(BaseDataset):
                 )
             self.files_events = [Path(p) for p in self.config.file_list]
 
+    def _get_event_type_from_filename(self, event: Path) -> str:
+        """
+        Extract the event type prefix from the file name. Assumes the event type is indicated by a prefix in the file name.
+        """
+        for prefix in [
+            ("WELL", "real"),
+            ("SIMULATED", "simulated"),
+            ("DRAWN", "drawn"),
+        ]:
+            if event.name.startswith(prefix[0]):
+                return prefix[1]
+        return "unknown"
+
+    def _get_event_class_from_folder(self, event: Path) -> int:
+        """
+        Extract the event class from the parent folder name. Assumes the parent folder is named with the class number.
+        """
+        try:
+            return int(event.parent.name)
+        except ValueError:
+            return -1  # Return -1 if the parent folder name is not an integer
+
     def _check_event_type(self, event: Path) -> bool:
         """
         Check if the event file name matches one of the requested event types.
         """
-        if isinstance(self.config.event_type, list):
+        if self.config.event_type is not None:
             return any(event.name.startswith(t.value) for t in self.config.event_type)
         else:  # Default: accept all
             return True
@@ -271,6 +293,10 @@ class ParquetDataset(BaseDataset):
                 - metadata: Dict with file_name and other info
         """
         file_name = self.files_events[idx]
+
+        event_class = self._get_event_class_from_folder(file_name)
+        event_type = self._get_event_type_from_filename(file_name)
+
         path = Path(self.config.path) / file_name
 
         # Read single parquet file
@@ -300,5 +326,11 @@ class ParquetDataset(BaseDataset):
             signal_df = parquet_file
 
         return DatasetOutputs(
-            signal=signal_df, label=label_series, metadata={"file_name": file_name}
+            signal=signal_df,
+            label=label_series,
+            metadata={
+                "file_name": file_name,
+                "event_class": event_class,
+                "event_type": event_type,
+            },
         )
