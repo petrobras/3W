@@ -19,6 +19,7 @@ from sklearn.utils.class_weight import compute_class_weight
 
 logger = logging.getLogger(__name__)
 
+
 class TrainingHistory(BaseModel):
     """
     Container for training history.
@@ -30,6 +31,7 @@ class TrainingHistory(BaseModel):
         train_metrics: Dictionary of training metrics per epoch.
         val_metrics: Dictionary of validation metrics per epoch (if applicable).
     """
+
     train_loss: list[float]
     val_loss: list[float] | None = None
 

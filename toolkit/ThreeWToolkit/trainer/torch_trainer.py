@@ -153,8 +153,7 @@ class TorchTrainer(BaseTrainer):
             self.config.config_model.input_size = inferred_size
 
         # Instantiate model after input size is known
-        self.model = self.config.config_model.build()
-        self.model = self.model.to(self.config.device)
+        self.model: BaseTorchModels = self.config.config_model.build().to(self.config.device)
         self.optimizer = self._create_optimizer()
 
         y = (
@@ -241,10 +240,9 @@ class TorchTrainer(BaseTrainer):
 
     def _validate_epoch(self, val_loader: DataLoader) -> float:
         """Compute validation loss."""
-        self.model.eval()
         running_loss = 0.0
 
-        with torch.no_grad():
+        with torch.inference_mode():
             for x_batch, y_batch in val_loader:
                 x_batch = x_batch.to(self.config.device)
                 y_batch = y_batch.to(self.config.device)
