@@ -49,24 +49,24 @@ class EWStatisticalConfig(
 
     @field_validator("decay")
     @classmethod
-    def check_decay_range(cls, v):
+    def check_decay_range(cls, decay):
         """Validates that decay is in the (0, 1] range."""
-        if not 0 < v <= 1:
+        if not 0 < decay <= 1:
             raise ValueError("Decay must be in the range (0, 1]")
-        return v
+        return decay
 
     @field_validator("features")
     @classmethod
-    def validate_features(cls, v):
+    def validate_features(cls, features):
         """Validates that selected features are available."""
-        if v is not None:
-            invalid_features = set(v) - _AVAILABLE_FEATURES
+        if features is not None:
+            invalid_features = set(features) - _AVAILABLE_FEATURES
             if invalid_features:
                 raise ValueError(
                     f"Invalid features: {invalid_features}. "
                     f"Available features: {_AVAILABLE_FEATURES}"
                 )
-        return v
+        return features
 
 
 class EWStatisticalFeatures(BaseFeatureExtractor):

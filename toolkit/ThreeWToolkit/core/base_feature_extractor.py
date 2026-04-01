@@ -30,19 +30,19 @@ class OverlapOffsetMixin(BaseModel):
 
     @field_validator("overlap")
     @classmethod
-    def check_overlap_range(cls, v):
+    def check_overlap_range(cls, overlap):
         """Validates that overlap is in the [0, 1) range."""
-        if not 0 <= v < 1:
+        if not 0 <= overlap < 1:
             raise ValueError("Overlap must be in the range [0, 1)")
-        return v
+        return overlap
 
     @field_validator("offset")
     @classmethod
-    def check_offset_value(cls, v):
+    def check_offset_value(cls, offset):
         """Validates that offset is not negative."""
-        if v < 0:
+        if offset < 0:
             raise ValueError("Offset must be a non-negative integer.")
-        return v
+        return offset
 
 
 class EpsMixin(BaseModel):
@@ -52,11 +52,11 @@ class EpsMixin(BaseModel):
 
     @field_validator("eps")
     @classmethod
-    def check_eps_value(cls, v):
+    def check_eps_value(cls, eps):
         """Validates that epsilon is a small, positive number."""
-        if v <= 0:
+        if eps <= 0:
             raise ValueError("Epsilon (eps) must be positive.")
-        return v
+        return eps
 
 
 class WindowSizeMixin(BaseModel):
@@ -66,11 +66,11 @@ class WindowSizeMixin(BaseModel):
 
     @field_validator("window_size")
     @classmethod
-    def check_window_size(cls, v):
+    def check_window_size(cls, window_size):
         """Validates that window_size is positive."""
-        if v <= 0:
+        if window_size <= 0:
             raise ValueError("Window size must be a positive integer.")
-        return v
+        return window_size
 
 
 class FeatureSelectionMixin(BaseModel):

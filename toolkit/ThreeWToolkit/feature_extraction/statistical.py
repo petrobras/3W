@@ -47,12 +47,12 @@ class StatisticalConfig(
 
     @field_validator("features")
     @classmethod
-    def validate_features(cls, v):
+    def validate_features(cls, features):
         """Validates that selected features are available."""
-        invalid_features = set(v) - set(_STATISTICAL_FEATURES)
+        invalid_features = set(features) - set(_STATISTICAL_FEATURES)
         if invalid_features:
             raise ValueError(f"Invalid features: {invalid_features}.")
-        return v
+        return features
 
 
 class StatisticalFeatures(BaseFeatureExtractor):

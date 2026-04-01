@@ -74,17 +74,17 @@ class ParquetDatasetConfig(BaseDatasetConfig):
 
     @field_validator("file_list")
     @classmethod
-    def validate_file_list(cls, v, info):
+    def validate_file_list(cls, file_list, info):
         """
         Ensure that `file_list` is only provided when `split=="list"`.
         Raise a ValueError otherwise.
         """
         split = info.data.get("split")
-        if split == "list" and v is None:
+        if split == "list" and file_list is None:
             raise ValueError('file_list must be provided if split is "list".')
-        elif split != "list" and v is not None:
+        elif split != "list" and file_list is not None:
             raise ValueError(f'file_list must not be provided if split="{split}".')
-        return v
+        return file_list
 
 
 class ParquetDataset(BaseDataset):
