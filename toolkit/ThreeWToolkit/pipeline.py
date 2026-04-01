@@ -1,13 +1,14 @@
 """Pipeline for orchestrating the complete ML workflow."""
 
 import logging
-from typing import Any
 from pydantic import Field, PrivateAttr
 
 from .core.base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .core.base_dataset import BaseDataset, BaseDatasetConfig
 from .core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingResult
-from .core.enums import TaskTypeEnum, DataSplitEnum
+from .core.base_transform import BaseTransform, BaseTransformConfig
+from .core.base_assessment import AssessmentOutput
+from .core.enums import TaskTypeEnum
 from .assessment import ModelAssessment, ModelAssessmentConfig
 
 logger = logging.getLogger(__name__)
@@ -34,9 +35,16 @@ class PipelineConfig(BasePipelineConfig):
     val_dataset_config: BaseDatasetConfig | None = Field(
         default=None, description="Configuration for validation dataset (optional)."
     )
-    transform_config: Any | None = Field(
+    transform_config: BaseTransformConfig | None = Field(
         default=None,
         description="Configuration for data transformation (optional). Should be BaseTransformConfig.",
+    )
+    assessment_config: ModelAssessmentConfig | None = Field(
+        default=None,
+        description="Configuration for model assessment (optional). If not provided, defaults will be used.",
+    )
+    save_results: bool = Field(
+        default=False, description="Whether to save the trained model after training."
     )
 
     # Experiment settings
@@ -98,14 +106,19 @@ class Pipeline(BasePipeline):
             if config.val_dataset_config is not None
             else None
         )
-        self.transform: Any | None = (
+        self.transform: BaseTransform | None = (
             config.transform_config.build()
             if config.transform_config is not None
             else None
         )
+        self.assessment: ModelAssessment | None = (
+            config.assessment_config.build()
+            if config.assessment_config is not None
+            else None
+        )
 
         self._training_result: TrainingResult | None = None
-        self._assessment_output: Any | None = None  # AssessmentOutput at runtime
+        self._assessment_output: AssessmentOutput | None = None
 
         logger.info("Pipeline initialized | experiment=%s", config.experiment_name)
 
@@ -118,24 +131,8 @@ class Pipeline(BasePipeline):
         """
         logger.info("Starting pipeline execution")
 
-        # Step 1: Fit and transform data
-        train_data = self._prepare_data(self.train_dataset, fit=True)
-        if train_data is None:
-            raise RuntimeError("Failed to prepare training data")
-
-        val_data = self._prepare_data(self.val_dataset) if self.val_dataset else None
-        test_data = self._prepare_data(self.test_dataset) if self.test_dataset else None
-
-        # Step 2: Train model
-        logger.info("Training model...")
-        self._training_result = self.trainer.train(train_data, val_data)
-        logger.info("Training complete")
-
-        # Step 3: Evaluate model (if test data provided)
-        if test_data is not None:
-            logger.info("Evaluating model...")
-            self._assessment_output = self._evaluate(test_data)
-            logger.info("Evaluation complete")
+        self.train()
+        self.evaluate()
 
         return PipelineResult(
             training_result=self._training_result,
@@ -164,50 +161,22 @@ class Pipeline(BasePipeline):
 
         return self.transform.transform(dataset)
 
-    def _evaluate(self, test_data: BaseDataset) -> Any:
-        """Run model evaluation."""
-        # Lazy import to avoid pydantic/numpy compatibility issue with metrics
-
-        if self._training_result is None:
-            raise RuntimeError("Model must be trained before evaluation")
-
-        assessment_config = ModelAssessmentConfig(
-            metrics=self.config.metrics,
-            task_type=self.config.task_type,
-            dataset_split=DataSplitEnum.TEST,
-            generate_report=self.config.generate_report,
-        )
-
-        assessor = ModelAssessment(
-            trainer=self.trainer,
-            training_result=self._training_result,
-            config=assessment_config,
-        )
-
-        return assessor.evaluate(test_data)
-
-    def train(self, val_dataset: BaseDataset | None = None) -> TrainingResult:
-        """
-        Train the model only.
-
-        Args:
-            val_dataset: Optional validation dataset (overrides constructor value).
-
-        Returns:
-            TrainingResult from training.
-        """
+    def train(self) -> TrainingResult:
+        # Step 1: Fit and transform data
         train_data = self._prepare_data(self.train_dataset, fit=True)
         if train_data is None:
             raise RuntimeError("Failed to prepare training data")
 
-        val_data = val_dataset or self.val_dataset
-        if val_data is not None:
-            val_data = self._prepare_data(val_data)
+        val_data = self._prepare_data(self.val_dataset) if self.val_dataset else None
 
+        # Step 2: Train model
+        logger.info("Training model...")
         self._training_result = self.trainer.train(train_data, val_data)
+        logger.info("Training complete")
+
         return self._training_result
 
-    def evaluate(self, test_dataset: BaseDataset | None = None) -> Any:
+    def evaluate(self) -> AssessmentOutput | None:
         """
         Evaluate the trained model.
 
@@ -225,32 +194,29 @@ class Pipeline(BasePipeline):
                 "Model must be trained before evaluation. Call train() first."
             )
 
-        test_data = test_dataset or self.test_dataset
+        test_data = self._prepare_data(self.test_dataset) if self.test_dataset else None
         if test_data is None:
-            raise ValueError("No test dataset provided")
-
-        test_data = self._prepare_data(test_data)
-        if test_data is None:
-            raise ValueError("Test data preparation failed")
-
-        self._assessment_output = self._evaluate(test_data)
-        return self._assessment_output
-
-    @property
-    def model(self):
-        """Get the trained model."""
-        if self._training_result is None:
+            logger.debug("No test dataset provided, skipping evaluation")
             return None
-        return self._training_result.model
 
-    @property
-    def training_history(self) -> dict[str, Any] | None:
-        """Get training history."""
-        if self._training_result is None:
-            return None
-        return self._training_result.history
+        logger.info("Evaluating model...")
+        if self.assessment:
+            logger.info("Evaluation complete")
+            return self.assessment.evaluate(test_data)
 
-    @property
-    def assessment_results(self) -> Any | None:
-        """Get assessment results."""
+        # If not provided, use default assessment configuration
+        print(self.config.generate_report)
+        assessment_config = ModelAssessmentConfig(
+            metrics=self.config.metrics,
+            task_type=self.config.task_type,
+            generate_report=self.config.generate_report,
+        )
+
+        assessor = ModelAssessment(
+            training_result=self._training_result,
+            config=assessment_config,
+        )
+
+        self._assessment_output = assessor.evaluate(test_data)
+        logger.info("Evaluation complete")
         return self._assessment_output

@@ -1,14 +1,15 @@
 """Tests for sklearn_models module."""
 
 import pytest
-from pathlib import Path
-
+from ThreeWToolkit.constants import CHECKPOINT_DIR
 from ThreeWToolkit.models.sklearn_models import (
     SklearnModels,
     SklearnModelsConfig,
     SKLEARN_MODELS,
 )
 from ThreeWToolkit.core.enums import ModelTypeEnum
+from sklearn.base import BaseEstimator
+import numpy as np
 
 
 class TestSklearnModelsConfig:
@@ -135,7 +136,6 @@ class TestSklearnModels:
 
     def test_save_and_load(self, logistic_config):
         """Model should save and load correctly."""
-        from ThreeWToolkit.constants import CHECKPOINT_DIR
 
         model = SklearnModels(logistic_config)
         model.set_params(C=0.5)
@@ -153,7 +153,6 @@ class TestSklearnModels:
 
     def test_save_creates_file_in_checkpoint_dir(self, logistic_config):
         """Save should create file in CHECKPOINT_DIR."""
-        from ThreeWToolkit.constants import CHECKPOINT_DIR
 
         model = SklearnModels(logistic_config)
         filename = "test_sklearn_checkpoint.pkl"
@@ -183,7 +182,6 @@ class TestSklearnModelsMapping:
 
     def test_mapping_returns_sklearn_classes(self):
         """All mapped values should be sklearn classes."""
-        from sklearn.base import BaseEstimator
 
         for model_type, model_class in SKLEARN_MODELS.items():
             instance = model_class()
@@ -196,7 +194,6 @@ class TestSklearnModelsIntegration:
     @pytest.fixture
     def sample_data(self):
         """Provide sample training data."""
-        import numpy as np
 
         np.random.seed(42)
         X = np.random.randn(100, 10)
@@ -240,7 +237,6 @@ class TestSklearnModelsIntegration:
 
     def test_multiclass_classification(self, sample_data):
         """Models should handle multi-class classification."""
-        import numpy as np
 
         X, _ = sample_data
         y = np.random.randint(0, 5, 100)  # 5 classes
@@ -254,7 +250,6 @@ class TestSklearnModelsIntegration:
 
     def test_save_load_fitted_model(self, sample_data):
         """Fitted model should save and load with state preserved."""
-        from ThreeWToolkit.constants import CHECKPOINT_DIR
 
         X, y = sample_data
         config = SklearnModelsConfig(model_type=ModelTypeEnum.LOGISTIC_REGRESSION)

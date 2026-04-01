@@ -13,6 +13,7 @@ from .base_dataset import BaseDataset
 from .base_models import BaseModels
 from .base_instantiable import Instantiable
 from .dataset_outputs import DatasetOutputs
+from sklearn.utils.class_weight import compute_class_weight
 
 logger = logging.getLogger(__name__)
 
@@ -288,8 +289,6 @@ class BaseTrainer(ABC):
         unique_classes = np.unique(labels_array)
 
         # Compute balanced weights
-        from sklearn.utils.class_weight import compute_class_weight
-
         weights = compute_class_weight(
             class_weight="balanced", classes=unique_classes, y=labels_array
         )
@@ -330,7 +329,7 @@ class BaseTrainer(ABC):
         self,
         test_dataset: BaseDataset,
         assessment_config: Any | None = None,
-    ) -> Any:
+    ) -> AssessmentOutput:
         """Evaluate the trained model using ModelAssessment.
 
         Args:
@@ -340,10 +339,6 @@ class BaseTrainer(ABC):
         Returns:
             AssessmentOutput with evaluation results.
         """
-        from ..assessment.model_assess import ModelAssessment
-        from ..core.base_assessment import ModelAssessmentConfig
-        from ..core.enums import TaskTypeEnum, DataSplitEnum
-
         if not hasattr(self, "_training_result") or self._training_result is None:
             raise RuntimeError(
                 "Model must be trained before evaluation. Call train() first."

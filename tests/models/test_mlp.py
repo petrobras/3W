@@ -2,9 +2,7 @@
 
 import pytest
 import torch
-import numpy as np
-from pathlib import Path
-
+from ThreeWToolkit.constants import CHECKPOINT_DIR
 from ThreeWToolkit.models.mlp import MLP, MLPConfig
 from ThreeWToolkit.core.enums import ModelTypeEnum
 
@@ -182,7 +180,6 @@ class TestMLP:
 
     def test_save_and_load(self, basic_config):
         """Model should save and load correctly."""
-        from ThreeWToolkit.constants import CHECKPOINT_DIR
 
         model = MLP(basic_config)
         x = torch.randn(4, 100)
@@ -202,7 +199,6 @@ class TestMLP:
 
     def test_save_creates_file_in_checkpoint_dir(self, basic_config):
         """Save should create file in CHECKPOINT_DIR."""
-        from ThreeWToolkit.constants import CHECKPOINT_DIR
 
         model = MLP(basic_config)
         filename = "test_mlp_checkpoint.pth"

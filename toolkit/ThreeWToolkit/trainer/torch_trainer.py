@@ -209,7 +209,6 @@ class TorchTrainer(BaseTrainer):
 
             pbar.refresh()
 
-        logger.info("Training completed")
         return history
 
     def _train_epoch(self, train_loader: DataLoader) -> float:

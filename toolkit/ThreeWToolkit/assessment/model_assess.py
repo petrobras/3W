@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from ..reports.report_generation import ReportGeneration
 from ..core.base_models import BaseModels
 from ..core.base_dataset import BaseDataset
-from ..core.base_trainer import BaseTrainer, TrainingResult
+from ..core.base_trainer import TrainingResult
 from ..core.base_assessment import AssessmentOutput
 from ..core import BaseAssessmentConfig, BaseAssessment
 
@@ -91,7 +91,6 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
         device (str): Device for PyTorch computations.
         report_title (str | None): Title for the report.
         report_author (str): Author name for the report.
-        dataset_split (DataSplitEnum): Type of dataset to be evaluated.
     """
 
     metrics: list[str] = Field(default=["accuracy", "f1"])
@@ -103,7 +102,6 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
     device: str = Field(default="cuda" if torch.cuda.is_available() else "cpu")
     report_title: str | None = Field(default=None)
     report_author: str = Field(default="3W Toolkit Report")
-    dataset_split: DataSplitEnum = Field(default=DataSplitEnum.TEST)
     _target: type = PrivateAttr(default_factory=lambda: ModelAssessment)
 
     @field_validator("task_type")
@@ -192,9 +190,8 @@ class ModelAssessment(BaseAssessment):
 
     def __init__(
         self,
-        trainer: BaseTrainer,
         training_result: TrainingResult,
-        config: ModelAssessmentConfig | None = None,
+        config: ModelAssessmentConfig,
     ):
         """Initialize ModelAssessment with a trainer and its training result.
 
@@ -203,16 +200,9 @@ class ModelAssessment(BaseAssessment):
             training_result: The result from trainer.train().
             config: Optional assessment configuration.
         """
-        self.trainer = trainer
-        self.training_result = training_result
         self.model = training_result.model
         self.training_history = training_result.history
-
-        self.config = config or ModelAssessmentConfig(
-            metrics=["accuracy"],
-            task_type=TaskTypeEnum.CLASSIFICATION,
-        )
-
+        self.config = config
         self.results: AssessmentOutput | None = None
         self.metric_registry = MetricRegistry()
         self._report_generator = None

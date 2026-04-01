@@ -130,8 +130,6 @@ class SklearnTrainer(BaseTrainer):
 
         self.model.model_class.fit(X_train, y_train, **fit_params)
 
-        logger.info("Training completed")
-
         history: dict[str, list[float] | float] = {}
 
         if val_data is not None:

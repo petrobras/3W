@@ -1,8 +1,8 @@
 """Tests for BaseModels and ModelsConfig."""
 
 import pytest
-from pydantic import ValidationError
-
+import torch
+from torch import nn
 from ThreeWToolkit.core import (
     BaseModels,
     BaseSkLearnModels,
@@ -197,8 +197,6 @@ class TestBaseTorchModels:
 
     def test_torch_model_implementation(self):
         """Test implementing a torch-style model."""
-        import torch
-        from torch import nn
 
         class MyTorchModel(BaseTorchModels):
             def __init__(self):
