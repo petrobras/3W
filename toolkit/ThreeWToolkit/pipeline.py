@@ -131,12 +131,12 @@ class Pipeline(BasePipeline):
         """
         logger.info("Starting pipeline execution")
 
-        self.train()
-        self.evaluate()
+        training_result = self.train(self.train_dataset, self.val_dataset)
+        assessment_result = self.evaluate(training_result, self.test_dataset)
 
         return PipelineResult(
-            training_result=self._training_result,
-            assessment_output=self._assessment_output,
+            training_result=training_result,
+            assessment_output=assessment_result,
             experiment_name=self.config.experiment_name,
             metadata={
                 "train_size": len(self.train_dataset),
@@ -161,22 +161,24 @@ class Pipeline(BasePipeline):
 
         return self.transform.transform(dataset)
 
-    def train(self) -> TrainingResult:
-        # Step 1: Fit and transform data
-        train_data = self._prepare_data(self.train_dataset, fit=True)
+    def train(
+        self, train_dataset: BaseDataset, val_dataset: BaseDataset | None
+    ) -> TrainingResult:
+        train_data = self._prepare_data(train_dataset, fit=True)
         if train_data is None:
             raise RuntimeError("Failed to prepare training data")
 
-        val_data = self._prepare_data(self.val_dataset) if self.val_dataset else None
+        val_data = self._prepare_data(val_dataset) if val_dataset else None
 
-        # Step 2: Train model
         logger.info("Training model...")
-        self._training_result = self.trainer.train(train_data, val_data)
+        training_result = self.trainer.train(train_data, val_data)
         logger.info("Training complete")
 
-        return self._training_result
+        return training_result
 
-    def evaluate(self) -> AssessmentOutput | None:
+    def evaluate(
+        self, training_result: TrainingResult, test_dataset: BaseDataset | None
+    ) -> AssessmentOutput | None:
         """
         Evaluate the trained model.
 
@@ -189,12 +191,12 @@ class Pipeline(BasePipeline):
         Raises:
             RuntimeError: If model hasn't been trained.
         """
-        if self._training_result is None:
+        if training_result is None:
             raise RuntimeError(
                 "Model must be trained before evaluation. Call train() first."
             )
 
-        test_data = self._prepare_data(self.test_dataset) if self.test_dataset else None
+        test_data = self._prepare_data(test_dataset) if test_dataset else None
         if test_data is None:
             logger.debug("No test dataset provided, skipping evaluation")
             return None
@@ -205,7 +207,6 @@ class Pipeline(BasePipeline):
             return self.assessment.evaluate(test_data)
 
         # If not provided, use default assessment configuration
-        print(self.config.generate_report)
         assessment_config = ModelAssessmentConfig(
             metrics=self.config.metrics,
             task_type=self.config.task_type,
@@ -213,7 +214,7 @@ class Pipeline(BasePipeline):
         )
 
         assessor = ModelAssessment(
-            training_result=self._training_result,
+            training_result=training_result,
             config=assessment_config,
         )
 

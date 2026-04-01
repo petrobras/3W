@@ -69,8 +69,8 @@ class ReportGeneration:
     def __init__(
         self,
         model,
-        X_train: pd.Series,
-        y_train: pd.Series,
+        X_train: pd.Series | None,
+        y_train: pd.Series | None,
         X_test: pd.Series,
         y_test: pd.Series,
         predictions: pd.Series,
@@ -455,7 +455,7 @@ class ReportGeneration:
             "calculated_metrics": self.calculated_metrics,
             "model_type": type(self.model).__name__,
             "model_config": self.model.config.__dict__,
-            "train_samples": len(self.X_train),
+            "train_samples": len(self.X_train) if self.X_train is not None else None,
             "test_samples": len(self.X_test),
             "plot_data": plot_data,
         }
