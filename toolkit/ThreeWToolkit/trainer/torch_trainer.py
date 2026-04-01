@@ -9,7 +9,7 @@ from pydantic import Field, field_validator, PrivateAttr
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm.auto import tqdm
 
-from ..core.base_trainer import BaseTrainer, BaseTrainerConfig
+from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingHistory
 from ..core.base_dataset import BaseDataset
 from ..core.base_models import BaseTorchModels
 from ..core.enums import OptimizersEnum, CriterionEnum
@@ -31,6 +31,11 @@ class TorchTrainerConfig(BaseTrainerConfig):
         default="cuda" if torch.cuda.is_available() else "cpu", description="Device"
     )
     shuffle: bool = Field(default=False, description="Shuffle training data")
+    deterministic: bool = Field(
+        default=False,
+        description="Use deterministic algorithms for cuda (may impact performance)",
+    )
+
     _target: type["TorchTrainer"] = PrivateAttr(default_factory=lambda: TorchTrainer)
 
     @field_validator("optimizer")
@@ -69,6 +74,10 @@ class TorchTrainer(BaseTrainer):
         self.config: TorchTrainerConfig = config
         self._class_weights: torch.Tensor | None = None
 
+        # For deterministic behavior (may impact performance)
+        torch.backends.cudnn.deterministic = self.config.deterministic
+        torch.backends.cudnn.benchmark = self.config.deterministic
+
         logger.info(
             "TorchTrainer initialized | device=%s | epochs=%d | batch_size=%d",
             config.device,
@@ -101,6 +110,12 @@ class TorchTrainer(BaseTrainer):
         if weights is not None and criterion_class == nn.CrossEntropyLoss:
             return criterion_class(weight=weights)
         return criterion_class()
+
+    def _set_random_seeds(self, seed: int) -> None:
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+        return super()._set_random_seeds(seed)
 
     def _prepare_data_for_training(self, dataset: BaseDataset) -> DataLoader:
         """Convert dataset to PyTorch DataLoader."""
@@ -174,13 +189,11 @@ class TorchTrainer(BaseTrainer):
 
     def _execute_training(
         self, train_data: DataLoader, val_data: DataLoader | None
-    ) -> dict[str, list[float] | None]:
+    ) -> TrainingHistory:
         """Execute epoch-based training loop."""
 
-        history: dict[str, list[float] | None] = {
-            "train_loss": [],
-            "val_loss": [] if val_data else None,
-        }
+        train_loss: list[float] = []
+        val_loss: list[float] | None =  [] if val_data else None
 
         pbar = tqdm(
             range(self.config.epochs),
@@ -191,25 +204,21 @@ class TorchTrainer(BaseTrainer):
         )
 
         for epoch in pbar:
-            avg_train_loss = self._train_epoch(train_data)
-            train_loss_list = history["train_loss"]
-            if train_loss_list is not None:
-                train_loss_list.append(avg_train_loss)
+            epoch_train_loss = self._train_epoch(train_data)
+            train_loss.append(epoch_train_loss)
 
-            if val_data is not None:
-                val_loss = self._validate_epoch(val_data)
-                val_loss_list = history["val_loss"]
-                if val_loss_list is not None:
-                    val_loss_list.append(val_loss)
+            if val_data is not None and val_loss is not None:
+                epoch_val_loss = self._validate_epoch(val_data)
+                val_loss.append(epoch_val_loss)
                 pbar.set_postfix(
-                    loss=f"{avg_train_loss:.4f}", val_loss=f"{val_loss:.4f}"
+                    loss=f"{epoch_train_loss:.4f}", val_loss=f"{epoch_val_loss:.4f}"
                 )
             else:
-                pbar.set_postfix(loss=f"{avg_train_loss:.4f}")
+                pbar.set_postfix(loss=f"{epoch_train_loss:.4f}")
 
             pbar.refresh()
 
-        return history
+        return TrainingHistory(train_loss=train_loss, val_loss=val_loss)
 
     def _train_epoch(self, train_loader: DataLoader) -> float:
         """Run single training epoch."""

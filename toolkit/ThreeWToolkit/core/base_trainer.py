@@ -7,15 +7,31 @@ from typing import Any
 
 import numpy as np
 import torch
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from .base_dataset import BaseDataset
 from .base_models import BaseModels
+from .base_assessment import AssessmentOutput
 from .base_instantiable import Instantiable
 from .dataset_outputs import DatasetOutputs
 from sklearn.utils.class_weight import compute_class_weight
 
 logger = logging.getLogger(__name__)
+
+class TrainingHistory(BaseModel):
+    """
+    Container for training history.
+
+    Attributes:
+        epochs: List of epoch numbers.
+        train_loss: List of training loss values per epoch.
+        val_loss: List of validation loss values per epoch (if applicable).
+        train_metrics: Dictionary of training metrics per epoch.
+        val_metrics: Dictionary of validation metrics per epoch (if applicable).
+    """
+    train_loss: list[float]
+    val_loss: list[float] | None = None
 
 
 class TrainingResult(BaseModel):
@@ -31,7 +47,7 @@ class TrainingResult(BaseModel):
     """
 
     model: BaseModels
-    history: dict[str, Any]
+    history: TrainingHistory
     train_dataset_size: int
     val_dataset_size: int
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -46,7 +62,7 @@ class BaseTrainerConfig(BaseModel, Instantiable):
         default=False,
         description="Whether to compute class weights for imbalanced data",
     )
-    class_weight_strategy: str = Field(
+    class_weight_strategy: Literal["balanced", "manual"] = Field(
         default="balanced", description="Class weight strategy: 'balanced' or 'manual'"
     )
     manual_class_weights: dict[int, float] | None = Field(
@@ -117,33 +133,27 @@ class BaseTrainer(ABC):
 
         Raises:
             ValueError: If datasets are incompatible or invalid.
-
-        Example:
-            >>> train_ds = ParquetDatasetConfig(split="train", ...).build()
-            >>> val_ds = ParquetDatasetConfig(split="val", ...).build()
-            >>> trainer = TorchTrainer(config)
-            >>> result = trainer.train(train_ds, val_ds)
-            >>> print(f"Training loss: {result.history['train_loss'][-1]}")
         """
         logger.info(
             "Starting training | train_size=%d | val_size=%s",
             len(train_dataset),
-            len(val_dataset) if val_dataset else "None",
+            str(len(val_dataset)) if val_dataset else "None",
         )
 
-        # 1. Validate datasets
-        self._validate_datasets(train_dataset, val_dataset)
-
-        # 2. Set random seeds
+        # 1. Set random seeds
         self._set_random_seeds(self.config.seed)
+
+        # 2. Validate datasets
+        self._validate_datasets(train_dataset, val_dataset)
 
         # 3. Prepare data (framework-specific)
         logger.info("Preparing training data...")
         train_data = self._prepare_data_for_training(train_dataset)
-        val_data = None
         if val_dataset is not None:
             logger.info("Preparing validation data...")
             val_data = self._prepare_data_for_training(val_dataset)
+        else:
+            val_data = None
 
         # 4. Execute training (framework-specific)
         logger.info("Executing training...")
@@ -231,24 +241,11 @@ class BaseTrainer(ABC):
         Sets seeds for:
         - Python random module
         - NumPy
-        - PyTorch (CPU and CUDA)
-
         Args:
             seed: Random seed value.
         """
         random.seed(seed)
         np.random.seed(seed)
-        torch.manual_seed(seed)
-
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed(seed)
-            torch.cuda.manual_seed_all(seed)
-
-            # For deterministic behavior (may impact performance)
-            if hasattr(self.config, "deterministic") and self.config.deterministic:
-                torch.backends.cudnn.deterministic = True
-                torch.backends.cudnn.benchmark = False
-
         logger.debug("Random seeds set to %d", seed)
 
     def _compute_class_weights(self, dataset: BaseDataset) -> dict[int, float]:
@@ -321,39 +318,6 @@ class BaseTrainer(ABC):
     @abstractmethod
     def _execute_training(
         self, train_data: Any, val_data: Any | None
-    ) -> dict[str, Any]:
+        ) -> TrainingHistory:
         """Execute the training loop (framework-specific)."""
         pass
-
-    def evaluate(
-        self,
-        test_dataset: BaseDataset,
-        assessment_config: Any | None = None,
-    ) -> AssessmentOutput:
-        """Evaluate the trained model using ModelAssessment.
-
-        Args:
-            test_dataset: Test dataset for evaluation.
-            assessment_config: Optional ModelAssessmentConfig. If None, uses defaults.
-
-        Returns:
-            AssessmentOutput with evaluation results.
-        """
-        if not hasattr(self, "_training_result") or self._training_result is None:
-            raise RuntimeError(
-                "Model must be trained before evaluation. Call train() first."
-            )
-
-        if assessment_config is None:
-            assessment_config = ModelAssessmentConfig(
-                metrics=["accuracy"],
-                task_type=TaskTypeEnum.CLASSIFICATION,
-                dataset_split=DataSplitEnum.TEST,
-            )
-
-        assessor = ModelAssessment(
-            trainer=self,
-            training_result=self._training_result,
-            config=assessment_config,
-        )
-        return assessor.evaluate(test_dataset)
