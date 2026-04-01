@@ -1,11 +1,14 @@
 """Definition for the base assessment class."""
 
-from pydantic import BaseModel, ConfigDict, Field
-from ..core.enums import TaskTypeEnum
-import numpy as np
-from typing import Any
 from abc import ABC
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+import numpy as np
+
 from .base_instantiable import Instantiable
+from ..core.enums import TaskTypeEnum
+from ..core.base_trainer import TrainingHistory
 
 
 class AssessmentOutput(BaseModel):
@@ -18,7 +21,7 @@ class AssessmentOutput(BaseModel):
     predictions: np.ndarray | None = None
     true_values: np.ndarray | None = None
     metrics: dict[str, float] | None = None
-    training_history: dict[str, Any] | None = None
+    training_history: TrainingHistory | None = None
 
     config: dict[str, Any] = Field(default_factory=dict)
     experiment_dir: str | None = None

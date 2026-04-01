@@ -3,7 +3,7 @@
 import logging
 import numpy as np
 from pydantic import Field, field_validator, PrivateAttr
-from ..core.base_trainer import BaseTrainer, BaseTrainerConfig
+from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingHistory
 from ..core.base_dataset import BaseDataset
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 
@@ -87,7 +87,7 @@ class SklearnTrainer(BaseTrainer):
         self,
         train_data: tuple[np.ndarray, np.ndarray],
         val_data: tuple[np.ndarray, np.ndarray] | None,
-    ) -> dict[str, list[float] | float]:
+        ) -> TrainingHistory:
         """Execute sklearn fit() training."""
         X_train, y_train = train_data
 
@@ -129,13 +129,12 @@ class SklearnTrainer(BaseTrainer):
                 fit_params["sample_weight"] = sample_weights
 
         self.model.model_class.fit(X_train, y_train, **fit_params)
-
-        history: dict[str, list[float] | float] = {}
+        train_score = self.model.model_class.score(X_train, y_train)
+        logger.info("Training score: %.4f", train_score)
 
         if val_data is not None:
             X_val, y_val = val_data
             val_score = self.model.model_class.score(X_val, y_val)
-            history["val_score"] = val_score
             logger.info("Validation score: %.4f", val_score)
 
-        return history
+        return TrainingHistory(train_score=[train_score], val_score=[val_score] if val_data is not None else None)
