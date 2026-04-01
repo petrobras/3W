@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from .base_visualizer import BaseVisualizer
+from ..core.base_visualizer import BaseVisualizer
 
 
 class PlotMultipleSeries(BaseVisualizer):

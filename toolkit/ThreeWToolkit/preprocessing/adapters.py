@@ -1,4 +1,4 @@
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 
 from ..dataset.transformed_dataset import TransformedDataset
 
@@ -10,7 +10,9 @@ from ..core.dataset_outputs import DatasetOutputs
 class SequentialPreprocessingAdapterConfig(BasePreprocessingConfig):
     """Configuration for SequentialPreprocessingAdapter, which applies a list of preprocessing steps sequentially."""
 
-    steps: list[BasePreprocessingConfig]
+    steps: list[BasePreprocessingConfig] = Field(
+        ..., description="List of preprocessing steps to apply sequentially."
+    )
     _target: type = PrivateAttr(default_factory=lambda: SequentialPreprocessingAdapter)
 
 

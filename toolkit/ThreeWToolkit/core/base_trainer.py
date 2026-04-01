@@ -6,13 +6,11 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import numpy as np
-import torch
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from .base_dataset import BaseDataset
 from .base_models import BaseModels
-from .base_assessment import AssessmentOutput
 from .base_instantiable import Instantiable
 from .dataset_outputs import DatasetOutputs
 from sklearn.utils.class_weight import compute_class_weight
@@ -48,11 +46,17 @@ class TrainingResult(BaseModel):
         metadata: Additional metadata about training.
     """
 
-    model: BaseModels
-    history: TrainingHistory
-    train_dataset_size: int
-    val_dataset_size: int
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    model: BaseModels = Field(..., description="Trained model instance.")
+    history: TrainingHistory = Field(..., description="Training history.")
+    train_dataset_size: int = Field(
+        ..., description="Number of events in training dataset."
+    )
+    val_dataset_size: int = Field(
+        ..., description="Number of events in validation dataset (0 if no validation)."
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata about training."
+    )
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
@@ -320,6 +324,6 @@ class BaseTrainer(ABC):
     @abstractmethod
     def _execute_training(
         self, train_data: Any, val_data: Any | None
-        ) -> TrainingHistory:
+    ) -> TrainingHistory:
         """Execute the training loop (framework-specific)."""
         pass

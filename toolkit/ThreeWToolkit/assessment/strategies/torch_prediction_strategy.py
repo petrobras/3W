@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-
+import numpy.typing as npt
 from typing import Any
 from ...core.base_prediction_strategies import PredictionStrategy
 from ...core.enums import TaskTypeEnum
@@ -39,9 +39,9 @@ class TorchPredictionStrategy(PredictionStrategy):
             AssertionError: If the model is not a valid torch.nn.Module.
             ValueError: If no DataLoader is provided or the task type is unknown.
         """
-        assert model is not None and isinstance(
-            model, nn.Module
-        ), "Model must be a valid torch.nn.Module before prediction."
+        assert model is not None and isinstance(model, nn.Module), (
+            "Model must be a valid torch.nn.Module before prediction."
+        )
 
         loader = kwargs.get("loader")
         device = kwargs.get("device", "cpu")
@@ -52,7 +52,7 @@ class TorchPredictionStrategy(PredictionStrategy):
         model.eval()
         model.to(device)
 
-        y_pred: list[Any] = []
+        y_pred: list[npt.NDArray[np.float32]] = []
 
         with torch.no_grad():
             for X_batch, _ in loader:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from .base_instantiable import Instantiable
 from .dataset_outputs import DatasetOutputs
 
@@ -25,8 +25,8 @@ class BaseFeatureExtractor(ABC):
 class OverlapOffsetMixin(BaseModel):
     """Mixin with common validations for overlap and offset."""
 
-    overlap: float = 0.0
-    offset: int = 0
+    overlap: float = Field(default=0.0, description="Overlap fraction between windows.")
+    offset: int = Field(default=0, description="Offset for the window.")
 
     @field_validator("overlap")
     @classmethod
@@ -48,7 +48,7 @@ class OverlapOffsetMixin(BaseModel):
 class EpsMixin(BaseModel):
     """Mixin for positive epsilon validation."""
 
-    eps: float = 1e-6
+    eps: float = Field(default=1e-6, description="Small epsilon value for stability.")
 
     @field_validator("eps")
     @classmethod
@@ -62,7 +62,7 @@ class EpsMixin(BaseModel):
 class WindowSizeMixin(BaseModel):
     """Mixin for window_size validation."""
 
-    window_size: int = 100
+    window_size: int = Field(default=100, description="Size of the window.")
 
     @field_validator("window_size")
     @classmethod
@@ -76,4 +76,6 @@ class WindowSizeMixin(BaseModel):
 class FeatureSelectionMixin(BaseModel):
     """Mixin for feature selection."""
 
-    selected_features: list[str] | None = None
+    selected_features: list[str] | None = Field(
+        default=None, description="List of features to select."
+    )

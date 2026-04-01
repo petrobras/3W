@@ -31,7 +31,7 @@ class SklearnModelsConfig(ModelsConfig):
     """Sklearn model configuration. Use with SklearnTrainer for training."""
 
     model_params: dict[str, int | float | str | bool | None] = Field(
-        default_factory=dict
+        default_factory=dict, description="Model-specific hyperparameters."
     )
     _target: type = PrivateAttr(default_factory=lambda: SklearnModels)
 

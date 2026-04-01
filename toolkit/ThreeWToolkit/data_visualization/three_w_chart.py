@@ -6,7 +6,7 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from ..utils.data_utils import get_config_dataset_ini
-from ..data_visualization.base_visualizer import BaseVisualizer
+from ..core.base_visualizer import BaseVisualizer
 
 
 class ThreeWChart(BaseVisualizer):

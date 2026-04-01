@@ -1,11 +1,13 @@
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
 
 
 class RenameColumnsConfig(BasePreprocessingConfig):
-    columns_map: dict[str, str]
+    columns_map: dict[str, str] = Field(
+        ..., description="Mapping from old column names to new column names."
+    )
     _target: type = PrivateAttr(default_factory=lambda: RenameColumns)
 
 

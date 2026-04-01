@@ -4,7 +4,6 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 
 from ...core.base_prediction_strategies import PredictionStrategy
-from ...core.enums import TaskTypeEnum
 
 
 class SklearnPredictionStrategy(PredictionStrategy):
@@ -14,14 +13,11 @@ class SklearnPredictionStrategy(PredictionStrategy):
     scikit-learn `predict` API.
     """
 
-    def predict(
-        self, model: BaseEstimator, task: TaskTypeEnum | None = None, **kwargs
-    ) -> np.ndarray:
+    def predict(self, model: BaseEstimator, **kwargs) -> np.ndarray:
         """Generate predictions using a scikit-learn model.
 
         Args:
-            model (Any): Trained scikit-learn model implementing `predict`.
-            task (TaskTypeEnum | None): Task type indicating how predictions
+            model (BaseEstimator): Trained scikit-learn model implementing `predict`.
                 should be interpreted. Defaults to TaskTypeEnum.CLASSIFICATION.
             **kwargs: Additional keyword arguments:
                 x (np.ndarray): Input feature matrix.
@@ -54,7 +50,7 @@ class SklearnPredictionStrategy(PredictionStrategy):
         scikit-learn convention.
 
         Args:
-            model (Any): Trained scikit-learn classification model implementing
+            model (BaseEstimator): Trained scikit-learn classification model implementing
                 `predict_proba`.
             **kwargs: Additional keyword arguments:
                 x (np.ndarray): Input feature matrix of shape (N, D).

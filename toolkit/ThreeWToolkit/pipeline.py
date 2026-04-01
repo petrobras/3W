@@ -117,9 +117,6 @@ class Pipeline(BasePipeline):
             else None
         )
 
-        self._training_result: TrainingResult | None = None
-        self._assessment_output: AssessmentOutput | None = None
-
         logger.info("Pipeline initialized | experiment=%s", config.experiment_name)
 
     def run(self) -> PipelineResult:
@@ -133,6 +130,10 @@ class Pipeline(BasePipeline):
 
         training_result = self.train(self.train_dataset, self.val_dataset)
         assessment_result = self.evaluate(training_result, self.test_dataset)
+
+        if self.config.save_results:
+            training_result.model.save(f"{self.config.experiment_name}_model.pth")
+            logger.info("Model saved to %s_model.pth", self.config.experiment_name)
 
         return PipelineResult(
             training_result=training_result,
@@ -211,6 +212,7 @@ class Pipeline(BasePipeline):
             metrics=self.config.metrics,
             task_type=self.config.task_type,
             generate_report=self.config.generate_report,
+            export_results=self.config.save_results,
         )
 
         assessor = ModelAssessment(
@@ -218,6 +220,6 @@ class Pipeline(BasePipeline):
             config=assessment_config,
         )
 
-        self._assessment_output = assessor.evaluate(test_data)
+        assessment_output = assessor.evaluate(test_data)
         logger.info("Evaluation complete")
-        return self._assessment_output
+        return assessment_output

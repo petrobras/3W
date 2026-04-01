@@ -10,7 +10,7 @@ from pathlib import Path
 from pydantic import Field, field_validator, PrivateAttr
 
 from ..constants import OUTPUT_DIR
-from ..core.enums import DataSplitEnum, TaskTypeEnum
+from ..core.enums import TaskTypeEnum
 
 from datetime import datetime
 from typing import Callable
@@ -93,15 +93,32 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
         report_author (str): Author name for the report.
     """
 
-    metrics: list[str] = Field(default=["accuracy", "f1"])
-    output_dir: Path = Field(default=Path(OUTPUT_DIR))
-    export_results: bool = Field(default=True)
-    generate_report: bool = Field(default=False)
-    task_type: TaskTypeEnum = Field(default=TaskTypeEnum.CLASSIFICATION)
-    batch_size: int = Field(default=64, gt=0)
-    device: str = Field(default="cuda" if torch.cuda.is_available() else "cpu")
-    report_title: str | None = Field(default=None)
-    report_author: str = Field(default="3W Toolkit Report")
+    metrics: list[str] = Field(
+        default=["accuracy", "f1"], description="Metrics to compute."
+    )
+    output_dir: Path = Field(
+        default=Path(OUTPUT_DIR), description="Directory for output files."
+    )
+    export_results: bool = Field(
+        default=True, description="Whether to export results to files."
+    )
+    generate_report: bool = Field(
+        default=False, description="Whether to generate a report."
+    )
+    task_type: TaskTypeEnum = Field(
+        default=TaskTypeEnum.CLASSIFICATION, description="Type of ML task."
+    )
+    batch_size: int = Field(
+        default=64, gt=0, description="Batch size for PyTorch model predictions."
+    )
+    device: str = Field(
+        default="cuda" if torch.cuda.is_available() else "cpu",
+        description="Device for PyTorch computations.",
+    )
+    report_title: str | None = Field(default=None, description="Title for the report.")
+    report_author: str = Field(
+        default="3W Toolkit Report", description="Author name for the report."
+    )
     _target: type = PrivateAttr(default_factory=lambda: ModelAssessment)
 
     @field_validator("task_type")
@@ -243,7 +260,6 @@ class ModelAssessment(BaseAssessment):
             true_values=y_array,
             metrics=metrics,
             training_history=self.training_history,
-            config=self.config.model_dump(),
             experiment_dir=str(experiment_dir),
         )
 

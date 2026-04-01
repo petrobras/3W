@@ -10,12 +10,16 @@ from pydantic import Field, PrivateAttr
 
 
 class SequentialFeatureAdapterConfig(BaseFeatureExtractorConfig):
-    steps: list[BaseFeatureExtractorConfig]
+    steps: list[BaseFeatureExtractorConfig] = Field(
+        ..., description="List of feature extractors to apply sequentially."
+    )
     _target: type = PrivateAttr(default_factory=lambda: SequentialFeatureAdapter)
 
 
 class ConcatFeatureAdapterConfig(BaseFeatureExtractorConfig):
-    steps: list[BaseFeatureExtractorConfig]
+    steps: list[BaseFeatureExtractorConfig] = Field(
+        ..., description="List of feature extractors whose outputs will be concatenated."
+    )
     _target: type = PrivateAttr(default_factory=lambda: ConcatFeatureAdapter)
 
 
@@ -25,7 +29,9 @@ class SequentialFeatureAdapter(BaseFeatureExtractor):
     Each transformation should be a BaseFeatureExtractor instance.
     """
 
-    steps: list[BaseFeatureExtractor] = Field(default_factory=list)
+    steps: list[BaseFeatureExtractor] = Field(
+        default_factory=list, description="List of feature extractors to apply."
+    )
 
     def __init__(
         self,
@@ -50,7 +56,9 @@ class ConcatFeatureAdapter(BaseFeatureExtractor):
     in case of conflicts.
     """
 
-    steps: list[BaseFeatureExtractor] = Field(..., min_length=1)
+    steps: list[BaseFeatureExtractor] = Field(
+        ..., min_length=1, description="List of feature extractors to apply."
+    )
 
     def __init__(self, config: ConcatFeatureAdapterConfig):
         self.config = config

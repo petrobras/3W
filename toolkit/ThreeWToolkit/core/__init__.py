@@ -4,6 +4,7 @@ from .base_assessment_visualization import (
     BaseAssessmentVisualizationConfig,
 )
 from .base_dataset import BaseDataset, BaseDatasetConfig
+from .base_visualizer import BaseVisualizer
 from .base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
@@ -33,6 +34,7 @@ from .enums import (
 __all__ = [
     # Assessment
     "BaseAssessment",
+    "BaseVisualizer",
     "BaseAssessmentConfig",
     "BaseAssessmentVisualizationConfig",
     "BaseAssessmentVisualization",

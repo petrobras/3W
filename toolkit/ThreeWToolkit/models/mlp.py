@@ -11,12 +11,22 @@ from ..core.enums import ModelTypeEnum, ActivationFunctionEnum
 class MLPConfig(ModelsConfig):
     """MLP configuration. Use with TorchTrainer for training."""
 
-    model_type: ModelTypeEnum = Field(default=ModelTypeEnum.MLP)
-    input_size: int | None = Field(default=None)
-    hidden_sizes: tuple[int, ...] = Field(..., min_length=1)
-    output_size: int = Field(..., gt=0)
-    activation_function: str = Field(default="relu")
-    regularization: float | None = Field(default=None, ge=0)
+    model_type: ModelTypeEnum = Field(
+        default=ModelTypeEnum.MLP, description="Type of model."
+    )
+    input_size: int | None = Field(
+        default=None, description="Input size (auto-detected if None)."
+    )
+    hidden_sizes: tuple[int, ...] = Field(
+        ..., min_length=1, description="Tuple of hidden layer sizes."
+    )
+    output_size: int = Field(..., gt=0, description="Output size (number of classes).")
+    activation_function: str = Field(
+        default="relu", description="Activation function for hidden layers."
+    )
+    regularization: float | None = Field(
+        default=None, ge=0, description="L2 regularization factor."
+    )
     _target: type = PrivateAttr(default_factory=lambda: MLP)
 
     @field_validator("input_size")

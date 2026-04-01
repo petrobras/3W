@@ -1,7 +1,6 @@
 """Definition for the base assessment class."""
 
 from abc import ABC
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 import numpy as np
@@ -14,17 +13,26 @@ from ..core.base_trainer import TrainingHistory
 class AssessmentOutput(BaseModel):
     """Output container for model assessment results."""
 
-    model_name: str
-    task_type: TaskTypeEnum
-    timestamp: str
+    model_name: str = Field(..., description="Name of the model.")
+    task_type: TaskTypeEnum = Field(..., description="Type of ML task.")
+    timestamp: str = Field(..., description="Timestamp of the assessment.")
 
-    predictions: np.ndarray | None = None
-    true_values: np.ndarray | None = None
-    metrics: dict[str, float] | None = None
-    training_history: TrainingHistory | None = None
+    predictions: np.ndarray | None = Field(
+        default=None, description="Model predictions."
+    )
+    true_values: np.ndarray | None = Field(
+        default=None, description="Ground truth values."
+    )
+    metrics: dict[str, float] | None = Field(
+        default=None, description="Computed metrics."
+    )
+    training_history: TrainingHistory | None = Field(
+        default=None, description="Training history from the trainer."
+    )
 
-    config: dict[str, Any] = Field(default_factory=dict)
-    experiment_dir: str | None = None
+    experiment_dir: str | None = Field(
+        default=None, description="Directory where experiment results are saved."
+    )
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
