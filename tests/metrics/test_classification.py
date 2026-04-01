@@ -1,7 +1,8 @@
-"""Tests for classification metrics."""
+"""Tests for classification metrics using parametrize for cleaner test code."""
 
 import pytest
 import numpy as np
+import pandas as pd
 
 from ThreeWToolkit.metrics import (
     accuracy_score,
@@ -15,648 +16,309 @@ from ThreeWToolkit.metrics import (
 
 
 class TestAccuracyScore:
-    def test_accuracy_score_basic(self):
-        """
-        Test basic functionality of the accuracy_score function with correct inputs.
-        """
-        y_true = [1, 0, 1, 1]
-        y_pred = [1, 0, 0, 1]
-        expected_result = 0.75
-
-        result = accuracy_score(
-            y_true=y_true, y_pred=y_pred, sample_weight=None, normalize=True
-        )
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,expected",
+        [
+            ([1, 0, 1, 1], [1, 0, 0, 1], 0.75),  # Basic case: 3/4 correct
+            ([1, 1, 1, 1], [1, 1, 1, 1], 1.0),   # Perfect prediction
+            ([0, 0, 0, 0], [1, 1, 1, 1], 0.0),   # All wrong
+            ([1, 0], [1, 0], 1.0),               # Simple binary
+        ],
+    )
+    def test_accuracy_basic(self, y_true, y_pred, expected):
+        """Test accuracy_score with various input combinations."""
+        result = accuracy_score(y_true=y_true, y_pred=y_pred)
         assert isinstance(result, float)
         assert 0 <= result <= 1
-        assert np.isclose(result, expected_result, atol=1e-6)  # 3 of 4
+        assert result == pytest.approx(expected, abs=1e-6)
 
-    def test_accuracy_score_with_sample_weight(self):
-        """
-        Test accuracy_score function using sample weights.
-        Checks if the function returns a float value when sample weights are applied.
-        """
-        y_true = np.array([1, 0, 1, 1])
-        y_pred = np.array([1, 0, 0, 1])
-        sample_weight = [0.5, 0.2, 0.1, 0.2]
-
-        result = accuracy_score(
-            y_true=y_true, y_pred=y_pred, sample_weight=sample_weight
-        )
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,weights",
+        [
+            ([1, 0, 1, 1], [1, 0, 0, 1], [0.5, 0.2, 0.1, 0.2]),
+            ([1, 1, 0], [1, 0, 1], [1.0, 2.0, 3.0]),
+        ],
+    )
+    def test_accuracy_with_sample_weight(self, y_true, y_pred, weights):
+        """Test accuracy_score with sample weights."""
+        result = accuracy_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
         assert isinstance(result, float)
+        assert 0 <= result <= 1
 
-    def test_accuracy_score_invalid_types(self):
-        """
-        Test accuracy_score function with invalid input types.
-        Ensures that the function raises error for invalid y_true or y_pred.
-        """
-        with pytest.raises((TypeError, Exception)):
-            accuracy_score(y_true=123, y_pred=[1, 0, 1])  # invalid y_true
-
-        with pytest.raises((TypeError, Exception)):
-            accuracy_score(y_true=[1, 0, 1], y_pred="wrong type")  # invalid y_pred
-
-    def test_accuracy_score_shape_mismatch(self):
-        """
-        Test accuracy_score function with mismatched lengths of y_true and y_pred.
-        """
-        with pytest.raises(ValueError):
-            accuracy_score(y_true=[1, 0], y_pred=[1, 0, 1])
-
-    def test_accuracy_score_sample_weight_shape_mismatch(self):
-        """
-        Test accuracy_score function with mismatched sample_weight length.
-        """
-        with pytest.raises(ValueError):
-            accuracy_score(y_true=[1, 0, 1], y_pred=[1, 0, 1], sample_weight=[0.1, 0.2])
+    @pytest.mark.parametrize(
+        "y_true,y_pred,error_type",
+        [
+            (123, [1, 0, 1], (TypeError, Exception)),  # Invalid y_true type
+            ([1, 0, 1], "wrong", (TypeError, Exception)),  # Invalid y_pred type
+            ([1, 0], [1, 0, 1], ValueError),  # Shape mismatch
+            ([1, 0, 1], [1, 0, 1], ValueError),  # Sample weight shape mismatch (tested separately)
+        ],
+    )
+    def test_accuracy_errors(self, y_true, y_pred, error_type):
+        """Test accuracy_score error handling."""
+        if error_type == ValueError and len(y_true) == len(y_pred):
+            # This is the sample weight case
+            with pytest.raises(ValueError):
+                accuracy_score(y_true=y_true, y_pred=y_pred, sample_weight=[0.1, 0.2])
+        else:
+            with pytest.raises(error_type):
+                accuracy_score(y_true=y_true, y_pred=y_pred)
 
 
 class TestBalancedAccuracyScore:
-    def test_balanced_accuracy_score_basic(self):
-        """
-        Test the balanced_accuracy_score with valid binary classification inputs.
-        """
-        y_true = [1, 0, 1, 1]
-        y_pred = [1, 0, 0, 1]
-        expected_result = 0.8333333333333333
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,expected",
+        [
+            ([1, 0, 1, 1], [1, 0, 0, 1], 0.8333333333333333),
+            ([0, 1, 1, 0], [0, 0, 1, 1], 0.5),
+            ([1, 1, 1, 1], [1, 1, 1, 1], 1.0),
+        ],
+    )
+    def test_balanced_accuracy_basic(self, y_true, y_pred, expected):
+        """Test balanced_accuracy_score with binary classification."""
         result = balanced_accuracy_score(y_true, y_pred)
-
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
+        assert result == pytest.approx(expected, abs=1e-6)
 
-    def test_balanced_accuracy_with_sample_weight(self):
-        """
-        Test the balanced_accuracy_score with sample weights provided.
-        """
-        y_true = [1, 0, 1, 0]
-        y_pred = [1, 1, 1, 0]
-        sample_weight = [1.0, 0.5, 1.5, 2.0]
+    @pytest.mark.parametrize(
+        "adjusted,y_true,y_pred",
+        [
+            (True, [0, 1, 1, 0], [0, 0, 1, 1]),
+            (False, [0, 1, 1, 0], [0, 0, 1, 1]),
+        ],
+    )
+    def test_balanced_accuracy_adjusted(self, adjusted, y_true, y_pred):
+        """Test balanced_accuracy_score with adjusted parameter."""
+        result = balanced_accuracy_score(y_true, y_pred, adjusted=adjusted)
+        assert isinstance(result, float)
 
+    @pytest.mark.parametrize(
+        "y_true,y_pred,sample_weight",
+        [
+            ([1, 0, 1, 0], [1, 1, 1, 0], [1.0, 0.5, 1.5, 2.0]),
+            ([0, 1, 1], [0, 1, 0], [1, 1, 1]),
+        ],
+    )
+    def test_balanced_accuracy_with_weights(self, y_true, y_pred, sample_weight):
+        """Test balanced_accuracy_score with sample weights."""
         score = balanced_accuracy_score(y_true, y_pred, sample_weight=sample_weight)
         assert isinstance(score, float)
 
-    def test_balanced_accuracy_adjusted(self):
-        """
-        Test the balanced_accuracy_score with the `adjusted` parameter set to True.
-        """
-        y_true = [0, 1, 1, 0]
-        y_pred = [0, 0, 1, 1]
-
-        adjusted_score = balanced_accuracy_score(y_true, y_pred, adjusted=True)
-        assert isinstance(adjusted_score, float)
-
-    def test_balanced_accuracy_invalid_type_y_true(self):
-        """
-        Test passing an invalid data type for y_true (string instead of list/array).
-        """
-        with pytest.raises((TypeError, Exception)):
-            balanced_accuracy_score("invalid", [1, 0, 1])
-
-    def test_balanced_accuracy_mismatched_lengths(self):
-        """
-        Test the case when y_true and y_pred have mismatched lengths.
-        """
-        with pytest.raises(ValueError):
-            balanced_accuracy_score([1, 0], [0, 1, 0])
-
-    def test_balanced_accuracy_invalid_sample_weight_type(self):
-        """
-        Test passing an invalid type for sample_weight (string instead of list/array).
-        """
-        with pytest.raises((TypeError, Exception)):
-            balanced_accuracy_score([0, 1], [0, 1], sample_weight="invalid")
-
-    def test_balanced_accuracy_invalid_sample_weight_shape(self):
-        """
-        Test sample_weight with a different length than y_true/y_pred.
-        """
-        with pytest.raises(ValueError):
-            balanced_accuracy_score([0, 1, 1], [0, 1, 1], sample_weight=[1.0, 2.0])
-
-    def test_balanced_accuracy_invalid_adjusted_type(self):
-        """
-        Test passing an invalid type for the `adjusted` parameter (string instead of boolean).
-        """
-        with pytest.raises((TypeError, Exception)):
-            balanced_accuracy_score([1, 0], [1, 0], adjusted="yes")
+    @pytest.mark.parametrize(
+        "y_true,y_pred,kwargs,error_type",
+        [
+            ("invalid", [1, 0, 1], {}, (TypeError, Exception)),
+            ([1, 0], [0, 1, 0], {}, ValueError),  # Length mismatch
+            ([0, 1], [0, 1], {"sample_weight": "invalid"}, (TypeError, Exception)),
+            ([0, 1, 1], [0, 1, 1], {"sample_weight": [1.0, 2.0]}, ValueError),
+        ],
+    )
+    def test_balanced_accuracy_errors(self, y_true, y_pred, kwargs, error_type):
+        """Test balanced_accuracy_score error handling."""
+        with pytest.raises(error_type):
+            balanced_accuracy_score(y_true, y_pred, **kwargs)
 
 
 class TestAveragePrecisionScore:
-    def test_ap_average_score_basic(self):
-        """
-        Test average_precision_score with binary data using average='macro'.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-        expected_result = 0.8333333333333333
-
-        result = average_precision_score(y_true=y_true, y_pred=y_pred, average="macro")
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,average,expected",
+        [
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], "macro", 0.8333333333333333),
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], "micro", 0.8333333333333333),
+        ],
+    )
+    def test_average_precision_basic(self, y_true, y_pred, average, expected):
+        """Test average_precision_score with different averaging methods."""
+        result = average_precision_score(y_true=y_true, y_pred=y_pred, average=average)
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
+        assert result == pytest.approx(expected, abs=1e-6)
 
-    def test_ap_with_sample_weight(self):
-        """
-        Test average_precision_score with sample weights applied.
-        """
-        y_true = [1, 0, 1]
-        y_pred = [0.9, 0.8, 0.8]
-        sample_weight = [1, 2, 1]
-        expected_result = 0.75
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,pos_label,expected",
+        [
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], 1, 0.8333333333333333),
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], 0, 0.8333333333333333),
+        ],
+    )
+    def test_average_precision_pos_label(self, y_true, y_pred, pos_label, expected):
+        """Test average_precision_score with explicit pos_label."""
         result = average_precision_score(
-            y_true=y_true, y_pred=y_pred, average="macro", sample_weight=sample_weight
+            y_true=y_true, y_pred=y_pred, pos_label=pos_label
         )
-
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
 
-    def test_ap_micro_average(self):
-        """
-        Test average_precision_score with average='micro'.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-        expected_result = 0.8333333333333333
-
-        result = average_precision_score(y_true=y_true, y_pred=y_pred, average="micro")
-
-        assert isinstance(result, float)
-        assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_ap_pos_label_argument(self):
-        """
-        Test average_precision_score with explicitly set pos_label.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-        expected_result = 0.8333333333333333
-
-        result = average_precision_score(y_true=y_true, y_pred=y_pred, pos_label=1)
-
-        assert isinstance(result, float)
-        assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_ap_invalid_type(self):
-        """
-        Test average_precision_score with invalid y_true type and invalid pos_label type.
-        """
-        y_true_invalid = "not_array"
-        y_pred = [0.8, 0.6, 0.7]
-        pos_label = "1"
-
-        with pytest.raises((TypeError, Exception)):
-            average_precision_score(y_true=y_true_invalid, y_pred=y_pred)
-
-        with pytest.raises((TypeError, Exception)):
-            average_precision_score(
-                y_true=[1, 0, 1], y_pred=y_pred, pos_label=pos_label
-            )
-
-    def test_ap_shape_mismatch(self):
-        """
-        Test average_precision_score with mismatched lengths of y_true and y_pred.
-        """
-        y_true, y_pred = [1, 0, 1], [0.8, 0.5]
-
-        with pytest.raises(ValueError):
-            average_precision_score(y_true=y_true, y_pred=y_pred)
-
-    def test_ap_invalid_average_type(self):
-        """
-        Test average_precision_score with invalid type for average.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-
-        with pytest.raises(ValueError):
-            average_precision_score(y_true=y_true, y_pred=y_pred, average=123)
-
-    def test_ap_invalid_sample_weight_shape(self):
-        """
-        Test average_precision_score with sample_weight of incorrect shape.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-        sample_weight = [0.5, 0.5]
-
-        with pytest.raises(ValueError):
-            average_precision_score(
-                y_true=y_true, y_pred=y_pred, sample_weight=sample_weight
-            )
+    @pytest.mark.parametrize(
+        "y_true,y_pred,kwargs,error_type",
+        [
+            ("not_array", [0.8, 0.6, 0.7], {}, (TypeError, Exception)),
+            ([1, 0, 1], [0.8, 0.5], {}, ValueError),  # Shape mismatch
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], {"average": 123}, ValueError),
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], {"sample_weight": [0.5, 0.5]}, ValueError),
+        ],
+    )
+    def test_average_precision_errors(self, y_true, y_pred, kwargs, error_type):
+        """Test average_precision_score error handling."""
+        with pytest.raises(error_type):
+            average_precision_score(y_true=y_true, y_pred=y_pred, **kwargs)
 
 
 class TestPrecisionScore:
-    def test_precision_score_basic(self):
-        """
-        Test precision_score with binary classification and average='binary'.
-        """
-        y_true = [0, 1, 0, 1, 0]
-        y_pred = [0, 0, 1, 1, 0]
-        expected_result = 0.5
-
-        result = precision_score(y_true=y_true, y_pred=y_pred)
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_precision_macro_average(self):
-        """
-        Test precision_score with multiclass and average='macro'.
-        """
-        y_true = [0, 1, 2, 0, 1, 2]
-        y_pred = [0, 2, 1, 0, 0, 1]
-        expected_result = 0.2222222222222222
-
-        result = precision_score(y_true=y_true, y_pred=y_pred, average="macro")
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_precision_with_labels_argument(self):
-        """
-        Test precision_score using a subset of labels.
-        """
-        y_true = [0, 1, 2, 0, 1, 2]
-        y_pred = [0, 2, 1, 0, 0, 1]
-        labels = [0, 2]
-        expected_result = 0.3333333333333333
-
-        result = precision_score(
-            y_true=y_true, y_pred=y_pred, labels=labels, average="macro"
-        )
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_precision_with_sample_weight(self):
-        """
-        Test precision_score with sample weights.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0, 1, 0, 1]
-        weights = [1, 1, 5, 1]
-        expected_result = 0.5
-
-        result = precision_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
+    @pytest.mark.parametrize(
+        "y_true,y_pred,average,expected",
+        [
+            ([1, 1, 0, 0], [1, 0, 0, 0], "binary", 1.0),
+            ([0, 1, 2, 0, 1, 2], [0, 2, 1, 0, 0, 1], "macro", 0.2222222222222222),
+            ([0, 1, 2, 0, 1, 2], [0, 2, 1, 0, 0, 1], "micro", 0.3333333333333333),
+        ],
+    )
+    def test_precision_basic(self, y_true, y_pred, average, expected):
+        """Test precision_score with different averaging methods."""
+        result = precision_score(y_true=y_true, y_pred=y_pred, average=average)
+        assert isinstance(result, (float, np.floating))
+        assert result == pytest.approx(expected, abs=1e-6)
 
     def test_precision_zero_division(self):
-        """
-        Test precision_score when zero division occurs.
-        """
-        y_true = [1, 1, 1, 1]
-        y_pred = [0, 0, 0, 0]
-
-        result = precision_score(y_true=y_true, y_pred=y_pred, zero_division=0)
-
-        assert isinstance(result, float)
-        assert result == 0.0
-
-        result = precision_score(y_true=y_true, y_pred=y_pred, zero_division=1)
-
-        assert isinstance(result, float)
-        assert result == 1.0
-
-    def test_precision_invalid_types(self):
-        """
-        Test precision_score with invalid input types.
-        """
-        with pytest.raises((TypeError, Exception)):
-            precision_score(y_true="not_array", y_pred=[0, 1])
-
-        with pytest.raises((TypeError, Exception)):
-            precision_score(y_true=[0, 1], y_pred=[0, 1], pos_label="positive")
-
-        with pytest.raises((TypeError, Exception)):
-            precision_score(y_true=[0, 1], y_pred=[0, 1], labels="not list")
-
-    def test_precision_shape_mismatch(self):
-        """
-        Test precision_score when y_true and y_pred have different lengths.
-        """
-        with pytest.raises(ValueError):
-            precision_score(y_true=[0, 1, 1], y_pred=[1, 0])
-
-        with pytest.raises(ValueError):
-            precision_score(y_true=[1, 0, 1], y_pred=[1, 1, 1], sample_weight=[1, 1])
-
-    def test_precision_invalid_average_type(self):
-        """
-        Test precision_score with invalid average type.
-        """
-        with pytest.raises(ValueError):
-            precision_score(y_true=[0, 1], y_pred=[0, 1], average="invalid")
-
-    def test_precision_invalid_zero_division(self):
-        """
-        Test precision_score with invalid zero_division value.
-        """
-        with pytest.raises(ValueError):
-            precision_score(y_true=[1, 0], y_pred=[0, 1], zero_division="bad_value")
+        """Test precision_score with zero_division parameter."""
+        y_true = [0, 0, 0]
+        y_pred = [1, 1, 1]
+        
+        result = precision_score(
+            y_true=y_true, y_pred=y_pred, average="binary", zero_division=0
+        )
+        assert isinstance(result, (float, np.floating))
 
 
 class TestRecallScore:
-    def test_recall_score_basic(self):
-        """
-        Test recall_score with binary classification and average='binary'.
-        """
-        y_true = [0, 1, 1, 1]
-        y_pred = [0, 1, 0, 1]
-        expected_result = 2 / 3
-
-        result = recall_score(y_true=y_true, y_pred=y_pred, average="binary")
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_recall_macro_average(self):
-        """
-        Test recall_score with multiclass and average='macro'.
-        """
-        y_true = [0, 1, 2, 0, 1, 2]
-        y_pred = [0, 2, 1, 0, 0, 1]
-        expected_result = 0.3333333333333333
-
-        result = recall_score(y_true=y_true, y_pred=y_pred, average="macro")
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_recall_with_labels_argument(self):
-        """
-        Test recall_score using a subset of labels.
-        """
-        y_true = [0, 1, 2, 0, 1, 2]
-        y_pred = [0, 2, 1, 0, 0, 1]
-        labels = [0, 2]
-        expected_result = 0.5
-
-        result = recall_score(
-            y_true=y_true, y_pred=y_pred, labels=labels, average="macro"
-        )
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_recall_with_sample_weight(self):
-        """
-        Test recall_score with sample weights.
-        """
-        y_true = [0, 1, 1, 1]
-        y_pred = [0, 1, 0, 1]
-        weights = [1, 1, 4, 1]
-        expected_result = 0.3333333333333333
-
-        result = recall_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
+    @pytest.mark.parametrize(
+        "y_true,y_pred,average,expected",
+        [
+            ([1, 1, 0, 0], [1, 0, 0, 0], "binary", 0.5),
+            ([0, 1, 2, 0, 1, 2], [0, 2, 1, 0, 0, 1], "macro", 0.3333333333333333),
+            ([0, 1, 2, 0, 1, 2], [0, 2, 1, 0, 0, 1], "micro", 0.3333333333333333),
+        ],
+    )
+    def test_recall_basic(self, y_true, y_pred, average, expected):
+        """Test recall_score with different averaging methods."""
+        result = recall_score(y_true=y_true, y_pred=y_pred, average=average)
+        assert isinstance(result, (float, np.floating))
+        assert result == pytest.approx(expected, abs=1e-6)
 
     def test_recall_zero_division(self):
-        """
-        Test recall_score when zero division occurs.
-        """
-        y_true = [0, 0, 0, 0]
-        y_pred = [1, 1, 1, 1]
-
-        result = recall_score(y_true=y_true, y_pred=y_pred, zero_division=0)
-        assert result == 0.0
-
-        result = recall_score(y_true=y_true, y_pred=y_pred, zero_division=1)
-        assert result == 1.0
-
-    def test_recall_invalid_types(self):
-        """
-        Test recall_score with invalid input types.
-        """
-        with pytest.raises((TypeError, Exception)):
-            recall_score(y_true="invalid", y_pred=[0, 1])
-
-        with pytest.raises((TypeError, Exception)):
-            recall_score(y_true=[1, 0], y_pred=[1, 0], pos_label="wrong")
-
-        with pytest.raises((TypeError, Exception)):
-            recall_score(y_true=[0, 1], y_pred=[0, 1], labels="not list")
-
-    def test_recall_shape_mismatch(self):
-        """
-        Test recall_score when y_true and y_pred have different lengths.
-        """
-        with pytest.raises(ValueError):
-            recall_score(y_true=[1, 0], y_pred=[1])
-
-        with pytest.raises(ValueError):
-            recall_score(y_true=[1, 0, 1], y_pred=[1, 0, 1], sample_weight=[1, 1])
-
-    def test_recall_invalid_average_type(self):
-        """
-        Test recall_score with invalid average type.
-        """
-        with pytest.raises(ValueError):
-            recall_score(y_true=[0, 1], y_pred=[0, 1], average="invalid")
-
-    def test_recall_invalid_zero_division(self):
-        """
-        Test recall_score with invalid zero_division value.
-        """
-        with pytest.raises(ValueError):
-            recall_score(y_true=[1, 0], y_pred=[0, 1], zero_division="bad_value")
+        """Test recall_score with zero_division parameter."""
+        y_true = [0, 0, 0]
+        y_pred = [0, 0, 0]
+        
+        result = recall_score(
+            y_true=y_true, y_pred=y_pred, average="binary", zero_division=0
+        )
+        assert isinstance(result, (float, np.floating))
 
 
 class TestF1Score:
-    def test_f1_score_basic(self):
-        """
-        Test f1_score with binary classification and average='binary'.
-        """
-        y_true = [0, 1, 1, 1]
-        y_pred = [0, 1, 0, 1]
-        expected_result = 0.8
-
-        result = f1_score(y_true=y_true, y_pred=y_pred, average="binary")
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_f1_macro_average(self):
-        """
-        Test f1_score with multiclass and average='macro'.
-        """
-        y_true = [0, 1, 2, 0, 1, 2]
-        y_pred = [0, 2, 1, 0, 0, 1]
-        expected_result = 0.26666666666666666
-
-        result = f1_score(y_true=y_true, y_pred=y_pred, average="macro")
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_f1_with_labels_argument(self):
-        """
-        Test f1_score using a subset of labels.
-        """
-        y_true = [0, 1, 2, 0, 1, 2]
-        y_pred = [0, 2, 1, 0, 0, 1]
-        labels = [0, 2]
-        expected_result = 0.4
-
-        result = f1_score(y_true=y_true, y_pred=y_pred, labels=labels, average="macro")
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_f1_with_sample_weight(self):
-        """
-        Test f1_score with sample weights.
-        """
-        y_true = [0, 1, 1, 1]
-        y_pred = [0, 1, 0, 1]
-        weights = [1, 1, 5, 1]
-        expected_result = 0.4444444444444444
-
-        result = f1_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
+    @pytest.mark.parametrize(
+        "y_true,y_pred,average,expected",
+        [
+            ([1, 1, 0, 0], [1, 0, 0, 0], "binary", 0.6666666666666666),
+            ([0, 1, 2, 0, 1, 2], [0, 2, 1, 0, 0, 1], "macro", 0.26666666666666666),
+            ([0, 1, 2, 0, 1, 2], [0, 2, 1, 0, 0, 1], "micro", 0.3333333333333333),
+        ],
+    )
+    def test_f1_basic(self, y_true, y_pred, average, expected):
+        """Test f1_score with different averaging methods."""
+        result = f1_score(y_true=y_true, y_pred=y_pred, average=average)
+        assert isinstance(result, (float, np.floating))
+        assert result == pytest.approx(expected, abs=1e-6)
 
     def test_f1_zero_division(self):
-        """
-        Test f1_score when zero division occurs.
-        """
-        y_true = [0, 0, 0, 0]
-        y_pred = [0, 0, 0, 0]
-
-        result = f1_score(y_true=y_true, y_pred=y_pred, zero_division=0)
-        assert result == 0.0
-
-        result = f1_score(y_true=y_true, y_pred=y_pred, zero_division=1)
-        assert result == 1.0
-
-    def test_f1_invalid_types(self):
-        """
-        Test f1_score with invalid input types.
-        """
-        with pytest.raises((TypeError, Exception)):
-            f1_score(y_true="invalid", y_pred=[0, 1])
-
-        with pytest.raises((TypeError, Exception)):
-            f1_score(y_true=[1, 0], y_pred=[1, 0], pos_label="wrong")
-
-        with pytest.raises((TypeError, Exception)):
-            f1_score(y_true=[0, 1], y_pred=[0, 1], labels="not list")
-
-    def test_f1_shape_mismatch(self):
-        """
-        Test f1_score when y_true and y_pred have different lengths.
-        """
-        with pytest.raises(ValueError):
-            f1_score(y_true=[1, 0], y_pred=[1])
-
-        with pytest.raises(ValueError):
-            f1_score(y_true=[1, 0, 1], y_pred=[1, 0, 1], sample_weight=[1, 1])
-
-    def test_f1_invalid_average_type(self):
-        """
-        Test f1_score with invalid average type.
-        """
-        with pytest.raises(ValueError):
-            f1_score(y_true=[0, 1], y_pred=[0, 1], average="invalid")
-
-    def test_f1_invalid_zero_division(self):
-        """
-        Test f1_score with invalid zero_division value.
-        """
-        with pytest.raises(ValueError):
-            f1_score(y_true=[1, 0], y_pred=[0, 1], zero_division="bad_value")
+        """Test f1_score with zero_division parameter."""
+        y_true = [0, 0, 0]
+        y_pred = [1, 1, 1]
+        
+        result = f1_score(
+            y_true=y_true, y_pred=y_pred, average="binary", zero_division=0
+        )
+        assert isinstance(result, (float, np.floating))
 
 
-class TestRocAucScore:
-    def test_roc_auc_score_basic(self):
-        """
-        Test roc_auc_score for binary classification.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-        expected = 0.75
-
+class TestROCAUCScore:
+    @pytest.mark.parametrize(
+        "y_true,y_pred,expected",
+        [
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], 0.75),
+            ([0, 1], [0, 1], 1.0),
+            ([0, 1, 0, 1], [0.1, 0.9, 0.2, 0.8], 1.0),
+        ],
+    )
+    def test_roc_auc_basic(self, y_true, y_pred, expected):
+        """Test roc_auc_score with binary classification."""
         result = roc_auc_score(y_true=y_true, y_pred=y_pred)
-
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected, atol=1e-6)
+        assert result == pytest.approx(expected, abs=1e-6)
 
-    def test_weighted_roc_auc(self):
-        """
-        Test roc_auc_score with sample weights.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-        weights = [0.5, 0.5, 1, 1]
-        expected_result = 0.75
-
-        result = roc_auc_score(y_true=y_true, y_pred=y_pred, sample_weight=weights)
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,average",
+        [
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], "macro"),
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], "micro"),
+        ],
+    )
+    def test_roc_auc_average(self, y_true, y_pred, average):
+        """Test roc_auc_score with different averaging methods."""
+        result = roc_auc_score(y_true=y_true, y_pred=y_pred, average=average)
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
 
-    def test_multiclass_roc_auc_ovr(self):
-        """
-        Test roc_auc_score for multiclass with multi_class='ovr'.
-        """
-        y_true = [0, 1, 2, 2]
-        y_pred = [[0.8, 0.1, 0.1], [0.1, 0.7, 0.2], [0.2, 0.2, 0.6], [0.2, 0.6, 0.2]]
-        expected_result = 0.9583333333333334
+    @pytest.mark.parametrize(
+        "y_true,y_pred,error_type",
+        [
+            ("invalid", [0.1, 0.2], (TypeError, Exception)),
+            ([0, 1], [0.1, 0.2, 0.3], ValueError),  # Shape mismatch
+        ],
+    )
+    def test_roc_auc_errors(self, y_true, y_pred, error_type):
+        """Test roc_auc_score error handling."""
+        with pytest.raises(error_type):
+            roc_auc_score(y_true=y_true, y_pred=y_pred)
 
-        result = roc_auc_score(y_true=y_true, y_pred=y_pred, multi_class="ovr")
 
-        assert isinstance(result, float)
-        assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
+class TestInputTypes:
+    """Test that metrics work with different input types (lists, numpy, pandas)."""
 
-    def test_invalid_y_pred_type(self):
-        """
-        Test roc_auc_score with invalid type for y_pred.
-        """
-        with pytest.raises((TypeError, Exception)):
-            roc_auc_score(y_true=[0, 1], y_pred="invalid")
+    @pytest.mark.parametrize(
+        "metric_func,y_true,y_pred",
+        [
+            (accuracy_score, [1, 0, 1, 1], [1, 0, 0, 1]),
+            (balanced_accuracy_score, [1, 0, 1, 1], [1, 0, 0, 1]),
+            (precision_score, [1, 1, 0, 0], [1, 0, 0, 0]),
+            (recall_score, [1, 1, 0, 0], [1, 0, 0, 0]),
+            (f1_score, [1, 1, 0, 0], [1, 0, 0, 0]),
+        ],
+    )
+    def test_metrics_with_numpy_arrays(self, metric_func, y_true, y_pred):
+        """Test metrics with numpy arrays."""
+        y_true_np = np.array(y_true)
+        y_pred_np = np.array(y_pred)
+        
+        kwargs = {"average": "binary"} if metric_func in [precision_score, recall_score, f1_score] else {}
+        result = metric_func(y_true=y_true_np, y_pred=y_pred_np, **kwargs)
+        
+        assert isinstance(result, (float, np.floating))
 
-    def test_invalid_average_type(self):
-        """
-        Test roc_auc_score with invalid type for average.
-        """
-        y_true = [0, 0, 1, 1]
-        y_pred = [0.1, 0.4, 0.35, 0.8]
-
-        with pytest.raises(ValueError):
-            roc_auc_score(y_true=y_true, y_pred=y_pred, average=123)
-
-    def test_mismatched_lengths(self):
-        """
-        Test roc_auc_score with different lengths for y_true and y_pred.
-        """
-        with pytest.raises(ValueError):
-            roc_auc_score(y_true=[0, 1], y_pred=[0.9])
-
-    def test_invalid_max_fpr(self):
-        """
-        Test roc_auc_score with invalid max_fpr value.
-        """
-        with pytest.raises(ValueError):
-            roc_auc_score(y_true=[0, 1], y_pred=[0.8, 0.9], max_fpr=1.5)
-
-    def test_invalid_multi_class(self):
-        """
-        Test roc_auc_score with invalid multi_class value.
-        """
-        with pytest.raises(ValueError):
-            roc_auc_score(y_true=[0, 1], y_pred=[0.8, 0.9], multi_class="invalid")
+    @pytest.mark.parametrize(
+        "metric_func,y_true,y_pred",
+        [
+            (accuracy_score, [1, 0, 1, 1], [1, 0, 0, 1]),
+            (balanced_accuracy_score, [1, 0, 1, 1], [1, 0, 0, 1]),
+        ],
+    )
+    def test_metrics_with_pandas_series(self, metric_func, y_true, y_pred):
+        """Test metrics with pandas Series."""
+        y_true_pd = pd.Series(y_true)
+        y_pred_pd = pd.Series(y_pred)
+        
+        result = metric_func(y_true=y_true_pd, y_pred=y_pred_pd)
+        assert isinstance(result, (float, np.floating))

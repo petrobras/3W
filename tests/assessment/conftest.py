@@ -1,18 +1,17 @@
-"""Conftest for assessment tests.
-
-This handles import issues by ensuring the toolkit is properly importable.
-The assessment/__init__.py imports model_assess which imports metrics,
-which has Pydantic validation issues on Python 3.14. We work around this
-by importing modules in a specific order.
-"""
+"""Conftest for assessment tests."""
 
 import sys
+import pytest
 from unittest.mock import MagicMock
 
 
-def pytest_configure(config):
-    """Hook to run before test collection."""
-    # Mock the metrics module to avoid pydantic/numpy issues during import
+@pytest.fixture(scope="module", autouse=True)
+def mock_metrics_module():
+    """Mock the metrics module for assessment tests only."""
+    # Store the original module if it exists
+    original_module = sys.modules.get("ThreeWToolkit.metrics")
+
+    # Create mock
     mock_metrics = MagicMock()
     mock_metrics.accuracy_score = MagicMock(return_value=0.5)
     mock_metrics.balanced_accuracy_score = MagicMock(return_value=0.5)
@@ -22,6 +21,13 @@ def pytest_configure(config):
     mock_metrics.average_precision_score = MagicMock(return_value=0.5)
     mock_metrics.explained_variance_score = MagicMock(return_value=0.5)
 
-    # Pre-register the mock before any imports try to load the real module
-    if "ThreeWToolkit.metrics" not in sys.modules:
-        sys.modules["ThreeWToolkit.metrics"] = mock_metrics
+    # Install mock
+    sys.modules["ThreeWToolkit.metrics"] = mock_metrics
+
+    yield mock_metrics
+
+    # Restore original module after tests
+    if original_module is not None:
+        sys.modules["ThreeWToolkit.metrics"] = original_module
+    else:
+        sys.modules.pop("ThreeWToolkit.metrics", None)

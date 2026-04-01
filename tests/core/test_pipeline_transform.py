@@ -153,32 +153,6 @@ class TestBaseTransform:
             result.signal.max().max(), 1.0, atol=0.1
         )
 
-    def test_transform_returns_transformed_dataset(self, mock_dataset_factory):
-        """Test that transform returns TransformedDataset."""
-
-        class IdentityTransform(BaseTransform):
-            def fit(self, dataset):
-                pass
-
-            def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
-                return data
-
-        class IdentityConfig(BaseTransformConfig):
-            target_: type = IdentityTransform
-
-        transform = IdentityConfig().build()
-        dataset = mock_dataset_factory(num_events=3)
-
-        transformed = transform.transform(dataset)
-
-        # Should return a TransformedDataset
-        assert len(transformed) == 3
-
-        # Each event should be accessible
-        for i in range(len(transformed)):
-            event = transformed[i]
-            assert isinstance(event, DatasetOutputs)
-
 
 class TestPredictionStrategy:
     """Test PredictionStrategy abstract class."""

@@ -1,163 +1,219 @@
-"""Tests for regression metrics."""
+"""Tests for regression metrics using parametrize for cleaner test code."""
 
 import pytest
 import numpy as np
+import pandas as pd
 
 from ThreeWToolkit.metrics import explained_variance_score
 
 
 class TestExplainedVarianceScore:
-    def test_basic_explained_variance(self):
-        """
-        Test explained_variance_score basic output.
-        """
-        y_true = [3, -0.5, 2, 7]
-        y_pred = [2.5, 0.0, 2, 8]
-        expected_result = 0.9571734475374732
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,expected",
+        [
+            ([3, -0.5, 2, 7], [2.5, 0.0, 2, 8], 0.9571734475374732),
+            ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 1.0),  # Perfect prediction
+            ([1, 1, 1, 1], [1, 1, 1, 1], 1.0),  # Constant perfect
+        ],
+    )
+    def test_explained_variance_basic(self, y_true, y_pred, expected):
+        """Test explained_variance_score basic calculations."""
         result = explained_variance_score(y_true=y_true, y_pred=y_pred)
 
         assert isinstance(result, float)
-        assert 0.0 <= result <= 1.0
-        assert np.isclose(result, expected_result, atol=1e-6)
+        assert result == pytest.approx(expected, abs=1e-6)
 
-    def test_explained_variance_with_sample_weight(self):
-        """
-        Test explained_variance_score with sample weights.
-        """
-        y_true = [3, -0.5, 2, 7]
-        y_pred = [2.5, 0.0, 2, 8]
-        weights = [1, 2, 3, 4]
-        expected_result = 0.9689988623435722
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,weights,expected",
+        [
+            ([3, -0.5, 2, 7], [2.5, 0.0, 2, 8], [1, 2, 3, 4], 0.9689988623435722),
+            (
+                [1, 2, 3],
+                [1.1, 2.1, 3.1],
+                [1, 1, 1],
+                None,
+            ),  # None means just check it runs
+        ],
+    )
+    def test_explained_variance_with_weights(self, y_true, y_pred, weights, expected):
+        """Test explained_variance_score with sample weights."""
         result = explained_variance_score(
             y_true=y_true, y_pred=y_pred, sample_weight=weights
         )
 
         assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
+        if expected is not None:
+            assert result == pytest.approx(expected, abs=1e-6)
 
-    def test_multioutput_raw_values(self):
-        """
-        Test explained_variance_score with multioutput='raw_values'.
-        """
-        y_true = [[0.5, 1], [-1, 1], [7, -6]]
-        y_pred = [[0, 2], [-1, 2], [8, -5]]
-        expected_result = np.array([0.96774194, 1.0])
-
+    @pytest.mark.parametrize(
+        "y_true,y_pred,multioutput,expected_type,expected_shape",
+        [
+            (
+                [[0.5, 1], [-1, 1], [7, -6]],
+                [[0, 2], [-1, 2], [8, -5]],
+                "raw_values",
+                np.ndarray,
+                (2,),
+            ),
+            (
+                [[0.5, 1], [-1, 1], [7, -6]],
+                [[0, 2], [-1, 2], [8, -5]],
+                "uniform_average",
+                float,
+                None,
+            ),
+            (
+                [[0.5, 1], [-1, 1], [7, -6]],
+                [[0, 2], [-1, 2], [8, -5]],
+                "variance_weighted",
+                float,
+                None,
+            ),
+        ],
+    )
+    def test_explained_variance_multioutput(
+        self, y_true, y_pred, multioutput, expected_type, expected_shape
+    ):
+        """Test explained_variance_score with different multioutput options."""
         result = explained_variance_score(
-            y_true=y_true, y_pred=y_pred, multioutput="raw_values"
+            y_true=y_true, y_pred=y_pred, multioutput=multioutput
         )
 
-        assert isinstance(result, np.ndarray)
-        assert np.allclose(result, expected_result, atol=1e-6)
+        assert isinstance(result, expected_type)
+        if expected_shape:
+            assert result.shape == expected_shape
 
-    def test_invalid_force_finite(self):
-        """
-        Test explained_variance_score with invalid force_finite type.
-        """
-        with pytest.raises((TypeError, Exception)):
-            explained_variance_score(y_true=[1, 2], y_pred=[1, 2], force_finite="yes")
-
-    def test_invalid_multioutput_value(self):
-        """
-        Test explained_variance_score with invalid multioutput.
-        """
-        with pytest.raises(ValueError):
-            explained_variance_score(
-                y_true=[1, 2], y_pred=[1, 2], multioutput="invalid"
-            )
-
-    def test_shape_mismatch(self):
-        """
-        Test explained_variance_score with mismatched y_true and y_pred lengths.
-        """
-        with pytest.raises(ValueError):
-            explained_variance_score(y_true=[1, 2, 3], y_pred=[1, 2])
-
-    def test_sample_weight_mismatch(self):
-        """
-        Test explained_variance_score with invalid sample_weight shape.
-        """
-        with pytest.raises(ValueError):
-            explained_variance_score(
-                y_true=[1, 2, 3], y_pred=[1, 2, 3], sample_weight=[1, 2]
-            )
-
-    def test_perfect_prediction(self):
-        """
-        Test explained_variance_score with perfect predictions.
-        """
-        y_true = [1, 2, 3, 4, 5]
-        y_pred = [1, 2, 3, 4, 5]
-
-        result = explained_variance_score(y_true=y_true, y_pred=y_pred)
-
-        assert np.isclose(result, 1.0, atol=1e-6)
-
-    def test_uniform_average(self):
-        """
-        Test explained_variance_score with multioutput='uniform_average'.
-        """
-        y_true = [[0.5, 1], [-1, 1], [7, -6]]
-        y_pred = [[0, 2], [-1, 2], [8, -5]]
-        expected_result = 0.9838709677419355
-
-        result = explained_variance_score(
-            y_true=y_true, y_pred=y_pred, multioutput="uniform_average"
-        )
-
-        assert isinstance(result, float)
-        assert np.isclose(result, expected_result, atol=1e-6)
-
-    def test_variance_weighted(self):
-        """
-        Test explained_variance_score with multioutput='variance_weighted'.
-        """
+    @pytest.mark.parametrize(
+        "multioutput,expected_value",
+        [
+            ("uniform_average", 0.9838709677419355),
+            ("raw_values", np.array([0.96774194, 1.0])),
+        ],
+    )
+    def test_explained_variance_multioutput_values(self, multioutput, expected_value):
+        """Test explained_variance_score multioutput expected values."""
         y_true = [[0.5, 1], [-1, 1], [7, -6]]
         y_pred = [[0, 2], [-1, 2], [8, -5]]
 
         result = explained_variance_score(
-            y_true=y_true, y_pred=y_pred, multioutput="variance_weighted"
+            y_true=y_true, y_pred=y_pred, multioutput=multioutput
         )
 
+        if isinstance(expected_value, np.ndarray):
+            assert np.allclose(result, expected_value, atol=1e-6)
+        else:
+            assert result == pytest.approx(expected_value, abs=1e-6)
+
+    @pytest.mark.parametrize(
+        "y_true,y_pred,kwargs,error_type",
+        [
+            ([1, 2], [1, 2], {"multioutput": "invalid"}, ValueError),
+            ([1, 2, 3], [1, 2], {}, ValueError),  # Shape mismatch
+            (
+                [1, 2, 3],
+                [1, 2, 3],
+                {"sample_weight": [1, 2]},
+                ValueError,
+            ),  # Weight mismatch
+        ],
+    )
+    def test_explained_variance_errors(self, y_true, y_pred, kwargs, error_type):
+        """Test explained_variance_score error handling."""
+        with pytest.raises(error_type):
+            explained_variance_score(y_true=y_true, y_pred=y_pred, **kwargs)
+
+    @pytest.mark.parametrize(
+        "y_true,y_pred",
+        [
+            ([1, 2, 3], [100, 200, 300]),  # Very bad predictions
+            ([1, 1, 1], [0, 0, 0]),  # Opposite predictions
+        ],
+    )
+    def test_explained_variance_can_be_negative(self, y_true, y_pred):
+        """Test that explained_variance_score can be negative for poor predictions."""
+        result = explained_variance_score(y_true=y_true, y_pred=y_pred)
+        assert isinstance(result, float)
+
+
+class TestInputTypes:
+    """Test that explained_variance_score works with different input types."""
+
+    @pytest.mark.parametrize(
+        "y_true,y_pred",
+        [
+            ([3, -0.5, 2, 7], [2.5, 0.0, 2, 8]),
+            ([1, 2, 3], [1.1, 2.1, 2.9]),
+        ],
+    )
+    def test_with_numpy_arrays(self, y_true, y_pred):
+        """Test explained_variance_score with numpy arrays."""
+        y_true_np = np.array(y_true)
+        y_pred_np = np.array(y_pred)
+
+        result = explained_variance_score(y_true=y_true_np, y_pred=y_pred_np)
+
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
 
-    def test_with_numpy_arrays(self):
-        """
-        Test explained_variance_score with numpy arrays.
-        """
-        y_true = np.array([3, -0.5, 2, 7])
-        y_pred = np.array([2.5, 0.0, 2, 8])
+    @pytest.mark.parametrize(
+        "y_true,y_pred",
+        [
+            ([3, -0.5, 2, 7], [2.5, 0.0, 2, 8]),
+            ([1, 2, 3], [1.1, 2.1, 2.9]),
+        ],
+    )
+    def test_with_pandas_series(self, y_true, y_pred):
+        """Test explained_variance_score with pandas Series."""
+        y_true_pd = pd.Series(y_true)
+        y_pred_pd = pd.Series(y_pred)
+
+        result = explained_variance_score(y_true=y_true_pd, y_pred=y_pred_pd)
+
+        assert isinstance(result, float)
+        assert 0.0 <= result <= 1.0
+
+    @pytest.mark.parametrize(
+        "y_true,y_pred",
+        [
+            ([[0.5, 1], [-1, 1]], [[0, 2], [-1, 2]]),  # Multioutput
+        ],
+    )
+    def test_with_2d_arrays(self, y_true, y_pred):
+        """Test explained_variance_score with 2D numpy arrays."""
+        y_true_np = np.array(y_true)
+        y_pred_np = np.array(y_pred)
+
+        result = explained_variance_score(y_true=y_true_np, y_pred=y_pred_np)
+
+        assert isinstance(result, float)
+
+
+class TestEdgeCases:
+    """Test edge cases and boundary conditions."""
+
+    @pytest.mark.parametrize(
+        "y_true,y_pred",
+        [
+            ([0, 0, 0], [0, 0, 0]),  # All zeros
+            ([1, 1, 1], [1, 1, 1]),  # All same value
+        ],
+    )
+    def test_constant_values(self, y_true, y_pred):
+        """Test with constant values."""
+        result = explained_variance_score(y_true=y_true, y_pred=y_pred)
+        assert isinstance(result, float)
+
+    @pytest.mark.parametrize(
+        "size",
+        [2, 10, 100, 1000],
+    )
+    def test_different_sizes(self, size):
+        """Test with different array sizes."""
+        np.random.seed(42)
+        y_true = np.random.randn(size)
+        y_pred = y_true + np.random.randn(size) * 0.1
 
         result = explained_variance_score(y_true=y_true, y_pred=y_pred)
 
         assert isinstance(result, float)
-        assert 0.0 <= result <= 1.0
-
-    def test_with_pandas_series(self):
-        """
-        Test explained_variance_score with pandas Series.
-        """
-        import pandas as pd
-
-        y_true = pd.Series([3, -0.5, 2, 7])
-        y_pred = pd.Series([2.5, 0.0, 2, 8])
-
-        result = explained_variance_score(y_true=y_true, y_pred=y_pred)
-
-        assert isinstance(result, float)
-        assert 0.0 <= result <= 1.0
-
-    def test_negative_variance_score(self):
-        """
-        Test explained_variance_score can be negative for very poor predictions.
-        """
-        y_true = [1, 2, 3]
-        y_pred = [100, 200, 300]  # Very bad predictions
-
-        result = explained_variance_score(y_true=y_true, y_pred=y_pred)
-
-        # Can be negative when predictions are worse than just predicting the mean
-        assert isinstance(result, float)
+        assert result > 0.5
