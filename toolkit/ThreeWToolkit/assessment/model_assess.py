@@ -1,6 +1,7 @@
 """ModelAssessment for evaluating trained models."""
 
 import logging
+from typing import Literal
 import numpy as np
 import pandas as pd
 import torch
@@ -111,7 +112,7 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
     batch_size: int = Field(
         default=64, gt=0, description="Batch size for PyTorch model predictions."
     )
-    device: str = Field(
+    device: Literal["cpu", "cuda"] = Field(
         default="cuda" if torch.cuda.is_available() else "cpu",
         description="Device for PyTorch computations.",
     )
@@ -121,28 +122,6 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
     )
     _target: type = PrivateAttr(default_factory=lambda: ModelAssessment)
 
-    @field_validator("task_type")
-    @classmethod
-    def validate_task_type(
-        cls: type["ModelAssessmentConfig"], task_type: TaskTypeEnum
-    ) -> TaskTypeEnum:
-        """
-        Validate that the task type is supported.
-
-        Args:
-            cls (ModelAssessmentConfig): The class reference.
-            task_type (TaskTypeEnum): Task type to validate.
-
-        Returns:
-            TaskTypeEnum: Validated task type.
-
-        Raises:
-            ValueError: If task_type is not supported.
-        """
-        valid_types = {TaskTypeEnum.CLASSIFICATION, TaskTypeEnum.REGRESSION}
-        if task_type not in valid_types:
-            raise ValueError(f"task_type must be one of {valid_types}")
-        return task_type
 
     @field_validator("metrics")
     @classmethod
@@ -179,27 +158,6 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
                 f"Invalid metrics: {invalid_metrics}. Valid metrics: {valid_metrics}"
             )
         return metrics
-
-    @field_validator("device")
-    @classmethod
-    def validate_device(cls: type["ModelAssessmentConfig"], device: str) -> str:
-        """
-        Validate that the computation device is supported.
-
-        Args:
-            cls (ModelAssessmentConfig): The class reference.
-            device (str): Device name ('cpu' or 'cuda').
-
-        Returns:
-            str: Validated device name.
-
-        Raises:
-            ValueError: If device is not supported.
-        """
-        valid_devices = {"cpu", "cuda"}
-        if device not in valid_devices:
-            raise ValueError(f"device must be one of {valid_devices}")
-        return device
 
 
 class ModelAssessment(BaseAssessment):
@@ -345,14 +303,10 @@ class ModelAssessment(BaseAssessment):
         if self.training_history:
             lines.append("")
             lines.append("Training History:")
-            if "train_loss" in self.training_history:
-                final_loss = self.training_history["train_loss"][-1]
-                lines.append(f"  Final train_loss: {final_loss:.4f}")
-            if (
-                "val_loss" in self.training_history
-                and self.training_history["val_loss"]
-            ):
-                final_val = self.training_history["val_loss"][-1]
+            final_loss = self.training_history.train_loss[-1]
+            lines.append(f"  Final train_loss: {final_loss:.4f}")
+            if self.training_history.val_loss is not None:
+                final_val = self.training_history.val_loss[-1]
                 lines.append(f"  Final val_loss: {final_val:.4f}")
 
         return "\n".join(lines)

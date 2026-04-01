@@ -29,9 +29,8 @@ class TrainingHistory(BaseModel):
         val_loss: List of validation loss values per epoch (for PyTorch).
     """
 
-    train_loss: list[float] | None = Field(
-        default=None, description="Training loss values per epoch."
-    )
+    train_loss: list[float] = Field(..., description="Training loss values per epoch.")
+
     val_loss: list[float] | None = Field(
         default=None, description="Validation loss values per epoch."
     )
@@ -139,14 +138,13 @@ class BaseTrainer(ABC):
         self._set_random_seeds(self.config.seed)
         logger.info("Initialized %s with seed=%d", self.__class__.__name__, config.seed)
 
-
     def cross_validate(
         self,
         train_dataset: BaseDataset,
         num_folds: int = 5,
         stratify_by: list[str] = [],
     ) -> CrossValidationResult:
-        """ Perform cross-validation on the given dataset.
+        """Perform cross-validation on the given dataset.
         Args:
             train_dataset: Dataset to perform cross-validation on.
             num_folds: Number of folds for cross-validation.
@@ -154,10 +152,12 @@ class BaseTrainer(ABC):
         Returns:
             CrossValidationResult containing results for each fold and metadata.
         """
-        
+
         splitter = KFoldSplitter(num_splits=num_folds, stratify_by=stratify_by)
         training_results = []
-        for fold_idx, (train_subset, val_subset) in enumerate(splitter.split_data(train_dataset)):
+        for fold_idx, (train_subset, val_subset) in enumerate(
+            splitter.split_data(train_dataset)
+        ):
             logger.info("Starting fold %d/%d", fold_idx + 1, num_folds)
             result = self.train(train_subset, val_subset)
             training_results.append(result)
@@ -173,7 +173,6 @@ class BaseTrainer(ABC):
                 "seed": self.config.seed,
             },
         )
-
 
     def train(
         self, train_dataset: BaseDataset, val_dataset: BaseDataset | None = None

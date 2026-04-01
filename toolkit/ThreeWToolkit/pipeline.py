@@ -93,24 +93,27 @@ class Pipeline(BasePipeline):
         self.config = config
 
         # Build components from configs
-        self.train_dataset: BaseDataset = config.train_dataset_config.build()
         self.trainer: BaseTrainer = config.trainer_config.build()
 
-        self.test_dataset: BaseDataset | None = (
-            config.test_dataset_config.build()
-            if config.test_dataset_config is not None
-            else None
-        )
+        self.train_dataset: BaseDataset = config.train_dataset_config.build()
+
         self.val_dataset: BaseDataset | None = (
             config.val_dataset_config.build()
             if config.val_dataset_config is not None
             else None
         )
+        self.test_dataset: BaseDataset | None = (
+            config.test_dataset_config.build()
+            if config.test_dataset_config is not None
+            else None
+        )
+
         self.transform: BaseTransform | None = (
             config.transform_config.build()
             if config.transform_config is not None
             else None
         )
+
         self.assessment: ModelAssessment | None = (
             config.assessment_config.build()
             if config.assessment_config is not None
@@ -169,7 +172,7 @@ class Pipeline(BasePipeline):
         if train_data is None:
             raise RuntimeError("Failed to prepare training data")
 
-        val_data = self._prepare_data(val_dataset) if val_dataset else None
+        val_data = self._prepare_data(val_dataset, fit=False) if val_dataset else None
 
         logger.info("Training model...")
         training_result = self.trainer.train(train_data, val_data)
@@ -192,20 +195,17 @@ class Pipeline(BasePipeline):
         Raises:
             RuntimeError: If model hasn't been trained.
         """
-        if training_result is None:
-            raise RuntimeError(
-                "Model must be trained before evaluation. Call train() first."
-            )
-
         test_data = self._prepare_data(test_dataset) if test_dataset else None
+
         if test_data is None:
             logger.debug("No test dataset provided, skipping evaluation")
             return None
 
         logger.info("Evaluating model...")
         if self.assessment:
+            eval_results = self.assessment.evaluate(test_data)
             logger.info("Evaluation complete")
-            return self.assessment.evaluate(test_data)
+            return eval_results
 
         # If not provided, use default assessment configuration
         assessment_config = ModelAssessmentConfig(
