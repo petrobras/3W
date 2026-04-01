@@ -246,8 +246,8 @@ class TestTorchTrainer:
         assert result is not None
         assert result.model is not None
         assert result.train_dataset_size == len(mock_dataset)
-        assert "train_loss" in result.history
-        assert len(result.history["train_loss"]) == trainer_config.epochs
+        assert result.history.train_loss is not None
+        assert len(result.history.train_loss) == trainer_config.epochs
 
     def test_train_with_validation(self, trainer_config, mock_dataset):
         """Training with validation should track val_loss."""
@@ -259,9 +259,8 @@ class TestTorchTrainer:
         result = trainer.train(mock_dataset, val_dataset)
 
         assert result.val_dataset_size == len(val_dataset)
-        assert "val_loss" in result.history
-        assert result.history["val_loss"] is not None
-        assert len(result.history["val_loss"]) == trainer_config.epochs
+        assert result.history.val_loss is not None
+        assert len(result.history.val_loss) == trainer_config.epochs
 
     def test_train_with_class_weights(self, mock_dataset):
         """Training with class weights should work."""
@@ -293,7 +292,7 @@ class TestTorchTrainer:
         trainer = TorchTrainer(config)
         result = trainer.train(mock_dataset)
 
-        train_loss = result.history["train_loss"]
+        train_loss = result.history.train_loss
         # Loss at end should be less than at start (with some tolerance for noise)
         assert train_loss[-1] < train_loss[0] * 1.5
 
@@ -424,7 +423,7 @@ class TestTorchTrainerIntegration:
         result2 = trainer2.train(dataset)
 
         # Results should be identical
-        assert result1.history["train_loss"] == result2.history["train_loss"]
+        assert result1.history.train_loss == result2.history.train_loss
 
     def test_different_batch_sizes(self):
         """Training should work with various batch sizes."""
@@ -440,4 +439,4 @@ class TestTorchTrainerIntegration:
             )
             trainer = TorchTrainer(config)
             result = trainer.train(dataset)
-            assert len(result.history["train_loss"]) == 2
+            assert len(result.history.train_loss) == 2

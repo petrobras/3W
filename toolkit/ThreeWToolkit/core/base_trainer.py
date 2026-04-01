@@ -23,15 +23,16 @@ class TrainingHistory(BaseModel):
     Container for training history.
 
     Attributes:
-        epochs: List of epoch numbers.
-        train_loss: List of training loss values per epoch.
-        val_loss: List of validation loss values per epoch (if applicable).
-        train_metrics: Dictionary of training metrics per epoch.
-        val_metrics: Dictionary of validation metrics per epoch (if applicable).
+        train_loss: List of training loss values per epoch (for PyTorch).
+        val_loss: List of validation loss values per epoch (for PyTorch).
     """
 
-    train_loss: list[float]
-    val_loss: list[float] | None = None
+    train_loss: list[float] | None = Field(
+        default=None, description="Training loss values per epoch."
+    )
+    val_loss: list[float] | None = Field(
+        default=None, description="Validation loss values per epoch."
+    )
 
 
 class TrainingResult(BaseModel):

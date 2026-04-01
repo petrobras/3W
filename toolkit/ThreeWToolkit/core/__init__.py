@@ -18,7 +18,7 @@ from .base_models import BaseModels, BaseSkLearnModels, BaseTorchModels, ModelsC
 from .base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .base_prediction_strategies import PredictionStrategy
 from .base_preprocessing import BasePreprocessing, BasePreprocessingConfig
-from .base_trainer import BaseTrainer, BaseTrainerConfig, TrainingResult
+from .base_trainer import BaseTrainer, BaseTrainerConfig, TrainingResult, TrainingHistory
 from .base_transform import BaseTransform, BaseTransformConfig
 from .dataset_outputs import DatasetOutputs
 from .enums import (
@@ -73,6 +73,7 @@ __all__ = [
     "BaseTrainer",
     "BaseTrainerConfig",
     "TrainingResult",
+    "TrainingHistory",
     # Enums
     "ActivationFunctionEnum",
     "CriterionEnum",

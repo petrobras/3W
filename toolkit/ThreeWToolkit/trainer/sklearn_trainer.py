@@ -132,9 +132,13 @@ class SklearnTrainer(BaseTrainer):
         train_score = self.model.model_class.score(X_train, y_train)
         logger.info("Training score: %.4f", train_score)
 
+        val_score = None
         if val_data is not None:
             X_val, y_val = val_data
             val_score = self.model.model_class.score(X_val, y_val)
             logger.info("Validation score: %.4f", val_score)
 
-        return TrainingHistory(train_score=[train_score], val_score=[val_score] if val_data is not None else None)
+        return TrainingHistory(
+            train_loss=[train_score],
+            val_loss=[val_score] if val_score is not None else None,
+        )

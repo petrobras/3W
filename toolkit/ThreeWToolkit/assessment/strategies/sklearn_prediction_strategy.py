@@ -13,12 +13,18 @@ class SklearnPredictionStrategy(PredictionStrategy):
     scikit-learn `predict` API.
     """
 
-    def predict(self, model: BaseEstimator, **kwargs) -> np.ndarray:
+    def predict(
+        self,
+        model: BaseEstimator,
+        task: "TaskTypeEnum | None" = None,
+        **kwargs,
+    ) -> np.ndarray:
         """Generate predictions using a scikit-learn model.
 
         Args:
             model (BaseEstimator): Trained scikit-learn model implementing `predict`.
-                should be interpreted. Defaults to TaskTypeEnum.CLASSIFICATION.
+            task (TaskTypeEnum | None): Task type (classification or regression).
+                Currently unused as sklearn models handle this internally.
             **kwargs: Additional keyword arguments:
                 x (np.ndarray): Input feature matrix.
 

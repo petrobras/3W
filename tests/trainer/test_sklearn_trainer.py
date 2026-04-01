@@ -195,8 +195,8 @@ class TestSklearnTrainer:
         result = trainer.train(mock_dataset, val_dataset)
 
         assert result.val_dataset_size == len(val_dataset)
-        assert "val_score" in result.history
-        assert 0 <= result.history["val_score"] <= 1
+        assert result.history.val_loss is not None
+        assert 0 <= result.history.val_loss[0] <= 1
 
     def test_train_with_class_weights_balanced(self, mock_dataset):
         """Training with balanced class weights should work."""

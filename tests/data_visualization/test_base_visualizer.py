@@ -3,7 +3,7 @@ from abc import ABC
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from ThreeWToolkit.data_visualization.base_visualizer import BaseVisualizer
+from ThreeWToolkit.core.base_visualizer import BaseVisualizer
 import matplotlib.pyplot as plt
 
 

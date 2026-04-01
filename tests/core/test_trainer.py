@@ -8,6 +8,7 @@ from ThreeWToolkit.core import (
     BaseTrainer,
     BaseTrainerConfig,
     TrainingResult,
+    TrainingHistory,
     BaseModels,
     DatasetOutputs,
 )
@@ -76,7 +77,7 @@ class TestTrainingResult:
                 pass
 
         model = DummyModel()
-        history = {"train_loss": [0.5, 0.3, 0.1]}
+        history = TrainingHistory(train_loss=[0.5, 0.3, 0.1])
 
         result = TrainingResult(
             model=model,
@@ -86,7 +87,7 @@ class TestTrainingResult:
         )
 
         assert result.model is model
-        assert result.history == history
+        assert result.history.train_loss == [0.5, 0.3, 0.1]
         assert result.train_dataset_size == 100
         assert result.val_dataset_size == 20
         assert result.metadata == {}
@@ -106,7 +107,7 @@ class TestTrainingResult:
 
         result = TrainingResult(
             model=model,
-            history={},
+            history=TrainingHistory(),
             train_dataset_size=100,
             val_dataset_size=0,
             metadata=metadata,
@@ -127,7 +128,7 @@ class TestTrainingResult:
 
         result = TrainingResult(
             model=DummyModel(),
-            history={},
+            history=TrainingHistory(),
             train_dataset_size=100,
             val_dataset_size=0,
         )
