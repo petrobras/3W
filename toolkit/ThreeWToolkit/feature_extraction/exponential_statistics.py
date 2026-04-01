@@ -5,7 +5,7 @@ from ..core.base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
 )
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 
 _AVAILABLE_FEATURES = {
     "ew_mean",
@@ -45,7 +45,7 @@ class EWStatisticalConfig(
         + ", ".join(_AVAILABLE_FEATURES),
     )
 
-    target_: type = Field(default_factory=lambda: EWStatisticalFeatures)
+    _target: type = PrivateAttr(default_factory=lambda: EWStatisticalFeatures)
 
     @field_validator("decay")
     @classmethod

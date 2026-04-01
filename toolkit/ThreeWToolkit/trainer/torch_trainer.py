@@ -5,7 +5,7 @@ import logging
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm.auto import tqdm
 
@@ -31,7 +31,7 @@ class TorchTrainerConfig(BaseTrainerConfig):
         default="cuda" if torch.cuda.is_available() else "cpu", description="Device"
     )
     shuffle: bool = Field(default=False, description="Shuffle training data")
-    target_: type["TorchTrainer"] = Field(default_factory=lambda: TorchTrainer)
+    _target: type["TorchTrainer"] = PrivateAttr(default_factory=lambda: TorchTrainer)
 
     @field_validator("optimizer")
     @classmethod

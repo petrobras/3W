@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import PrivateAttr
 
 from ..dataset.transformed_dataset import TransformedDataset
 
@@ -8,9 +8,10 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class SequentialPreprocessingAdapterConfig(BasePreprocessingConfig):
-    """ Configuration for SequentialPreprocessingAdapter, which applies a list of preprocessing steps sequentially. """
+    """Configuration for SequentialPreprocessingAdapter, which applies a list of preprocessing steps sequentially."""
+
     steps: list[BasePreprocessingConfig]
-    target_: type = Field(default_factory=lambda: SequentialPreprocessingAdapter)
+    _target: type = PrivateAttr(default_factory=lambda: SequentialPreprocessingAdapter)
 
 
 class SequentialPreprocessingAdapter(BasePreprocessing):
@@ -21,11 +22,13 @@ class SequentialPreprocessingAdapter(BasePreprocessing):
 
     def __init__(self, config: SequentialPreprocessingAdapterConfig):
         self.config: SequentialPreprocessingAdapterConfig = config
-        self.steps: list[BasePreprocessing] = [step_config.build() for step_config in self.config.steps]
+        self.steps: list[BasePreprocessing] = [
+            step_config.build() for step_config in self.config.steps
+        ]
 
     def fit(self, data: BaseDataset) -> None:
-        """ Fit each preprocessing step sequentially on the dataset, feeding the transformed data from the previous step
-        to the next. """
+        """Fit each preprocessing step sequentially on the dataset, feeding the transformed data from the previous step
+        to the next."""
 
         fitted_steps: list[BasePreprocessing] = []
         for step in self.steps:

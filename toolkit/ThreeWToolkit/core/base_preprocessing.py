@@ -8,7 +8,7 @@ from .dataset_outputs import DatasetOutputs
 class BasePreprocessingConfig(BaseModel, Instantiable):
     """Base configuration for preprocessing steps."""
 
-    target_: type["BasePreprocessing"]
+    _target: type["BasePreprocessing"]
 
 
 class BasePreprocessing(ABC):
@@ -24,4 +24,4 @@ class BasePreprocessing(ABC):
 
     def fit(self, data: BaseDataset) -> None:
         """If needed, fit the preprocessing step to the dataset."""
-        pass # do nothing by default.
+        pass  # do nothing by default.

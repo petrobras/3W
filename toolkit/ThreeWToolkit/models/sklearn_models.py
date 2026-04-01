@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Mapping
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
@@ -33,7 +33,7 @@ class SklearnModelsConfig(ModelsConfig):
     model_params: dict[str, int | float | str | bool | None] = Field(
         default_factory=dict
     )
-    target_: type = Field(default_factory=lambda: SklearnModels)
+    _target: type = PrivateAttr(default_factory=lambda: SklearnModels)
 
 
 class SklearnModels(BaseSkLearnModels):

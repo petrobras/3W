@@ -9,7 +9,7 @@ class Instantiable:
     'target' can be a type or a callable returning a type (e.g., from Field with default_factory).
     """
 
-    target_: type["Any"]
+    _target: type["Any"]
 
     def build(self, *args, **kwargs) -> Any:
-        return self.target_(self, *args, **kwargs)
+        return self._target(self, *args, **kwargs)

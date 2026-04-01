@@ -3,7 +3,7 @@
 import pytest
 import pandas as pd
 
-from pydantic import Field
+from pydantic import PrivateAttr
 from typing import Callable
 
 
@@ -28,7 +28,7 @@ class MockFeatureConfig(BaseFeatureExtractorConfig):
     function: Callable[[pd.DataFrame], pd.DataFrame]
     meta_tag: str | None = None
     wants_tag: str | None = None
-    target_: type = Field(default_factory=lambda: MockFeature)
+    _target: type = PrivateAttr(default_factory=lambda: MockFeature)
 
 
 class MockFeature(BaseFeatureExtractor):
@@ -115,6 +115,7 @@ class TestSequentialFeatureAdapter:
 
 class TestConcatFeatureAdapter:
     """Test data flow through ConcatFeatureAdapter."""
+
     def test_concat_single_extractor(self, simple_dataset):
         """Test application of single feature extractor."""
         features = ConcatFeatureAdapterConfig(
@@ -145,9 +146,7 @@ class TestConcatFeatureAdapter:
 
         for event in simple_dataset:
             transformed = features.transform(event)
-            expected_signal = pd.concat(
-                [event.signal + 1, event.signal * 2], axis=1
-            )
+            expected_signal = pd.concat([event.signal + 1, event.signal * 2], axis=1)
             assert (transformed.signal == expected_signal).all().all(), (
                 "Transformations should be applied and concatenated."
             )

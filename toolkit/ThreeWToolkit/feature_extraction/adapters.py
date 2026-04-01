@@ -6,17 +6,17 @@ from ..core.base_feature_extractor import (
 )
 from ..core.dataset_outputs import DatasetOutputs
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 
 class SequentialFeatureAdapterConfig(BaseFeatureExtractorConfig):
     steps: list[BaseFeatureExtractorConfig]
-    target_: type = Field(default_factory=lambda: SequentialFeatureAdapter)
+    _target: type = PrivateAttr(default_factory=lambda: SequentialFeatureAdapter)
 
 
 class ConcatFeatureAdapterConfig(BaseFeatureExtractorConfig):
     steps: list[BaseFeatureExtractorConfig]
-    target_: type = Field(default_factory=lambda: ConcatFeatureAdapter)
+    _target: type = PrivateAttr(default_factory=lambda: ConcatFeatureAdapter)
 
 
 class SequentialFeatureAdapter(BaseFeatureExtractor):

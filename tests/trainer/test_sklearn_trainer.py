@@ -105,9 +105,9 @@ class TestSklearnTrainerConfig:
             SklearnTrainerConfig(config_model=sklearn_config, verbose=-1)
 
     def test_target_returns_trainer_class(self, sklearn_config):
-        """target_ should return SklearnTrainer class."""
+        """_target should return SklearnTrainer class."""
         config = SklearnTrainerConfig(config_model=sklearn_config)
-        assert config.target_ == SklearnTrainer
+        assert config._target == SklearnTrainer
 
     def test_class_weight_config(self, sklearn_config):
         """Class weight config should be accepted."""

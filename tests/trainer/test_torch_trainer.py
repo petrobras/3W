@@ -142,9 +142,9 @@ class TestTorchTrainerConfig:
             TorchTrainerConfig(config_model=mlp_config, device="tpu")
 
     def test_target_returns_trainer_class(self, mlp_config):
-        """target_ should return TorchTrainer class."""
+        """_target should return TorchTrainer class."""
         config = TorchTrainerConfig(config_model=mlp_config)
-        assert config.target_ == TorchTrainer
+        assert config._target == TorchTrainer
 
     def test_class_weight_config(self, mlp_config):
         """Class weight config should be accepted."""

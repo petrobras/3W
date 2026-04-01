@@ -8,7 +8,7 @@ from .base_instantiable import Instantiable
 class BaseTransformConfig(BaseModel, Instantiable):
     """Base configuration for general transformation steps."""
 
-    target_: type["BaseTransform"]
+    _target: type["BaseTransform"]
 
 
 class BaseTransform(ABC):

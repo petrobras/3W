@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from pathlib import Path
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 from ..core.base_models import ModelsConfig, BaseTorchModels, ParamsT
 from ..utils.model_recorder import ModelRecorder
 from ..core.enums import ModelTypeEnum, ActivationFunctionEnum
@@ -17,7 +17,7 @@ class MLPConfig(ModelsConfig):
     output_size: int = Field(..., gt=0)
     activation_function: str = Field(default="relu")
     regularization: float | None = Field(default=None, ge=0)
-    target_: type = Field(default_factory=lambda: MLP)
+    _target: type = PrivateAttr(default_factory=lambda: MLP)
 
     @field_validator("input_size")
     @classmethod

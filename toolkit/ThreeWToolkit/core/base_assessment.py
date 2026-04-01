@@ -28,7 +28,7 @@ class AssessmentOutput(BaseModel):
 class BaseAssessmentConfig(BaseModel, Instantiable):
     """Base configuration for assessments."""
 
-    target_: type["BaseAssessment"]
+    _target: type["BaseAssessment"]
 
 
 class BaseAssessment(ABC):

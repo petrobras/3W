@@ -17,22 +17,6 @@ from .dataset_outputs import DatasetOutputs
 logger = logging.getLogger(__name__)
 
 
-class BaseTrainerConfig(BaseModel, Instantiable):
-    """Base configuration for all trainers."""
-
-    seed: int = Field(default=42, description="Random seed for reproducibility")
-    use_class_weights: bool = Field(
-        default=False,
-        description="Whether to compute class weights for imbalanced data",
-    )
-    class_weight_strategy: str = Field(
-        default="balanced", description="Class weight strategy: 'balanced' or 'manual'"
-    )
-    manual_class_weights: dict[int, float] | None = Field(
-        default=None, description="Manual class weights (required if strategy='manual')"
-    )
-
-
 class TrainingResult(BaseModel):
     """
     Container for training results.
@@ -51,6 +35,22 @@ class TrainingResult(BaseModel):
     val_dataset_size: int
     metadata: dict[str, Any] = Field(default_factory=dict)
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class BaseTrainerConfig(BaseModel, Instantiable):
+    """Base configuration for all trainers."""
+
+    seed: int = Field(default=42, description="Random seed for reproducibility")
+    use_class_weights: bool = Field(
+        default=False,
+        description="Whether to compute class weights for imbalanced data",
+    )
+    class_weight_strategy: str = Field(
+        default="balanced", description="Class weight strategy: 'balanced' or 'manual'"
+    )
+    manual_class_weights: dict[int, float] | None = Field(
+        default=None, description="Manual class weights (required if strategy='manual')"
+    )
 
 
 class BaseTrainer(ABC):

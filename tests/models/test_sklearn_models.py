@@ -47,9 +47,9 @@ class TestSklearnModelsConfig:
         assert config.model_type == model_type
 
     def test_target_returns_sklearn_models_class(self):
-        """target_ should return SklearnModels class."""
+        """_target should return SklearnModels class."""
         config = SklearnModelsConfig(model_type=ModelTypeEnum.LOGISTIC_REGRESSION)
-        assert config.target_ == SklearnModels
+        assert config._target == SklearnModels
 
     def test_random_seed_default(self):
         """Random seed should have default value."""

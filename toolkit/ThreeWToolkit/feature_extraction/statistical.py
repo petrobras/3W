@@ -7,7 +7,7 @@ from ..core.base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
 )
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 
 from ..core.dataset_outputs import DatasetOutputs
 
@@ -16,8 +16,12 @@ _STATISTICAL_FEATURES = {
     # moments
     "std": lambda x: np.std(x, axis=1, ddof=0),
     "var": lambda x: np.var(x, axis=1, ddof=0),
-    "skew": lambda x: stats.moment(x, axis=1, order=3), # dont use stats.skew to avoid NaNs.
-    "kurt": lambda x: stats.moment(x, axis=1, order=4), # use moment instead which returns 0 for constant values
+    "skew": lambda x: stats.moment(
+        x, axis=1, order=3
+    ),  # dont use stats.skew to avoid NaNs.
+    "kurt": lambda x: stats.moment(
+        x, axis=1, order=4
+    ),  # use moment instead which returns 0 for constant values
     # quantiles
     "min": lambda x: np.min(x, axis=1),
     "q25": lambda x: np.percentile(x, 25, axis=1),
@@ -26,13 +30,20 @@ _STATISTICAL_FEATURES = {
     "max": lambda x: np.max(x, axis=1),
 }
 
-class StatisticalConfig(BaseFeatureExtractorConfig,):
+
+class StatisticalConfig(
+    BaseFeatureExtractorConfig,
+):
     """Configuration for Statistical feature extractor."""
 
-    features: list[str] = Field(default_factory=lambda: list(_STATISTICAL_FEATURES.keys()), description="List of statistical\
-            features to compute. Available features: " + ", ".join(_STATISTICAL_FEATURES.keys()))
+    features: list[str] = Field(
+        default_factory=lambda: list(_STATISTICAL_FEATURES.keys()),
+        description="List of statistical\
+            features to compute. Available features: "
+        + ", ".join(_STATISTICAL_FEATURES.keys()),
+    )
 
-    target_: type = Field(default_factory=lambda: StatisticalFeatures)
+    _target: type = PrivateAttr(default_factory=lambda: StatisticalFeatures)
 
     @field_validator("features")
     @classmethod
@@ -65,11 +76,23 @@ class StatisticalFeatures(BaseFeatureExtractor):
 
         # compute statistics over the rows (windows) for each column independently
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning) # ignore warnings from constant values
-            features = {s: _STATISTICAL_FEATURES[s](values) for s in self.config.features}
+            warnings.simplefilter(
+                "ignore", category=RuntimeWarning
+            )  # ignore warnings from constant values
+            features = {
+                s: _STATISTICAL_FEATURES[s](values) for s in self.config.features
+            }
 
-        signal = pd.DataFrame(features, index=data.signal.index) # assemble multiindex DataFrame with features as cols
-        signal = signal.unstack("variable") # unstack variable to get per-variable features in columns
-        signal.columns = ['_'.join(col).strip() for col in signal.columns] # flatten multiindex columns
+        signal = pd.DataFrame(
+            features, index=data.signal.index
+        )  # assemble multiindex DataFrame with features as cols
+        signal = signal.unstack(
+            "variable"
+        )  # unstack variable to get per-variable features in columns
+        signal.columns = [
+            "_".join(col).strip() for col in signal.columns
+        ]  # flatten multiindex columns
 
-        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata.copy()) #type: ignore
+        return DatasetOutputs(
+            signal=signal, label=data.label, metadata=data.metadata.copy()
+        )  # type: ignore

@@ -43,7 +43,7 @@ class TestBasePipeline:
 
         class MyPipelineConfig(BasePipelineConfig):
             name: str = "test"
-            target_: type = MyPipeline
+            _target: type = MyPipeline
 
         config = MyPipelineConfig(name="my_pipeline")
         pipeline = config.build()
@@ -64,10 +64,10 @@ class TestBasePipelineConfig:
                 pass
 
         class MyConfig(BasePipelineConfig):
-            target_: type = MyPipeline
+            _target: type = MyPipeline
 
         config = MyConfig()
-        assert config.target_ == MyPipeline
+        assert config._target == MyPipeline
 
     def test_config_build_returns_pipeline(self):
         """Test that build returns pipeline instance."""
@@ -81,7 +81,7 @@ class TestBasePipelineConfig:
 
         class MyConfig(BasePipelineConfig):
             steps: int = 5
-            target_: type = MyPipeline
+            _target: type = MyPipeline
 
         config = MyConfig(steps=10)
         pipeline = config.build()
@@ -101,7 +101,7 @@ class TestBaseTransform:
                 pass
 
         class IncompleteConfig(BaseTransformConfig):
-            target_: type = IncompleteTransform
+            _target: type = IncompleteTransform
 
         transform = IncompleteConfig().build()
 
@@ -137,7 +137,7 @@ class TestBaseTransform:
                 )
 
         class ScaleConfig(BaseTransformConfig):
-            target_: type = ScaleTransform
+            _target: type = ScaleTransform
 
         transform = ScaleConfig().build()
         dataset = mock_dataset_factory(num_events=5, global_mean=50.0)

@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Literal
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import Field, ValidationInfo, field_validator, PrivateAttr
 
 from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
@@ -31,7 +31,7 @@ class ImputeMissingConfig(BasePreprocessingConfig):
         "- 'nearest': Nearest-neighbor interpolation\n"
         "- 'zero': Step-wise interpolation (previous value)",
     )
-    target_: type = Field(default_factory=lambda: ImputeMissing)
+    _target: type = PrivateAttr(default_factory=lambda: ImputeMissing)
 
     @field_validator("fill_value")
     def check_fill_value_for_constant(cls, v, info: ValidationInfo):

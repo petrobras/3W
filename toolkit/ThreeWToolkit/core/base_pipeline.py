@@ -19,7 +19,7 @@ class PipelineResult(BaseModel):
 class BasePipelineConfig(BaseModel, Instantiable):
     """Base configuration for pipelines."""
 
-    target_: type["BasePipeline"]
+    _target: type["BasePipeline"]
 
 
 class BasePipeline(ABC):

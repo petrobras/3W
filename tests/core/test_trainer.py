@@ -25,7 +25,7 @@ class ConcreteTrainer(BaseTrainer):
 class ConcreteTrainerConfig(BaseTrainerConfig):
     """Concrete trainer config for testing."""
 
-    target_: type = ConcreteTrainer
+    _target: type = ConcreteTrainer
 
 
 class TestBaseTrainerConfig:

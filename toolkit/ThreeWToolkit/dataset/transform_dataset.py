@@ -1,6 +1,6 @@
 from ThreeWToolkit.core.base_dataset import BaseDataset
 from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from ..core.base_preprocessing import BasePreprocessingConfig
 from ..core.base_feature_extractor import BaseFeatureExtractorConfig
 from ..core.base_transform import BaseTransform, BaseTransformConfig
@@ -19,7 +19,7 @@ class TransformConfig(BaseTransformConfig):
         default=None,
         description="List of feature extraction steps to apply to the dataset after preprocessing.",
     )
-    target_: type = Field(default_factory=lambda: TransformDataset)
+    _target: type = PrivateAttr(default_factory=lambda: TransformDataset)
 
 
 class TransformDataset(BaseTransform):

@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class BaseAssessmentVisualizationConfig(BaseModel, Instantiable):
     """Base configuration for assessment visualizations."""
 
-    target_: type["BaseAssessmentVisualization"]
+    _target: type["BaseAssessmentVisualization"]
 
 
 class BaseAssessmentVisualization(ABC):

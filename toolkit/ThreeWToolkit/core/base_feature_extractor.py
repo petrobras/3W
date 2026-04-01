@@ -7,7 +7,7 @@ from .dataset_outputs import DatasetOutputs
 class BaseFeatureExtractorConfig(BaseModel, Instantiable):
     """Base configuration for feature extractors."""
 
-    target_: type["BaseFeatureExtractor"]
+    _target: type["BaseFeatureExtractor"]
 
 
 class BaseFeatureExtractor(ABC):

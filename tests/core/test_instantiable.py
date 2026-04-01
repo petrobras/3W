@@ -18,7 +18,7 @@ class TestInstantiable:
 
         class MyConfig(BaseModel, Instantiable):
             value: int
-            target_: type = MyClass
+            _target: type = MyClass
 
         config = MyConfig(value=42)
         instance = config.build()
@@ -36,7 +36,7 @@ class TestInstantiable:
 
         class MyConfig(BaseModel, Instantiable):
             value: str
-            target_: type = MyClass
+            _target: type = MyClass
 
         config = MyConfig(value="test")
         instance = config.build("extra_value")
@@ -54,7 +54,7 @@ class TestInstantiable:
 
         class MyConfig(BaseModel, Instantiable):
             config_value: float
-            target_: type = MyClass
+            _target: type = MyClass
 
         config = MyConfig(config_value=3.14)
         instance = config.build(name="custom")
@@ -72,7 +72,7 @@ class TestInstantiable:
         class MyConfig(BaseModel, Instantiable):
             param_a: int
             param_b: str
-            target_: type = MyClass
+            _target: type = MyClass
 
         config = MyConfig(param_a=10, param_b="hello")
         instance = config.build()
@@ -89,7 +89,7 @@ class TestInstantiable:
 
         class InnerConfig(BaseModel, Instantiable):
             inner_value: int
-            target_: type = InnerClass
+            _target: type = InnerClass
 
         class OuterClass:
             def __init__(self, config):
@@ -99,7 +99,7 @@ class TestInstantiable:
         class OuterConfig(BaseModel, Instantiable):
             outer_value: str
             inner_config: InnerConfig
-            target_: type = OuterClass
+            _target: type = OuterClass
 
         inner_config = InnerConfig(inner_value=99)
         outer_config = OuterConfig(outer_value="outer", inner_config=inner_config)

@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from pathlib import Path
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 
 from ..constants import OUTPUT_DIR
 from ..core.enums import DataSplitEnum, TaskTypeEnum
@@ -104,7 +104,7 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
     report_title: str | None = Field(default=None)
     report_author: str = Field(default="3W Toolkit Report")
     dataset_split: DataSplitEnum = Field(default=DataSplitEnum.TEST)
-    target_: type = Field(default_factory=lambda: ModelAssessment)
+    _target: type = PrivateAttr(default_factory=lambda: ModelAssessment)
 
     @field_validator("task_type")
     @classmethod

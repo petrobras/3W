@@ -1,9 +1,8 @@
 """Pipeline for orchestrating the complete ML workflow."""
 
 import logging
-from pathlib import Path
 from typing import Any
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from .core.base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .core.base_dataset import BaseDataset, BaseDatasetConfig
@@ -44,9 +43,6 @@ class PipelineConfig(BasePipelineConfig):
     experiment_name: str = Field(
         default="experiment", description="Name for this experiment run."
     )
-    output_dir: Path | str = Field(
-        default="output", description="Directory for saving outputs."
-    )
 
     # Task settings
     task_type: TaskTypeEnum = Field(
@@ -59,7 +55,7 @@ class PipelineConfig(BasePipelineConfig):
         default=True, description="Whether to generate assessment report."
     )
 
-    target_: type = Field(default_factory=lambda: Pipeline)
+    _target: type = PrivateAttr(default_factory=lambda: Pipeline)
     model_config = {"arbitrary_types_allowed": True}
 
 

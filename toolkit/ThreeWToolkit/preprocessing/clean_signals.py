@@ -1,6 +1,6 @@
 """Preprocessing class for cleaning possibly frozen or out-of-range signals."""
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 import numpy as np
 import pandas as pd
@@ -14,20 +14,18 @@ from ..core.base_preprocessing import (
 
 from ..dataset.transformed_dataset import TransformedDataset
 
-_3W_CATEGORICAL_FEATURES = (
-    [  # List of categorical features to exclude from cleaning by default
-        "ESTADO-DHSV",
-        "ESTADO-M1",
-        "ESTADO-M2",
-        "ESTADO-PXO",
-        "ESTADO-SDV-GL",
-        "ESTADO-SDV-P",
-        "ESTADO-W1",
-        "ESTADO-W2",
-        "ESTADO-XO",
-        "state",
-    ]
-)
+_3W_CATEGORICAL_FEATURES = [  # List of categorical features to exclude from cleaning by default
+    "ESTADO-DHSV",
+    "ESTADO-M1",
+    "ESTADO-M2",
+    "ESTADO-PXO",
+    "ESTADO-SDV-GL",
+    "ESTADO-SDV-P",
+    "ESTADO-W1",
+    "ESTADO-W2",
+    "ESTADO-XO",
+    "state",
+]
 
 
 class CleanSignalsConfig(BasePreprocessingConfig):
@@ -83,7 +81,7 @@ class CleanSignalsConfig(BasePreprocessingConfig):
                      features that should not be processed by the IQR-based thresholds.",
     )
 
-    target_: type = Field(default_factory=lambda: CleanSignals)
+    _target: type = PrivateAttr(default_factory=lambda: CleanSignals)
 
 
 class CleanSignals(BasePreprocessing):

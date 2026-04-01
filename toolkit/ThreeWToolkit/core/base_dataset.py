@@ -1,4 +1,4 @@
-""" Definition for the base dataset class. """
+"""Definition for the base dataset class."""
 
 from abc import ABC, abstractmethod
 from typing import Iterator
@@ -10,8 +10,8 @@ from .base_instantiable import Instantiable
 
 class BaseDatasetConfig(BaseModel, Instantiable):
     """Base configuration for datasets."""
-    target_: type["BaseDataset"]
 
+    _target: type["BaseDataset"]
 
 
 class BaseDataset(ABC):

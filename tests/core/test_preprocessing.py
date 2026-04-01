@@ -20,7 +20,7 @@ class TestBasePreprocessingImplementation:
             pass
 
         class DummyConfig(BasePreprocessingConfig):
-            target_: type = IncompletePreprocessing
+            _target: type = IncompletePreprocessing
 
         config = DummyConfig()
 
@@ -41,7 +41,7 @@ class TestBasePreprocessingImplementation:
                 )
 
         class SimpleConfig(BasePreprocessingConfig):
-            target_: type = SimplePreprocessing
+            _target: type = SimplePreprocessing
 
         config = SimpleConfig()
         preprocessing = config.build()
@@ -71,7 +71,7 @@ class TestBasePreprocessingFit:
                 return data
 
         class SimpleConfig(BasePreprocessingConfig):
-            target_: type = SimplePreprocessing
+            _target: type = SimplePreprocessing
 
         preprocessing = SimpleConfig().build()
         dataset = mock_dataset_factory(num_events=5)
@@ -105,7 +105,7 @@ class TestBasePreprocessingFit:
                 )
 
         class StatefulConfig(BasePreprocessingConfig):
-            target_: type = StatefulPreprocessing
+            _target: type = StatefulPreprocessing
 
         preprocessing = StatefulConfig().build()
         dataset = mock_dataset_factory(num_events=5, global_mean=50.0)
@@ -128,10 +128,10 @@ class TestBasePreprocessingConfig:
                 return data
 
         class MyConfig(BasePreprocessingConfig):
-            target_: type = MyPreprocessing
+            _target: type = MyPreprocessing
 
         config = MyConfig()
-        assert config.target_ == MyPreprocessing
+        assert config._target == MyPreprocessing
 
     def test_config_accessible_from_preprocessing(self):
         """Test that config is accessible from preprocessing instance."""
@@ -143,7 +143,7 @@ class TestBasePreprocessingConfig:
         class MyConfig(BasePreprocessingConfig):
             param_a: int = 5
             param_b: str = "test"
-            target_: type = MyPreprocessing
+            _target: type = MyPreprocessing
 
         config = MyConfig(param_a=10, param_b="custom")
         preprocessing = config.build()

@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator, PrivateAttr, ValidationInfo
 
 from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
@@ -13,7 +13,7 @@ class FillLabelsConfig(BasePreprocessingConfig):
     fill_value: int | None = Field(
         default=None, description="Value to use when fill_method is 'constant'."
     )
-    target_: type = Field(default_factory=lambda: FillLabels)
+    _target: type = PrivateAttr(default_factory=lambda: FillLabels)
 
     @field_validator("fill_value")
     @classmethod
@@ -47,7 +47,7 @@ class FillLabels(BasePreprocessing):
             - If fill_method is 'nearest', fill missing values using nearest interpolation then bfill and ffill to handle any remaining NaNs.
         """
 
-        if data.label is None: # Noop if there are no labels to fill
+        if data.label is None:  # Noop if there are no labels to fill
             return data
 
         if self.config.fill_method == "constant":

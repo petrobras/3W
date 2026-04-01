@@ -2,7 +2,7 @@
 
 import logging
 import numpy as np
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 from ..core.base_trainer import BaseTrainer, BaseTrainerConfig
 from ..core.base_dataset import BaseDataset
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
@@ -18,7 +18,7 @@ class SklearnTrainerConfig(BaseTrainerConfig):
     )
     n_jobs: int | None = Field(default=None, description="Number of parallel jobs")
     verbose: int = Field(default=0, ge=0, description="Verbosity level")
-    target_: type = Field(default_factory=lambda: SklearnTrainer)
+    _target: type = PrivateAttr(default_factory=lambda: SklearnTrainer)
 
     @field_validator("n_jobs")
     @classmethod

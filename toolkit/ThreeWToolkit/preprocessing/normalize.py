@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from typing import Literal
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
@@ -12,7 +12,7 @@ class NormalizeConfig(BasePreprocessingConfig):
         default="l2",
         description="Normalization method to apply. Can be 'l1', 'l2', 'max' for standard normalization, or a generic norm",
     )
-    target_: type = Field(default_factory=lambda: Normalize)
+    _target: type = PrivateAttr(default_factory=lambda: Normalize)
 
     @field_validator("norm")
     def validate_norm(cls, value):

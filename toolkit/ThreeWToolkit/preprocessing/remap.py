@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
@@ -9,7 +9,7 @@ class RemapClassConfig(BasePreprocessingConfig):
         default=None,
         description="Mapping from original class labels to new class labels. If None, it will be generated in fit() by collecting all unique classes across events.",
     )
-    target_: type = Field(default_factory=lambda: RemapClass)
+    _target: type = PrivateAttr(default_factory=lambda: RemapClass)
 
 
 class RemapClass(BasePreprocessing):

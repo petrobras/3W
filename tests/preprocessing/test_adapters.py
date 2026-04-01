@@ -4,7 +4,7 @@ import pytest
 from typing import Callable
 
 import pandas as pd
-from pydantic import Field
+from pydantic import PrivateAttr
 import numpy as np
 
 from ThreeWToolkit.core.base_dataset import BaseDataset
@@ -24,7 +24,7 @@ class MockPreprocessingConfig(BasePreprocessingConfig):
     function: Callable[[pd.DataFrame], pd.DataFrame]
     meta_tag: str | None = None
     wants_tag: str | None = None
-    target_: type = Field(default_factory=lambda: MockPreprocessing)
+    _target: type = PrivateAttr(default_factory=lambda: MockPreprocessing)
 
 
 class MockPreprocessing(BasePreprocessing):
@@ -79,23 +79,23 @@ class TestSequentialPreprocessingAdapter:
         sequential.fit(simple_dataset)
 
         for step in sequential.steps:
-            assert (
-                step.fitted
-            ), "Each step should be fitted after calling fit on the sequential adapter."
+            assert step.fitted, (
+                "Each step should be fitted after calling fit on the sequential adapter."
+            )
 
         for event in simple_dataset:
             transformed = sequential.transform(event)
             expected_signal = (event.signal + 1) * 2
-            assert np.isclose(
-                transformed.signal, expected_signal
-            ).all(), "Transformed signal does not match expected output."
+            assert np.isclose(transformed.signal, expected_signal).all(), (
+                "Transformed signal does not match expected output."
+            )
 
-            assert (
-                transformed.metadata.get("add_one") is True
-            ), "First step should add 'add_one' tag to metadata."
-            assert (
-                transformed.metadata.get("multiply_two") is True
-            ), "Second step should add 'multiply_two' tag to metadata."
+            assert transformed.metadata.get("add_one") is True, (
+                "First step should add 'add_one' tag to metadata."
+            )
+            assert transformed.metadata.get("multiply_two") is True, (
+                "Second step should add 'multiply_two' tag to metadata."
+            )
 
         # Invert order of transformations and test again
         sequential = SequentialPreprocessingAdapterConfig(
@@ -111,13 +111,13 @@ class TestSequentialPreprocessingAdapter:
         sequential.fit(simple_dataset)
 
         for step in sequential.steps:
-            assert (
-                step.fitted
-            ), "Each step should be fitted after calling fit on the sequential adapter."
+            assert step.fitted, (
+                "Each step should be fitted after calling fit on the sequential adapter."
+            )
 
         for event in simple_dataset:
             transformed = sequential.transform(event).signal
             expected_signal = (event.signal * 2) + 1
-            assert np.isclose(
-                transformed, expected_signal
-            ).all(), "Transformed signal does not match expected output."
+            assert np.isclose(transformed, expected_signal).all(), (
+                "Transformed signal does not match expected output."
+            )

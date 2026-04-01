@@ -2,11 +2,10 @@ import shutil
 import zipfile
 from pathlib import Path
 from pandas import read_parquet
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 from typing import Literal
 from ThreeWToolkit.core.enums import EventPrefixEnum
 from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
-import pandas as pd
 from ..utils.downloader import get_figshare_data
 
 from ..core.base_dataset import BaseDataset, BaseDatasetConfig
@@ -65,7 +64,7 @@ class ParquetDatasetConfig(BaseDatasetConfig):
         description="Dataset version to load. (e.g., 2.0.0, 2.0.1, ...)",
     )
 
-    target_: type = Field(default_factory=lambda: ParquetDataset)
+    _target: type = PrivateAttr(default_factory=lambda: ParquetDataset)
 
     @field_validator("path")
     @classmethod
@@ -101,8 +100,10 @@ class ParquetDataset(BaseDataset):
 
         # Check if dataset version is valid
         if self.config.version not in DATASET_VALIDATION_RULES:
-            raise ValueError(f"Dataset version {self.config.version} is not valid. \
-                Supported versions are: {list(DATASET_VALIDATION_RULES.keys())}")
+            raise ValueError(
+                f"Dataset version {self.config.version} is not valid. \
+                Supported versions are: {list(DATASET_VALIDATION_RULES.keys())}"
+            )
 
         # TODO: Implement dataset splitting for train, val, test
         if self.config.split not in [None, "list"]:
@@ -295,7 +296,9 @@ class ParquetDataset(BaseDataset):
                 )
 
             signal_df = parquet_file[self.config.columns]
-        else: # load the remaining columns as signal if no specific columns are defined
+        else:  # load the remaining columns as signal if no specific columns are defined
             signal_df = parquet_file
 
-        return DatasetOutputs(signal=signal_df, label=label_series, metadata={"file_name": file_name})
+        return DatasetOutputs(
+            signal=signal_df, label=label_series, metadata={"file_name": file_name}
+        )

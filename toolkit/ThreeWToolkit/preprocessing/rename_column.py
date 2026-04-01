@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import PrivateAttr
 
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
@@ -6,7 +6,8 @@ from ..core.dataset_outputs import DatasetOutputs
 
 class RenameColumnsConfig(BasePreprocessingConfig):
     columns_map: dict[str, str]
-    target_: type = Field(default_factory=lambda: RenameColumns)
+    _target: type = PrivateAttr(default_factory=lambda: RenameColumns)
+
 
 class RenameColumns(BasePreprocessing):
     """
@@ -40,9 +41,13 @@ class RenameColumns(BasePreprocessing):
         """
 
         signal_columns = data.signal.columns
-        missing_columns = [col for col in self.config.columns_map.keys() if col not in signal_columns]
+        missing_columns = [
+            col for col in self.config.columns_map.keys() if col not in signal_columns
+        ]
         if missing_columns:
-            raise ValueError(f"RenameColumns: The following columns specified in columns_map are not present in the signal DataFrame: {missing_columns}")
+            raise ValueError(
+                f"RenameColumns: The following columns specified in columns_map are not present in the signal DataFrame: {missing_columns}"
+            )
 
         data.signal = data.signal.rename(columns=self.config.columns_map)
         return data

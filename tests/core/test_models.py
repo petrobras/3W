@@ -27,7 +27,7 @@ class TestModelsConfig:
 
         config = ModelsConfig(
             model_type=ModelTypeEnum.MLP,
-            target_=DummyModel,
+            _target=DummyModel,
         )
 
         assert config.model_type == ModelTypeEnum.MLP
@@ -44,7 +44,7 @@ class TestModelsConfig:
 
         config = ModelsConfig(
             model_type=ModelTypeEnum.RANDOM_FOREST,
-            target_=DummyModel,
+            _target=DummyModel,
         )
 
         assert config.model_type == ModelTypeEnum.RANDOM_FOREST
@@ -71,7 +71,7 @@ class TestModelsConfig:
         ]
 
         for model_type in valid_types:
-            config = ModelsConfig(model_type=model_type, target_=DummyModel)
+            config = ModelsConfig(model_type=model_type, _target=DummyModel)
             assert config.model_type == model_type
 
     def test_default_random_seed(self):
@@ -86,7 +86,7 @@ class TestModelsConfig:
 
         config = ModelsConfig(
             model_type=ModelTypeEnum.MLP,
-            target_=DummyModel,
+            _target=DummyModel,
         )
 
         assert config.random_seed == 42
@@ -104,7 +104,7 @@ class TestModelsConfig:
         config = ModelsConfig(
             model_type=ModelTypeEnum.MLP,
             random_seed=123,
-            target_=DummyModel,
+            _target=DummyModel,
         )
 
         assert config.random_seed == 123
@@ -122,7 +122,7 @@ class TestModelsConfig:
         config = ModelsConfig(
             model_type=ModelTypeEnum.MLP,
             random_seed=None,
-            target_=DummyModel,
+            _target=DummyModel,
         )
 
         assert config.random_seed is None

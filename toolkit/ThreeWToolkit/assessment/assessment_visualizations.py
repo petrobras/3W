@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from sklearn.metrics import confusion_matrix
 from typing import cast
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 from ..core.base_assessment_visualization import (
     BaseAssessmentVisualizationConfig,
     BaseAssessmentVisualization,
@@ -18,7 +18,7 @@ class AssessmentVisualizationConfig(BaseAssessmentVisualizationConfig):
     class_names: list[str] | None = Field(
         default=None, description="List containing class names"
     )
-    target_: type = Field(default_factory=lambda: AssessmentVisualization)
+    _target: type = PrivateAttr(default_factory=lambda: AssessmentVisualization)
 
     @field_validator("class_names")
     @classmethod

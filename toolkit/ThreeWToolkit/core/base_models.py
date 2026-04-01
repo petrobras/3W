@@ -22,7 +22,7 @@ class ModelsConfig(BaseModel, Instantiable):
     random_seed: int | None = Field(
         default=42, description="Random seed for reproducibility."
     )
-    target_: type["BaseModels"]
+    _target: type["BaseModels"]
 
     @field_validator("model_type")
     @classmethod

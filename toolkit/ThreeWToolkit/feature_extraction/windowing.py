@@ -5,7 +5,7 @@ from scipy.signal import get_window
 from scipy.stats import mode
 
 from typing import Literal
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PrivateAttr
 from ..core.base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
@@ -64,7 +64,7 @@ class WindowingConfig(BaseFeatureExtractorConfig):
         description="Value to use for padding the last window if `pad_last_window` is True.",
     )
 
-    target_: type = Field(default_factory=lambda: Windowing)
+    _target: type = PrivateAttr(default_factory=lambda: Windowing)
 
     @field_validator("window")
     def validate_window(cls, v: str | tuple):
@@ -131,7 +131,7 @@ class Windowing(BaseFeatureExtractor):
             self.window = self.window / np.sum(self.window)
 
         # compute step size based on overlap
-        step = int(self.config.window_size * (1 - self.config.overlap)) # floor
+        step = int(self.config.window_size * (1 - self.config.overlap))  # floor
         self.step = max(step, 1)  # ensure step is at least 1 to avoid infinite loops
 
         # precalculate start padding, if needed

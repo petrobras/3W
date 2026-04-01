@@ -47,9 +47,7 @@ class TestMLPConfig:
     def test_invalid_activation_function(self):
         """Invalid activation function should raise ValueError."""
         with pytest.raises(ValueError, match="activation_function must be one of"):
-            MLPConfig(
-                hidden_sizes=(32,), output_size=2, activation_function="invalid"
-            )
+            MLPConfig(hidden_sizes=(32,), output_size=2, activation_function="invalid")
 
     def test_invalid_input_size_zero(self):
         """input_size of 0 should raise ValueError."""
@@ -100,9 +98,9 @@ class TestMLPConfig:
         assert config.model_type == ModelTypeEnum.MLP
 
     def test_target_returns_mlp_class(self):
-        """target_ should return MLP class."""
+        """_target should return MLP class."""
         config = MLPConfig(hidden_sizes=(32,), output_size=2)
-        assert config.target_ == MLP
+        assert config._target == MLP
 
 
 class TestMLP:
@@ -158,7 +156,10 @@ class TestMLP:
     def test_activation_functions(self, activation):
         """Model should use correct activation function."""
         config = MLPConfig(
-            hidden_sizes=(32,), output_size=2, input_size=10, activation_function=activation
+            hidden_sizes=(32,),
+            output_size=2,
+            input_size=10,
+            activation_function=activation,
         )
         model = MLP(config)
         assert model.activation_func is not None
