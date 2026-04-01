@@ -1,7 +1,7 @@
-from .base_assessment import ModelAssessmentConfig, AssessmentOutput
+from .base_assessment import BaseAssessment, BaseAssessmentConfig, AssessmentOutput
 from .base_assessment_visualization import (
-    AssessmentVisualizationConfig,
     BaseAssessmentVisualization,
+    BaseAssessmentVisualizationConfig,
 )
 from .base_dataset import BaseDataset, BaseDatasetConfig
 from .base_feature_extractor import (
@@ -32,8 +32,9 @@ from .enums import (
 
 __all__ = [
     # Assessment
-    "ModelAssessmentConfig",
-    "AssessmentVisualizationConfig",
+    "BaseAssessment",
+    "BaseAssessmentConfig",
+    "BaseAssessmentVisualizationConfig",
     "BaseAssessmentVisualization",
     "AssessmentOutput",
     # Dataset

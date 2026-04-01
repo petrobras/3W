@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 matplotlib.use("Agg")  # Use non-interactive backend for tests
 from matplotlib.figure import Figure
 
-from ThreeWToolkit.core.base_assessment_visualization import (
+from ThreeWToolkit.assessment import (
     AssessmentVisualizationConfig,
+    AssessmentVisualization,
 )
-from ThreeWToolkit.assessment.assessment_visualizations import AssessmentVisualization
 
 
 class TestAssessmentVisualization:
