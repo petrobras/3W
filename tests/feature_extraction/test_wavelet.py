@@ -1,6 +1,4 @@
 import pytest
-import numpy as np
-import pandas as pd
 
 
 from ThreeWToolkit.core.base_dataset import BaseDataset
