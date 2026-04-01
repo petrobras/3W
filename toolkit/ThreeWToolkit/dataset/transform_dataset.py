@@ -5,6 +5,7 @@ from ..core.base_preprocessing import BasePreprocessingConfig
 from ..core.base_feature_extractor import BaseFeatureExtractorConfig
 from ..core.base_transform import BaseTransform, BaseTransformConfig
 from ..preprocessing.remap import RemapClass
+from .transformed_dataset import TransformedDataset
 
 
 class TransformConfig(BaseTransformConfig):
@@ -42,6 +43,9 @@ class TransformDataset(BaseTransform):
         """
         if self.pre_processing_step is not None:
             self.pre_processing_step.fit(dataset)
+
+    def transform(self, dataset: BaseDataset) -> TransformedDataset:
+        return TransformedDataset(dataset, self.transform_event)
 
     def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
         """Apply the fitted preprocessing and feature extraction steps to a single event."""

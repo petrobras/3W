@@ -1,6 +1,5 @@
 from ThreeWToolkit.core.base_dataset import BaseDataset
 from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
-from ThreeWToolkit.dataset.transformed_dataset import TransformedDataset
 from pydantic import BaseModel
 from abc import ABC, abstractmethod
 from .base_instantiable import Instantiable
@@ -8,6 +7,7 @@ from .base_instantiable import Instantiable
 
 class BaseTransformConfig(BaseModel, Instantiable):
     """Base configuration for general transformation steps."""
+
     target_: type["BaseTransform"]
 
 
@@ -26,7 +26,9 @@ class BaseTransform(ABC):
     def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
         """Transform a single event using the fitted transformation step.
         By default, this method raises NotImplementedError, as subclasses should implement it."""
-        raise NotImplementedError("Subclasses must implement the transform_event method.")
+        raise NotImplementedError(
+            "Subclasses must implement the transform_event method."
+        )
 
-    def transform(self, dataset: BaseDataset) -> TransformedDataset:
-        return TransformedDataset(dataset, self.transform_event)
+    def transform(self, dataset: BaseDataset) -> BaseDataset:
+        raise NotImplementedError("Subclasses must implement the transform method.")
