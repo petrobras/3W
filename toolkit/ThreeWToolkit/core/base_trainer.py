@@ -15,7 +15,7 @@ from .base_models import BaseModels
 from .base_instantiable import Instantiable
 from .dataset_outputs import DatasetOutputs
 
-from .utils.data_splitter import KFoldSplitter
+from ..utils.data_splitter import KFoldSplitter
 
 logger = logging.getLogger(__name__)
 
