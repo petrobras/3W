@@ -69,6 +69,9 @@ class TestExtractWaveletFeatures:
 
         for event in simple_dataset.events:
             transformed = feature_extractor.transform(event)
+            
+            assert not transformed.signal.isna().any().any(), "Transformed data should not contain NaN values."
+
             assert transformed.signal.shape[0] > 0, (
                 "Transformed data should have at least one row."
             )

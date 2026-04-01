@@ -39,7 +39,7 @@ class EWStatisticalConfig(
         description="Size of the window for calculating exponentially weighted statistics. Must be a positive integer.",
     )
 
-    selected_features: list[str] = Field(
+    features: list[str] = Field(
         default_factory=lambda: list(_AVAILABLE_FEATURES),
         description="List of exponentially weighted statistical features to compute. Available features: "
         + ", ".join(_AVAILABLE_FEATURES),
@@ -55,9 +55,9 @@ class EWStatisticalConfig(
             raise ValueError("Decay must be in the range (0, 1]")
         return v
 
-    @field_validator("selected_features")
+    @field_validator("features")
     @classmethod
-    def validate_selected_features(cls, v):
+    def validate_features(cls, v):
         """Validates that selected features are available."""
         if v is not None:
             invalid_features = set(v) - _AVAILABLE_FEATURES
@@ -121,14 +121,19 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
             DatasetOutputs with extracted features and labels
         """
         if data.signal.index.names != ["window", "variable"]:
-            raise RuntimeError("EWStatisticalFeatures must operate on windowed data.")
+            raise ValueError("EWStatisticalFeatures must operate on windowed data.")
+
+        if data.signal.shape[1] != self.config.window_size:
+            raise ValueError(
+                f"Input data window size {data.signal.shape[1]} does not match configured window size {self.config.window_size}."
+            )
 
         values = data.signal.values
         features = {}
 
         # Calculate exponentially weighted moments
         mean = self._ew_expectation(values)  # we will need this first
-        if "ew_mean" in self.config.selected_features:
+        if "ew_mean" in self.config.features:
             features["ew_mean"] = mean
 
         centered = (
@@ -136,18 +141,18 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
         )  # center the data for std, skew, kurt calculations
         std = np.sqrt(self._ew_expectation(centered**2))
 
-        if "ew_std" in self.config.selected_features:
+        if "ew_std" in self.config.features:
             features["ew_std"] = std
 
-        if "ew_skew" in self.config.selected_features:
+        if "ew_skew" in self.config.features:
             features["ew_skew"] = self._ew_expectation(centered**3)
 
-        if "ew_kurt" in self.config.selected_features:
+        if "ew_kurt" in self.config.features:
             features["ew_kurt"] = self._ew_expectation(centered**4)
 
         # Calculate exponentially weighted quantiles
         if any(
-            f in self.config.selected_features
+            f in self.config.features
             for f in ["ew_min", "ew_1qrt", "ew_med", "ew_3qrt", "ew_max"]
         ):
             # quantiles requested, so we compute the quantiles on the ew-shifted data.
@@ -156,15 +161,15 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
             quantiles = np.quantile(
                 standardized, [0, 0.25, 0.5, 0.75, 1], axis=1
             )  # calculate all at once
-            if "ew_min" in self.config.selected_features:
+            if "ew_min" in self.config.features:
                 features["ew_min"] = quantiles[0]
-            if "ew_1qrt" in self.config.selected_features:
+            if "ew_1qrt" in self.config.features:
                 features["ew_1qrt"] = quantiles[1]
-            if "ew_med" in self.config.selected_features:
+            if "ew_med" in self.config.features:
                 features["ew_med"] = quantiles[2]
-            if "ew_3qrt" in self.config.selected_features:
+            if "ew_3qrt" in self.config.features:
                 features["ew_3qrt"] = quantiles[3]
-            if "ew_max" in self.config.selected_features:
+            if "ew_max" in self.config.features:
                 features["ew_max"] = quantiles[4]
 
         signal = pd.DataFrame(

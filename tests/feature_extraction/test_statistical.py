@@ -6,7 +6,10 @@ from ThreeWToolkit.core.base_dataset import BaseDataset
 from ThreeWToolkit.feature_extraction.adapters import SequentialFeatureAdapterConfig
 
 from ThreeWToolkit.feature_extraction.windowing import WindowingConfig
-from ThreeWToolkit.feature_extraction.statistical import StatisticalConfig, _STATISTICAL_FEATURES
+from ThreeWToolkit.feature_extraction.statistical import (
+    StatisticalConfig,
+    _STATISTICAL_FEATURES,
+)
 
 
 _NUM_SENSORS = 10
@@ -30,12 +33,15 @@ class TestExtractStatisticalFeatures:
                 extractor.transform(event)
 
     @pytest.mark.parametrize("window_size", [64, 128, 256])
-    @pytest.mark.parametrize("features", [
-        ["mean", "std"],
-        ["var", "skew", "kurt"],
-        ["min", "q25", "median", "q75", "max"],
-        list(_STATISTICAL_FEATURES.keys()),
-    ])
+    @pytest.mark.parametrize(
+        "features",
+        [
+            ["mean", "std"],
+            ["var", "skew", "kurt"],
+            ["min", "q25", "median", "q75", "max"],
+            list(_STATISTICAL_FEATURES.keys()),
+        ],
+    )
     def test_stats_with_windowing(self, simple_dataset, window_size, features):
         """Test that statistical feature extraction works correctly with windowed data."""
 
@@ -57,6 +63,10 @@ class TestExtractStatisticalFeatures:
 
         for event in simple_dataset.events:
             transformed = feature_extractor.transform(event)
+            assert not transformed.signal.isna().any().any(), (
+                "Transformed data should not contain NaN values."
+            )
+
             assert transformed.signal.shape[0] > 0, (
                 "Transformed data should have at least one row."
             )
@@ -66,4 +76,4 @@ class TestExtractStatisticalFeatures:
             )
             assert set(transformed.signal.columns) == set(expected_names), (
                 "Expected feature names do not match actual feature names."
-                )
+            )
