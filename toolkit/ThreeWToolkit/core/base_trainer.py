@@ -4,11 +4,10 @@ import random
 import logging
 from abc import ABC, abstractmethod
 from typing import Any
-from dataclasses import dataclass, field
 
 import numpy as np
 import torch
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base_dataset import BaseDataset
 from .base_models import BaseModels
@@ -34,8 +33,7 @@ class BaseTrainerConfig(BaseModel, Instantiable):
     )
 
 
-@dataclass
-class TrainingResult:
+class TrainingResult(BaseModel):
     """
     Container for training results.
 
@@ -51,7 +49,8 @@ class TrainingResult:
     history: dict[str, Any]
     train_dataset_size: int
     val_dataset_size: int
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class BaseTrainer(ABC):
@@ -345,8 +344,10 @@ class BaseTrainer(ABC):
         from ..core.base_assessment import ModelAssessmentConfig
         from ..core.enums import TaskTypeEnum, DataSplitEnum
 
-        if not hasattr(self, '_training_result') or self._training_result is None:
-            raise RuntimeError("Model must be trained before evaluation. Call train() first.")
+        if not hasattr(self, "_training_result") or self._training_result is None:
+            raise RuntimeError(
+                "Model must be trained before evaluation. Call train() first."
+            )
 
         if assessment_config is None:
             assessment_config = ModelAssessmentConfig(

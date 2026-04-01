@@ -5,7 +5,6 @@ import numpy as np
 from pydantic import Field, field_validator
 from ..core.base_trainer import BaseTrainer, BaseTrainerConfig
 from ..core.base_dataset import BaseDataset
-from ..core.base_models import BaseSkLearnModels
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 
 logger = logging.getLogger(__name__)

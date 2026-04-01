@@ -17,10 +17,13 @@ class DatasetOutputs(BaseModel):
         label (pd.Series | None): Target labels for supervised learning
         metadata (dict[str, Any]): Additional metadata (file_name, etc.)
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     signal: pd.DataFrame = Field(..., description="Input signal data")
 
     label: pd.Series | None = Field(..., description="Optional target labels")
 
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata"
+    )

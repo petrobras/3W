@@ -1,4 +1,4 @@
-from .base_assessment import ModelAssessmentConfig
+from .base_assessment import ModelAssessmentConfig, AssessmentOutput
 from .base_assessment_visualization import (
     AssessmentVisualizationConfig,
     BaseAssessmentVisualization,
@@ -14,7 +14,7 @@ from .base_feature_extractor import (
 )
 from .base_instantiable import Instantiable
 from .base_models import BaseModels, BaseSkLearnModels, BaseTorchModels, ModelsConfig
-from .base_pipeline import BasePipeline, BasePipelineConfig
+from .base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .base_prediction_strategies import PredictionStrategy
 from .base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from .base_trainer import BaseTrainer, BaseTrainerConfig, TrainingResult
@@ -35,6 +35,7 @@ __all__ = [
     "ModelAssessmentConfig",
     "AssessmentVisualizationConfig",
     "BaseAssessmentVisualization",
+    "AssessmentOutput",
     # Dataset
     "BaseDataset",
     "BaseDatasetConfig",
@@ -56,6 +57,10 @@ __all__ = [
     # Pipeline
     "BasePipeline",
     "BasePipelineConfig",
+    "PipelineResult",
+    # Transform
+    "BaseTransform",
+    "BaseTransformConfig",
     # Prediction
     "PredictionStrategy",
     # Preprocessing
@@ -65,9 +70,6 @@ __all__ = [
     "BaseTrainer",
     "BaseTrainerConfig",
     "TrainingResult",
-    # Transform
-    "BaseTransform",
-    "BaseTransformConfig",
     # Enums
     "ActivationFunctionEnum",
     "CriterionEnum",
