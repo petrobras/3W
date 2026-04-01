@@ -1,5 +1,4 @@
-from typing import Any, Type
-from dataclasses import dataclass, field
+from typing import Any
 
 
 class Instantiable:
@@ -11,5 +10,6 @@ class Instantiable:
     """
 
     target_: type["Any"]
+
     def build(self, *args, **kwargs) -> Any:
         return self.target_(self, *args, **kwargs)

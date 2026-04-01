@@ -6,8 +6,6 @@ from pydantic import BaseModel, Field, field_validator
 from ..constants import OUTPUT_DIR
 from ..core.enums import DataSplitEnum, TaskTypeEnum
 
-from .base_step import BaseStep
-
 
 class ModelAssessmentConfig(BaseModel):
     """
@@ -125,8 +123,3 @@ class ModelAssessmentConfig(BaseModel):
         if device not in valid_devices:
             raise ValueError(f"device must be one of {valid_devices}")
         return device
-
-
-class BaseModelAssessment(BaseStep):
-    def __init__(self, config: ModelAssessmentConfig):
-        self.config = config

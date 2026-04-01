@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Mapping, TypeVar
+from typing import Mapping
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, field_validator
 import torch
