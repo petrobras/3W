@@ -10,7 +10,7 @@ from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
 from pylatex.package import Package
 
-from ThreeWToolkit.data_visualization import DataVisualization
+from ..data_visualization import DataVisualization
 
 from ..constants import LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR, HTML_ASSETS_DIR
 from ..utils.template_manager import copy_html_support_files, copy_latex_support_files

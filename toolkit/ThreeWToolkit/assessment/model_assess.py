@@ -7,15 +7,14 @@ import torch
 import torch.nn as nn
 
 from datetime import datetime
-from dataclasses import dataclass, field
-from typing import Callable, Any
+from typing import Callable
 from torch.utils.data import DataLoader, TensorDataset
 
 from ..reports.report_generation import ReportGeneration
 from ..core.base_models import BaseModels
 from ..core.base_dataset import BaseDataset
 from ..core.base_trainer import BaseTrainer, TrainingResult
-from ..core.base_assessment import ModelAssessmentConfig
+from ..core.base_assessment import ModelAssessmentConfig, AssessmentOutput
 from ..core.enums import TaskTypeEnum
 from ..metrics import (
     accuracy_score,
@@ -69,23 +68,6 @@ class MetricRegistry:
                 raise ValueError(f"Metric '{m}' not available for task {task_type}")
             resolved[m] = available[m]
         return resolved
-
-
-@dataclass
-class AssessmentOutput:
-    """Output container for model assessment results."""
-
-    model_name: str
-    task_type: TaskTypeEnum
-    timestamp: str
-
-    predictions: np.ndarray | None = None
-    true_values: np.ndarray | None = None
-    metrics: dict[str, float] | None = None
-    training_history: dict[str, Any] | None = None
-
-    config: dict[str, Any] = field(default_factory=dict)
-    experiment_dir: str | None = None
 
 
 class ModelAssessment:
@@ -204,7 +186,9 @@ class ModelAssessment:
     def _get_predictions(self, model: BaseModels, x: np.ndarray) -> np.ndarray:
         """Generate predictions by detecting model type."""
         if isinstance(model, nn.Module):
-            strategy: TorchPredictionStrategy | SklearnPredictionStrategy = TorchPredictionStrategy()
+            strategy: TorchPredictionStrategy | SklearnPredictionStrategy = (
+                TorchPredictionStrategy()
+            )
             dataset = TensorDataset(
                 torch.tensor(x, dtype=torch.float32), torch.zeros(len(x))
             )
