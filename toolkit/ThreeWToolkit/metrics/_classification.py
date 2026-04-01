@@ -11,10 +11,12 @@ from sklearn.metrics import (
     roc_auc_score as sk_roc_auc,
 )
 
-from pydantic import validate_call
+from pydantic import ConfigDict, validate_call
+
+_validate_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-@validate_call
+@validate_call(config=_validate_config)
 def accuracy_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -47,7 +49,7 @@ def accuracy_score(
     )
 
 
-@validate_call
+@validate_call(config=_validate_config)
 def balanced_accuracy_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -78,7 +80,7 @@ def balanced_accuracy_score(
     )
 
 
-@validate_call
+@validate_call(config=_validate_config)
 def average_precision_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -114,7 +116,7 @@ def average_precision_score(
     )
 
 
-@validate_call
+@validate_call(config=_validate_config)
 def precision_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -154,7 +156,7 @@ def precision_score(
     )
 
 
-@validate_call
+@validate_call(config=_validate_config)
 def recall_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -194,7 +196,7 @@ def recall_score(
     )
 
 
-@validate_call
+@validate_call(config=_validate_config)
 def f1_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -234,7 +236,7 @@ def f1_score(
     )
 
 
-@validate_call
+@validate_call(config=_validate_config)
 def roc_auc_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
