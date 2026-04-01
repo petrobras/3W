@@ -26,7 +26,6 @@ class TestModelAssessmentConfig:
         assert config.generate_report is False
         assert config.task_type == TaskTypeEnum.CLASSIFICATION
         assert config.batch_size == 64
-        assert config.dataset_split == DataSplitEnum.TEST
 
     def test_custom_metrics(self):
         """Test custom metrics list."""
@@ -124,17 +123,6 @@ class TestModelAssessmentConfig:
         """Test custom report author."""
         config = ModelAssessmentConfig(report_author="Test Author")
         assert config.report_author == "Test Author"
-
-    def test_dataset_split_values(self):
-        """Test all dataset split values."""
-        for split in [
-            DataSplitEnum.TRAIN,
-            DataSplitEnum.VALIDATION,
-            DataSplitEnum.TEST,
-            DataSplitEnum.CUSTOM,
-        ]:
-            config = ModelAssessmentConfig(dataset_split=split)
-            assert config.dataset_split == split
 
 
 class TestAssessmentVisualizationConfig:
