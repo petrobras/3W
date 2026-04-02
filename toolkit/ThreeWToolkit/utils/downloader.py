@@ -128,10 +128,6 @@ def get_figshare_data(
             verification fails.
         ValueError: If an invalid version or chunk_size is provided.
 
-    Example:
-        >>> from pathlib import Path
-        >>> downloaded = get_figshare_data(Path("./data"), version="2.0.0")
-        >>> print(f"Downloaded {len(downloaded)} files")
 
     Notes:
         - Downloads are streamed with progress bars via tqdm

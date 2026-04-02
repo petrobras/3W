@@ -25,7 +25,6 @@ class TestParquetDataset:
         """
         Load all files, without target column separation.
         """
-        print(parquet_dataset_path)
         config = ParquetDatasetConfig(
             path=parquet_dataset_path,
             columns=_COLUMNS,

@@ -1,3 +1,4 @@
+import logging
 import shutil
 import zipfile
 from pathlib import Path
@@ -14,6 +15,7 @@ from ..utils.downloader import get_figshare_data
 
 from ..core.base_dataset import BaseDataset, BaseDatasetConfig
 
+logger = logging.getLogger(__name__)
 DATASET_VALIDATION_RULES = {
     "2.0.0": {"total_parquet_files": 2228},
 }
@@ -115,7 +117,7 @@ class ParquetDataset(BaseDataset):
 
         # Check if download is forced
         if self.config.force_download:
-            print(
+            logger.info(
                 f"`force_download` is True. Deleting existing dataset at {self.config.path}."
             )
             # Delete existing dataset
@@ -133,10 +135,10 @@ class ParquetDataset(BaseDataset):
             # Check if a zip already exists
             existing_zips = list(dl_path.glob("*.zip"))
             if existing_zips:
-                print(f"[ParquetDataset] Found existing dataset at {dl_path}.")
+                logger.info(f"Found existing dataset at {dl_path}.")
                 zip_path = existing_zips[0]
             else:
-                print("[ParquetDataset] Downloading dataset...")
+                logger.info("Downloading dataset...")
                 downloaded = get_figshare_data(
                     path=dl_path, version=self.config.version, chunk_size=1024 * 1024
                 )
@@ -144,25 +146,25 @@ class ParquetDataset(BaseDataset):
 
             # Check if all files were extracted correctly
             if self.is_dataset_extracted_correctly():
-                print(f"[ParquetDataset] Dataset already extracted at {config.path}.")
+                logger.info(f"Dataset already extracted at {config.path}.")
             else:
-                print(f"[ParquetDataset] Extracting dataset from {zip_path}...")
+                logger.info(f"Extracting dataset from {zip_path}...")
                 with zipfile.ZipFile(zip_path, "r") as zip_file:
                     zip_file.extractall(config.path)
         else:
-            print(f"[ParquetDataset] Dataset found at {config.path}")
+            logger.info(f"Dataset found at {config.path}")
 
         # Collect parquet files
         root = Path(self.config.path)
 
         # Check dataset integrity
-        print("[ParquetDataset] Validating dataset integrity...")
+        logger.info("Validating dataset integrity...")
         pass_validation, error_messages = self.validate_dataset_integrity()
         if not pass_validation:
             msg = "\n".join(error_messages)
             raise FileNotFoundError(f"Dataset validation failed: {msg}")
         else:
-            print("[ParquetDataset] Dataset integrity check passed!")
+            logger.info("Dataset integrity check passed!")
 
         all_events_files = [e.relative_to(root) for e in root.rglob("*.parquet")]
         all_events_files = sorted(all_events_files)

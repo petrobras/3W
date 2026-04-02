@@ -77,8 +77,6 @@ class TestCleanSignalsIQRThresholds:
         ).build()
         cleaner.fit(df_with_missing_column)
 
-        print(cleaner.drop_list)
-
         cleaned_dataset = TransformedDataset(df_with_missing_column, cleaner.transform)
 
         # The column with all NaN values should be dropped
@@ -102,9 +100,9 @@ class TestCleanSignalsIQRThresholds:
         for _, cleaned in zip(df_with_some_frozen_signals, cleaned_dataset):
             assert "sensor_2" in cleaned.signal.columns
             has_nan.append(cleaned.signal["sensor_2"].isna().all())
-        assert (
-            sum(has_nan) == 5
-        ), "Exactly 5 events should have the frozen signal column set to NaN"
+        assert sum(has_nan) == 5, (
+            "Exactly 5 events should have the frozen signal column set to NaN"
+        )
 
     def test_exclude_features(self, df_with_missing_column):
         """Test that excluded features are not dropped even if they meet the IQR-based criteria."""

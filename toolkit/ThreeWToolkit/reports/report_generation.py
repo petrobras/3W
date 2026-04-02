@@ -1,3 +1,5 @@
+import logging
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -14,6 +16,8 @@ from ..data_visualization import DataVisualization
 
 from ..constants import LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR, HTML_ASSETS_DIR
 from ..utils.template_manager import copy_html_support_files, copy_latex_support_files
+
+logger = logging.getLogger(__name__)
 
 
 class ReportGeneration:
@@ -170,7 +174,7 @@ class ReportGeneration:
             pylatex.Document: The generated Beamer presentation as a PyLaTeX
                               Document object.
         """
-        print(f"Generating Beamer report: '{self.title}'...")
+        logger.info(f"Generating Beamer report: '{self.title}'...")
 
         doc = Document(documentclass="beamer", document_options=["t,compress"])
 
@@ -277,7 +281,7 @@ class ReportGeneration:
                 doc.append(NoEscape(r"\end{figure}"))
                 doc.append(NoEscape(r"\end{frame}"))
 
-        print("Beamer document generated successfully.")
+        logger.info("Beamer document generated successfully.")
         if self.save_report_after_generate:
             self._save_report_latex(doc=doc, filename=self.title)
 
@@ -392,13 +396,13 @@ class ReportGeneration:
         """
 
         report_path = self.reports_dir / "latex"
-        print(f"Saving report to '{report_path}' folder'...")
+        logger.info(f"Saving report to '{report_path}' folder'...")
 
         report_path.mkdir(parents=True, exist_ok=True)
 
         doc.generate_tex(filepath=str(report_path / filename))
 
-        print(f"Report saved successfully to '{filename}.tex'")
+        logger.info(f"Report saved successfully to '{filename}.tex'")
 
         copy_latex_support_files(self.latex_dir, report_path)
 
@@ -421,7 +425,7 @@ class ReportGeneration:
         Returns:
             str: A string containing the complete, rendered report in HTML format.
         """
-        print(f"Generating HTML report from template: '{template_name}'...")
+        logger.info(f"Generating HTML report from template: '{template_name}'...")
 
         # Set up Jinja2 environment
         # This assumes your templates are in a 'templates' subdirectory.
@@ -462,7 +466,7 @@ class ReportGeneration:
 
         # --- 4. Render the template with the data ---
         markdown_output = template.render(context)
-        print("Markdown report generated successfully.")
+        logger.info("Markdown report generated successfully.")
 
         if self.save_report_after_generate:
             self._save_report_html(
@@ -497,13 +501,13 @@ class ReportGeneration:
         report_path.mkdir(parents=True, exist_ok=True)
 
         file_path = report_path / filename
-        print(f"Saving HTML report to '{file_path}'...")
+        logger.info(f"Saving HTML report to '{file_path}'...")
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(report_content)
-            print(f"HTML report saved successfully to '{file_path}'")
+            logger.info(f"HTML report saved successfully to '{file_path}'")
         except IOError as e:
-            print(f"Error saving HTML file: {e}")
+            logger.error(f"Error saving HTML file: {e}")
 
         copy_html_support_files(HTML_TEMPLATES_DIR, HTML_ASSETS_DIR, report_path)
 
@@ -543,7 +547,7 @@ class ReportGeneration:
             ValueError: If the `results` dictionary does not contain all the
                 required keys.
         """
-        print(f"Exporting results to '{filename}'...")
+        logger.info(f"Exporting results to '{filename}'...")
 
         self.reports_dir.mkdir(parents=True, exist_ok=True)
 
@@ -587,7 +591,9 @@ class ReportGeneration:
                 df_export[metric_name] = metric_value
 
         df_export.to_csv(self.reports_dir / filename, index=True)
-        print(f"Successfully exported results to '{self.reports_dir / filename}'.")
+        logger.info(
+            f"Successfully exported results to '{self.reports_dir / filename}'."
+        )
         return df_export
 
     def generate_summary_report(
@@ -603,7 +609,7 @@ class ReportGeneration:
             Document | str: A PyLaTeX Document for LaTeX reports or a string for HTML reports.
         """
         if self.save_report_after_generate:
-            print(f"Reports will be saved to directory: '{self.reports_dir}'")
+            logger.info(f"Reports will be saved to directory: '{self.reports_dir}'")
 
         if format == "latex":
             return self._generate_summary_report_latex()
@@ -622,10 +628,10 @@ class ReportGeneration:
         """
         if format == "latex":
             self._save_report_latex(doc, filename)
-            print("LaTeX report saved successfully")
+            logger.info("LaTeX report saved successfully")
         elif format == "html":
             self._save_report_html(doc, f"{filename}.html")
             # Convert Markdown to HTML and then to PDF using WeasyPrint
-            print("HTML report saved successfully")
+            logger.info("HTML report saved successfully")
         else:
             raise ValueError("Format must be either 'latex' or 'html'.")
