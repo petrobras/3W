@@ -2,9 +2,9 @@
 
 import pytest
 import pandas as pd
-import numpy as np
 
 from ThreeWToolkit.core import (
+    BaseDataset,
     BaseTrainer,
     BaseTrainerConfig,
     TrainingResult,
@@ -19,8 +19,8 @@ class ConcreteTrainer(BaseTrainer):
     def _prepare_data_for_training(self, dataset):
         return dataset
 
-    def _execute_training(self, train_data, val_data):
-        return {}
+    def _execute_training(self, train_data, val_data) -> TrainingHistory:
+        return TrainingHistory(train_loss=[0.5, 0.3, 0.1], val_loss=[0.6, 0.4, 0.2])
 
 
 class ConcreteTrainerConfig(BaseTrainerConfig):
@@ -107,7 +107,7 @@ class TestTrainingResult:
 
         result = TrainingResult(
             model=model,
-            history=TrainingHistory(),
+            history=TrainingHistory(train_loss=[0.5, 0.3, 0.1]),
             train_dataset_size=100,
             val_dataset_size=0,
             metadata=metadata,
@@ -128,7 +128,7 @@ class TestTrainingResult:
 
         result = TrainingResult(
             model=DummyModel(),
-            history=TrainingHistory(),
+            history=TrainingHistory(train_loss=[0.5, 0.3, 0.1]),
             train_dataset_size=100,
             val_dataset_size=0,
         )
@@ -142,7 +142,7 @@ class TestBaseTrainerValidation:
     def test_validate_empty_train_dataset(self, mock_dataset_factory):
         """Test validation fails for empty training dataset."""
 
-        class EmptyDataset:
+        class EmptyDataset(BaseDataset):
             def __len__(self):
                 return 0
 
@@ -157,7 +157,7 @@ class TestBaseTrainerValidation:
     def test_validate_empty_val_dataset(self, mock_dataset_factory):
         """Test validation fails for empty validation dataset."""
 
-        class EmptyDataset:
+        class EmptyDataset(BaseDataset):
             def __len__(self):
                 return 0
 
@@ -175,7 +175,7 @@ class TestBaseTrainerValidation:
         train_dataset = mock_dataset_factory(num_events=5, num_sensors=10)
 
         # Create val dataset with different columns
-        class DifferentColumnsDataset:
+        class DifferentColumnsDataset(BaseDataset):
             def __len__(self):
                 return 3
 
@@ -194,7 +194,7 @@ class TestBaseTrainerValidation:
         train_dataset = mock_dataset_factory(num_events=5, num_sensors=3)
 
         # Create val dataset without labels
-        class NoLabelDataset:
+        class NoLabelDataset(BaseDataset):
             def __len__(self):
                 return 3
 
