@@ -56,7 +56,7 @@ class TestAccuracyScore:
     )
     def test_accuracy_errors(self, y_true, y_pred, error_type):
         """Test accuracy_score error handling."""
-        if error_type == ValueError and len(y_true) == len(y_pred):
+        if (error_type is ValueError) and (len(y_true) == len(y_pred)):
             # This is the sample weight case
             with pytest.raises(ValueError):
                 accuracy_score(y_true=y_true, y_pred=y_pred, sample_weight=[0.1, 0.2])
@@ -139,7 +139,7 @@ class TestAveragePrecisionScore:
         "y_true,y_pred,pos_label,expected",
         [
             ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], 1, 0.8333333333333333),
-            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], 0, 0.8333333333333333),
+            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], 0, 0.5),
         ],
     )
     def test_average_precision_pos_label(self, y_true, y_pred, pos_label, expected):
@@ -148,7 +148,7 @@ class TestAveragePrecisionScore:
             y_true=y_true, y_pred=y_pred, pos_label=pos_label
         )
         assert isinstance(result, float)
-        assert 0.0 <= result <= 1.0
+        assert result == pytest.approx(expected, abs=1e-6)
 
     @pytest.mark.parametrize(
         "y_true,y_pred,kwargs,error_type",
