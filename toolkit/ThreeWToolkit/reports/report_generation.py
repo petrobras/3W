@@ -251,7 +251,7 @@ class ReportGeneration:
             with doc.create(Itemize()) as itemize:
                 itemize.add_item(
                     NoEscape(
-                        f"Training Samples: {len(self.X_train)} \\\\ Test Samples: {len(self.X_test)}"
+                        f"Training Samples: {len(self.X_train if self.X_train is not None else [])} \\\\ Test Samples: {len(self.X_test)}"
                     )
                 )
             doc.append(NoEscape(r"\end{block}"))

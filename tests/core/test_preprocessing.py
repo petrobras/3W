@@ -13,21 +13,21 @@ from ThreeWToolkit.core import (
 class TestBasePreprocessingImplementation:
     """Test BasePreprocessing implementation requirements."""
 
-    def test_abstract_methods_required(self):
+    def test_abstract_methods_required(self) -> None:
         """Test that abstract methods must be implemented."""
 
         class IncompletePreprocessing(BasePreprocessing):
             pass
 
         class DummyConfig(BasePreprocessingConfig):
-            _target: type = IncompletePreprocessing
+            _target: type[IncompletePreprocessing] = IncompletePreprocessing  # type: ignore[type-abstract]
 
         config = DummyConfig()
 
         with pytest.raises(TypeError):
             config.build()
 
-    def test_complete_implementation(self):
+    def test_complete_implementation(self) -> None:
         """Test a complete implementation of BasePreprocessing."""
 
         class SimplePreprocessing(BasePreprocessing):
@@ -41,7 +41,7 @@ class TestBasePreprocessingImplementation:
                 )
 
         class SimpleConfig(BasePreprocessingConfig):
-            _target: type = SimplePreprocessing
+            _target: type[SimplePreprocessing] = SimplePreprocessing
 
         config = SimpleConfig()
         preprocessing = config.build()
@@ -59,11 +59,11 @@ class TestBasePreprocessingImplementation:
 class TestBasePreprocessingFit:
     """Test BasePreprocessing fit method."""
 
-    def test_default_fit_does_nothing(self, mock_dataset_factory):
+    def test_default_fit_does_nothing(self, mock_dataset_factory) -> None:
         """Test that default fit method does nothing."""
 
         class SimplePreprocessing(BasePreprocessing):
-            def __init__(self, config):
+            def __init__(self, config) -> None:
                 super().__init__(config)
                 self.fit_called = False
 
@@ -71,7 +71,7 @@ class TestBasePreprocessingFit:
                 return data
 
         class SimpleConfig(BasePreprocessingConfig):
-            _target: type = SimplePreprocessing
+            _target: type[SimplePreprocessing] = SimplePreprocessing
 
         preprocessing = SimpleConfig().build()
         dataset = mock_dataset_factory(num_events=5)
@@ -79,15 +79,15 @@ class TestBasePreprocessingFit:
         # Should not raise
         preprocessing.fit(dataset)
 
-    def test_custom_fit_implementation(self, mock_dataset_factory):
+    def test_custom_fit_implementation(self, mock_dataset_factory) -> None:
         """Test custom fit implementation."""
 
         class StatefulPreprocessing(BasePreprocessing):
-            def __init__(self, config):
+            def __init__(self, config) -> None:
                 super().__init__(config)
                 self.mean = None
 
-            def fit(self, dataset):
+            def fit(self, dataset) -> None:
                 # Compute global mean from dataset
                 all_values = []
                 for event in dataset:
@@ -105,7 +105,7 @@ class TestBasePreprocessingFit:
                 )
 
         class StatefulConfig(BasePreprocessingConfig):
-            _target: type = StatefulPreprocessing
+            _target: type[StatefulPreprocessing] = StatefulPreprocessing
 
         preprocessing = StatefulConfig().build()
         dataset = mock_dataset_factory(num_events=5, global_mean=50.0)
@@ -120,30 +120,30 @@ class TestBasePreprocessingFit:
 class TestBasePreprocessingConfig:
     """Test BasePreprocessingConfig."""
 
-    def test_config_stores_target(self):
+    def test_config_stores_target(self) -> None:
         """Test that config stores target class."""
 
         class MyPreprocessing(BasePreprocessing):
-            def transform(self, data):
+            def transform(self, data: DatasetOutputs) -> DatasetOutputs:
                 return data
 
         class MyConfig(BasePreprocessingConfig):
-            _target: type = MyPreprocessing
+            _target: type[MyPreprocessing] = MyPreprocessing
 
         config = MyConfig()
         assert config._target == MyPreprocessing
 
-    def test_config_accessible_from_preprocessing(self):
+    def test_config_accessible_from_preprocessing(self) -> None:
         """Test that config is accessible from preprocessing instance."""
 
         class MyPreprocessing(BasePreprocessing):
-            def transform(self, data):
+            def transform(self, data: DatasetOutputs) -> DatasetOutputs:
                 return data
 
         class MyConfig(BasePreprocessingConfig):
             param_a: int = 5
             param_b: str = "test"
-            _target: type = MyPreprocessing
+            _target: type[MyPreprocessing] = MyPreprocessing
 
         config = MyConfig(param_a=10, param_b="custom")
         preprocessing = config.build()

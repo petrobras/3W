@@ -22,10 +22,13 @@ DATASET_VALIDATION_RULES = {
 
 
 class ParquetDatasetConfig(BaseDatasetConfig):
+    """Configuration schema for loading a Parquet dataset.
+
+    Defines the dataset location, splits, filtering options,
+    and preprocessing behavior.
     """
-    Configuration schema for loading a Parquet dataset.
-    Defines the dataset location, splits, filtering options, and preprocessing behavior.
-    """
+
+    model_config = {"arbitrary_types_allowed": True}
 
     path: Path | str = Field(..., description="Path to the dataset directory or file.")
 

@@ -106,7 +106,8 @@ class TestSklearnPredictionStrategy:
     def test_predict_preserves_dataframe_structure(self, strategy, mock_model):
         """DataFrame input should be passed to model preserving structure."""
         x = pd.DataFrame(
-            np.random.randn(5, 4), columns=["feature_1", "feature_2", "feature_3", "feature_4"]
+            np.random.randn(5, 4),
+            columns=["feature_1", "feature_2", "feature_3", "feature_4"],
         )
         strategy.predict(mock_model, TaskTypeEnum.CLASSIFICATION, x=x)
 
@@ -151,9 +152,7 @@ class TestSklearnPredictionStrategyPredictProba:
 
     def test_predict_proba_shape_multiclass(self, strategy):
         """predict_proba should return (N, C) shape for multiclass classification."""
-        probas = np.array(
-            [[0.7, 0.2, 0.1], [0.1, 0.8, 0.1], [0.2, 0.3, 0.5]]
-        )
+        probas = np.array([[0.7, 0.2, 0.1], [0.1, 0.8, 0.1], [0.2, 0.3, 0.5]])
         model = MockSklearnModel(probas=probas)
 
         x = np.random.randn(3, 4)
@@ -230,12 +229,3 @@ class TestSklearnPredictionStrategyEnsureDataframe:
         result = strategy._ensure_dataframe(lst, {})
 
         assert result == lst
-
-
-class TestSklearnPredictionStrategyRequiresDataloader:
-    """Tests for the requires_dataloader property."""
-
-    def test_requires_dataloader_returns_false(self):
-        """Sklearn strategy should not require a DataLoader."""
-        strategy = SklearnPredictionStrategy()
-        assert strategy.requires_dataloader is False

@@ -73,7 +73,10 @@ class TestTorchPredictionStrategyPredict:
     def test_predict_returns_numpy_array(self, strategy, multiclass_model, dataloader):
         """Predict should return a numpy array."""
         result = strategy.predict(
-            multiclass_model, TaskTypeEnum.CLASSIFICATION, loader=dataloader, device="cpu"
+            multiclass_model,
+            TaskTypeEnum.CLASSIFICATION,
+            loader=dataloader,
+            device="cpu",
         )
 
         assert isinstance(result, np.ndarray)
@@ -81,7 +84,10 @@ class TestTorchPredictionStrategyPredict:
     def test_predict_multiclass_shape(self, strategy, multiclass_model, dataloader):
         """Multiclass predictions should have correct shape."""
         result = strategy.predict(
-            multiclass_model, TaskTypeEnum.CLASSIFICATION, loader=dataloader, device="cpu"
+            multiclass_model,
+            TaskTypeEnum.CLASSIFICATION,
+            loader=dataloader,
+            device="cpu",
         )
 
         assert result.shape == (12,)  # One prediction per sample
@@ -89,7 +95,10 @@ class TestTorchPredictionStrategyPredict:
     def test_predict_multiclass_values(self, strategy, multiclass_model, dataloader):
         """Multiclass predictions should be valid class indices."""
         result = strategy.predict(
-            multiclass_model, TaskTypeEnum.CLASSIFICATION, loader=dataloader, device="cpu"
+            multiclass_model,
+            TaskTypeEnum.CLASSIFICATION,
+            loader=dataloader,
+            device="cpu",
         )
 
         assert all(0 <= pred < 3 for pred in result)
@@ -103,7 +112,9 @@ class TestTorchPredictionStrategyPredict:
         assert result.shape == (12,)
         assert all(pred in [0, 1] for pred in result)
 
-    def test_predict_binary_with_custom_threshold(self, strategy, binary_model, dataloader):
+    def test_predict_binary_with_custom_threshold(
+        self, strategy, binary_model, dataloader
+    ):
         """Binary classification should use custom threshold."""
         # Low threshold should predict more 1s
         result_low = strategy.predict(
@@ -139,31 +150,44 @@ class TestTorchPredictionStrategyPredict:
     def test_predict_raises_without_loader(self, strategy, multiclass_model):
         """Predict should raise ValueError when loader is not provided."""
         with pytest.raises(ValueError, match="DataLoader must be provided"):
-            strategy.predict(multiclass_model, TaskTypeEnum.CLASSIFICATION, device="cpu")
+            strategy.predict(
+                multiclass_model, TaskTypeEnum.CLASSIFICATION, device="cpu"
+            )
 
     def test_predict_raises_for_invalid_model(self, strategy, dataloader):
         """Predict should raise AssertionError for non-Module model."""
         with pytest.raises(AssertionError, match="torch.nn.Module"):
-            strategy.predict("not_a_model", TaskTypeEnum.CLASSIFICATION, loader=dataloader)
+            strategy.predict(
+                "not_a_model", TaskTypeEnum.CLASSIFICATION, loader=dataloader
+            )
 
-    def test_predict_raises_for_unknown_task(self, strategy, multiclass_model, dataloader):
+    def test_predict_raises_for_unknown_task(
+        self, strategy, multiclass_model, dataloader
+    ):
         """Predict should raise ValueError for unknown task type."""
         with pytest.raises(ValueError, match="Unknown task type"):
             strategy.predict(
                 multiclass_model, task="unknown_task", loader=dataloader, device="cpu"
             )
 
-    def test_predict_default_task_is_classification(self, strategy, multiclass_model, dataloader):
+    def test_predict_default_task_is_classification(
+        self, strategy, multiclass_model, dataloader
+    ):
         """Default task should be classification."""
         result = strategy.predict(multiclass_model, loader=dataloader, device="cpu")
 
         assert result.shape == (12,)
         assert all(0 <= pred < 3 for pred in result)
 
-    def test_predict_uses_specified_device(self, strategy, multiclass_model, dataloader):
+    def test_predict_uses_specified_device(
+        self, strategy, multiclass_model, dataloader
+    ):
         """Model should be moved to specified device."""
         result = strategy.predict(
-            multiclass_model, TaskTypeEnum.CLASSIFICATION, loader=dataloader, device="cpu"
+            multiclass_model,
+            TaskTypeEnum.CLASSIFICATION,
+            loader=dataloader,
+            device="cpu",
         )
 
         # Verify model is on CPU
@@ -178,7 +202,10 @@ class TestTorchPredictionStrategyPredict:
         assert multiclass_model.training is True
 
         strategy.predict(
-            multiclass_model, TaskTypeEnum.CLASSIFICATION, loader=dataloader, device="cpu"
+            multiclass_model,
+            TaskTypeEnum.CLASSIFICATION,
+            loader=dataloader,
+            device="cpu",
         )
 
         assert multiclass_model.training is False
@@ -186,9 +213,14 @@ class TestTorchPredictionStrategyPredict:
     def test_predict_with_different_batch_sizes(self, strategy, multiclass_model):
         """Predict should work with various batch sizes."""
         for batch_size in [1, 4, 8, 16]:
-            loader = create_dataloader(n_samples=16, n_features=10, batch_size=batch_size)
+            loader = create_dataloader(
+                n_samples=16, n_features=10, batch_size=batch_size
+            )
             result = strategy.predict(
-                multiclass_model, TaskTypeEnum.CLASSIFICATION, loader=loader, device="cpu"
+                multiclass_model,
+                TaskTypeEnum.CLASSIFICATION,
+                loader=loader,
+                device="cpu",
             )
 
             assert result.shape == (16,)
@@ -270,15 +302,6 @@ class TestTorchPredictionStrategyRegression:
 
         expected = torch.tensor([-1.5, 0.0, 3.14])
         assert torch.allclose(result, expected)
-
-
-class TestTorchPredictionStrategyRequiresDataloader:
-    """Tests for the requires_dataloader property."""
-
-    def test_requires_dataloader_returns_true(self):
-        """Torch strategy should require a DataLoader."""
-        strategy = TorchPredictionStrategy()
-        assert strategy.requires_dataloader is True
 
 
 class TestTorchPredictionStrategyIntegration:

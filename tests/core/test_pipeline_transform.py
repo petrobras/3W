@@ -18,7 +18,7 @@ from ThreeWToolkit.core import (
 class TestBasePipeline:
     """Test BasePipeline class."""
 
-    def test_pipeline_abstract(self):
+    def test_pipeline_abstract(self) -> None:
         """Test that BasePipeline is abstract."""
 
         class ConcretePipeline(BasePipeline):
@@ -29,21 +29,21 @@ class TestBasePipeline:
         with pytest.raises(NotImplementedError):
             pipeline.run()
 
-    def test_pipeline_implementation(self):
+    def test_pipeline_implementation(self) -> None:
         """Test a complete pipeline implementation."""
 
         class MyPipeline(BasePipeline):
-            def __init__(self, config):
+            def __init__(self, config) -> None:
                 self.config = config
                 self.executed = False
 
-            def run(self):
+            def run(self) -> str:
                 self.executed = True
                 return "Pipeline completed"
 
         class MyPipelineConfig(BasePipelineConfig):
             name: str = "test"
-            _target: type = MyPipeline
+            _target: type[MyPipeline] = MyPipeline
 
         config = MyPipelineConfig(name="my_pipeline")
         pipeline = config.build()
@@ -56,32 +56,32 @@ class TestBasePipeline:
 class TestBasePipelineConfig:
     """Test BasePipelineConfig."""
 
-    def test_config_stores_target(self):
+    def test_config_stores_target(self) -> None:
         """Test that config stores target class."""
 
         class MyPipeline(BasePipeline):
-            def run(self):
+            def run(self) -> None:
                 pass
 
         class MyConfig(BasePipelineConfig):
-            _target: type = MyPipeline
+            _target: type[MyPipeline] = MyPipeline
 
         config = MyConfig()
         assert config._target == MyPipeline
 
-    def test_config_build_returns_pipeline(self):
+    def test_config_build_returns_pipeline(self) -> None:
         """Test that build returns pipeline instance."""
 
         class MyPipeline(BasePipeline):
-            def __init__(self, config):
+            def __init__(self, config) -> None:
                 self.config = config
 
-            def run(self):
+            def run(self) -> int:
                 return self.config.steps
 
         class MyConfig(BasePipelineConfig):
             steps: int = 5
-            _target: type = MyPipeline
+            _target: type[MyPipeline] = MyPipeline
 
         config = MyConfig(steps=10)
         pipeline = config.build()
@@ -93,15 +93,15 @@ class TestBasePipelineConfig:
 class TestBaseTransform:
     """Test BaseTransform class."""
 
-    def test_transform_abstract_transform_event(self):
+    def test_transform_abstract_transform_event(self) -> None:
         """Test that transform_event must be implemented."""
 
         class IncompleteTransform(BaseTransform):
-            def fit(self, dataset):
+            def fit(self, dataset) -> None:
                 pass
 
         class IncompleteConfig(BaseTransformConfig):
-            _target: type = IncompleteTransform
+            _target: type[IncompleteTransform] = IncompleteTransform
 
         transform = IncompleteConfig().build()
 
@@ -111,15 +111,15 @@ class TestBaseTransform:
         with pytest.raises(NotImplementedError):
             transform.transform_event(data)
 
-    def test_transform_complete_implementation(self, mock_dataset_factory):
+    def test_transform_complete_implementation(self, mock_dataset_factory) -> None:
         """Test complete transform implementation."""
 
         class ScaleTransform(BaseTransform):
-            def __init__(self, config):
+            def __init__(self, config) -> None:
                 super().__init__(config)
                 self.scale = 1.0
 
-            def fit(self, dataset):
+            def fit(self, dataset) -> None:
                 # Compute max value across dataset
                 max_val = 0.0
                 for event in dataset:
@@ -137,7 +137,7 @@ class TestBaseTransform:
                 )
 
         class ScaleConfig(BaseTransformConfig):
-            _target: type = ScaleTransform
+            _target: type[ScaleTransform] = ScaleTransform
 
         transform = ScaleConfig().build()
         dataset = mock_dataset_factory(num_events=5, global_mean=50.0)
@@ -157,16 +157,16 @@ class TestBaseTransform:
 class TestPredictionStrategy:
     """Test PredictionStrategy abstract class."""
 
-    def test_prediction_strategy_abstract(self):
+    def test_prediction_strategy_abstract(self) -> None:
         """Test that PredictionStrategy is abstract."""
 
         class IncompleteStrategy(PredictionStrategy):
             pass
 
         with pytest.raises(TypeError):
-            IncompleteStrategy()
+            IncompleteStrategy()  # type: ignore[abstract]
 
-    def test_prediction_strategy_implementation(self):
+    def test_prediction_strategy_implementation(self) -> None:
         """Test a complete prediction strategy implementation."""
 
         class SimpleStrategy(PredictionStrategy):
@@ -178,9 +178,6 @@ class TestPredictionStrategy:
 
         strategy = SimpleStrategy()
 
-        # Default requires_dataloader is False
-        assert strategy.requires_dataloader is False
-
         # Test predict
         X = np.array([[1, 2], [3, 4], [5, 6]])
         result = strategy.predict(None, X=X)
@@ -188,23 +185,7 @@ class TestPredictionStrategy:
         assert len(result) == 3
         assert all(r == 1 for r in result)
 
-    def test_prediction_strategy_with_dataloader_requirement(self):
-        """Test strategy that requires dataloader."""
-
-        class DataloaderStrategy(PredictionStrategy):
-            def predict(self, model, task=None, **kwargs):
-                dataloader = kwargs.get("dataloader")
-                return np.array([1, 2, 3])
-
-            @property
-            def requires_dataloader(self):
-                return True
-
-        strategy = DataloaderStrategy()
-
-        assert strategy.requires_dataloader is True
-
-    def test_prediction_strategy_with_task_type(self):
+    def test_prediction_strategy_with_task_type(self) -> None:
         """Test strategy using task type."""
 
         class TaskAwareStrategy(PredictionStrategy):

@@ -43,7 +43,9 @@ class TestBaseVisualizer:
                 if ax is None:
                     fig, ax = plt.subplots()
                 else:
-                    fig = ax.get_figure()
+                    _fig = ax.get_figure()
+                    assert isinstance(_fig, Figure)
+                    fig = _fig
                 return fig, ax
 
         # Should be able to instantiate
@@ -58,7 +60,9 @@ class TestBaseVisualizer:
                 if ax is None:
                     fig, ax = plt.subplots()
                 else:
-                    fig = ax.get_figure()
+                    _fig = ax.get_figure()
+                    assert isinstance(_fig, Figure)
+                    fig = _fig
                 ax.plot([1, 2, 3], [1, 2, 3])
                 return fig, ax
 
