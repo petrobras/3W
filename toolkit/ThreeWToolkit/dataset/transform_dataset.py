@@ -1,6 +1,7 @@
-from ThreeWToolkit.core.base_dataset import BaseDataset
-from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 from pydantic import Field, PrivateAttr
+
+from ..core.base_dataset import BaseDataset
+from ..core.dataset_outputs import DatasetOutputs
 from ..core.base_preprocessing import BasePreprocessingConfig
 from ..core.base_feature_extractor import BaseFeatureExtractorConfig
 from ..core.base_transform import BaseTransform, BaseTransformConfig

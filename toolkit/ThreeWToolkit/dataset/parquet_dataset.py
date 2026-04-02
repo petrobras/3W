@@ -4,8 +4,9 @@ from pathlib import Path
 from pandas import read_parquet
 from pydantic import Field, field_validator, PrivateAttr
 from typing import Literal
-from ThreeWToolkit.core.enums import EventPrefixEnum
-from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
+
+from ..core.enums import EventPrefixEnum
+from ..core.dataset_outputs import DatasetOutputs
 from ..utils.downloader import get_figshare_data
 
 from ..core.base_dataset import BaseDataset, BaseDatasetConfig

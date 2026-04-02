@@ -1,7 +1,8 @@
-from ThreeWToolkit.core.base_dataset import BaseDataset
-from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 from pydantic import BaseModel
 from abc import ABC, abstractmethod
+
+from .base_dataset import BaseDataset
+from .dataset_outputs import DatasetOutputs
 from .base_instantiable import Instantiable
 
 
