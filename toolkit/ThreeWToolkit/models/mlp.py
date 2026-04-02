@@ -1,7 +1,7 @@
 import logging
 from typing import Sequence
 
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import Field, PrivateAttr, field_validator, ConfigDict
 import torch
 import torch.nn as nn
 
@@ -24,6 +24,7 @@ class MLPConfig(TorchModelsConfig):
     activation_function: nn.Module = Field(
         default=nn.ReLU(), description="Activation function for hidden layers."
     )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     _target: type = PrivateAttr(default_factory=lambda: MLP)
 
     @field_validator("hidden_sizes")
@@ -42,7 +43,6 @@ class MLP(TorchModels):
         super().__init__()
         self.config: MLPConfig = config
         self.activation_func = self.config.activation_function
-        self._layers_built = False
         self.model: nn.Sequential | None = None
 
         self._build_layers()

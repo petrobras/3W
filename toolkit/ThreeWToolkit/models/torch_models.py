@@ -56,7 +56,7 @@ class TorchModels(BaseModels, nn.Module):
     def load(cls, filename: str | Path, device="cpu") -> "TorchModels":
         """Load model from disk."""
         path = Path(filename)
-        obj = torch.load(path, map_location=device)
+        obj = torch.load(path, map_location=device, weights_only=False)
         if not isinstance(obj, cls):
             raise ValueError(f"Loaded object is not a MLP instance: {type(obj)}")
         return obj

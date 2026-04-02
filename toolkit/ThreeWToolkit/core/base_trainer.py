@@ -120,7 +120,7 @@ class BaseTrainerConfig(BaseModel, Instantiable):
     @field_validator("manual_class_weights")
     @classmethod
     def validate_manual_class_weights(cls, manual_class_weights, info):
-        if info.get("class_weight_strategy") == "manual" and manual_class_weights is None:
+        if info.data["class_weight_strategy"] == "manual" and manual_class_weights is None:
             raise ValueError(
                 "manual_class_weights must be provided when strategy='manual'"
             )

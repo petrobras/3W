@@ -2,6 +2,9 @@
 
 import pytest
 import pandas as pd
+import numpy as np
+
+from ThreeWToolkit.core.base_trainer import PredictionResult
 
 from ThreeWToolkit.core import (
     BaseDataset,
@@ -18,6 +21,12 @@ from ThreeWToolkit.core import (
 class ConcreteTrainer(BaseTrainer):
     def _prepare_data_for_training(self, dataset):
         return dataset
+
+    def predict(self, dataset: BaseDataset)-> PredictionResult:
+        return PredictionResult(
+            y_pred=np.random.randint(0, 2, size=len(dataset)),
+            y_true=np.random.randint(0, 2, size=len(dataset)),
+        )
 
     def _execute_training(self, train_data, val_data) -> TrainingHistory:
         return TrainingHistory(train_loss=[0.5, 0.3, 0.1], val_loss=[0.6, 0.4, 0.2])
