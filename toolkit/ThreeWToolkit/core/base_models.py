@@ -1,13 +1,11 @@
-from typing import Iterable, TypeAlias, Any, Mapping
+from typing import Iterable, TypeAlias
 from abc import ABC, abstractmethod
 
 from pathlib import Path
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 import torch
-from torch import nn
 
-from .enums import ModelTypeEnum
 from .base_instantiable import Instantiable
 
 ParamsT: TypeAlias = (
@@ -19,30 +17,7 @@ ParamsT: TypeAlias = (
 
 class ModelsConfig(BaseModel, Instantiable):
     """Base configuration class for all models."""
-
-    # model_type: ModelTypeEnum = Field(..., description="Type of model to use.")
-    model_type: type[Any] = Field(..., description="Type of model to use.")
     _target: type["BaseModels"]
-
-    # @field_validator("model_type")
-    # @classmethod
-    # def check_model_type(cls: type["ModelsConfig"], value: ModelTypeEnum):
-    #     """Validate that model_type is supported."""
-    #     allowed = {
-    #         ModelTypeEnum.MLP,
-    #         ModelTypeEnum.LOGISTIC_REGRESSION,
-    #         ModelTypeEnum.RANDOM_FOREST,
-    #         ModelTypeEnum.DECISION_TREE,
-    #         ModelTypeEnum.GRADIENT_BOOSTING,
-    #         ModelTypeEnum.KNN,
-    #         ModelTypeEnum.NAIVE_BAYES,
-    #         ModelTypeEnum.SVM,
-    #     }
-
-    #     if value not in allowed:
-    #         raise NotImplementedError(f"model_type {value} not implemented yet.")
-    #     return value
-
 
 class BaseModels(ABC):
     """
@@ -77,5 +52,3 @@ class BaseModels(ABC):
             Loaded model instance.
         """
         pass
-
-
