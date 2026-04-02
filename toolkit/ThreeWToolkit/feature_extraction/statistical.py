@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import pandas as pd
 import warnings
@@ -83,16 +85,15 @@ class StatisticalFeatures(BaseFeatureExtractor):
                 s: _STATISTICAL_FEATURES[s](values) for s in self.config.features
             }
 
-        signal = pd.DataFrame(
-            features, index=data.signal.index
-        )  # assemble multiindex DataFrame with features as cols
-        signal = signal.unstack(
-            "variable"
-        )  # unstack variable to get per-variable features in columns
-        signal.columns = [
-            "_".join(col).strip() for col in signal.columns
-        ]  # flatten multiindex columns
+        # assemble multiindex DataFrame with features as cols
+        signal_df = pd.DataFrame(features, index=data.signal.index)
+        # unstack variable to get per-variable features in columns
+        signal_df = cast(pd.DataFrame, signal_df.unstack("variable"))  # safe cast
+        # flatten multiindex columns
+        signal_df.columns = ["_".join(col).strip() for col in signal_df.columns] 
 
         return DatasetOutputs(
-            signal=signal, label=data.label, metadata=data.metadata.copy()
-        )  # type: ignore
+            signal=signal_df,  # type: ignore
+            label=data.label,
+            metadata=data.metadata.copy(),
+        )

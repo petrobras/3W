@@ -1,6 +1,7 @@
-from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
+from typing import cast
 import numpy as np
 import pandas as pd
+from ..core.dataset_outputs import DatasetOutputs
 from ..core.base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
@@ -172,14 +173,11 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
             if "ew_max" in self.config.features:
                 features["ew_max"] = quantiles[4]
 
-        signal = pd.DataFrame(
-            features, index=data.signal.index
-        )  # assemble multiindex DataFrame with features as cols
-        signal = signal.unstack(
-            "variable"
-        )  # unstack variable to get per-variable features in columns
-        signal.columns = [
-            "_".join(col).strip() for col in signal.columns
-        ]  # flatten multiindex columns
+        # assemble multiindex DataFrame with features as cols
+        signal_df = pd.DataFrame(features, index=data.signal.index)
+        # unstack variable to get per-variable features in columns
+        signal_df = cast(pd.DataFrame, signal_df.unstack("variable"))  # safe cast
+        # flatten multiindex columns
+        signal_df.columns = ["_".join(col).strip() for col in signal_df.columns] 
 
-        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)  # type: ignore
+        return DatasetOutputs(signal=signal_df, label=data.label, metadata=data.metadata)

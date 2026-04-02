@@ -3,6 +3,8 @@ import pandas as pd
 from pydantic import Field, field_validator, PrivateAttr
 import pywt
 
+from typing import cast
+
 from ..core.base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
@@ -132,16 +134,15 @@ class WaveletFeatures(BaseFeatureExtractor):
             "ik,lk->il", signal, self.waves
         )  # (num_windows * num_features, num_wavelet_features)
 
-        signal = pd.DataFrame(
-            feats, index=data.signal.index, columns=self.features
-        )  # assemble multiindex DataFrame with features as cols
-        signal = signal.unstack(
-            "variable"
-        )  # unstack variable to get per-variable features in columns
-        signal.columns = [
-            "_".join(col).strip() for col in signal.columns
-        ]  # flatten multiindex columns
+        # assemble multiindex DataFrame with features as cols
+        signal_df = pd.DataFrame(feats, index=data.signal.index, columns=self.features)
+        # unstack variable to get per-variable features in columns
+        signal_df = cast(pd.DataFrame, signal_df.unstack("variable"))  # safe cast
+        # flatten multiindex columns
+        signal_df.columns = ["_".join(col).strip() for col in signal_df.columns] 
 
         return DatasetOutputs(
-            signal=signal, label=data.label, metadata=data.metadata.copy()
-        )  # type: ignore
+            signal=signal_df,
+            label=data.label,
+            metadata=data.metadata.copy(),
+        )

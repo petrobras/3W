@@ -155,15 +155,10 @@ class Windowing(BaseFeatureExtractor):
         signal = data.signal.values
         n_samples, n_channels = signal.shape
 
+        # We pad to the right so that (padding_start + n_samples + padding_end - window_size) % step == 0
         if self.config.pad_last_window:
-            # We pad to the right so that (padding_start + n_samples + padding_end - window_size) % step == 0
-            padding_end = (
-                self.step
-                - (
-                    (self.padding_start + n_samples - self.config.window_size)
-                    % self.step
-                )
-            ) % self.step
+            transversed = self.padding_start + n_samples - self.config.window_size
+            padding_end = ((self.step - transversed) % self.step) % self.step
         else:
             padding_end = 0  # leave it as is
 
@@ -172,20 +167,19 @@ class Windowing(BaseFeatureExtractor):
         )
 
         # sliding window view of the signal and labels
-        signal = sliding_window_view(signal, (self.config.window_size, n_channels))[
-            :: self.step, 0
-        ]  # (N_win, window_size, n_channels)
+        sliding_shape = (self.config.window_size, n_channels)
+        signal = sliding_window_view(signal, sliding_shape)[:: self.step, 0]
+        # (N_win, window_size, n_channels)
 
         # multiply by window function and transpose window to last dimension
-        signal = np.einsum(
-            "ijk,j->ikj", signal, self.window
-        )  # (N_win, n_channels, window_size)
+        signal = np.einsum("ijk,j->ikj", signal, self.window)
+        # (N_win, n_channels, window_size)
 
         # lets assign a multi-index to the columns of the windowed signal for better interpretability
         index = pd.MultiIndex.from_product(
             (range(signal.shape[0]), data.signal.columns), names=["window", "variable"]
         )
-        signal = pd.DataFrame(
+        signal_df = pd.DataFrame(
             signal.reshape(-1, self.config.window_size), index=index
         )  # (N_win * n_channels * window_size)
 
@@ -202,8 +196,8 @@ class Windowing(BaseFeatureExtractor):
             elif self.config.label_strategy == "mode":
                 # take the mode of the labels in each window
                 label = mode(label, axis=1, nan_policy="omit", keepdims=False).mode
-            label = pd.Series(label, name="label")
+            label_series = pd.Series(label, name="label")
         else:
-            label = None
+            label_series = None
 
-        return DatasetOutputs(signal=signal, label=label, metadata=data.metadata)
+        return DatasetOutputs(signal=signal_df, label=label_series, metadata=data.metadata)
