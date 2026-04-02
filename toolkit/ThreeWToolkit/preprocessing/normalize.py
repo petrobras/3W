@@ -61,28 +61,28 @@ class Normalize(BasePreprocessing):
         self.global_moment: pd.Series | None = None
 
     def _compute_global_average(self, data: BaseDataset) -> None:
-        sums = []
-        counts = []
+        _sums = []
+        _counts = []
         for event in data:
-            sums.append(event.signal.sum())
-            counts.append(event.signal.count())
+            _sums.append(event.signal.sum())
+            _counts.append(event.signal.count())
         # compute average across all events
-        sums = pd.concat(sums, axis=1).transpose()
-        counts = pd.concat(counts, axis=1).transpose()
+        sums = pd.concat(_sums, axis=1).transpose()
+        counts = pd.concat(_counts, axis=1).transpose()
 
         self.global_average = sums.mean() / counts.mean()
 
     def _compute_global_moments(self, data: BaseDataset) -> None:
-        moments = []
-        counts = []
+        _moments = []
+        _counts = []
         for event in data:
-            moments.append(
+            _moments.append(
                 (event.signal - self.global_average).abs().pow(self.norm).sum()
             )
-            counts.append(event.signal.count())
+            _counts.append(event.signal.count())
         # compute average of the central dispersion measure across all events
-        moments = pd.concat(moments, axis=1).transpose()
-        counts = pd.concat(counts, axis=1).transpose()
+        moments = pd.concat(_moments, axis=1).transpose()
+        counts = pd.concat(_counts, axis=1).transpose()
 
         self.global_moment = moments.mean() / counts.mean()
         self.global_moment = self.global_moment.pow(
@@ -90,11 +90,11 @@ class Normalize(BasePreprocessing):
         )  # take the root to get back to the original scale
 
     def _compute_global_max(self, data: BaseDataset) -> None:
-        maxes = []
+        _maxes = []
         for event in data:
-            maxes.append((event.signal - self.global_average).abs().max())
+            _maxes.append((event.signal - self.global_average).abs().max())
         # compute global max across all events
-        maxes = pd.concat(maxes, axis=1).transpose()
+        maxes = pd.concat(_maxes, axis=1).transpose()
         self.global_moment = maxes.max()
 
     def fit(self, data: BaseDataset) -> None:

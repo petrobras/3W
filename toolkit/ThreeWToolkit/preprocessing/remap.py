@@ -30,7 +30,7 @@ class RemapClass(BasePreprocessing):
             self.class_map = self.config.class_map
             return
 
-        unique_classes = set()
+        unique_classes: set[int] = set()
         # collect unique classes across all events
         for event in data:
             if event.label is not None:
