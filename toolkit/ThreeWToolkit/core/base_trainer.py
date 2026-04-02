@@ -3,11 +3,12 @@
 import random
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
+import numpy.typing as npt
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sklearn.utils.class_weight import compute_class_weight
 
 from .base_dataset import BaseDataset
@@ -79,6 +80,28 @@ class CrossValidationResult(BaseModel):
     )
 
 
+class PredictionResult(BaseModel):
+    """
+    Container for prediction results.
+
+    Attributes:
+        predictions: Model predictions (e.g., class probabilities or regression outputs).
+        metadata: Additional metadata about the prediction.
+    """
+
+    y_pred: Sequence[float | int] | npt.NDArray[np.number] = Field(
+        ..., description="Model predictions."
+    )
+    y_true: Sequence[int] | npt.NDArray[np.integer] | None = Field(
+        default=None, description="True labels (if available)."
+    )
+
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata about the prediction."
+    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
 class BaseTrainerConfig(BaseModel, Instantiable):
     """Base configuration for all trainers."""
 
@@ -93,6 +116,15 @@ class BaseTrainerConfig(BaseModel, Instantiable):
     manual_class_weights: dict[int, float] | None = Field(
         default=None, description="Manual class weights (required if strategy='manual')"
     )
+
+    @field_validator("manual_class_weights")
+    @classmethod
+    def validate_manual_class_weights(cls, manual_class_weights, info):
+        if info.get("class_weight_strategy") == "manual" and manual_class_weights is None:
+            raise ValueError(
+                "manual_class_weights must be provided when strategy='manual'"
+            )
+        return manual_class_weights
 
 
 class BaseTrainer(ABC):
@@ -235,6 +267,13 @@ class BaseTrainer(ABC):
 
         logger.info("Training completed successfully")
         return result
+
+    @abstractmethod
+    def predict(
+        self, dataset: BaseDataset
+    ) -> PredictionResult:
+        """Make predictions on the test dataset."""
+        pass
 
     def _validate_datasets(
         self, train_dataset: BaseDataset, val_dataset: BaseDataset | None

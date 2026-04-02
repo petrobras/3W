@@ -3,7 +3,7 @@
 import os
 import logging
 import numpy as np
-from pydantic import Field, field_validator, PrivateAttr
+from pydantic import Field, PrivateAttr
 from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingHistory
 from ..core.base_dataset import BaseDataset
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
@@ -38,12 +38,12 @@ class SklearnTrainer(BaseTrainer):
 
         self.model = config.config_model.build()  # type: ignore
 
-        model_params = self.model.model_class.get_params()
+        model_params = self.model.get_params()
         if "n_jobs" in model_params:
-            self.model.model_class.set_params(n_jobs=config.n_jobs)
+            self.model.set_params(n_jobs=config.n_jobs)
 
         if "verbose" in model_params:
-            self.model.model_class.set_params(verbose=config.verbose)
+            self.model.set_params(verbose=config.verbose)
 
         logger.info(
             "SklearnTrainer initialized | model=%s | n_jobs=%s",
@@ -51,7 +51,7 @@ class SklearnTrainer(BaseTrainer):
             config.n_jobs,
         )
 
-    def _prepare_data_for_training(
+    def _prepare_data(
         self, dataset: BaseDataset
     ) -> tuple[np.ndarray, np.ndarray]:
         """Convert dataset to numpy arrays (X, y)."""
@@ -71,12 +71,12 @@ class SklearnTrainer(BaseTrainer):
 
             if event.label is not None:
                 label_array = event.label.values
-                labels_list.extend(label_array)
+                labels_list.append(label_array)
 
         assert len(signals_list) == len(labels_list), "Mismatch between signals and labels"
 
         X = np.concatenate(signals_list, axis=0)
-        y = np.array(labels_list)
+        y = np.concatenate(labels_list, axis=0)
 
         logger.info("Created arrays | X.shape=%s | y.shape=%s", X.shape, y.shape)
         return X, y
@@ -140,3 +140,9 @@ class SklearnTrainer(BaseTrainer):
             train_loss=[train_score],
             val_loss=[val_score] if val_score is not None else None,
         )
+
+    def predict(self, dataset: BaseDataset) -> np.ndarray:
+        """Predict labels for given dataset."""
+        X, _ = self._prepare_data(dataset)
+        predictions = self.model.model_class.predict(X)
+        return predictions

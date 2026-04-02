@@ -1,83 +1,84 @@
-from pathlib import Path
 from typing import Mapping
-from pydantic import Field, PrivateAttr
+import logging
+
+from pathlib import Path
+import pickle
+from pydantic import Field, PrivateAttr, field_validator
 
 from sklearn.base import BaseEstimator
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import ComplementNB
-from sklearn.ensemble import GradientBoostingClassifier
 
+from ..core.base_models import ModelsConfig, BaseModels
 
-from ..core.base_models import BaseSkLearnModels, ModelsConfig
-from ..core.enums import ModelTypeEnum
-from ..utils.model_recorder import ModelRecorder
-
-SKLEARN_MODELS = {
-    ModelTypeEnum.LOGISTIC_REGRESSION: LogisticRegression,
-    ModelTypeEnum.DECISION_TREE: DecisionTreeClassifier,
-    ModelTypeEnum.RANDOM_FOREST: RandomForestClassifier,
-    ModelTypeEnum.SVM: SVC,
-    ModelTypeEnum.KNN: KNeighborsClassifier,
-    ModelTypeEnum.NAIVE_BAYES: ComplementNB,
-    ModelTypeEnum.GRADIENT_BOOSTING: GradientBoostingClassifier,
-}
-
+logger = logging.getLogger(__name__)
 
 class SklearnModelsConfig(ModelsConfig):
     """Sklearn model configuration. Use with SklearnTrainer for training."""
+
+    model_type: type[BaseEstimator] = Field(
+        ..., description="Type of sklearn model to use. Must be one of the supported models."
+    )
 
     model_params: dict[str, int | float | str | bool | None] = Field(
         default_factory=dict, description="Model-specific hyperparameters."
     )
     _target: type = PrivateAttr(default_factory=lambda: SklearnModels)
 
+    @field_validator("model_params")
+    @classmethod
+    def check_model_params(cls, model_params, info):
+        """Validate that model_type is supported."""
+        try: # try to instantiate the model with given parameters
+            info.data["model_type"](**model_params)
+        except Exception as e:
+            raise ValueError(f"Invalid model_params: {e}")
+        return model_params
 
-class SklearnModels(BaseSkLearnModels):
+
+class SklearnModels(BaseModels):
     """Sklearn model wrapper. Use SklearnTrainer for training."""
 
     def __init__(self, config: SklearnModelsConfig):
         self.config: SklearnModelsConfig = config
 
-        model_class = SKLEARN_MODELS[config.model_type]
-        params = config.model_params.copy()
+        self.model: BaseEstimator = self.config.model_type(**self.config.model_params)
 
-        if "random_state" in model_class().get_params():
-            params["random_state"] = config.random_seed
-
-        self.model_class: BaseEstimator = model_class(**params)
         self._feature_names: list[str] | None = None
 
     @property
     def model_name(self) -> str:
-        return self.model_class.__class__.__name__
+        return self.model.__class__.__name__
 
-    def save(self, filename: str | Path) -> None:
+    def save(self, filename: str | Path) -> Path:
         """Save model to disk."""
-        path = Path(filename)
-        if path.exists() and path.suffix not in {".pkl", ".pickle"}:
+        path = Path(filename) # ensure path
+        if path.suffix and path.suffix not in {".pkl", ".pickle"}:
             raise ValueError(
                 "Sklearn models must be saved with .pkl or .pickle extension"
             )
-        if not path.exists() and path.suffix == "":
+        elif not path.suffix:
             path = path.with_suffix(".pkl")
-        ModelRecorder.save_model(model=self, filename=path)
+            logger.warning(
+                "No file extension provided. Saving sklearn model with .pkl extension: %s", path
+            )
 
-    def load(self, filename: str | Path):
+        with path.open("wb") as f:
+            pickle.dump(self, f)
+
+        return path
+
+
+    @classmethod
+    def load(cls, filename: str | Path) -> "SklearnModels":
         """Load model from disk."""
         path = Path(filename)
-        loaded = ModelRecorder.load_model(filename=path)
-        if isinstance(loaded, SklearnModels):
-            self.model_class = loaded.model_class
-            self.config = loaded.config
-        else:
-            self.model_class = loaded
+        with path.open("rb") as f:
+            obj = pickle.load(f)
+            if not isinstance(obj, cls):
+                raise ValueError(f"Loaded object is not a SklearnModels instance: {type(obj)}")
+            return obj
 
     def get_params(self) -> Mapping[str, object]:
-        return self.model_class.get_params()
+        return self.model.get_params()
 
     def set_params(self, **params: object) -> None:
-        self.model_class.set_params(**params)
+        self.model.set_params(**params)

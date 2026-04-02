@@ -14,7 +14,7 @@ from .base_feature_extractor import (
     WindowSizeMixin,
 )
 from .base_instantiable import Instantiable
-from .base_models import BaseModels, BaseSkLearnModels, BaseTorchModels, ModelsConfig
+from .base_models import BaseModels, ModelsConfig
 from .base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .base_prediction_strategies import PredictionStrategy
 from .base_preprocessing import BasePreprocessing, BasePreprocessingConfig
@@ -54,8 +54,6 @@ __all__ = [
     "Instantiable",
     # Models
     "BaseModels",
-    "BaseSkLearnModels",
-    "BaseTorchModels",
     "ModelsConfig",
     # Pipeline
     "BasePipeline",

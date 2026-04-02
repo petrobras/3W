@@ -1,12 +1,14 @@
-from pathlib import Path
-from typing import Mapping
+from typing import Iterable, TypeAlias, Any, Mapping
 from abc import ABC, abstractmethod
+
+from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
+
 import torch
 from torch import nn
+
 from .enums import ModelTypeEnum
 from .base_instantiable import Instantiable
-from typing import Iterable, TypeAlias
 
 ParamsT: TypeAlias = (
     Iterable[torch.Tensor]
@@ -18,30 +20,28 @@ ParamsT: TypeAlias = (
 class ModelsConfig(BaseModel, Instantiable):
     """Base configuration class for all models."""
 
-    model_type: ModelTypeEnum = Field(..., description="Type of model to use.")
-    random_seed: int | None = Field(
-        default=42, description="Random seed for reproducibility."
-    )
+    # model_type: ModelTypeEnum = Field(..., description="Type of model to use.")
+    model_type: type[Any] = Field(..., description="Type of model to use.")
     _target: type["BaseModels"]
 
-    @field_validator("model_type")
-    @classmethod
-    def check_model_type(cls: type["ModelsConfig"], value: ModelTypeEnum):
-        """Validate that model_type is supported."""
-        allowed = {
-            ModelTypeEnum.MLP,
-            ModelTypeEnum.LOGISTIC_REGRESSION,
-            ModelTypeEnum.RANDOM_FOREST,
-            ModelTypeEnum.DECISION_TREE,
-            ModelTypeEnum.GRADIENT_BOOSTING,
-            ModelTypeEnum.KNN,
-            ModelTypeEnum.NAIVE_BAYES,
-            ModelTypeEnum.SVM,
-        }
+    # @field_validator("model_type")
+    # @classmethod
+    # def check_model_type(cls: type["ModelsConfig"], value: ModelTypeEnum):
+    #     """Validate that model_type is supported."""
+    #     allowed = {
+    #         ModelTypeEnum.MLP,
+    #         ModelTypeEnum.LOGISTIC_REGRESSION,
+    #         ModelTypeEnum.RANDOM_FOREST,
+    #         ModelTypeEnum.DECISION_TREE,
+    #         ModelTypeEnum.GRADIENT_BOOSTING,
+    #         ModelTypeEnum.KNN,
+    #         ModelTypeEnum.NAIVE_BAYES,
+    #         ModelTypeEnum.SVM,
+    #     }
 
-        if value not in allowed:
-            raise NotImplementedError(f"model_type {value} not implemented yet.")
-        return value
+    #     if value not in allowed:
+    #         raise NotImplementedError(f"model_type {value} not implemented yet.")
+    #     return value
 
 
 class BaseModels(ABC):
@@ -57,7 +57,7 @@ class BaseModels(ABC):
         return self.__class__.__name__
 
     @abstractmethod
-    def save(self, filename: str | Path) -> None:
+    def save(self, filename: str | Path) -> Path:
         """Save model to disk.
 
         Args:
@@ -65,8 +65,9 @@ class BaseModels(ABC):
         """
         pass
 
+    @classmethod
     @abstractmethod
-    def load(self, filename: str | Path):
+    def load(cls, filename: str | Path) -> "BaseModels":
         """Load model from disk.
 
         Args:
@@ -78,24 +79,3 @@ class BaseModels(ABC):
         pass
 
 
-class BaseTorchModels(BaseModels, nn.Module):
-    """Base class for PyTorch models."""
-
-    @abstractmethod
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the model."""
-        pass
-
-    @abstractmethod
-    def get_params(self) -> ParamsT:
-        """Return model parameters."""
-        pass
-
-
-class BaseSkLearnModels(BaseModels):
-    """Base class for scikit-learn models."""
-
-    @abstractmethod
-    def get_params(self) -> Mapping[str, object]:
-        """Return model parameters."""
-        pass

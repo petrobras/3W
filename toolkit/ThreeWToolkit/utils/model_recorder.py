@@ -1,9 +1,7 @@
 import logging
 from pathlib import Path
-from ..core.base_models import BaseModels, BaseTorchModels, BaseSkLearnModels
+from ..core.base_models import BaseModels
 from ..constants import CHECKPOINT_DIR
-import torch
-import pickle
 
 logger = logging.getLogger(__name__)
 
@@ -23,30 +21,18 @@ class ModelRecorder:
         Returns:
             Full path where model was saved.
         """
-        CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-        path = CHECKPOINT_DIR / Path(filename).name
+        path = Path(filename)
+        if not path.is_absolute():
+            CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+            path = CHECKPOINT_DIR / Path(filename).name
 
-        if isinstance(model, BaseTorchModels):
-            try:
-                torch.save(model.state_dict(), path)
-            except Exception as e:
-                raise RuntimeError(f"Error saving PyTorch model: {e}")
-
-        elif isinstance(model, BaseSkLearnModels):
-            try:
-                with open(path, "wb") as f:
-                    pickle.dump(model, f)
-            except Exception as e:
-                raise RuntimeError(f"Error saving Pickle model: {e}")
-
-        else:
-            raise ValueError(f"Unsupported model type: {type(model)}")
+        model.save(path)  # Call the model's save method, which will use this utility
 
         logger.info("Model saved to %s", path)
         return path
 
     @staticmethod
-    def load_model(filename: str | Path, model: BaseModels | None = None) -> BaseModels:
+    def load_model(filename: str | Path) -> BaseModels:
         """
         Load a model from CHECKPOINT_DIR. Supports PyTorch (.pt, .pth) and Pickle (.pkl).
 
@@ -60,28 +46,6 @@ class ModelRecorder:
         path = Path(filename)
         if not path.is_absolute():
             path = CHECKPOINT_DIR / path.name
-
-        ext = path.suffix.lower()
-
-        if ext in [".pt", ".pth"]:
-            try:
-                if model is None:
-                    return torch.load(path)
-                state_dict = torch.load(path)
-                if isinstance(model, BaseTorchModels):
-                    model.load_state_dict(state_dict)
-                return model
-            except Exception as e:
-                raise RuntimeError(f"Error loading PyTorch model: {e}")
-
-        elif ext in [".pkl", ".pickle"]:
-            try:
-                with open(path, "rb") as f:
-                    return pickle.load(f)
-            except Exception as e:
-                raise RuntimeError(f"Error loading Pickle model: {e}")
-
-        else:
-            raise ValueError(f"Unsupported file extension: {ext}")
-
+        model = BaseModels.load(path)  # Call the model's load method, which will use this utility
         logger.info("Model loaded from %s", path)
+        return model

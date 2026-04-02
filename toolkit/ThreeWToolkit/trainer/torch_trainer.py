@@ -1,19 +1,18 @@
 """TorchTrainer for training PyTorch models with datasets."""
 
 import logging
+from typing import Literal
 
+from pydantic import Field, PrivateAttr, field_validator
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from pydantic import Field, field_validator, PrivateAttr
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm.auto import tqdm
 
-from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingHistory
 from ..core.base_dataset import BaseDataset
-from ..core.base_models import BaseTorchModels
-from ..core.enums import OptimizersEnum, CriterionEnum
-from ..models.mlp import MLPConfig
+from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingHistory
+from ..models.torch_models import TorchModelsConfig, TorchModels
 
 logger = logging.getLogger(__name__)
 
@@ -21,53 +20,57 @@ logger = logging.getLogger(__name__)
 class TorchTrainerConfig(BaseTrainerConfig):
     """Configuration for PyTorch trainer."""
 
-    config_model: MLPConfig = Field(..., description="MLP model configuration")
+    config_model: TorchModelsConfig = Field(
+        ..., description="Torch model configuration"
+    )
+
     batch_size: int = Field(default=32, gt=0, description="Batch size")
     epochs: int = Field(default=50, gt=0, description="Training epochs")
+
+    optimizer: type[optim.Optimizer] = Field(
+        default=optim.Adam, description="Optimizer"
+    )
     learning_rate: float = Field(default=1e-3, gt=0, description="Learning rate")
-    optimizer: str = Field(default="adam", description="Optimizer")
-    criterion: str = Field(default="cross_entropy", description="Loss function")
-    device: str = Field(
+    optimizer_args: dict[str, int | float | str | bool | None] = Field(
+        default_factory=dict, description="Additional optimizer hyperparameters"
+    )
+
+    criterion: type[nn.Module] = Field(
+        default=nn.CrossEntropyLoss, description="Loss function"
+    )
+
+    device: Literal["cuda", "cpu"] = Field(
         default="cuda" if torch.cuda.is_available() else "cpu", description="Device"
     )
-    shuffle: bool = Field(default=False, description="Shuffle training data")
+
+    shuffle: bool = Field(default=True, description="Shuffle training data")
+
     deterministic: bool = Field(
         default=False,
         description="Use deterministic algorithms for cuda (may impact performance)",
     )
-
     _target: type["TorchTrainer"] = PrivateAttr(default_factory=lambda: TorchTrainer)
 
-    @field_validator("optimizer")
+    @field_validator("optimizer_args")
     @classmethod
-    def check_optimizer(cls, value: str) -> str:
-        valid = {o.value for o in OptimizersEnum}
-        if value not in valid:
-            raise ValueError(f"optimizer must be one of {valid}, got '{value}'")
-        return value
-
-    @field_validator("criterion")
-    @classmethod
-    def check_criterion(cls, value: str) -> str:
-        valid = {c.value for c in CriterionEnum}
-        if value not in valid:
-            raise ValueError(f"criterion must be one of {valid}, got '{value}'")
-        return value
-
-    @field_validator("device")
-    @classmethod
-    def check_device(cls, value: str) -> str:
-        if value not in {"cpu", "cuda"}:
-            raise ValueError("device must be 'cpu' or 'cuda'")
-        if value == "cuda" and not torch.cuda.is_available():
-            raise ValueError("CUDA device requested but not available")
-        return value
+    def check_optimizer_args(
+        cls, optimizer_args, info
+    ) -> dict[str, int | float | str | bool | None]:
+        """Validate that optimizer_args are compatible with the chosen optimizer."""
+        optimizer_class = info.data["optimizer"]
+        try:
+            optimizer_class(info.data["learning_rate"], **optimizer_args)
+        except Exception as e:
+            raise ValueError(
+                f"Invalid optimizer_args for {optimizer_class.__name__}: {e}"
+            )
+        return optimizer_args
 
 
 class TorchTrainer(BaseTrainer):
     """PyTorch trainer for neural network models."""
 
-    model: BaseTorchModels
+    model: TorchModels
 
     def __init__(self, config: TorchTrainerConfig):
         super().__init__(config)
@@ -85,31 +88,13 @@ class TorchTrainer(BaseTrainer):
             config.batch_size,
         )
 
-    def _create_optimizer(self) -> torch.optim.Optimizer:
-        optimizer_map = {
-            OptimizersEnum.ADAM.value: optim.Adam,
-            OptimizersEnum.SGD.value: optim.SGD,
-            OptimizersEnum.RMSPROP.value: optim.RMSprop,
-            OptimizersEnum.ADAMW.value: optim.AdamW,
-        }
-
-        optimizer_class = optimizer_map[self.config.optimizer.lower()]
-        return optimizer_class(self.model.parameters(), lr=self.config.learning_rate)
-
     def _create_criterion(self, weights: torch.Tensor | None = None) -> nn.Module:
         """Create loss function, optionally with class weights."""
-        criterion_map = {
-            CriterionEnum.CROSS_ENTROPY.value: nn.CrossEntropyLoss,
-            CriterionEnum.MSE.value: nn.MSELoss,
-            CriterionEnum.MAE.value: nn.L1Loss,
-        }
-
-        criterion_class = criterion_map[self.config.criterion.lower()]
 
         # Only CrossEntropyLoss supports class weights
-        if weights is not None and criterion_class == nn.CrossEntropyLoss:
-            return criterion_class(weight=weights)
-        return criterion_class()
+        if weights is not None and self.config.criterion is nn.CrossEntropyLoss:
+            return self.config.criterion(weight=weights)
+        return self.config.criterion()
 
     def _set_random_seeds(self, seed: int) -> None:
         torch.manual_seed(seed)
@@ -147,14 +132,18 @@ class TorchTrainer(BaseTrainer):
             X = X.reshape(batch_size, time_steps * features)
 
         # Auto-detect input size if not set
-        if self.config.config_model.input_size is None:
+        if self.config.config_model.is_input_size_dynamic:
             inferred_size = X.shape[1]
             logger.info("Auto-detected input_size=%d", inferred_size)
             self.config.config_model.input_size = inferred_size
 
         # Instantiate model after input size is known
-        self.model = self.config.config_model.build().to(self.config.device) # type: ignore
-        self.optimizer = self._create_optimizer()
+        self.model = self.config.config_model.build().to(self.config.device)  # type: ignore
+        self.optimizer = self.config.optimizer(
+            self.model.parameters(),
+            lr=self.config.learning_rate, # type: ignore
+            **self.config.optimizer_args,
+        )
 
         y = (
             torch.cat(labels_list)
@@ -192,7 +181,7 @@ class TorchTrainer(BaseTrainer):
         """Execute epoch-based training loop."""
 
         train_loss: list[float] = []
-        val_loss: list[float] | None =  [] if val_data else None
+        val_loss: list[float] | None = [] if val_data else None
 
         pbar = tqdm(
             range(self.config.epochs),
