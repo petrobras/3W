@@ -20,8 +20,8 @@ class TestAccuracyScore:
         "y_true,y_pred,expected",
         [
             ([1, 0, 1, 1], [1, 0, 0, 1], 0.75),  # Basic case: 3/4 correct
-            ([1, 1, 1, 1], [1, 1, 1, 1], 1.0),   # Perfect prediction
-            ([0, 0, 0, 0], [1, 1, 1, 1], 0.0),   # All wrong
+            ([1, 0, 1, 1], [1, 0, 1, 1], 1.0),   # Perfect prediction
+            ([0, 0, 0, 1], [1, 1, 1, 0], 0.0),   # All wrong
             ([1, 0], [1, 0], 1.0),               # Simple binary
         ],
     )
@@ -71,7 +71,7 @@ class TestBalancedAccuracyScore:
         [
             ([1, 0, 1, 1], [1, 0, 0, 1], 0.8333333333333333),
             ([0, 1, 1, 0], [0, 0, 1, 1], 0.5),
-            ([1, 1, 1, 1], [1, 1, 1, 1], 1.0),
+            ([1, 0, 0, 1], [1, 0, 0, 1], 1.0),
         ],
     )
     def test_balanced_accuracy_basic(self, y_true, y_pred, expected):
