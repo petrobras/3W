@@ -3,7 +3,10 @@ import zipfile
 from pathlib import Path
 from pandas import read_parquet
 from pydantic import Field, field_validator, PrivateAttr
-from typing import Literal
+from typing import Literal, Sequence
+
+import numpy as np
+import numpy.typing as npt
 
 from ..core.enums import EventPrefixEnum
 from ..core.dataset_outputs import DatasetOutputs
@@ -39,7 +42,7 @@ class ParquetDatasetConfig(BaseDatasetConfig):
         description="Event types to include. (e.g., simulated, real, ...)",
     )
 
-    target_class: list[int] | None = Field(
+    target_class: Sequence[int] | npt.NDArray[np.integer] | None = Field(
         default=None,
         description="Event classes to include. (e.g., 0, 1, 2, ...). Loads all classes if `None`.",
     )

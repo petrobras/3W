@@ -1,6 +1,6 @@
 """SubsetDataset for slicing datasets by indices."""
 
-from typing import Any
+from typing import Sequence
 import numpy as np
 import numpy.typing as npt
 
@@ -20,7 +20,7 @@ class SubsetDataset(BaseDataset):
     Similar to torch.utils.data.Subset but works with any BaseDataset.
     """
 
-    def __init__(self, dataset: BaseDataset, indices: list[int] | npt.NDArray[np.integer[Any]]):
+    def __init__(self, dataset: BaseDataset, indices: Sequence[int] | npt.NDArray[np.integer]):
         """
         Initialize subset dataset.
 

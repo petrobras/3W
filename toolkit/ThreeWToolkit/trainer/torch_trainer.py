@@ -153,7 +153,7 @@ class TorchTrainer(BaseTrainer):
             self.config.config_model.input_size = inferred_size
 
         # Instantiate model after input size is known
-        self.model: BaseTorchModels = self.config.config_model.build().to(self.config.device) # type: ignore
+        self.model = self.config.config_model.build().to(self.config.device) # type: ignore
         self.optimizer = self._create_optimizer()
 
         y = (

@@ -1,5 +1,6 @@
 """SklearnTrainer for training scikit-learn models with datasets."""
 
+import os
 import logging
 import numpy as np
 from pydantic import Field, field_validator, PrivateAttr
@@ -16,16 +17,14 @@ class SklearnTrainerConfig(BaseTrainerConfig):
     config_model: SklearnModelsConfig = Field(
         ..., description="Sklearn model configuration"
     )
-    n_jobs: int | None = Field(default=None, description="Number of parallel jobs")
+    n_jobs: int = Field(
+        default=os.cpu_count() or 1,
+        gt=0,
+        description="Number of parallel jobs. Automatic to number of CPUs if not set.",
+    )
     verbose: int = Field(default=0, ge=0, description="Verbosity level")
-    _target: type = PrivateAttr(default_factory=lambda: SklearnTrainer)
 
-    @field_validator("n_jobs")
-    @classmethod
-    def check_n_jobs(cls, value: int | None) -> int | None:
-        if value is not None and value == 0:
-            raise ValueError("n_jobs cannot be 0")
-        return value
+    _target: type = PrivateAttr(default_factory=lambda: SklearnTrainer)
 
 
 class SklearnTrainer(BaseTrainer):
@@ -37,10 +36,10 @@ class SklearnTrainer(BaseTrainer):
         super().__init__(config)
         self.config: SklearnTrainerConfig = config
 
-        self.model = config.config_model.build()
+        self.model = config.config_model.build()  # type: ignore
 
         model_params = self.model.model_class.get_params()
-        if "n_jobs" in model_params and config.n_jobs is not None:
+        if "n_jobs" in model_params:
             self.model.model_class.set_params(n_jobs=config.n_jobs)
 
         if "verbose" in model_params:
@@ -72,10 +71,9 @@ class SklearnTrainer(BaseTrainer):
 
             if event.label is not None:
                 label_array = event.label.values
-                if hasattr(label_array, "__len__"):
-                    labels_list.extend(label_array)
-                else:
-                    labels_list.append(label_array)
+                labels_list.extend(label_array)
+
+        assert len(signals_list) == len(labels_list), "Mismatch between signals and labels"
 
         X = np.concatenate(signals_list, axis=0)
         y = np.array(labels_list)
@@ -87,7 +85,7 @@ class SklearnTrainer(BaseTrainer):
         self,
         train_data: tuple[np.ndarray, np.ndarray],
         val_data: tuple[np.ndarray, np.ndarray] | None,
-        ) -> TrainingHistory:
+    ) -> TrainingHistory:
         """Execute sklearn fit() training."""
         X_train, y_train = train_data
 
