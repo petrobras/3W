@@ -4,11 +4,19 @@ import pytest
 import numpy as np
 import pandas as pd
 
+from pydantic import ValidationError
+
 from ThreeWToolkit.trainer.sklearn_trainer import SklearnTrainer, SklearnTrainerConfig
 from ThreeWToolkit.models.sklearn_models import SklearnModelsConfig
-from ThreeWToolkit.core.enums import ModelTypeEnum
 from ThreeWToolkit.core.dataset_outputs import DatasetOutputs
 from ThreeWToolkit.core.base_dataset import BaseDataset
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
 
 
 class MockDataset(BaseDataset):
@@ -60,49 +68,7 @@ class TestSklearnTrainerConfig:
     @pytest.fixture
     def sklearn_config(self):
         """Provide basic sklearn model config."""
-        return SklearnModelsConfig(model_type=ModelTypeEnum.LOGISTIC_REGRESSION)
-
-    def test_valid_config(self, sklearn_config):
-        """Valid config should be created."""
-        config = SklearnTrainerConfig(
-            config_model=sklearn_config,
-            n_jobs=2,
-            verbose=1,
-        )
-        assert config.n_jobs == 2
-        assert config.verbose == 1
-
-    def test_default_values(self, sklearn_config):
-        """Config should have sensible defaults."""
-        config = SklearnTrainerConfig(config_model=sklearn_config)
-        assert config.n_jobs is None
-        assert config.verbose == 0
-        assert config.seed == 42
-
-    def test_n_jobs_none(self, sklearn_config):
-        """n_jobs=None should be valid."""
-        config = SklearnTrainerConfig(config_model=sklearn_config, n_jobs=None)
-        assert config.n_jobs is None
-
-    def test_n_jobs_positive(self, sklearn_config):
-        """Positive n_jobs should be valid."""
-        config = SklearnTrainerConfig(config_model=sklearn_config, n_jobs=4)
-        assert config.n_jobs == 4
-
-    def test_n_jobs_negative_one(self, sklearn_config):
-        """n_jobs=-1 (all cores) should be valid."""
-        config = SklearnTrainerConfig(config_model=sklearn_config, n_jobs=-1)
-        assert config.n_jobs == -1
-
-    def test_n_jobs_zero_invalid(self, sklearn_config):
-        """n_jobs=0 should raise ValueError."""
-        with pytest.raises(ValueError, match="n_jobs cannot be 0"):
-            SklearnTrainerConfig(config_model=sklearn_config, n_jobs=0)
-
-    def test_verbose_non_negative(self, sklearn_config):
-        """Negative verbose should raise ValidationError."""
-        with pytest.raises(ValueError):
-            SklearnTrainerConfig(config_model=sklearn_config, verbose=-1)
+        return SklearnModelsConfig(model_type=LogisticRegression)
 
     def test_target_returns_trainer_class(self, sklearn_config):
         """_target should return SklearnTrainer class."""
@@ -137,7 +103,7 @@ class TestSklearnTrainer:
     def logistic_trainer_config(self):
         """Provide logistic regression trainer config."""
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.LOGISTIC_REGRESSION
+            model_type=LogisticRegression,
         )
         return SklearnTrainerConfig(config_model=sklearn_config)
 
@@ -145,10 +111,10 @@ class TestSklearnTrainer:
     def rf_trainer_config(self):
         """Provide random forest trainer config."""
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.RANDOM_FOREST,
+            model_type=RandomForestClassifier,
             model_params={"n_estimators": 10, "max_depth": 3},
         )
-        return SklearnTrainerConfig(config_model=sklearn_config, n_jobs=1)
+        return SklearnTrainerConfig(config_model=sklearn_config)
 
     @pytest.fixture
     def mock_dataset(self):
@@ -169,12 +135,6 @@ class TestSklearnTrainer:
         params = trainer.model.get_params()
         assert params["n_estimators"] == 10
         assert params["max_depth"] == 3
-
-    def test_n_jobs_set(self, rf_trainer_config):
-        """n_jobs should be set on model if supported."""
-        trainer = SklearnTrainer(rf_trainer_config)
-        params = trainer.model.get_params()
-        assert params["n_jobs"] == 1
 
     def test_train_basic(self, logistic_trainer_config, mock_dataset):
         """Basic training should complete successfully."""
@@ -201,7 +161,7 @@ class TestSklearnTrainer:
     def test_train_with_class_weights_balanced(self, mock_dataset):
         """Training with balanced class weights should work."""
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.LOGISTIC_REGRESSION
+            model_type=LogisticRegression,
         )
         config = SklearnTrainerConfig(
             config_model=sklearn_config,
@@ -219,7 +179,7 @@ class TestSklearnTrainer:
     def test_train_with_manual_class_weights(self, mock_dataset):
         """Training with manual class weights should work."""
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.LOGISTIC_REGRESSION
+            model_type=LogisticRegression,
         )
         config = SklearnTrainerConfig(
             config_model=sklearn_config,
@@ -237,17 +197,17 @@ class TestSklearnTrainer:
     def test_manual_weights_without_dict_raises(self, mock_dataset):
         """Manual strategy without weights dict should raise ValueError."""
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.LOGISTIC_REGRESSION
+            model_type=LogisticRegression,
         )
-        config = SklearnTrainerConfig(
-            config_model=sklearn_config,
-            use_class_weights=True,
-            class_weight_strategy="manual",
-            manual_class_weights=None,  # Missing weights
-        )
-        trainer = SklearnTrainer(config)
+        with pytest.raises(ValidationError):
+            config = SklearnTrainerConfig(
+                config_model=sklearn_config,
+                use_class_weights=True,
+                class_weight_strategy="manual",
+                manual_class_weights=None,  # Missing weights
+            )
+            trainer = SklearnTrainer(config)
 
-        with pytest.raises(ValueError, match="manual_class_weights required"):
             trainer.train(mock_dataset)
 
     def test_model_predictions(self, logistic_trainer_config, mock_dataset):
@@ -257,7 +217,7 @@ class TestSklearnTrainer:
 
         # Create test data with same number of features (not flattened timesteps)
         X_test = np.random.randn(10, 10)  # num_features only
-        predictions = trainer.model.model_class.predict(X_test)
+        predictions = trainer.model.model.predict(X_test) # type: ignore
 
         assert len(predictions) == 10
         assert all(p in [0, 1] for p in predictions)
@@ -268,7 +228,7 @@ class TestSklearnTrainer:
         trainer.train(mock_dataset)
 
         X_test = np.random.randn(10, 10)  # num_features only
-        probs = trainer.model.model_class.predict_proba(X_test)
+        probs = trainer.model.model.predict_proba(X_test) # type: ignore
 
         assert probs.shape == (10, 2)
         assert np.allclose(probs.sum(axis=1), 1.0, atol=1e-6)
@@ -290,7 +250,7 @@ class TestSklearnTrainerValidation:
     def trainer(self):
         """Provide trainer for validation tests."""
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.LOGISTIC_REGRESSION
+            model_type=LogisticRegression,
         )
         config = SklearnTrainerConfig(config_model=sklearn_config)
         return SklearnTrainer(config)
@@ -341,11 +301,11 @@ class TestSklearnTrainerAllModels:
     @pytest.mark.parametrize(
         "model_type",
         [
-            ModelTypeEnum.LOGISTIC_REGRESSION,
-            ModelTypeEnum.DECISION_TREE,
-            ModelTypeEnum.RANDOM_FOREST,
-            ModelTypeEnum.KNN,
-            ModelTypeEnum.GRADIENT_BOOSTING,
+            LogisticRegression,
+            DecisionTreeClassifier,
+            RandomForestClassifier,
+            KNeighborsClassifier,
+            GradientBoostingClassifier,
         ],
     )
     def test_train_all_model_types(self, model_type, mock_dataset):
@@ -362,7 +322,7 @@ class TestSklearnTrainerAllModels:
     def test_train_svm(self, mock_dataset):
         """SVM should train (with probability for predict_proba)."""
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.SVM,
+            model_type=SVC,
             model_params={"probability": True},  # Required for predict_proba
         )
         config = SklearnTrainerConfig(config_model=sklearn_config)
@@ -390,7 +350,7 @@ class TestSklearnTrainerAllModels:
 
         positive_dataset = MockDataset(events)
 
-        sklearn_config = SklearnModelsConfig(model_type=ModelTypeEnum.NAIVE_BAYES)
+        sklearn_config = SklearnModelsConfig(model_type=GaussianNB)
         config = SklearnTrainerConfig(config_model=sklearn_config)
 
         trainer = SklearnTrainer(config)
@@ -409,7 +369,7 @@ class TestSklearnTrainerIntegration:
             num_events=50, num_features=20, num_classes=num_classes
         )
 
-        sklearn_config = SklearnModelsConfig(model_type=ModelTypeEnum.RANDOM_FOREST)
+        sklearn_config = SklearnModelsConfig(model_type=RandomForestClassifier)
         config = SklearnTrainerConfig(config_model=sklearn_config)
 
         trainer = SklearnTrainer(config)
@@ -417,8 +377,8 @@ class TestSklearnTrainerIntegration:
 
         # Model should predict all classes (with correct num features)
         X_test = np.random.randn(20, 20)  # num_features only
-        predictions = trainer.model.model_class.predict(X_test)
-        probs = trainer.model.model_class.predict_proba(X_test)
+        predictions = trainer.model.model.predict(X_test)
+        probs = trainer.model.model.predict_proba(X_test)
 
         assert probs.shape[1] == num_classes
 
@@ -427,7 +387,7 @@ class TestSklearnTrainerIntegration:
         dataset = create_mock_dataset(num_events=30, seed=42)
 
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.RANDOM_FOREST,
+            model_type=RandomForestClassifier,
             model_params={"n_estimators": 10},
         )
         config = SklearnTrainerConfig(config_model=sklearn_config, seed=42)
@@ -441,8 +401,8 @@ class TestSklearnTrainerIntegration:
 
         # Same predictions on same input (with correct num features)
         X_test = np.random.RandomState(42).randn(10, 10)  # num_features only
-        pred1 = result1.model.model_class.predict(X_test)
-        pred2 = result2.model.model_class.predict(X_test)
+        pred1 = result1.model.model.predict(X_test)
+        pred2 = result2.model.model.predict(X_test)
 
         assert np.array_equal(pred1, pred2)
 
@@ -453,9 +413,7 @@ class TestSklearnTrainerIntegration:
         )
 
         sklearn_config = SklearnModelsConfig(
-            model_type=ModelTypeEnum.LOGISTIC_REGRESSION,
-            model_params={"max_iter": 1000},
-        )
+            model_type=LogisticRegression, model_params={"max_iter": 1000},)
         config = SklearnTrainerConfig(config_model=sklearn_config)
 
         trainer = SklearnTrainer(config)

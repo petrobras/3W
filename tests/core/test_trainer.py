@@ -19,7 +19,7 @@ from ThreeWToolkit.core import (
 
 # Create a concrete trainer for testing
 class ConcreteTrainer(BaseTrainer):
-    def _prepare_data_for_training(self, dataset):
+    def _prepare_data(self, dataset, shuffle=True):
         return dataset
 
     def predict(self, dataset: BaseDataset)-> PredictionResult:

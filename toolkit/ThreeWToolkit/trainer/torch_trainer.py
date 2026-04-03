@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm.auto import tqdm
 
 from ..core.base_dataset import BaseDataset
-from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingHistory
+from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, PredictionResult, TrainingHistory
 from ..models.torch_models import TorchModelsConfig, TorchModels
 
 logger = logging.getLogger(__name__)
@@ -42,8 +42,6 @@ class TorchTrainerConfig(BaseTrainerConfig):
     device: Literal["cuda", "cpu"] = Field(
         default="cuda" if torch.cuda.is_available() else "cpu", description="Device"
     )
-
-    shuffle: bool = Field(default=True, description="Shuffle training data")
 
     deterministic: bool = Field(
         default=False,
@@ -88,6 +86,14 @@ class TorchTrainer(BaseTrainer):
             config.batch_size,
         )
 
+    def _create_optimizer(self) -> optim.Optimizer:
+        """Create optimizer based on config."""
+        return self.config.optimizer(
+            self.model.parameters(),
+            lr=self.config.learning_rate, # type: ignore
+            **self.config.optimizer_args,
+        )
+
     def _create_criterion(self, weights: torch.Tensor | None = None) -> nn.Module:
         """Create loss function, optionally with class weights."""
 
@@ -102,7 +108,7 @@ class TorchTrainer(BaseTrainer):
             torch.cuda.manual_seed_all(seed)
         return super()._set_random_seeds(seed)
 
-    def _prepare_data_for_training(self, dataset: BaseDataset) -> DataLoader:
+    def _prepare_data(self, dataset: BaseDataset, shuffle: bool = True) -> DataLoader:
         """Convert dataset to PyTorch DataLoader."""
         logger.info("Converting dataset to DataLoader (size=%d)", len(dataset))
 
@@ -139,11 +145,7 @@ class TorchTrainer(BaseTrainer):
 
         # Instantiate model after input size is known
         self.model = self.config.config_model.build().to(self.config.device)  # type: ignore
-        self.optimizer = self.config.optimizer(
-            self.model.parameters(),
-            lr=self.config.learning_rate, # type: ignore
-            **self.config.optimizer_args,
-        )
+        self.optimizer = self._create_optimizer()
 
         y = (
             torch.cat(labels_list)
@@ -168,7 +170,7 @@ class TorchTrainer(BaseTrainer):
         dataloader = DataLoader(
             tensor_dataset,
             batch_size=self.config.batch_size,
-            shuffle=self.config.shuffle,
+            shuffle=shuffle,
             pin_memory=(self.config.device == "cuda"),
         )
 
@@ -241,6 +243,28 @@ class TorchTrainer(BaseTrainer):
                 running_loss += loss.item()
 
         return running_loss / len(val_loader)
+
+    def predict(self, dataset: BaseDataset) -> PredictionResult:
+        """Predict labels for a dataset."""
+
+        dataloader = self._prepare_data(dataset, shuffle=False)
+        self.model.eval()
+
+        predictions = []
+        true_labels = []
+
+        with torch.inference_mode():
+            for x_batch, y_batch in dataloader:
+                x_batch = x_batch.to(self.config.device)
+                outputs = self.model(x_batch)
+
+                predictions.append(outputs.cpu())
+                true_labels.append(y_batch.cpu())
+
+        _true_labels = torch.cat(true_labels, dim=0).numpy()
+        _predictions = torch.cat(predictions, dim=0).numpy()
+
+        return PredictionResult(y_pred=_predictions, y_true=_true_labels)
 
     def _compute_loss(
         self, outputs: torch.Tensor, targets: torch.Tensor

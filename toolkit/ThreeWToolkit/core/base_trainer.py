@@ -143,7 +143,7 @@ class BaseTrainer(ABC):
     Usage:
         # Subclass must implement abstract methods
         class MyTrainer(BaseTrainer):
-            def _prepare_data_for_training(self, dataset):
+            def _prepare_data(self, dataset):
                 # Convert dataset to framework-specific format
                 ...
 
@@ -240,10 +240,10 @@ class BaseTrainer(ABC):
 
         # 3. Prepare data (framework-specific)
         logger.info("Preparing training data...")
-        train_data = self._prepare_data_for_training(train_dataset)
+        train_data = self._prepare_data(train_dataset)
         if val_dataset is not None:
             logger.info("Preparing validation data...")
-            val_data = self._prepare_data_for_training(val_dataset)
+            val_data = self._prepare_data(val_dataset, shuffle=False)
         else:
             val_data = None
 
@@ -397,7 +397,7 @@ class BaseTrainer(ABC):
         return class_weight_dict
 
     @abstractmethod
-    def _prepare_data_for_training(self, dataset: BaseDataset) -> Any:
+    def _prepare_data(self, dataset: BaseDataset, shuffle: bool = True) -> Any:
         """
         Prepare dataset for training (framework-specific).
 

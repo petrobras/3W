@@ -52,9 +52,12 @@ class SklearnTrainer(BaseTrainer):
         )
 
     def _prepare_data(
-        self, dataset: BaseDataset
+        self, dataset: BaseDataset,
+        shuffle: bool = True
     ) -> tuple[np.ndarray, np.ndarray]:
         """Convert dataset to numpy arrays (X, y)."""
+        _ = shuffle  # Sklearn models typically handle shuffling internally
+
         logger.info("Converting dataset to arrays (size=%d)", len(dataset))
 
         signals_list = []
@@ -98,7 +101,7 @@ class SklearnTrainer(BaseTrainer):
         fit_params = {}
 
         if self.config.use_class_weights:
-            model_params = self.model.model_class.get_params()
+            model_params = self.model.get_params()
 
             if self.config.class_weight_strategy == "manual":
                 if self.config.manual_class_weights is None:
@@ -116,24 +119,24 @@ class SklearnTrainer(BaseTrainer):
                 }
 
             if "class_weight" in model_params:
-                self.model.model_class.set_params(class_weight=class_weights)
+                self.model.set_params(class_weight=class_weights)
             elif (
-                hasattr(self.model.model_class.fit, "__code__")
-                and "sample_weight" in self.model.model_class.fit.__code__.co_varnames
+                hasattr(self.model.model.fit, "__code__")
+                and "sample_weight" in self.model.model.fit.__code__.co_varnames
             ):
                 sample_weights = np.array(
                     [class_weights.get(int(label), 1.0) for label in y_train]
                 )
                 fit_params["sample_weight"] = sample_weights
 
-        self.model.model_class.fit(X_train, y_train, **fit_params)
-        train_score = self.model.model_class.score(X_train, y_train)
+        self.model.model.fit(X_train, y_train, **fit_params)
+        train_score = self.model.model.score(X_train, y_train)
         logger.info("Training score: %.4f", train_score)
 
         val_score = None
         if val_data is not None:
             X_val, y_val = val_data
-            val_score = self.model.model_class.score(X_val, y_val)
+            val_score = self.model.model.score(X_val, y_val)
             logger.info("Validation score: %.4f", val_score)
 
         return TrainingHistory(
@@ -144,5 +147,5 @@ class SklearnTrainer(BaseTrainer):
     def predict(self, dataset: BaseDataset) -> np.ndarray:
         """Predict labels for given dataset."""
         X, _ = self._prepare_data(dataset)
-        predictions = self.model.model_class.predict(X)
+        predictions = self.model.model.predict(X)
         return predictions

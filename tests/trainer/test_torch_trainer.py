@@ -1,7 +1,10 @@
 """Tests for TorchTrainer and TorchTrainerConfig."""
 
+from pydantic import ValidationError
 import pytest
 import torch
+from torch import nn
+from torch import optim
 import numpy as np
 import pandas as pd
 
@@ -80,11 +83,10 @@ class TestTorchTrainerConfig:
         assert config.batch_size == 32
         assert config.epochs == 50
         assert config.learning_rate == 1e-3
-        assert config.optimizer == "adam"
-        assert config.criterion == "cross_entropy"
-        assert config.shuffle is False
+        assert config.optimizer is optim.Adam
+        assert config.criterion is nn.CrossEntropyLoss
 
-    @pytest.mark.parametrize("optimizer", ["adam", "sgd", "rmsprop", "adamw"])
+    @pytest.mark.parametrize("optimizer", [optim.Adam, optim.SGD, optim.AdamW, optim.RMSprop])
     def test_valid_optimizers(self, mlp_config, optimizer):
         """All valid optimizers should be accepted."""
         config = TorchTrainerConfig(config_model=mlp_config, optimizer=optimizer)
@@ -92,10 +94,10 @@ class TestTorchTrainerConfig:
 
     def test_invalid_optimizer(self, mlp_config):
         """Invalid optimizer should raise ValueError."""
-        with pytest.raises(ValueError, match="optimizer must be one of"):
-            TorchTrainerConfig(config_model=mlp_config, optimizer="invalid")
+        with pytest.raises(ValidationError):
+            TorchTrainerConfig(config_model=mlp_config, optimizer="invalid") #type: ignore
 
-    @pytest.mark.parametrize("criterion", ["cross_entropy", "mse", "mae"])
+    @pytest.mark.parametrize("criterion", [nn.CrossEntropyLoss, nn.MSELoss, nn.L1Loss])
     def test_valid_criteria(self, mlp_config, criterion):
         """All valid criteria should be accepted."""
         config = TorchTrainerConfig(config_model=mlp_config, criterion=criterion)
@@ -103,32 +105,32 @@ class TestTorchTrainerConfig:
 
     def test_invalid_criterion(self, mlp_config):
         """Invalid criterion should raise ValueError."""
-        with pytest.raises(ValueError, match="criterion must be one of"):
-            TorchTrainerConfig(config_model=mlp_config, criterion="invalid")
+        with pytest.raises(ValidationError):
+            TorchTrainerConfig(config_model=mlp_config, criterion="invalid") # type: ignore
 
     def test_invalid_batch_size_zero(self, mlp_config):
         """batch_size of 0 should raise ValidationError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             TorchTrainerConfig(config_model=mlp_config, batch_size=0)
 
     def test_invalid_batch_size_negative(self, mlp_config):
         """Negative batch_size should raise ValidationError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             TorchTrainerConfig(config_model=mlp_config, batch_size=-1)
 
     def test_invalid_epochs_zero(self, mlp_config):
         """epochs of 0 should raise ValidationError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             TorchTrainerConfig(config_model=mlp_config, epochs=0)
 
     def test_invalid_learning_rate_zero(self, mlp_config):
         """learning_rate of 0 should raise ValidationError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             TorchTrainerConfig(config_model=mlp_config, learning_rate=0)
 
     def test_invalid_learning_rate_negative(self, mlp_config):
         """Negative learning_rate should raise ValidationError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             TorchTrainerConfig(config_model=mlp_config, learning_rate=-0.001)
 
     def test_device_cpu(self, mlp_config):
@@ -138,7 +140,7 @@ class TestTorchTrainerConfig:
 
     def test_invalid_device(self, mlp_config):
         """Invalid device should raise ValueError."""
-        with pytest.raises(ValueError, match="device must be"):
+        with pytest.raises(ValidationError):
             TorchTrainerConfig(config_model=mlp_config, device="tpu")
 
     def test_target_returns_trainer_class(self, mlp_config):
@@ -207,7 +209,7 @@ class TestTorchTrainer:
         """SGD optimizer should be created correctly."""
         mlp_config = MLPConfig(hidden_sizes=(32,), output_size=2, input_size=10)
         config = TorchTrainerConfig(
-            config_model=mlp_config, optimizer="sgd", device="cpu"
+            config_model=mlp_config, optimizer=optim.SGD, device="cpu"
         )
         trainer = TorchTrainer(config)
         trainer.model = mlp_config.build()
@@ -232,7 +234,7 @@ class TestTorchTrainer:
         """MSELoss should be created correctly."""
         mlp_config = MLPConfig(hidden_sizes=(32,), output_size=1, input_size=10)
         config = TorchTrainerConfig(
-            config_model=mlp_config, criterion="mse", device="cpu"
+            config_model=mlp_config, criterion=nn.MSELoss, device="cpu"
         )
         trainer = TorchTrainer(config)
         criterion = trainer._create_criterion()
