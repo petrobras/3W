@@ -1,7 +1,7 @@
 """TorchTrainer for training PyTorch models with datasets."""
 
 import logging
-from typing import Literal
+from typing import Literal, Any
 
 from pydantic import Field, PrivateAttr, field_validator
 import torch
@@ -31,7 +31,7 @@ class TorchTrainerConfig(BaseTrainerConfig):
         default=optim.Adam, description="Optimizer"
     )
     learning_rate: float = Field(default=1e-3, gt=0, description="Learning rate")
-    optimizer_args: dict[str, int | float | str | bool | None] = Field(
+    optimizer_args: dict[str, Any] = Field(
         default_factory=dict, description="Additional optimizer hyperparameters"
     )
 

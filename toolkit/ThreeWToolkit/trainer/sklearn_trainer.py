@@ -4,7 +4,7 @@ import os
 import logging
 import numpy as np
 from pydantic import Field, PrivateAttr
-from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingHistory
+from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, PredictionResult, TrainingHistory
 from ..core.base_dataset import BaseDataset
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 
@@ -144,8 +144,8 @@ class SklearnTrainer(BaseTrainer):
             val_loss=[val_score] if val_score is not None else None,
         )
 
-    def predict(self, dataset: BaseDataset) -> np.ndarray:
+    def predict(self, dataset: BaseDataset) -> PredictionResult:
         """Predict labels for given dataset."""
-        X, _ = self._prepare_data(dataset)
+        X, y_true = self._prepare_data(dataset)
         predictions = self.model.model.predict(X)
-        return predictions
+        return PredictionResult(y_pred=predictions, y_true=y_true)

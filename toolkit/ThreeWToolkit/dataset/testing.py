@@ -175,7 +175,6 @@ if __name__ == "__main__":
         ),
         trainer_config=TorchTrainerConfig(
             config_model=MLPConfig(
-                random_seed=42,
                 hidden_sizes=(64, 32),
                 output_size=dataset_processor.num_classes,
             ),
