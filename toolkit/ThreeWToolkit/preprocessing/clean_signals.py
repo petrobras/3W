@@ -35,7 +35,7 @@ class CleanSignalsConfig(BasePreprocessingConfig):
     This configuration includes thresholds for identifying frozen / out-of-range signals based on the interquartile
     range (IQR) of the average and standard deviation of the signals.
 
-    Events whose statitics (standard deviation or average) fall outside the specified IQR thresholds may be considered faulty, and
+    Events whose statistics (standard deviation or average) fall outside the specified IQR thresholds may be considered faulty, and
     will be replaced with NaN values.
 
     Larger IQR thresholds will be more lenient, while smaller IQR thresholds will be more strict in identifying frozen /
