@@ -17,11 +17,11 @@ class AssessmentOutput(BaseModel):
     task_type: TaskTypeEnum = Field(..., description="Type of ML task.")
     timestamp: str = Field(..., description="Timestamp of the assessment.")
 
-    predictions: np.ndarray | None = Field(
-        default=None, description="Model predictions."
-    )
     true_values: np.ndarray | None = Field(
         default=None, description="Ground truth values."
+    )
+    predictions: np.ndarray | None = Field(
+        default=None, description="Model predictions."
     )
     metrics: dict[str, float] | None = Field(
         default=None, description="Computed metrics."

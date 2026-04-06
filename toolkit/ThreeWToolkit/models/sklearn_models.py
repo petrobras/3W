@@ -1,20 +1,31 @@
 from typing import Mapping
 import logging
 
+from typing import Protocol, runtime_checkable
+import numpy as np
+import numpy.typing as npt
 from pathlib import Path
 import pickle
 from pydantic import Field, PrivateAttr, field_validator
-
-from sklearn.base import BaseEstimator
 
 from ..core.base_models import ModelsConfig, BaseModels
 
 logger = logging.getLogger(__name__)
 
+@runtime_checkable
+class SklearnModelProtocol(Protocol):
+    """Protocol for sklearn models. Used for type hinting."""
+    def fit(self, X, y, **fit_params): ...
+    def score(self, X, y, **score_params) -> float: ...
+    def predict(self, X) -> npt.NDArray[np.number]: ...
+    def get_params(self) -> Mapping[str, object]: ...
+    def set_params(self, **params: object) -> None: ...
+
+
 class SklearnModelsConfig(ModelsConfig):
     """Sklearn model configuration. Use with SklearnTrainer for training."""
 
-    model_type: type[BaseEstimator] = Field(
+    model_type: type[SklearnModelProtocol] = Field(
         ..., description="Type of sklearn model to use. Must be one of the supported models."
     )
 
@@ -40,7 +51,7 @@ class SklearnModels(BaseModels):
     def __init__(self, config: SklearnModelsConfig):
         self.config: SklearnModelsConfig = config
 
-        self.model: BaseEstimator = self.config.model_type(**self.config.model_params)
+        self.model: SklearnModelProtocol = self.config.model_type(**self.config.model_params)
 
         self._feature_names: list[str] | None = None
 

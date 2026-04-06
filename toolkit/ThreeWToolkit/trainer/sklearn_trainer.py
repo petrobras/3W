@@ -110,6 +110,7 @@ class SklearnTrainer(BaseTrainer):
                     )
                 class_weights = self.config.manual_class_weights
             else:
+                logger.info("Calculating class weights using strategy: %s", self.config.class_weight_strategy)
                 unique_classes, class_counts = np.unique(y_train, return_counts=True)
                 total_samples = len(y_train)
                 n_classes = len(unique_classes)

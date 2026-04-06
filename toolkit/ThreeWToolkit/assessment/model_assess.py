@@ -1,11 +1,8 @@
 """ModelAssessment for evaluating trained models."""
 
 import logging
-from typing import Literal
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn as nn
 
 from pathlib import Path
 from pydantic import Field, field_validator, PrivateAttr
@@ -15,12 +12,9 @@ from ..core.enums import TaskTypeEnum
 
 from datetime import datetime
 from typing import Callable
-from torch.utils.data import DataLoader, TensorDataset
 
 from ..reports.report_generation import ReportGeneration
-from ..core.base_models import BaseModels
-from ..core.base_dataset import BaseDataset
-from ..core.base_trainer import TrainingResult
+from ..core.base_trainer import PredictionResult, TrainingResult
 from ..core.base_assessment import AssessmentOutput
 from ..core import BaseAssessmentConfig, BaseAssessment
 
@@ -33,8 +27,6 @@ from ..metrics import (
     average_precision_score,
     explained_variance_score,
 )
-from .strategies.torch_prediction_strategy import TorchPredictionStrategy
-from .strategies.sklearn_prediction_strategy import SklearnPredictionStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +80,6 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
         export_results (bool): Whether to export results to CSV files.
         generate_report (bool): Whether to generate LaTeX report using ReportGeneration.
         task_type (TaskTypeEnum): Type of task (TaskTypeEnum.CLASSIFICATION or TaskTypeEnum.REGRESSION).
-        batch_size (int): Batch size for PyTorch model predictions.
-        device (str): Device for PyTorch computations.
         report_title (str | None): Title for the report.
         report_author (str): Author name for the report.
     """
@@ -109,19 +99,11 @@ class ModelAssessmentConfig(BaseAssessmentConfig):
     task_type: TaskTypeEnum = Field(
         default=TaskTypeEnum.CLASSIFICATION, description="Type of ML task."
     )
-    batch_size: int = Field(
-        default=64, gt=0, description="Batch size for PyTorch model predictions."
-    )
-    device: Literal["cpu", "cuda"] = Field(
-        default="cuda" if torch.cuda.is_available() else "cpu",
-        description="Device for PyTorch computations.",
-    )
     report_title: str | None = Field(default=None, description="Title for the report.")
     report_author: str = Field(
         default="3W Toolkit Report", description="Author name for the report."
     )
     _target: type = PrivateAttr(default_factory=lambda: ModelAssessment)
-
 
     @field_validator("metrics")
     @classmethod
@@ -165,7 +147,6 @@ class ModelAssessment(BaseAssessment):
 
     def __init__(
         self,
-        training_result: TrainingResult,
         config: ModelAssessmentConfig,
     ):
         """Initialize ModelAssessment with a trainer and its training result.
@@ -175,49 +156,53 @@ class ModelAssessment(BaseAssessment):
             training_result: The result from trainer.train().
             config: Optional assessment configuration.
         """
-        self.model = training_result.model
-        self.training_history = training_result.history
         self.config = config
-        self.results: AssessmentOutput | None = None
         self.metric_registry = MetricRegistry()
-        self._report_generator = None
 
         if self.config.generate_report:
-            self._report_generation_class = ReportGeneration
+            self._report_generator = ReportGeneration
 
-    def evaluate(self, test_dataset: BaseDataset) -> AssessmentOutput:
-        """Evaluate the model on a test dataset.
+    def evaluate(
+        self, training_results: TrainingResult, predictions: PredictionResult | None
+    ) -> AssessmentOutput:
+        """ Evaluate training results and predictions to compute metrics and generate report.
 
         Args:
-            test_dataset: The dataset to evaluate on.
+            training_results: The results from the training process, including model and history.
+            predictions: The predictions made by the model on the test set.
 
         Returns:
             AssessmentOutput with predictions, metrics, and training history.
         """
-        if len(test_dataset) == 0:
-            raise ValueError("Test dataset is empty")
-
-        x_array, y_array = self._prepare_data(test_dataset)
-
         metric_fns = self.metric_registry.resolve(
             task_type=self.config.task_type, metrics=self.config.metrics
         )
+        if predictions is None:
+            raise ValueError(
+                "True labels (y_true) are required for metric calculation."
+            )
 
-        preds = self._get_predictions(self.model, x_array)
-        metrics = {k: float(fn(y_array, preds)) for k, fn in metric_fns.items()}
+        if predictions.y_true is None:
+            raise ValueError(
+                "True labels (y_true) are required for metric calculation."
+            )
+        metrics = {
+            k: float(fn(predictions.y_true, predictions.y_pred))
+            for k, fn in metric_fns.items()
+        }
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         experiment_dir = self.config.output_dir / f"exp_{timestamp}"
         experiment_dir.mkdir(parents=True, exist_ok=True)
 
         self.results = AssessmentOutput(
-            model_name=self.model.model_name,
+            model_name=training_results.model.model_name,
             task_type=self.config.task_type,
             timestamp=timestamp,
-            predictions=preds,
-            true_values=y_array,
+            predictions=predictions.y_pred,
+            true_values=predictions.y_true,
             metrics=metrics,
-            training_history=self.training_history,
+            training_history=training_results.history,
             experiment_dir=str(experiment_dir),
         )
 
@@ -227,59 +212,10 @@ class ModelAssessment(BaseAssessment):
             self._export_results()
 
         if self.config.generate_report:
-            self._generate_report(x_array, y_array)
+            self._generate_report()
 
         logger.info(self.summary())
         return self.results
-
-    def _prepare_data(self, dataset: BaseDataset) -> tuple[np.ndarray, np.ndarray]:
-        """Convert BaseDataset to numpy arrays (X, y)."""
-        logger.info("Preparing dataset for assessment (size=%d)", len(dataset))
-
-        signals_list = []
-        labels_list = []
-
-        for idx in range(len(dataset)):
-            event = dataset[idx]
-            signal = event.signal.values
-
-            # Each row in signal is a sample
-            if signal.ndim == 2:
-                signals_list.append(signal)
-            else:
-                signals_list.append(signal.reshape(1, -1))
-
-            if event.label is not None:
-                label = event.label.values
-                if hasattr(label, "__len__"):
-                    labels_list.extend(label)
-                else:
-                    labels_list.append(label)
-
-        x_array = np.concatenate(signals_list, axis=0)
-        y_array = np.array(labels_list)
-
-        logger.info(
-            "Prepared arrays | X.shape=%s | y.shape=%s", x_array.shape, y_array.shape
-        )
-        return x_array, y_array
-
-    def _get_predictions(self, model: BaseModels, x: np.ndarray) -> np.ndarray:
-        """Generate predictions by detecting model type."""
-        if isinstance(model, nn.Module):
-            strategy: TorchPredictionStrategy | SklearnPredictionStrategy = (
-                TorchPredictionStrategy()
-            )
-            dataset = TensorDataset(
-                torch.tensor(x, dtype=torch.float32), torch.zeros(len(x))
-            )
-            loader = DataLoader(dataset, batch_size=self.config.batch_size)
-            return strategy.predict(
-                model, self.config.task_type, loader=loader, device=self.config.device
-            )
-        else:
-            strategy = SklearnPredictionStrategy()
-            return strategy.predict(model, self.config.task_type, x=x)
 
     def summary(self) -> str:
         """Generate summary of assessment results."""
@@ -300,13 +236,13 @@ class ModelAssessment(BaseAssessment):
             for m, v in self.results.metrics.items():
                 lines.append(f"  {m}: {v:.4f}")
 
-        if self.training_history:
+        if self.results.training_history:
             lines.append("")
             lines.append("Training History:")
-            final_loss = self.training_history.train_loss[-1]
+            final_loss = self.results.training_history.train_loss[-1]
             lines.append(f"  Final train_loss: {final_loss:.4f}")
-            if self.training_history.val_loss is not None:
-                final_val = self.training_history.val_loss[-1]
+            if self.results.training_history.val_loss is not None:
+                final_val = self.results.training_history.val_loss[-1]
                 lines.append(f"  Final val_loss: {final_val:.4f}")
 
         return "\n".join(lines)
@@ -346,11 +282,8 @@ class ModelAssessment(BaseAssessment):
 
         logger.info(f"Results exported to {self.experiment_dir}")
 
-    def _generate_report(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
+    def _generate_report(self) -> None:
         """Generate assessment report using ReportGeneration."""
-        if not self.config.generate_report:
-            return
-
         if self.results is None:
             raise RuntimeError("No results to generate report.")
 
@@ -358,17 +291,14 @@ class ModelAssessment(BaseAssessment):
             logger.warning("ReportGeneration not available.")
             return
 
-        r = self.results
-        title = self.config.report_title or f"Model Assessment Report - {r.model_name}"
+        title = self.config.report_title or f"Model Assessment Report - {self.results.model_name}"
 
-        report_generator = self._report_generation_class(
-            model=self.model,
-            X_train=None,
-            y_train=None,
-            X_test=x_test,
-            y_test=y_test,
-            predictions=r.predictions,
-            calculated_metrics=r.metrics or {},
+        report_generator = self._report_generator(
+            model=self.results.model_name,
+            train_len=None,
+            test_len=None,
+            predictions=pd.Series(self.results.predictions),
+            calculated_metrics=self.results.metrics or {},
             plot_config=None,
             title=title,
             author=self.config.report_author,

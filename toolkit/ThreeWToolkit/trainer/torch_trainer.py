@@ -246,7 +246,6 @@ class TorchTrainer(BaseTrainer):
 
     def predict(self, dataset: BaseDataset) -> PredictionResult:
         """Predict labels for a dataset."""
-
         dataloader = self._prepare_data(dataset, shuffle=False)
         self.model.eval()
 
@@ -257,6 +256,9 @@ class TorchTrainer(BaseTrainer):
             for x_batch, y_batch in dataloader:
                 x_batch = x_batch.to(self.config.device)
                 outputs = self.model(x_batch)
+
+                if outputs.shape[1] > 1: # multi-class classification
+                    outputs = torch.argmax(outputs, dim=1)
 
                 predictions.append(outputs.cpu())
                 true_labels.append(y_batch.cpu())

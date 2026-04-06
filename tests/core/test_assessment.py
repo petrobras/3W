@@ -6,7 +6,6 @@ from pydantic import ValidationError
 from ThreeWToolkit.core import (
     BaseAssessmentVisualization,
     TaskTypeEnum,
-    DataSplitEnum,
 )
 from ThreeWToolkit.assessment import (
     ModelAssessmentConfig,
@@ -25,7 +24,6 @@ class TestModelAssessmentConfig:
         assert config.export_results is True
         assert config.generate_report is False
         assert config.task_type == TaskTypeEnum.CLASSIFICATION
-        assert config.batch_size == 64
 
     def test_custom_metrics(self):
         """Test custom metrics list."""
@@ -77,34 +75,6 @@ class TestModelAssessmentConfig:
         """Test custom output directory."""
         config = ModelAssessmentConfig(output_dir=tmp_path)
         assert config.output_dir == tmp_path
-
-    def test_batch_size_positive(self):
-        """Test that batch size must be positive."""
-        with pytest.raises(ValidationError):
-            ModelAssessmentConfig(batch_size=0)
-
-        with pytest.raises(ValidationError):
-            ModelAssessmentConfig(batch_size=-1)
-
-    def test_custom_batch_size(self):
-        """Test custom batch size."""
-        config = ModelAssessmentConfig(batch_size=128)
-        assert config.batch_size == 128
-
-    def test_device_cpu(self):
-        """Test CPU device."""
-        config = ModelAssessmentConfig(device="cpu")
-        assert config.device == "cpu"
-
-    def test_device_cuda(self):
-        """Test CUDA device."""
-        config = ModelAssessmentConfig(device="cuda")
-        assert config.device == "cuda"
-
-    def test_invalid_device_raises_error(self):
-        """Test that invalid device raises error."""
-        with pytest.raises(ValidationError):
-            ModelAssessmentConfig(device="tpu")
 
     def test_report_title_optional(self):
         """Test optional report title."""

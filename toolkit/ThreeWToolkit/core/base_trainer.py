@@ -3,7 +3,7 @@
 import random
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -89,11 +89,11 @@ class PredictionResult(BaseModel):
         metadata: Additional metadata about the prediction.
     """
 
-    y_pred: Sequence[float | int] | npt.NDArray[np.number] = Field(
-        ..., description="Model predictions."
-    )
-    y_true: Sequence[int] | npt.NDArray[np.integer] | None = Field(
+    y_true: npt.NDArray[np.integer] | None = Field(
         default=None, description="True labels (if available)."
+    )
+    y_pred: npt.NDArray[np.number] = Field(
+        ..., description="Model predictions."
     )
 
     metadata: dict[str, Any] = Field(

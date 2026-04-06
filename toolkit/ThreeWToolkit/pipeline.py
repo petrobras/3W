@@ -5,7 +5,7 @@ from pydantic import Field, PrivateAttr
 
 from .core.base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .core.base_dataset import BaseDataset, BaseDatasetConfig
-from .core.base_trainer import BaseTrainer, BaseTrainerConfig, TrainingResult
+from .core.base_trainer import BaseTrainer, BaseTrainerConfig, PredictionResult, TrainingResult
 from .core.base_transform import BaseTransform, BaseTransformConfig
 from .core.base_assessment import AssessmentOutput
 from .core.enums import TaskTypeEnum
@@ -26,9 +26,6 @@ class PipelineConfig(BasePipelineConfig):
     train_dataset_config: BaseDatasetConfig = Field(
         ..., description="Configuration for training dataset."
     )
-    trainer_config: BaseTrainerConfig = Field(
-        ..., description="Configuration for the model trainer."
-    )
     test_dataset_config: BaseDatasetConfig | None = Field(
         default=None, description="Configuration for test dataset (optional)."
     )
@@ -38,6 +35,9 @@ class PipelineConfig(BasePipelineConfig):
     transform_config: BaseTransformConfig | None = Field(
         default=None,
         description="Configuration for data transformation (optional). Should be BaseTransformConfig.",
+    )
+    trainer_config: BaseTrainerConfig = Field(
+        ..., description="Configuration for the model trainer."
     )
     assessment_config: ModelAssessmentConfig | None = Field(
         default=None,
@@ -132,7 +132,13 @@ class Pipeline(BasePipeline):
         logger.info("Starting pipeline execution")
 
         training_result = self.train(self.train_dataset, self.val_dataset)
-        assessment_result = self.evaluate(training_result, self.test_dataset)
+        if self.test_dataset is not None:
+            predictions = self.predict(self.test_dataset)
+        else:
+            logger.debug("No test dataset provided, skipping prediction")
+            predictions = None
+
+        assessment_result = self.assess(training_result, predictions)
 
         if self.config.save_results:
             training_result.model.save(f"{self.config.experiment_name}_model.pth")
@@ -180,14 +186,26 @@ class Pipeline(BasePipeline):
 
         return training_result
 
-    def evaluate(
-        self, training_result: TrainingResult, test_dataset: BaseDataset | None
+    def predict(self, dataset: BaseDataset) -> PredictionResult:
+        prepared_data = self._prepare_data(dataset, fit=False)
+        if prepared_data is None:
+            raise RuntimeError("Failed to prepare data for prediction")
+
+        logger.info("Generating predictions...")
+        predictions = self.trainer.predict(prepared_data)
+        logger.info("Prediction complete")
+
+        return predictions
+
+    def assess(
+            self, training_result: TrainingResult, predictions: PredictionResult | None
     ) -> AssessmentOutput | None:
         """
-        Evaluate the trained model.
+        Assess the trained model.
 
         Args:
-            test_dataset: Optional test dataset (overrides constructor value).
+            training_result: Result from the training phase, containing model and history.
+            predictions: Predictions generated from the test dataset.
 
         Returns:
             AssessmentOutput from evaluation.
@@ -195,31 +213,10 @@ class Pipeline(BasePipeline):
         Raises:
             RuntimeError: If model hasn't been trained.
         """
-        test_data = self._prepare_data(test_dataset) if test_dataset else None
-
-        if test_data is None:
-            logger.debug("No test dataset provided, skipping evaluation")
-            return None
-
-        logger.info("Evaluating model...")
         if self.assessment:
-            eval_results = self.assessment.evaluate(test_data)
+            eval_results = self.assessment.evaluate(training_result, predictions)
             logger.info("Evaluation complete")
             return eval_results
-
-        # If not provided, use default assessment configuration
-        assessment_config = ModelAssessmentConfig(
-            metrics=self.config.metrics,
-            task_type=self.config.task_type,
-            generate_report=self.config.generate_report,
-            export_results=self.config.save_results,
-        )
-
-        assessor = ModelAssessment(
-            training_result=training_result,
-            config=assessment_config,
-        )
-
-        assessment_output = assessor.evaluate(test_data)
-        logger.info("Evaluation complete")
-        return assessment_output
+        else:
+            logger.debug("No assessment component provided, skipping evaluation")
+            return None

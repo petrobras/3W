@@ -79,7 +79,10 @@ def report_generator_instance(tmp_path, mock_model, sample_data):
 
     instance = ReportGeneration(
         model=mock_model,
-        **sample_data,
+        train_len=len(sample_data["X_train"]),
+        test_len=len(sample_data["X_test"]),
+        predictions=sample_data["predictions"],
+        ##**sample_data,
         calculated_metrics={"Accuracy": 0.95, "F1 Score": 0.92},
         plot_config=plot_config,
         title="Test_Report",
