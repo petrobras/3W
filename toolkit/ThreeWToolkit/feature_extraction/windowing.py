@@ -180,7 +180,7 @@ class Windowing(BaseFeatureExtractor):
             (range(signal.shape[0]), data.signal.columns), names=["window", "variable"]
         )
         signal_df = pd.DataFrame(
-            signal.reshape(-1, self.config.window_size), index=index
+            signal.reshape(-1, self.config.window_size), index=index, dtype=np.float64
         )  # (N_win * n_channels * window_size)
 
         if data.label is not None:  # repeat for label series, if needed
