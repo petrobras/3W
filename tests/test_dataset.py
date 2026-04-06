@@ -77,12 +77,11 @@ class TestParquetDataset:
         """
         Load only files matching event_type.
         """
-        event_type = [EventPrefixEnum.REAL]
         config = ParquetDatasetConfig(
             path=parquet_dataset_path,
             target_column=_LABEL_NAME,
             split=None,
-            event_type=event_type,
+            event_type=["real"],
         )
         dataset = config.build()
         assert (
@@ -90,12 +89,11 @@ class TestParquetDataset:
         )  # known number of real events in the dataset (2.0.0 version)
 
         # Múltiplos tipos de evento
-        event_type = [EventPrefixEnum.REAL, EventPrefixEnum.SIMULATED]
         config = ParquetDatasetConfig(
             path=parquet_dataset_path,
             target_column=_LABEL_NAME,
             split=None,
-            event_type=event_type,
+            event_type=["real", "simulated"],
         )
         dataset = config.build()
         assert (

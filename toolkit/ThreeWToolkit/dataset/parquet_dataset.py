@@ -2,14 +2,14 @@ import logging
 import shutil
 import zipfile
 from pathlib import Path
+import pandas as pd
 from pandas import read_parquet
 from pydantic import Field, field_validator, PrivateAttr
-from typing import Literal, Sequence
+from typing import Literal, Sequence, cast
 
 import numpy as np
 import numpy.typing as npt
 
-from ..core.enums import EventPrefixEnum
 from ..core.dataset_outputs import DatasetOutputs
 from ..utils.downloader import get_figshare_data
 
@@ -43,7 +43,7 @@ class ParquetDatasetConfig(BaseDatasetConfig):
     )
 
     event_type: (
-        list[EventPrefixEnum] | list[Literal["simulated", "real", "drawn"]] | None
+        list[Literal["simulated", "real", "drawn"]] | None
     ) = Field(
         default=None,
         description="Event types to include. (e.g., SIMULATED, REAL, DRAWN)",
@@ -219,7 +219,7 @@ class ParquetDataset(BaseDataset):
         Check if the event file name matches one of the requested event types.
         """
         if self.config.event_type is not None:
-            return any(event.name.startswith(t.value) for t in self.config.event_type)
+            return any(self._get_event_type_from_filename(event) == t for t in self.config.event_type)
         else:  # Default: accept all
             return True
 
@@ -320,7 +320,7 @@ class ParquetDataset(BaseDataset):
                     f"Target column '{self.config.target_column}' not found in file {file_name}."
                 )
 
-            label_series = parquet_file[self.config.target_column]
+            label_series = cast(pd.Series, parquet_file[self.config.target_column])
             parquet_file = parquet_file.drop(columns=[self.config.target_column])
         else:
             label_series = None
@@ -332,7 +332,7 @@ class ParquetDataset(BaseDataset):
                     f"Some specified columns are not found in file {file_name}: {missing_cols}"
                 )
 
-            signal_df = parquet_file[self.config.columns]
+            signal_df = cast(pd.DataFrame, parquet_file[self.config.columns])
         else:  # load the remaining columns as signal if no specific columns are defined
             signal_df = parquet_file
 
