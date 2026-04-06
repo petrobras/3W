@@ -26,6 +26,9 @@ class TransformConfig(BaseTransformConfig):
 class TransformDataset(BaseTransform):
     """Class for fitting preprocessing and feature extraction steps on a dataset and applying the transformations."""
 
+    pre_processing_step: BasePreprocessingConfig | None = None
+    feature_extraction_step: BaseFeatureExtractorConfig | None = None
+
     def __init__(self, config: TransformConfig):
         self.config = config
 
