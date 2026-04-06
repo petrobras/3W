@@ -105,30 +105,33 @@ class ImputeMissing(BasePreprocessing):
         Returns:
             dict: Event data with imputed 'signal' DataFrame
         """
+
+        signal = data.signal.copy().astype(float)
         if self.config.strategy == "constant":
-            signal = data.signal.fillna(self.config.fill_value)
+            signal = signal.fillna(self.config.fill_value)
         elif self.config.strategy == "mean":
             if self.global_average is None:
                 raise ValueError("Global average not computed. Call fit() first.")
-            signal = data.signal.fillna(self.global_average)
+            print(self.global_average)
+            signal = signal.fillna(self.global_average)
 
         elif (
             self.config.strategy == "interpolate"
             and self.config.interpolate_method is not None
         ):
             signal = (
-                data.signal.interpolate(method=self.config.interpolate_method)
+                signal.interpolate(method=self.config.interpolate_method)
                 .bfill()
                 .ffill()
             )  # interpolate
             # then fill any remaining NaNs
         elif self.config.strategy == "ffill":
             signal = (
-                data.signal.ffill().bfill()
+                signal.ffill().bfill()
             )  # forward-fill then backward-fill to handle leading NaNs
         else:  # self.config.strategy == "bfill":
             signal = (
-                data.signal.bfill().ffill()
+                signal.bfill().ffill()
             )  # backward-fill then forward-fill to handle trailing NaNs
 
         # if post-imputation there are still missing values, print a warning
