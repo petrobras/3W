@@ -1,11 +1,13 @@
 from pydantic import Field, PrivateAttr
+from typing import cast
 
 from ..core.base_dataset import BaseDataset
 from ..core.dataset_outputs import DatasetOutputs
-from ..core.base_preprocessing import BasePreprocessingConfig
-from ..core.base_feature_extractor import BaseFeatureExtractorConfig
+from ..core.base_preprocessing import BasePreprocessingConfig, BasePreprocessing
+from ..core.base_feature_extractor import BaseFeatureExtractorConfig, BaseFeatureExtractor
 from ..core.base_transform import BaseTransform, BaseTransformConfig
 from ..preprocessing.remap import RemapClass
+from ..preprocessing.adapters import SequentialPreprocessingAdapter
 from .transformed_dataset import TransformedDataset
 
 
@@ -26,8 +28,8 @@ class TransformConfig(BaseTransformConfig):
 class TransformDataset(BaseTransform):
     """Class for fitting preprocessing and feature extraction steps on a dataset and applying the transformations."""
 
-    pre_processing_step: BasePreprocessingConfig | None = None
-    feature_extraction_step: BaseFeatureExtractorConfig | None = None
+    pre_processing_step: BasePreprocessing | None = None
+    feature_extraction_step: BaseFeatureExtractor | None = None
 
     def __init__(self, config: TransformConfig):
         self.config = config
@@ -63,10 +65,11 @@ class TransformDataset(BaseTransform):
     @property
     def num_classes(self) -> int | None:
         """Return the number of classes from the RemapClass step, if present."""
-        if not hasattr(self, "pre_processing_step") or self.pre_processing_step is None:
+        if self.pre_processing_step is None:
             return None
 
-        for step in self.pre_processing_step.steps:
-            if isinstance(step, RemapClass) and hasattr(step, "class_map"):
-                return len(step.class_map)
+        if isinstance(self.pre_processing_step, SequentialPreprocessingAdapter):
+            for step in self.pre_processing_step.steps:
+                if isinstance(step, RemapClass) and hasattr(step, "class_map"):
+                    return len(step.class_map)
         return None
