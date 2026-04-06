@@ -12,7 +12,6 @@ from ..core.base_models import BaseModels, ParamsT, ModelsConfig
 logger = logging.getLogger(__name__)
 
 
-
 class TorchModelsConfig(ModelsConfig):
     """Base configuration for PyTorch models. Use with TorchTrainer for training."""
 
@@ -38,19 +37,17 @@ class TorchModels(BaseModels, nn.Module):
 
     def save(self, filename: str | Path) -> Path:
         """Save model to disk."""
-        path = Path(filename) # ensure path
+        path = Path(filename)  # ensure path
         if path.suffix and path.suffix not in {".pt", ".pth"}:
-            raise ValueError(
-                "Sklearn models must be saved with .pkl or .pickle extension"
-            )
+            raise ValueError("Torch models must be saved with .pt or .pth extension")
         elif not path.suffix:
-            path = path.with_suffix(".pkl")
+            path = path.with_suffix(".pt")
             logger.warning(
-                "No file extension provided. Saving sklearn model with .pkl extension: %s", path
+                "No file extension provided. Saving torch model with .pt extension: %s",
+                path,
             )
         torch.save(self, path)
         return path
-
 
     @classmethod
     def load(cls, filename: str | Path, device="cpu") -> "TorchModels":
@@ -58,7 +55,7 @@ class TorchModels(BaseModels, nn.Module):
         path = Path(filename)
         obj = torch.load(path, map_location=device, weights_only=False)
         if not isinstance(obj, cls):
-            raise ValueError(f"Loaded object is not a MLP instance: {type(obj)}")
+            raise ValueError(f"Loaded object is not a TorchModel instance: {type(obj)}")
         return obj
 
     @abstractmethod
@@ -70,4 +67,3 @@ class TorchModels(BaseModels, nn.Module):
     def get_params(self) -> ParamsT:
         """Return model parameters."""
         pass
-
