@@ -42,9 +42,11 @@ class ParquetDatasetConfig(BaseDatasetConfig):
         description='List of files to load if split=="list".',
     )
 
-    event_type: list[EventPrefixEnum] | None = Field(
+    event_type: (
+        list[EventPrefixEnum] | list[Literal["simulated", "real", "drawn"]] | None
+    ) = Field(
         default=None,
-        description="Event types to include. (e.g., simulated, real, ...)",
+        description="Event types to include. (e.g., SIMULATED, REAL, DRAWN)",
     )
 
     target_class: Sequence[int] | npt.NDArray[np.integer] | None = Field(
