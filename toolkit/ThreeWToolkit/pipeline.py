@@ -1,21 +1,24 @@
 """Pipeline for orchestrating the complete ML workflow."""
 
 import logging
-from pydantic import Field, PrivateAttr
+from typing import Literal
 
+from pydantic import Field, PrivateAttr, field_validator
+
+from .assessment import ModelAssessment, ModelAssessmentConfig
+from .core.base_assessment import AssessmentOutput
+from .core.base_dataset import BaseDataset
 from .core.base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
-from .core.base_dataset import BaseDataset, BaseDatasetConfig
 from .core.base_trainer import (
     BaseTrainer,
     BaseTrainerConfig,
+    CrossValidationResult,
     PredictionResult,
     TrainingResult,
-    CrossValidationResult,
 )
 from .core.base_transform import BaseTransform, BaseTransformConfig
-from .core.base_assessment import AssessmentOutput
 from .utils import ModelRecorder
-from .assessment import ModelAssessment, ModelAssessmentConfig
+from .utils.data_splitter import KFoldSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +32,9 @@ class PipelineConfig(BasePipelineConfig):
     """
 
     # Component configs
+    task: Literal["training", "cross_validation"] = Field(
+        default="training", description="Task to perform on run()"
+    )
     train_dataset: BaseDataset = Field(
         ..., description="Configuration for training dataset."
     )
@@ -45,10 +51,16 @@ class PipelineConfig(BasePipelineConfig):
     trainer_config: BaseTrainerConfig = Field(
         ..., description="Configuration for the model trainer."
     )
-    cross_validation_folds: int = Field(
-        default=1,
-        description="Number of folds for cross-validation. If >1, trainer should handle CV logic.",
+    num_folds: int | None = Field(
+        default=None,
+        gt=1,
+        description="Number of folds for cross-validation. Required if task is 'cross_validation'.",
     )
+    stratify_by: list[str] = Field(
+        default_factory=list,
+        description="List of column names to stratify by during cross-validation (optional).",
+    )
+
     assessment_config: ModelAssessmentConfig | None = Field(
         default=None,
         description="Configuration for model assessment (optional). If not provided, defaults will be used.",
@@ -72,6 +84,19 @@ class PipelineConfig(BasePipelineConfig):
 
     _target: type = PrivateAttr(default_factory=lambda: Pipeline)
     model_config = {"arbitrary_types_allowed": True}
+
+    @field_validator("num_folds")
+    @classmethod
+    def validate_num_folds(cls, num_folds, info):
+        if info.data.get("task") == "cross_validation" and num_folds is None:
+            raise ValueError(
+                "num_folds must be provided when task is 'cross_validation'"
+            )
+        elif info.data.get("task") != "cross_validation" and num_folds is not None:
+            raise ValueError(
+                "num_folds should not be provided when task is not 'cross_validation'"
+            )
+        return num_folds
 
 
 class Pipeline(BasePipeline):
@@ -123,8 +148,6 @@ class Pipeline(BasePipeline):
             else None
         )
 
-        self.cross_validation_folds = config.cross_validation_folds
-
         self.model_recorder: ModelRecorder = ModelRecorder()
         logger.info("Pipeline initialized | experiment=%s", config.experiment_name)
 
@@ -137,14 +160,24 @@ class Pipeline(BasePipeline):
         """
         logger.info("Starting pipeline execution")
 
-        # train step (either train or cross-validate based on config)
-        if self.cross_validation_folds > 1:
+        if self.config.task == "cross_validation":
+            if self.config.num_folds is None:
+                raise ValueError(
+                    "num_folds must be specified for cross-validation task"
+                )
             cv_result = self.cross_validate(
-                self.train_dataset, self.cross_validation_folds, self.transform
+                self.train_dataset, self.config.num_folds, self.config.stratify_by
             )
             training_result = cv_result.fold_results[0]  # First fold for evaluation
-        else:
+            logger.info(
+                "Cross-validation completed with %d folds", self.config.num_folds
+            )
+        elif self.config.task == "training":
+            cv_result = None
             training_result = self.train(self.train_dataset, self.val_dataset)
+            logger.info("Training completed")
+        else:
+            raise ValueError(f"Unsupported task: {self.config.task}")
 
         # predict (will run only if test dataset is provided)
         predictions = self.predict(self.test_dataset)
@@ -154,10 +187,17 @@ class Pipeline(BasePipeline):
 
         # model recorder
         if self.config.save_results:
-            self.model_recorder.save_model(
+            if self.transform is not None:
+                logger.info("Saving fitted transform for future use...")
+                transform_path = self.model_recorder.save_transform(
+                    self.transform, self.config.experiment_name + "_transform.pkl"
+                )
+                logger.info("Transform saved to %s", transform_path)
+
+            model_path = self.model_recorder.save_model(
                 training_result.model, self.config.experiment_name
             )
-            logger.info("Model saved to %s_model.pth", self.config.experiment_name)
+            logger.info("Model saved to %s", model_path)
 
         return PipelineResult(
             training_result=training_result,
@@ -190,20 +230,27 @@ class Pipeline(BasePipeline):
         self,
         train_dataset: BaseDataset,
         num_folds: int,
-        transform: BaseTransform | None,
+        stratify_by: list[str] = [],
     ) -> CrossValidationResult:
-        """
-        Perform cross-validation on the training dataset.
-
-        Args:
-            train_dataset: Dataset to perform cross-validation on.
-            num_folds: Number of folds for cross-validation.
-            transform: Optional transform to apply to the dataset before splitting.
-        Returns:
-            CrossValidationResult containing results for each fold and metadata.
-        """
-        logger.info("Starting cross-validation with %d folds", num_folds)
-        return self.trainer.cross_validate(train_dataset, num_folds, transform)
+        splitter = KFoldSplitter(num_splits=num_folds, stratify_by=stratify_by)
+        training_results = []
+        for fold_idx, (train_subset, val_subset) in enumerate(
+            splitter.split_data(train_dataset)
+        ):
+            logger.info("Starting fold %d/%d", fold_idx + 1, num_folds)
+            result = self.train(train_subset, val_subset)
+            training_results.append(result)
+            logger.info("Completed fold %d/%d", fold_idx + 1, num_folds)
+        logger.info("Cross-validation completed with %d folds", num_folds)
+        return CrossValidationResult(
+            fold_results=training_results,
+            metadata={
+                "num_folds": num_folds,
+                "stratify_by": stratify_by,
+                "trainer_type": self.__class__.__name__,
+                "seed": self.trainer.config.seed,
+            },
+        )
 
     def train(
         self, train_dataset: BaseDataset, val_dataset: BaseDataset | None
@@ -229,7 +276,6 @@ class Pipeline(BasePipeline):
         logger.info("Generating predictions...")
         predictions = self.trainer.predict(prepared_data)
         logger.info("Prediction complete")
-
         return predictions
 
     def assess(

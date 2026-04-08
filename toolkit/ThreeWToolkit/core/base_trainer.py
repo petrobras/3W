@@ -1,23 +1,20 @@
 """Base trainer class with framework-agnostic training logic."""
 
-import random
-import logging
 from abc import ABC, abstractmethod
+import logging
+import random
 from typing import Any
+from typing import Literal
 
-from ThreeWToolkit.core.base_transform import BaseTransform
 import numpy as np
 import numpy.typing as npt
-from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sklearn.utils.class_weight import compute_class_weight
 
 from .base_dataset import BaseDataset
-from .base_models import BaseModels
 from .base_instantiable import Instantiable
+from .base_models import BaseModels
 from .dataset_outputs import DatasetOutputs
-
-from ..utils.data_splitter import KFoldSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -171,49 +168,6 @@ class BaseTrainer(ABC):
         # Set random seeds
         self._set_random_seeds(self.config.seed)
         logger.info("Initialized %s with seed=%d", self.__class__.__name__, config.seed)
-
-    def cross_validate(
-        self,
-        train_dataset: BaseDataset,
-        num_folds: int = 5,
-        transform: BaseTransform | None = None,
-        stratify_by: list[str] = [],
-    ) -> CrossValidationResult:
-        """Perform cross-validation on the given dataset.
-        Args:
-            train_dataset: Dataset to perform cross-validation on.
-            num_folds: Number of folds for cross-validation.
-            transform: Optional transform to apply to the dataset.
-            stratify_by: List of metadata keys to stratify by.
-        Returns:
-            CrossValidationResult containing results for each fold and metadata.
-        """
-
-        splitter = KFoldSplitter(num_splits=num_folds, stratify_by=stratify_by)
-        training_results = []
-        for fold_idx, (train_subset, val_subset) in enumerate(
-            splitter.split_data(train_dataset)
-        ):
-            if transform is not None:
-                transform.fit(train_subset)
-                train_subset = transform.transform(train_subset)
-                val_subset = transform.transform(val_subset)
-
-            logger.info("Starting fold %d/%d", fold_idx + 1, num_folds)
-            result = self.train(train_subset, val_subset)
-            training_results.append(result)
-            logger.info("Completed fold %d/%d", fold_idx + 1, num_folds)
-        logger.info("Cross-validation completed with %d folds", num_folds)
-
-        return CrossValidationResult(
-            fold_results=training_results,
-            metadata={
-                "num_folds": num_folds,
-                "stratify_by": stratify_by,
-                "trainer_type": self.__class__.__name__,
-                "seed": self.config.seed,
-            },
-        )
 
     def train(
         self, train_dataset: BaseDataset, val_dataset: BaseDataset | None = None
