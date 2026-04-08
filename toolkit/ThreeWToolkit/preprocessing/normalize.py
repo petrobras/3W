@@ -19,6 +19,10 @@ class NormalizeConfig(BasePreprocessingConfig):
                      Normalize preprocessor, and will be left unchanged. By default, this includes known categorical\
                      features that should not be processed by normalization.",
     )
+    eps: float = Field(
+        default=1e-6,
+        description="Small constant added to denominator to prevent division by zero during normalization.",
+    )
     _target: type = PrivateAttr(default_factory=lambda: Normalize)
 
     @field_validator("norm")
@@ -92,8 +96,8 @@ class Normalize(BasePreprocessing):
         counts = pd.concat(_counts, axis=1).transpose()
 
         self.global_moment = moments.mean() / counts.mean()
-        self.global_moment = self.global_moment.pow(
-            1 / self.norm
+        self.global_moment = (
+            self.global_moment.pow(1 / self.norm) + self.config.eps
         )  # take the root to get back to the original scale
 
     def _compute_global_max(self, data: BaseDataset) -> None:
@@ -102,7 +106,9 @@ class Normalize(BasePreprocessing):
             _maxes.append((event.signal - self.global_average).abs().max())
         # compute global max across all events
         maxes = pd.concat(_maxes, axis=1).transpose()
-        self.global_moment = maxes.max()
+        self.global_moment = (
+            maxes.max() + self.config.eps
+        )  # add epsilon to avoid division by zero
 
     def fit(self, data: BaseDataset) -> None:
         """
