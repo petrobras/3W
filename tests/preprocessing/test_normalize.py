@@ -31,3 +31,24 @@ class TestNormalizeStrategies:
         # The second normalizer should find that the global average is close to 0 and the global moments are close to 1 after Lp normalization
         assert np.isclose(second_normalizer.global_average.values, 0.0).all()
         assert np.isclose(second_normalizer.global_moment.values, 1.0).all()
+
+    def test_exclude_features_from_normalization(self, mock_dataset_factory):
+        """Excluded features should remain unchanged after transform."""
+        dataset = mock_dataset_factory(
+            num_events=4,
+            num_sensors=3,
+            num_timesteps_range=64,
+            seed=7,
+        )
+
+        for idx in range(len(dataset)):
+            dataset[idx].signal["sensor_0"] = 1.0
+
+        normalizer = NormalizeConfig(norm="l2", exclude_features=["sensor_0"]).build()
+        normalizer.fit(dataset)
+
+        for event in dataset:
+            transformed = normalizer.transform(event)
+
+            assert (transformed.signal["sensor_0"] == 1.0).all()
+            assert not transformed.signal.isna().any().any()

@@ -5,12 +5,19 @@ from pydantic import Field, field_validator, PrivateAttr
 from ..core.base_dataset import BaseDataset
 from ..core.base_preprocessing import BasePreprocessing, BasePreprocessingConfig
 from ..core.dataset_outputs import DatasetOutputs
+from .clean_signals import _3W_CATEGORICAL_FEATURES
 
 
 class NormalizeConfig(BasePreprocessingConfig):
     norm: Literal["l1", "l2", "max"] | float = Field(
         default="l2",
         description="Normalization method to apply. Can be 'l1', 'l2', 'max' for standard normalization, or a generic norm",
+    )
+    exclude_features: list[str] = Field(
+        default=_3W_CATEGORICAL_FEATURES,
+        description="List of feature names to exclude from normalization. These features will not be processed by the\
+                     Normalize preprocessor, and will be left unchanged. By default, this includes known categorical\
+                     features that should not be processed by normalization.",
     )
     _target: type = PrivateAttr(default_factory=lambda: Normalize)
 
@@ -128,6 +135,15 @@ class Normalize(BasePreprocessing):
                 "Normalize: fit must be called before transform to compute statistics."
             )
 
-        signal = (data.signal - self.global_average) / self.global_moment
+        signal = data.signal.copy()
+        columns_to_normalize = [
+            col for col in signal.columns if col not in self.config.exclude_features
+        ]
+
+        if len(columns_to_normalize) > 0:
+            signal.loc[:, columns_to_normalize] = (
+                signal.loc[:, columns_to_normalize]
+                - self.global_average.loc[columns_to_normalize]
+            ) / self.global_moment.loc[columns_to_normalize]
 
         return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
