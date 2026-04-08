@@ -5,10 +5,16 @@ from pydantic import Field, PrivateAttr
 
 from .core.base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .core.base_dataset import BaseDataset, BaseDatasetConfig
-from .core.base_trainer import BaseTrainer, BaseTrainerConfig, PredictionResult, TrainingResult
+from .core.base_trainer import (
+    BaseTrainer,
+    BaseTrainerConfig,
+    PredictionResult,
+    TrainingResult,
+    CrossValidationResult,
+)
 from .core.base_transform import BaseTransform, BaseTransformConfig
 from .core.base_assessment import AssessmentOutput
-from .core.enums import TaskTypeEnum
+from .utils import ModelRecorder
 from .assessment import ModelAssessment, ModelAssessmentConfig
 
 logger = logging.getLogger(__name__)
@@ -23,13 +29,13 @@ class PipelineConfig(BasePipelineConfig):
     """
 
     # Component configs
-    train_dataset_config: BaseDatasetConfig = Field(
+    train_dataset: BaseDataset = Field(
         ..., description="Configuration for training dataset."
     )
-    test_dataset_config: BaseDatasetConfig | None = Field(
+    test_dataset: BaseDataset | None = Field(
         default=None, description="Configuration for test dataset (optional)."
     )
-    val_dataset_config: BaseDatasetConfig | None = Field(
+    val_dataset: BaseDataset | None = Field(
         default=None, description="Configuration for validation dataset (optional)."
     )
     transform_config: BaseTransformConfig | None = Field(
@@ -38,6 +44,10 @@ class PipelineConfig(BasePipelineConfig):
     )
     trainer_config: BaseTrainerConfig = Field(
         ..., description="Configuration for the model trainer."
+    )
+    cross_validation_folds: int = Field(
+        default=1,
+        description="Number of folds for cross-validation. If >1, trainer should handle CV logic.",
     )
     assessment_config: ModelAssessmentConfig | None = Field(
         default=None,
@@ -53,9 +63,6 @@ class PipelineConfig(BasePipelineConfig):
     )
 
     # Task settings
-    task_type: TaskTypeEnum = Field(
-        default=TaskTypeEnum.CLASSIFICATION, description="Type of ML task."
-    )
     metrics: list[str] = Field(
         default_factory=lambda: ["accuracy"], description="Metrics to compute."
     )
@@ -95,17 +102,13 @@ class Pipeline(BasePipeline):
         # Build components from configs
         self.trainer: BaseTrainer = config.trainer_config.build()
 
-        self.train_dataset: BaseDataset = config.train_dataset_config.build()
+        self.train_dataset: BaseDataset = config.train_dataset
 
         self.val_dataset: BaseDataset | None = (
-            config.val_dataset_config.build()
-            if config.val_dataset_config is not None
-            else None
+            config.val_dataset if config.val_dataset is not None else None
         )
         self.test_dataset: BaseDataset | None = (
-            config.test_dataset_config.build()
-            if config.test_dataset_config is not None
-            else None
+            config.test_dataset if config.test_dataset is not None else None
         )
 
         self.transform: BaseTransform | None = (
@@ -120,6 +123,9 @@ class Pipeline(BasePipeline):
             else None
         )
 
+        self.cross_validation_folds = config.cross_validation_folds
+
+        self.model_recorder: ModelRecorder = ModelRecorder()
         logger.info("Pipeline initialized | experiment=%s", config.experiment_name)
 
     def run(self) -> PipelineResult:
@@ -131,17 +137,26 @@ class Pipeline(BasePipeline):
         """
         logger.info("Starting pipeline execution")
 
-        training_result = self.train(self.train_dataset, self.val_dataset)
-        if self.test_dataset is not None:
-            predictions = self.predict(self.test_dataset)
+        # train step (either train or cross-validate based on config)
+        if self.cross_validation_folds > 1:
+            cv_result = self.cross_validate(
+                self.train_dataset, self.cross_validation_folds, self.transform
+            )
+            training_result = cv_result.fold_results[0]  # First fold for evaluation
         else:
-            logger.debug("No test dataset provided, skipping prediction")
-            predictions = None
+            training_result = self.train(self.train_dataset, self.val_dataset)
 
+        # predict (will run only if test dataset is provided)
+        predictions = self.predict(self.test_dataset)
+
+        # assessment step if assessment component is provided
         assessment_result = self.assess(training_result, predictions)
 
+        # model recorder
         if self.config.save_results:
-            training_result.model.save(f"{self.config.experiment_name}_model.pth")
+            self.model_recorder.save_model(
+                training_result.model, self.config.experiment_name
+            )
             logger.info("Model saved to %s_model.pth", self.config.experiment_name)
 
         return PipelineResult(
@@ -171,6 +186,25 @@ class Pipeline(BasePipeline):
 
         return self.transform.transform(dataset)
 
+    def cross_validate(
+        self,
+        train_dataset: BaseDataset,
+        num_folds: int,
+        transform: BaseTransform | None,
+    ) -> CrossValidationResult:
+        """
+        Perform cross-validation on the training dataset.
+
+        Args:
+            train_dataset: Dataset to perform cross-validation on.
+            num_folds: Number of folds for cross-validation.
+            transform: Optional transform to apply to the dataset before splitting.
+        Returns:
+            CrossValidationResult containing results for each fold and metadata.
+        """
+        logger.info("Starting cross-validation with %d folds", num_folds)
+        return self.trainer.cross_validate(train_dataset, num_folds, transform)
+
     def train(
         self, train_dataset: BaseDataset, val_dataset: BaseDataset | None
     ) -> TrainingResult:
@@ -186,10 +220,11 @@ class Pipeline(BasePipeline):
 
         return training_result
 
-    def predict(self, dataset: BaseDataset) -> PredictionResult:
+    def predict(self, dataset: BaseDataset | None) -> PredictionResult | None:
         prepared_data = self._prepare_data(dataset, fit=False)
         if prepared_data is None:
-            raise RuntimeError("Failed to prepare data for prediction")
+            logger.info("No data to predict on, skipping prediction")
+            return None
 
         logger.info("Generating predictions...")
         predictions = self.trainer.predict(prepared_data)
@@ -198,7 +233,9 @@ class Pipeline(BasePipeline):
         return predictions
 
     def assess(
-            self, training_result: TrainingResult, predictions: PredictionResult | None
+        self,
+        training_result: TrainingResult | CrossValidationResult,
+        predictions: PredictionResult | None,
     ) -> AssessmentOutput | None:
         """
         Assess the trained model.

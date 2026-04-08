@@ -4,14 +4,14 @@ from abc import ABC
 from pydantic import BaseModel, Field
 from typing import Any
 from .base_instantiable import Instantiable
-from .base_trainer import TrainingResult
+from .base_trainer import CrossValidationResult, TrainingResult
 from .base_assessment import AssessmentOutput
 
 
 class PipelineResult(BaseModel):
     """Container for pipeline execution results."""
 
-    training_result: TrainingResult | None = Field(
+    training_result: TrainingResult | CrossValidationResult | None = Field(
         default=None, description="Result from training phase."
     )
     assessment_output: AssessmentOutput | None = Field(

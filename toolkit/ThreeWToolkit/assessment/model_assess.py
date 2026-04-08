@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Callable
 
 from ..reports.report_generation import ReportGeneration
-from ..core.base_trainer import PredictionResult, TrainingResult
+from ..core.base_trainer import PredictionResult, TrainingResult, CrossValidationResult
 from ..core.base_assessment import AssessmentOutput
 from ..core import BaseAssessmentConfig, BaseAssessment
 
@@ -163,9 +163,11 @@ class ModelAssessment(BaseAssessment):
             self._report_generator = ReportGeneration
 
     def evaluate(
-        self, training_results: TrainingResult, predictions: PredictionResult | None
+        self,
+        training_results: TrainingResult | CrossValidationResult,
+        predictions: PredictionResult | None,
     ) -> AssessmentOutput:
-        """ Evaluate training results and predictions to compute metrics and generate report.
+        """Evaluate training results and predictions to compute metrics and generate report.
 
         Args:
             training_results: The results from the training process, including model and history.
@@ -291,7 +293,10 @@ class ModelAssessment(BaseAssessment):
             logger.warning("ReportGeneration not available.")
             return
 
-        title = self.config.report_title or f"Model Assessment Report - {self.results.model_name}"
+        title = (
+            self.config.report_title
+            or f"Model Assessment Report - {self.results.model_name}"
+        )
 
         report_generator = self._report_generator(
             model=self.results.model_name,

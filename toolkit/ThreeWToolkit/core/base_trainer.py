@@ -5,6 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
+from ThreeWToolkit.core.base_transform import BaseTransform
 import numpy as np
 import numpy.typing as npt
 from typing import Literal
@@ -92,9 +93,7 @@ class PredictionResult(BaseModel):
     y_true: npt.NDArray[np.integer] | None = Field(
         default=None, description="True labels (if available)."
     )
-    y_pred: npt.NDArray[np.number] = Field(
-        ..., description="Model predictions."
-    )
+    y_pred: npt.NDArray[np.number] = Field(..., description="Model predictions.")
 
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata about the prediction."
@@ -120,7 +119,10 @@ class BaseTrainerConfig(BaseModel, Instantiable):
     @field_validator("manual_class_weights")
     @classmethod
     def validate_manual_class_weights(cls, manual_class_weights, info):
-        if info.data["class_weight_strategy"] == "manual" and manual_class_weights is None:
+        if (
+            info.data["class_weight_strategy"] == "manual"
+            and manual_class_weights is None
+        ):
             raise ValueError(
                 "manual_class_weights must be provided when strategy='manual'"
             )
@@ -174,12 +176,14 @@ class BaseTrainer(ABC):
         self,
         train_dataset: BaseDataset,
         num_folds: int = 5,
+        transform: BaseTransform | None = None,
         stratify_by: list[str] = [],
     ) -> CrossValidationResult:
         """Perform cross-validation on the given dataset.
         Args:
             train_dataset: Dataset to perform cross-validation on.
             num_folds: Number of folds for cross-validation.
+            transform: Optional transform to apply to the dataset.
             stratify_by: List of metadata keys to stratify by.
         Returns:
             CrossValidationResult containing results for each fold and metadata.
@@ -190,6 +194,11 @@ class BaseTrainer(ABC):
         for fold_idx, (train_subset, val_subset) in enumerate(
             splitter.split_data(train_dataset)
         ):
+            if transform is not None:
+                transform.fit(train_subset)
+                train_subset = transform.transform(train_subset)
+                val_subset = transform.transform(val_subset)
+
             logger.info("Starting fold %d/%d", fold_idx + 1, num_folds)
             result = self.train(train_subset, val_subset)
             training_results.append(result)
@@ -269,9 +278,7 @@ class BaseTrainer(ABC):
         return result
 
     @abstractmethod
-    def predict(
-        self, dataset: BaseDataset
-    ) -> PredictionResult:
+    def predict(self, dataset: BaseDataset) -> PredictionResult:
         """Make predictions on the test dataset."""
         pass
 
