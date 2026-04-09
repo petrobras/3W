@@ -252,8 +252,8 @@ class TorchTrainer(BaseTrainer):
 
     def _infer_input_size(self, train_data: DataLoader) -> int:
         """Infer the input size from the training data."""
-        for x_batch, _ in train_data:
-            return x_batch.shape[1]
+        if len(train_data) > 0:
+            return int(train_data.dataset.tensors[0].shape[1])  # type: ignore
         raise ValueError("Training data is empty, cannot infer input size.")
 
     def _initialize_training_state(

@@ -28,6 +28,11 @@ class ConcreteTrainer(BaseTrainer):
             y_true=np.random.randint(0, 2, size=len(dataset)),
         )
 
+    def _initialize_training_state(
+        self, train_data, train_dataset: BaseDataset
+    ) -> None:
+        return super()._initialize_training_state(train_data, train_dataset)
+
     def _execute_training(self, train_data, val_data) -> TrainingHistory:
         return TrainingHistory(train_loss=[0.5, 0.3, 0.1], val_loss=[0.6, 0.4, 0.2])
 

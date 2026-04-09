@@ -80,9 +80,9 @@ class SklearnTrainer(BaseTrainer):
                 label_array = event.label.values
                 labels_list.append(label_array)
 
-        assert len(signals_list) == len(
-            labels_list
-        ), "Mismatch between signals and labels"
+        assert len(signals_list) == len(labels_list), (
+            "Mismatch between signals and labels"
+        )
 
         X = np.concatenate(signals_list, axis=0)
         y = np.concatenate(labels_list, axis=0)
@@ -159,3 +159,8 @@ class SklearnTrainer(BaseTrainer):
         X, y_true = self._prepare_data(dataset)
         predictions = self.model.model.predict(X)
         return PredictionResult(y_pred=predictions, y_true=y_true)
+
+    def _initialize_training_state(
+        self, train_data, train_dataset: BaseDataset
+    ) -> None:
+        return super()._initialize_training_state(train_data, train_dataset)

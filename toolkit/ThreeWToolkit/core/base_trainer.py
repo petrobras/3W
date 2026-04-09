@@ -198,6 +198,9 @@ class BaseTrainer(ABC):
             str(len(val_dataset)) if val_dataset else "None",
         )
 
+        # 1. Reset random seeds for reproducibility on every train() call
+        self._set_random_seeds(self.config.seed)
+
         # 2. Validate datasets
         self._validate_datasets(train_dataset, val_dataset)
 
