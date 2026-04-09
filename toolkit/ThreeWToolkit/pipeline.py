@@ -159,6 +159,7 @@ class Pipeline(BasePipeline):
                 self.train_dataset,
                 self.config.num_folds,
                 self.config.stratify_by,
+                random_state=self.trainer.config.seed,
             )
             logger.info(
                 "Cross-validation completed with %d folds", self.config.num_folds
@@ -220,9 +221,14 @@ class Pipeline(BasePipeline):
         self,
         train_dataset: BaseDataset,
         num_folds: int,
-        stratify_by: list[str] = [],
+        stratify_by: list[str] | None = None,
+        random_state: int | None = None,
     ) -> CrossValidationResult:
-        splitter = KFoldSplitter(num_splits=num_folds, stratify_by=stratify_by)
+        splitter = KFoldSplitter(
+            num_splits=num_folds,
+            stratify_by=stratify_by or [],
+            random_state=random_state,
+        )
         training_results = []
         for fold_idx, (train_subset, val_subset) in enumerate(
             splitter.split_data(train_dataset)
@@ -236,9 +242,10 @@ class Pipeline(BasePipeline):
             fold_results=training_results,
             metadata={
                 "num_folds": num_folds,
-                "stratify_by": stratify_by,
-                "trainer_type": self.__class__.__name__,
+                "stratify_by": stratify_by or [],
+                "trainer_type": self.trainer.__class__.__name__,
                 "seed": self.trainer.config.seed,
+                "split_random_state": random_state,
             },
         )
 

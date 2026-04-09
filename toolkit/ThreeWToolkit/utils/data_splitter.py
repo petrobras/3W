@@ -14,8 +14,12 @@ class KFoldSplitter(BaseModel):
 
     num_splits: int = Field(
         default=5,
-        ge=1,
-        description="Number of times to split the dataset (for cross-validation)",
+        gt=1,
+        description="Number of folds for cross-validation (must be at least 2).",
+    )
+    random_state: int | None = Field(
+        default=None,
+        description="Random seed used when shuffling folds. Use None for non-deterministic splits.",
     )
 
     stratify_by: list[str] = Field(
@@ -29,7 +33,11 @@ class KFoldSplitter(BaseModel):
 
         if len(self.stratify_by) == 0:
             # No stratification, just use KFold
-            splitter = KFold(n_splits=self.num_splits, shuffle=True)
+            splitter = KFold(
+                n_splits=self.num_splits,
+                shuffle=True,
+                random_state=self.random_state,
+            )
             for train_idx, test_idx in splitter.split(range(len(data))):
                 yield SubsetDataset(data, train_idx), SubsetDataset(data, test_idx)
             return
@@ -56,7 +64,11 @@ class KFoldSplitter(BaseModel):
         stratify_y = [pseudo_label_to_int[label] for label in event_pseudo_label]
         stratify_x = list(range(len(data)))  # dummy x
 
-        splitter = StratifiedKFold(n_splits=self.num_splits, shuffle=True)
+        splitter = StratifiedKFold(
+            n_splits=self.num_splits,
+            shuffle=True,
+            random_state=self.random_state,
+        )
 
         for train_idx, test_idx in splitter.split(stratify_x, stratify_y):
             yield SubsetDataset(data, train_idx), SubsetDataset(data, test_idx)
