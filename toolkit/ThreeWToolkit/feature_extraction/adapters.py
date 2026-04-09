@@ -18,7 +18,8 @@ class SequentialFeatureAdapterConfig(BaseFeatureExtractorConfig):
 
 class ConcatFeatureAdapterConfig(BaseFeatureExtractorConfig):
     steps: list[BaseFeatureExtractorConfig] = Field(
-        ..., description="List of feature extractors whose outputs will be concatenated."
+        ...,
+        description="List of feature extractors whose outputs will be concatenated.",
     )
     _target: type = PrivateAttr(default_factory=lambda: ConcatFeatureAdapter)
 

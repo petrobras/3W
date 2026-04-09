@@ -52,14 +52,14 @@ class TestFillLabelsStrategies:
             assert original.label is not None, "Original labels should not be None."
             assert filled.label is not None, "Filled labels should not be None."
 
-            assert not filled.label.isna().any(), (
-                "Filled labels should not contain NaN values."
-            )
+            assert (
+                not filled.label.isna().any()
+            ), "Filled labels should not contain NaN values."
 
             nan_mask = original.label.isna()
-            assert (filled.label[nan_mask] == fill_value).all(), (
-                "Filled values should match the specified constant fill value."
-            )
+            assert (
+                filled.label[nan_mask] == fill_value
+            ).all(), "Filled values should match the specified constant fill value."
 
     @pytest.mark.parametrize(
         "fill_method",
@@ -78,9 +78,9 @@ class TestFillLabelsStrategies:
             assert original.label is not None, "Original labels should not be None."
             assert filled.label is not None, "Filled labels should not be None."
 
-            assert not filled.label.isna().any(), (
-                "Filled labels should not contain NaN values."
-            )
+            assert (
+                not filled.label.isna().any()
+            ), "Filled labels should not contain NaN values."
 
             original_na_mask = original.label.isna()
             nan_indices = original_na_mask[original_na_mask].index
@@ -98,16 +98,14 @@ class TestFillLabelsStrategies:
                     assert filled.label[idx] == original.label[nearest_left]
                 else:
                     if fill_method == "ffill":
-                        assert filled.label[idx] == original.label[nearest_left], (
-                            "Filled value should match nearest left non-NaN value for ffill strategy."
-                        )
+                        assert (
+                            filled.label[idx] == original.label[nearest_left]
+                        ), "Filled value should match nearest left non-NaN value for ffill strategy."
                     elif fill_method == "bfill":
-                        assert filled.label[idx] == original.label[nearest_right], (
-                            "Filled value should match nearest right non-NaN value for bfill strategy."
-                        )
+                        assert (
+                            filled.label[idx] == original.label[nearest_right]
+                        ), "Filled value should match nearest right non-NaN value for bfill strategy."
                     else:  # nearest
                         assert (filled.label[idx] == original.label[nearest_left]) or (
                             filled.label[idx] == original.label[nearest_right]
-                        ), (
-                            "Filled value should match either nearest left or right non-NaN value."
-                        )
+                        ), "Filled value should match either nearest left or right non-NaN value."

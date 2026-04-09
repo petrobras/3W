@@ -178,6 +178,8 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
         # unstack variable to get per-variable features in columns
         signal_df = cast(pd.DataFrame, signal_df.unstack("variable"))  # safe cast
         # flatten multiindex columns
-        signal_df.columns = ["_".join(col).strip() for col in signal_df.columns] 
+        signal_df.columns = ["_".join(col).strip() for col in signal_df.columns]
 
-        return DatasetOutputs(signal=signal_df, label=data.label, metadata=data.metadata)
+        return DatasetOutputs(
+            signal=signal_df, label=data.label, metadata=data.metadata
+        )

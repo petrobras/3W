@@ -4,7 +4,10 @@ from typing import cast
 from ..core.base_dataset import BaseDataset
 from ..core.dataset_outputs import DatasetOutputs
 from ..core.base_preprocessing import BasePreprocessingConfig, BasePreprocessing
-from ..core.base_feature_extractor import BaseFeatureExtractorConfig, BaseFeatureExtractor
+from ..core.base_feature_extractor import (
+    BaseFeatureExtractorConfig,
+    BaseFeatureExtractor,
+)
 from ..core.base_transform import BaseTransform, BaseTransformConfig
 from ..preprocessing.remap import RemapClass
 from ..preprocessing.adapters import SequentialPreprocessingAdapter

@@ -86,7 +86,9 @@ class TestTorchTrainerConfig:
         assert config.optimizer is optim.Adam
         assert config.criterion is nn.CrossEntropyLoss
 
-    @pytest.mark.parametrize("optimizer", [optim.Adam, optim.SGD, optim.AdamW, optim.RMSprop])
+    @pytest.mark.parametrize(
+        "optimizer", [optim.Adam, optim.SGD, optim.AdamW, optim.RMSprop]
+    )
     def test_valid_optimizers(self, mlp_config, optimizer):
         """All valid optimizers should be accepted."""
         config = TorchTrainerConfig(config_model=mlp_config, optimizer=optimizer)
@@ -95,7 +97,7 @@ class TestTorchTrainerConfig:
     def test_invalid_optimizer(self, mlp_config):
         """Invalid optimizer should raise ValueError."""
         with pytest.raises(ValidationError):
-            TorchTrainerConfig(config_model=mlp_config, optimizer="invalid") #type: ignore
+            TorchTrainerConfig(config_model=mlp_config, optimizer="invalid")  # type: ignore
 
     @pytest.mark.parametrize("criterion", [nn.CrossEntropyLoss, nn.MSELoss, nn.L1Loss])
     def test_valid_criteria(self, mlp_config, criterion):
@@ -106,7 +108,7 @@ class TestTorchTrainerConfig:
     def test_invalid_criterion(self, mlp_config):
         """Invalid criterion should raise ValueError."""
         with pytest.raises(ValidationError):
-            TorchTrainerConfig(config_model=mlp_config, criterion="invalid") # type: ignore
+            TorchTrainerConfig(config_model=mlp_config, criterion="invalid")  # type: ignore
 
     def test_invalid_batch_size_zero(self, mlp_config):
         """batch_size of 0 should raise ValidationError."""

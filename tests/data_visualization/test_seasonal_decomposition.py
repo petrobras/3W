@@ -20,7 +20,7 @@ class TestSeasonalDecompositionPlot:
         trend = 0.5 * time
         seasonal = 10 * np.sin(2 * np.pi * time / 12)
         noise = np.random.normal(0, 1, n_points)
-        
+
         self.dates = pd.date_range("2024-01-01", periods=n_points, freq="D")
         self.values = trend + seasonal + noise
         self.series = pd.Series(self.values, index=self.dates)
@@ -30,7 +30,7 @@ class TestSeasonalDecompositionPlot:
         plotter = SeasonalDecompositionPlot(
             series=self.series, model="additive", period=12
         )
-        
+
         assert plotter.series.equals(self.series)
         assert plotter.model == "additive"
         assert plotter.period == 12
@@ -38,7 +38,7 @@ class TestSeasonalDecompositionPlot:
     def test_initialization_default_model(self):
         """Test initialization with default model."""
         plotter = SeasonalDecompositionPlot(series=self.series)
-        
+
         assert plotter.model == "additive"
 
     def test_plot_returns_figure_and_axes(self):
@@ -77,9 +77,7 @@ class TestSeasonalDecompositionPlot:
     def test_plot_multiplicative_model(self):
         """Test plotting with multiplicative model."""
         # Create positive values for multiplicative model
-        positive_series = pd.Series(
-            np.abs(self.values) + 10, index=self.dates
-        )
+        positive_series = pd.Series(np.abs(self.values) + 10, index=self.dates)
         plotter = SeasonalDecompositionPlot(
             series=positive_series, model="multiplicative", period=12
         )
@@ -113,16 +111,14 @@ class TestSeasonalDecompositionPlot:
         short_series = pd.Series([1, 2, 3, 4, 5])
         plotter = SeasonalDecompositionPlot(series=short_series, period=2)
 
-        with pytest.raises(
-            ValueError, match="Series too short for decomposition"
-        ):
+        with pytest.raises(ValueError, match="Series too short for decomposition"):
             plotter.plot()
 
     def test_plot_with_nan_values(self):
         """Test that series with NaN values is handled (NaNs dropped)."""
         series_with_nan = self.series.copy()
         series_with_nan.iloc[10:15] = np.nan
-        
+
         plotter = SeasonalDecompositionPlot(
             series=series_with_nan, model="additive", period=12
         )
@@ -147,7 +143,7 @@ class TestSeasonalDecompositionPlot:
             series=self.series, model="additive", period=12
         )
         fig_orig, ax_orig = plt.subplots()
-        
+
         # Even with ax provided, function creates new figure with 4 subplots
         fig, ax = plotter.plot(ax=ax_orig)
 

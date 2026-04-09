@@ -12,9 +12,11 @@ from ..core.base_models import ModelsConfig, BaseModels
 
 logger = logging.getLogger(__name__)
 
+
 @runtime_checkable
 class SklearnModelProtocol(Protocol):
     """Protocol for sklearn models. Used for type hinting."""
+
     def fit(self, X, y, **fit_params): ...
     def score(self, X, y, **score_params) -> float: ...
     def predict(self, X) -> npt.NDArray[np.number]: ...
@@ -26,7 +28,8 @@ class SklearnModelsConfig(ModelsConfig):
     """Sklearn model configuration. Use with SklearnTrainer for training."""
 
     model_type: type[SklearnModelProtocol] = Field(
-        ..., description="Type of sklearn model to use. Must be one of the supported models."
+        ...,
+        description="Type of sklearn model to use. Must be one of the supported models.",
     )
 
     model_params: dict[str, int | float | str | bool | None] = Field(
@@ -38,7 +41,7 @@ class SklearnModelsConfig(ModelsConfig):
     @classmethod
     def check_model_params(cls, model_params, info):
         """Validate that model_type is supported."""
-        try: # try to instantiate the model with given parameters
+        try:  # try to instantiate the model with given parameters
             info.data["model_type"](**model_params)
         except Exception as e:
             raise ValueError(f"Invalid model_params: {e}")
@@ -51,7 +54,9 @@ class SklearnModels(BaseModels):
     def __init__(self, config: SklearnModelsConfig):
         self.config: SklearnModelsConfig = config
 
-        self.model: SklearnModelProtocol = self.config.model_type(**self.config.model_params)
+        self.model: SklearnModelProtocol = self.config.model_type(
+            **self.config.model_params
+        )
 
         self._feature_names: list[str] | None = None
 
@@ -61,7 +66,7 @@ class SklearnModels(BaseModels):
 
     def save(self, filename: str | Path) -> Path:
         """Save model to disk."""
-        path = Path(filename) # ensure path
+        path = Path(filename)  # ensure path
         if path.suffix and path.suffix not in {".pkl", ".pickle"}:
             raise ValueError(
                 "Sklearn models must be saved with .pkl or .pickle extension"
@@ -69,14 +74,14 @@ class SklearnModels(BaseModels):
         elif not path.suffix:
             path = path.with_suffix(".pkl")
             logger.warning(
-                "No file extension provided. Saving sklearn model with .pkl extension: %s", path
+                "No file extension provided. Saving sklearn model with .pkl extension: %s",
+                path,
             )
 
         with path.open("wb") as f:
             pickle.dump(self, f)
 
         return path
-
 
     @classmethod
     def load(cls, filename: str | Path) -> "SklearnModels":
@@ -85,7 +90,9 @@ class SklearnModels(BaseModels):
         with path.open("rb") as f:
             obj = pickle.load(f)
             if not isinstance(obj, cls):
-                raise ValueError(f"Loaded object is not a SklearnModels instance: {type(obj)}")
+                raise ValueError(
+                    f"Loaded object is not a SklearnModels instance: {type(obj)}"
+                )
             return obj
 
     def get_params(self) -> Mapping[str, object]:

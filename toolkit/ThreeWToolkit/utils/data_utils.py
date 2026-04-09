@@ -44,9 +44,9 @@ def load_config_in_dataset_ini() -> dict[str, configparser.SectionProxy]:
     return dict(dataset_ini)
 
 
-def get_config_dataset_ini() -> dict[
-    str, dict[str, str] | int | list[str] | dict[int, str]
-]:
+def get_config_dataset_ini() -> (
+    dict[str, dict[str, str] | int | list[str] | dict[int, str]]
+):
     """
     Load and process dataset configuration from the ``dataset.ini`` file.
 

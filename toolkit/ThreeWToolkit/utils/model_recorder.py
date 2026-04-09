@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class ModelRecorder:
     """Utility for saving and loading models to/from CHECKPOINT_DIR."""
+
     @staticmethod
     def save_transform(transform: BaseTransform, filename: str | Path) -> Path:
         """
@@ -55,7 +56,6 @@ class ModelRecorder:
         logger.info("Transform loaded from %s", path)
         return transform
 
-
     @staticmethod
     def save_model(model: BaseModels, filename: str | Path) -> Path:
         """
@@ -78,7 +78,9 @@ class ModelRecorder:
         return path
 
     @staticmethod
-    def load_model(filename: str | Path, model_type: type[BaseModels] | None = None) -> BaseModels:
+    def load_model(
+        filename: str | Path, model_type: type[BaseModels] | None = None
+    ) -> BaseModels:
         """
         Load a model from CHECKPOINT_DIR. Supports PyTorch (.pt, .pth) and Pickle (.pkl).
 
@@ -95,13 +97,23 @@ class ModelRecorder:
 
         if model_type is not None:
             model = model_type.load(path)
-        else: # Infer model type from file extension
+        else:  # Infer model type from file extension
             if path.suffix in {".pt", ".pth"}:
-                logger.debug("Inferring model type as TorchModels based on file extension %s", path.suffix)
-                model = TorchModels.load(path)  # Call the model's load method, which will use this utility
+                logger.debug(
+                    "Inferring model type as TorchModels based on file extension %s",
+                    path.suffix,
+                )
+                model = TorchModels.load(
+                    path
+                )  # Call the model's load method, which will use this utility
             elif path.suffix in {".pkl", ".pickle"}:
-                logger.debug("Inferring model type as SklearnModels based on file extension %s", path.suffix)
-                model = SklearnModels.load(path)  # Call the model's load method, which will use this utility
+                logger.debug(
+                    "Inferring model type as SklearnModels based on file extension %s",
+                    path.suffix,
+                )
+                model = SklearnModels.load(
+                    path
+                )  # Call the model's load method, which will use this utility
             else:
                 raise ValueError(
                     "Unsupported file extension for loading model. Supported: .pt, .pth, .pkl, .pickle"

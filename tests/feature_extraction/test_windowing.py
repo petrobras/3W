@@ -38,20 +38,20 @@ class TestWindowing:
         windowed_dataset = TransformedDataset(simple_dataset, windowing.transform)
 
         for original, windowed in zip(simple_dataset, windowed_dataset):
-            assert "window" in windowed.signal.index.names, (
-                "Expected 'window' in signal index names"
-            )
-            assert "variable" in windowed.signal.index.names, (
-                "Expected 'variable' in signal index names"
-            )
-            assert windowed.signal.shape[1] == win_size, (
-                f"Expected window size {win_size}, got {windowed.signal.shape[1]}"
-            )
+            assert (
+                "window" in windowed.signal.index.names
+            ), "Expected 'window' in signal index names"
+            assert (
+                "variable" in windowed.signal.index.names
+            ), "Expected 'variable' in signal index names"
+            assert (
+                windowed.signal.shape[1] == win_size
+            ), f"Expected window size {win_size}, got {windowed.signal.shape[1]}"
 
             windowed_vars = windowed.signal.index.get_level_values("variable").unique()
-            assert set(windowed_vars) == set(original.signal.columns), (
-                "Expected windowed variables to match original signal columns"
-            )
+            assert set(windowed_vars) == set(
+                original.signal.columns
+            ), "Expected windowed variables to match original signal columns"
 
     @pytest.mark.parametrize("win_size", [64, 128, 256])
     @pytest.mark.parametrize("overlap", [0.0, 0.25, 0.5, 0.75])
@@ -82,6 +82,6 @@ class TestWindowing:
                 expected_n_windows = int(np.floor(n_samples / step) + 1)
 
             actual_windows = windowed.signal.index.get_level_values("window").nunique()
-            assert actual_windows == expected_n_windows, (
-                f"Expected {expected_n_windows} windows, got {actual_windows}"
-            )
+            assert (
+                actual_windows == expected_n_windows
+            ), f"Expected {expected_n_windows} windows, got {actual_windows}"

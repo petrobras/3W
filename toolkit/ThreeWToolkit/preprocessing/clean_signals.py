@@ -14,18 +14,20 @@ from ..core.base_preprocessing import (
 
 from ..dataset.transformed_dataset import TransformedDataset
 
-_3W_CATEGORICAL_FEATURES = [  # List of categorical features to exclude from cleaning by default
-    "ESTADO-DHSV",
-    "ESTADO-M1",
-    "ESTADO-M2",
-    "ESTADO-PXO",
-    "ESTADO-SDV-GL",
-    "ESTADO-SDV-P",
-    "ESTADO-W1",
-    "ESTADO-W2",
-    "ESTADO-XO",
-    "state",
-]
+_3W_CATEGORICAL_FEATURES = (
+    [  # List of categorical features to exclude from cleaning by default
+        "ESTADO-DHSV",
+        "ESTADO-M1",
+        "ESTADO-M2",
+        "ESTADO-PXO",
+        "ESTADO-SDV-GL",
+        "ESTADO-SDV-P",
+        "ESTADO-W1",
+        "ESTADO-W2",
+        "ESTADO-XO",
+        "state",
+    ]
+)
 
 
 class CleanSignalsConfig(BasePreprocessingConfig):

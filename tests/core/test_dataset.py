@@ -62,7 +62,9 @@ class TestBaseDatasetIteration:
         for i in range(5):
             signal = pd.DataFrame({"sensor_0": [float(i)]})
             label = pd.Series([i % 2])
-            events.append(DatasetOutputs(signal=signal, label=label, metadata={"id": i}))
+            events.append(
+                DatasetOutputs(signal=signal, label=label, metadata={"id": i})
+            )
 
         dataset = SimpleDataset(events)
         iterated = list(dataset)

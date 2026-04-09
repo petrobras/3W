@@ -217,7 +217,7 @@ class TestSklearnTrainer:
 
         # Create test data with same number of features (not flattened timesteps)
         X_test = np.random.randn(10, 10)  # num_features only
-        predictions = trainer.model.model.predict(X_test) # type: ignore
+        predictions = trainer.model.model.predict(X_test)  # type: ignore
 
         assert len(predictions) == 10
         assert all(p in [0, 1] for p in predictions)
@@ -228,7 +228,7 @@ class TestSklearnTrainer:
         trainer.train(mock_dataset)
 
         X_test = np.random.randn(10, 10)  # num_features only
-        probs = trainer.model.model.predict_proba(X_test) # type: ignore
+        probs = trainer.model.model.predict_proba(X_test)  # type: ignore
 
         assert probs.shape == (10, 2)
         assert np.allclose(probs.sum(axis=1), 1.0, atol=1e-6)
@@ -413,7 +413,9 @@ class TestSklearnTrainerIntegration:
         )
 
         sklearn_config = SklearnModelsConfig(
-            model_type=LogisticRegression, model_params={"max_iter": 1000},)
+            model_type=LogisticRegression,
+            model_params={"max_iter": 1000},
+        )
         config = SklearnTrainerConfig(config_model=sklearn_config)
 
         trainer = SklearnTrainer(config)

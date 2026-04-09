@@ -58,6 +58,6 @@ class TestSklearnModelsConfig:
                 pytest.fail(
                     f"Saving/loading model type {model_type} raised an exception: {e}"
                 )
-            assert loaded_model.get_params() == model.get_params(), (
-                f"Loaded model parameters do not match original for {model_type}"
-            )
+            assert (
+                loaded_model.get_params() == model.get_params()
+            ), f"Loaded model parameters do not match original for {model_type}"

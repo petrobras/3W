@@ -77,11 +77,13 @@ class TestDatasetOutputsUsage:
 
     def test_access_signal_columns(self):
         """Test accessing signal columns."""
-        signal = pd.DataFrame({
-            "P-PDG": [100.0, 101.0],
-            "T-TPT": [50.0, 51.0],
-            "P-MON-CKP": [200.0, 201.0],
-        })
+        signal = pd.DataFrame(
+            {
+                "P-PDG": [100.0, 101.0],
+                "T-TPT": [50.0, 51.0],
+                "P-MON-CKP": [200.0, 201.0],
+            }
+        )
         label = pd.Series([0, 0])
 
         output = DatasetOutputs(signal=signal, label=label)
@@ -101,10 +103,12 @@ class TestDatasetOutputsUsage:
 
     def test_signal_with_nan_values(self):
         """Test that DatasetOutputs accepts NaN values in signal."""
-        signal = pd.DataFrame({
-            "sensor_0": [1.0, np.nan, 3.0],
-            "sensor_1": [np.nan, np.nan, np.nan],
-        })
+        signal = pd.DataFrame(
+            {
+                "sensor_0": [1.0, np.nan, 3.0],
+                "sensor_1": [np.nan, np.nan, np.nan],
+            }
+        )
         label = pd.Series([0, 0, 1])
 
         output = DatasetOutputs(signal=signal, label=label)

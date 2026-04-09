@@ -8,7 +8,6 @@ import torch.nn as nn
 from ..core.base_models import ParamsT
 from .torch_models import TorchModels, TorchModelsConfig
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -64,7 +63,6 @@ class MLP(TorchModels):
 
         layers.append(nn.Linear(in_size, self.config.output_size))
         self.model = nn.Sequential(*layers)
-
 
     def get_params(self) -> ParamsT:
         if self.model is None:

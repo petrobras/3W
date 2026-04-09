@@ -21,7 +21,7 @@ class TestPlotFFT:
     def test_initialization(self):
         """Test that PlotFFT initializes correctly."""
         plotter = PlotFFT(series=self.series, title="Test FFT")
-        
+
         assert plotter.series.equals(self.series)
         assert plotter.title == "Test FFT"
         assert plotter.sample_rate is None
@@ -30,7 +30,7 @@ class TestPlotFFT:
         """Test initialization with custom sample rate."""
         sample_rate = 1.0
         plotter = PlotFFT(series=self.series, sample_rate=sample_rate)
-        
+
         assert plotter.sample_rate == sample_rate
 
     def test_plot_returns_figure_and_axes(self):
@@ -46,7 +46,7 @@ class TestPlotFFT:
         """Test plotting on provided Axes."""
         plotter = PlotFFT(series=self.series)
         fig_orig, ax_orig = plt.subplots()
-        
+
         fig, ax = plotter.plot(ax=ax_orig)
 
         assert fig is fig_orig.figure
@@ -93,7 +93,7 @@ class TestPlotFFT:
         """Test that series with some NaN values plots correctly."""
         series_with_nan = self.series.copy()
         series_with_nan.iloc[10:15] = np.nan
-        
+
         plotter = PlotFFT(series=series_with_nan)
         fig, ax = plotter.plot()
 
@@ -145,7 +145,7 @@ class TestPlotFFT:
         freq = 5  # 5 Hz
         signal = np.sin(2 * np.pi * freq * t)
         series = pd.Series(signal)
-        
+
         plotter = PlotFFT(series=series, sample_rate=100.0)
         fig, ax = plotter.plot()
 

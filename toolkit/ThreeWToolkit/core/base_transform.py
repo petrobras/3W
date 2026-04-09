@@ -26,7 +26,8 @@ class BaseTransform(ABC):
 
     def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
         """Transform a single event using the fitted transformation step.
-        By default, this method raises NotImplementedError, as subclasses should implement it."""
+        By default, this method raises NotImplementedError, as subclasses should implement it.
+        """
         raise NotImplementedError(
             "Subclasses must implement the transform_event method."
         )

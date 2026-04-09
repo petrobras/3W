@@ -200,4 +200,6 @@ class Windowing(BaseFeatureExtractor):
         else:
             label_series = None
 
-        return DatasetOutputs(signal=signal_df, label=label_series, metadata=data.metadata)
+        return DatasetOutputs(
+            signal=signal_df, label=label_series, metadata=data.metadata
+        )

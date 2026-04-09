@@ -150,6 +150,7 @@ class Pipeline(BasePipeline):
         logger.info("Starting pipeline execution")
 
         # train or cross-validate training
+        training_result: TrainingResult | CrossValidationResult
         if self.config.task == "cross_validation":
             if self.config.num_folds is None:
                 raise ValueError(

@@ -1,4 +1,4 @@
-""" Dataset adapter for transformed datasets. """
+"""Dataset adapter for transformed datasets."""
 
 from typing import Callable
 from ..core.base_dataset import BaseDataset, DatasetOutputs
@@ -7,8 +7,12 @@ from ..core.base_dataset import BaseDataset, DatasetOutputs
 class TransformedDataset(BaseDataset):
     """Dataset class for transformed datasets."""
 
-    def __init__(self, dataset: BaseDataset, transform: Callable[[DatasetOutputs], DatasetOutputs]):
-        """ Initialize the TransformedDataset with the original dataset and the transformation function. """
+    def __init__(
+        self,
+        dataset: BaseDataset,
+        transform: Callable[[DatasetOutputs], DatasetOutputs],
+    ):
+        """Initialize the TransformedDataset with the original dataset and the transformation function."""
         self.dataset = dataset
         self.transform = transform
 

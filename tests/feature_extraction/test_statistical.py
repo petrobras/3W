@@ -11,7 +11,6 @@ from ThreeWToolkit.feature_extraction.statistical import (
     _STATISTICAL_FEATURES,
 )
 
-
 _NUM_SENSORS = 10
 
 
@@ -63,17 +62,17 @@ class TestExtractStatisticalFeatures:
 
         for event in simple_dataset.events:
             transformed = feature_extractor.transform(event)
-            assert not transformed.signal.isna().any().any(), (
-                "Transformed data should not contain NaN values."
-            )
+            assert (
+                not transformed.signal.isna().any().any()
+            ), "Transformed data should not contain NaN values."
 
-            assert transformed.signal.shape[0] > 0, (
-                "Transformed data should have at least one row."
-            )
-            assert transformed.signal.shape[1] == len(expected_names), (
-                f"Expected {len(expected_names)} features,\
+            assert (
+                transformed.signal.shape[0] > 0
+            ), "Transformed data should have at least one row."
+            assert transformed.signal.shape[1] == len(
+                expected_names
+            ), f"Expected {len(expected_names)} features,\
                     but got {transformed.signal.shape[1]}."
-            )
-            assert set(transformed.signal.columns) == set(expected_names), (
-                "Expected feature names do not match actual feature names."
-            )
+            assert set(transformed.signal.columns) == set(
+                expected_names
+            ), "Expected feature names do not match actual feature names."

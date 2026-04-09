@@ -22,7 +22,7 @@ class ConcreteTrainer(BaseTrainer):
     def _prepare_data(self, dataset, shuffle=True):
         return dataset
 
-    def predict(self, dataset: BaseDataset)-> PredictionResult:
+    def predict(self, dataset: BaseDataset) -> PredictionResult:
         return PredictionResult(
             y_pred=np.random.randint(0, 2, size=len(dataset)),
             y_true=np.random.randint(0, 2, size=len(dataset)),

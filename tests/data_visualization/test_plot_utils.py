@@ -54,7 +54,7 @@ class TestCreateSubplotGrid:
         nrows, ncols = 2, 3
         default_width_per_col = 5
         default_height_per_row = 4
-        
+
         fig, axes = create_subplot_grid(
             nrows=nrows,
             ncols=ncols,
@@ -64,7 +64,7 @@ class TestCreateSubplotGrid:
 
         expected_width = default_width_per_col * ncols
         expected_height = default_height_per_row * nrows
-        
+
         assert fig.get_size_inches()[0] == expected_width
         assert fig.get_size_inches()[1] == expected_height
         plt.close(fig)
@@ -91,7 +91,7 @@ class TestCreateSubplotGrid:
             for j in range(3):
                 ax = axes[i, j]
                 assert ax is not None
-        
+
         plt.close(fig)
 
     def test_single_subplot_indexing(self):

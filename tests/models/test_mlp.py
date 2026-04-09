@@ -48,7 +48,7 @@ class TestMLPConfig:
     def test_invalid_activation_function(self):
         """Invalid activation function should raise ValueError."""
         with pytest.raises(ValidationError):
-            MLPConfig(hidden_sizes=(32,), output_size=2, activation_function=None) # type: ignore
+            MLPConfig(hidden_sizes=(32,), output_size=2, activation_function=None)  # type: ignore
 
     def test_invalid_input_size_zero(self):
         """input_size of 0 should raise ValueError."""
@@ -123,7 +123,7 @@ class TestMLP:
         assert model.model is not None
 
     def test_model_creation_without_input_size(self, dynamic_config):
-        """Model without input_size should fail building """
+        """Model without input_size should fail building"""
 
         with pytest.raises(ValueError):
             model = MLP(dynamic_config)
@@ -191,7 +191,9 @@ class TestMLP:
         # Linear layers + activation layers
         # Expected: Linear(100, 64), ReLU, Linear(64, 32), ReLU, Linear(32, 3)
         # Note: ReLU may be shared in Sequential, so count Linear layers
-        linear_layers = [layer for layer in layers if isinstance(layer, torch.nn.Linear)]
+        linear_layers = [
+            layer for layer in layers if isinstance(layer, torch.nn.Linear)
+        ]
         assert len(linear_layers) == 3
         assert linear_layers[0].in_features == 100
         assert linear_layers[0].out_features == 64

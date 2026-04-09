@@ -42,9 +42,7 @@ class ParquetDatasetConfig(BaseDatasetConfig):
         description='List of files to load if split=="list".',
     )
 
-    event_type: (
-        list[Literal["simulated", "real", "drawn"]] | None
-    ) = Field(
+    event_type: list[Literal["simulated", "real", "drawn"]] | None = Field(
         default=None,
         description="Event types to include. (e.g., SIMULATED, REAL, DRAWN)",
     )
@@ -111,10 +109,8 @@ class ParquetDataset(BaseDataset):
 
         # Check if dataset version is valid
         if self.config.version not in DATASET_VALIDATION_RULES:
-            raise ValueError(
-                f"Dataset version {self.config.version} is not valid. \
-                Supported versions are: {list(DATASET_VALIDATION_RULES.keys())}"
-            )
+            raise ValueError(f"Dataset version {self.config.version} is not valid. \
+                Supported versions are: {list(DATASET_VALIDATION_RULES.keys())}")
 
         # TODO: Implement dataset splitting for train, val, test
         if self.config.split not in [None, "list"]:
@@ -219,7 +215,10 @@ class ParquetDataset(BaseDataset):
         Check if the event file name matches one of the requested event types.
         """
         if self.config.event_type is not None:
-            return any(self._get_event_type_from_filename(event) == t for t in self.config.event_type)
+            return any(
+                self._get_event_type_from_filename(event) == t
+                for t in self.config.event_type
+            )
         else:  # Default: accept all
             return True
 

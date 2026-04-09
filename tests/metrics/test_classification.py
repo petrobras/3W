@@ -20,9 +20,9 @@ class TestAccuracyScore:
         "y_true,y_pred,expected",
         [
             ([1, 0, 1, 1], [1, 0, 0, 1], 0.75),  # Basic case: 3/4 correct
-            ([1, 0, 1, 1], [1, 0, 1, 1], 1.0),   # Perfect prediction
-            ([0, 0, 0, 1], [1, 1, 1, 0], 0.0),   # All wrong
-            ([1, 0], [1, 0], 1.0),               # Simple binary
+            ([1, 0, 1, 1], [1, 0, 1, 1], 1.0),  # Perfect prediction
+            ([0, 0, 0, 1], [1, 1, 1, 0], 0.0),  # All wrong
+            ([1, 0], [1, 0], 1.0),  # Simple binary
         ],
     )
     def test_accuracy_basic(self, y_true, y_pred, expected):
@@ -51,7 +51,11 @@ class TestAccuracyScore:
             (123, [1, 0, 1], (TypeError, Exception)),  # Invalid y_true type
             ([1, 0, 1], "wrong", (TypeError, Exception)),  # Invalid y_pred type
             ([1, 0], [1, 0, 1], ValueError),  # Shape mismatch
-            ([1, 0, 1], [1, 0, 1], ValueError),  # Sample weight shape mismatch (tested separately)
+            (
+                [1, 0, 1],
+                [1, 0, 1],
+                ValueError,
+            ),  # Sample weight shape mismatch (tested separately)
         ],
     )
     def test_accuracy_errors(self, y_true, y_pred, error_type):
@@ -156,7 +160,12 @@ class TestAveragePrecisionScore:
             ("not_array", [0.8, 0.6, 0.7], {}, (TypeError, Exception)),
             ([1, 0, 1], [0.8, 0.5], {}, ValueError),  # Shape mismatch
             ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], {"average": 123}, ValueError),
-            ([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8], {"sample_weight": [0.5, 0.5]}, ValueError),
+            (
+                [0, 0, 1, 1],
+                [0.1, 0.4, 0.35, 0.8],
+                {"sample_weight": [0.5, 0.5]},
+                ValueError,
+            ),
         ],
     )
     def test_average_precision_errors(self, y_true, y_pred, kwargs, error_type):
@@ -184,7 +193,7 @@ class TestPrecisionScore:
         """Test precision_score with zero_division parameter."""
         y_true = [0, 0, 0]
         y_pred = [1, 1, 1]
-        
+
         result = precision_score(
             y_true=y_true, y_pred=y_pred, average="binary", zero_division=0
         )
@@ -210,7 +219,7 @@ class TestRecallScore:
         """Test recall_score with zero_division parameter."""
         y_true = [0, 0, 0]
         y_pred = [0, 0, 0]
-        
+
         result = recall_score(
             y_true=y_true, y_pred=y_pred, average="binary", zero_division=0
         )
@@ -236,7 +245,7 @@ class TestF1Score:
         """Test f1_score with zero_division parameter."""
         y_true = [0, 0, 0]
         y_pred = [1, 1, 1]
-        
+
         result = f1_score(
             y_true=y_true, y_pred=y_pred, average="binary", zero_division=0
         )
@@ -302,10 +311,14 @@ class TestInputTypes:
         """Test metrics with numpy arrays."""
         y_true_np = np.array(y_true)
         y_pred_np = np.array(y_pred)
-        
-        kwargs = {"average": "binary"} if metric_func in [precision_score, recall_score, f1_score] else {}
+
+        kwargs = (
+            {"average": "binary"}
+            if metric_func in [precision_score, recall_score, f1_score]
+            else {}
+        )
         result = metric_func(y_true=y_true_np, y_pred=y_pred_np, **kwargs)
-        
+
         assert isinstance(result, (float, np.floating))
 
     @pytest.mark.parametrize(
@@ -319,6 +332,6 @@ class TestInputTypes:
         """Test metrics with pandas Series."""
         y_true_pd = pd.Series(y_true)
         y_pred_pd = pd.Series(y_pred)
-        
+
         result = metric_func(y_true=y_true_pd, y_pred=y_pred_pd)
         assert isinstance(result, (float, np.floating))

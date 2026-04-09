@@ -4,7 +4,12 @@ import os
 import logging
 import numpy as np
 from pydantic import Field, PrivateAttr
-from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, PredictionResult, TrainingHistory
+from ..core.base_trainer import (
+    BaseTrainer,
+    BaseTrainerConfig,
+    PredictionResult,
+    TrainingHistory,
+)
 from ..core.base_dataset import BaseDataset
 from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
 
@@ -52,8 +57,7 @@ class SklearnTrainer(BaseTrainer):
         )
 
     def _prepare_data(
-        self, dataset: BaseDataset,
-        shuffle: bool = True
+        self, dataset: BaseDataset, shuffle: bool = True
     ) -> tuple[np.ndarray, np.ndarray]:
         """Convert dataset to numpy arrays (X, y)."""
         _ = shuffle  # Sklearn models typically handle shuffling internally
@@ -76,7 +80,9 @@ class SklearnTrainer(BaseTrainer):
                 label_array = event.label.values
                 labels_list.append(label_array)
 
-        assert len(signals_list) == len(labels_list), "Mismatch between signals and labels"
+        assert len(signals_list) == len(
+            labels_list
+        ), "Mismatch between signals and labels"
 
         X = np.concatenate(signals_list, axis=0)
         y = np.concatenate(labels_list, axis=0)
@@ -110,7 +116,10 @@ class SklearnTrainer(BaseTrainer):
                     )
                 class_weights = self.config.manual_class_weights
             else:
-                logger.info("Calculating class weights using strategy: %s", self.config.class_weight_strategy)
+                logger.info(
+                    "Calculating class weights using strategy: %s",
+                    self.config.class_weight_strategy,
+                )
                 unique_classes, class_counts = np.unique(y_train, return_counts=True)
                 total_samples = len(y_train)
                 n_classes = len(unique_classes)

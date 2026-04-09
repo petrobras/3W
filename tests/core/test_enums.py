@@ -27,8 +27,14 @@ class TestModelTypeEnum:
     def test_all_model_types_defined(self):
         """Test all expected model types are defined."""
         expected = {
-            "MLP", "LogisticRegression", "RandomForest", "GradientBoosting",
-            "SVM", "KNN", "DecisionTree", "NaiveBayes"
+            "MLP",
+            "LogisticRegression",
+            "RandomForest",
+            "GradientBoosting",
+            "SVM",
+            "KNN",
+            "DecisionTree",
+            "NaiveBayes",
         }
         actual = {e.value for e in ModelTypeEnum}
         assert actual == expected

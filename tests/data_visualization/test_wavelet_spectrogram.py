@@ -23,14 +23,14 @@ class TestWaveletSpectrogramPlot:
     def test_initialization(self):
         """Test that WaveletSpectrogramPlot initializes correctly."""
         plotter = WaveletSpectrogramPlot(series=self.series, title="Test Spectrogram")
-        
+
         assert plotter.series.equals(self.series)
         assert plotter.title == "Test Spectrogram"
 
     def test_initialization_default_title(self):
         """Test initialization with default title."""
         plotter = WaveletSpectrogramPlot(series=self.series)
-        
+
         assert plotter.title == "Wavelet Spectrogram"
 
     def test_plot_returns_figure_and_axes(self):
@@ -46,7 +46,7 @@ class TestWaveletSpectrogramPlot:
         """Test plotting on provided Axes."""
         plotter = WaveletSpectrogramPlot(series=self.series)
         fig_orig, ax_orig = plt.subplots()
-        
+
         fig, ax = plotter.plot(ax=ax_orig)
 
         assert fig is fig_orig.figure
@@ -103,12 +103,12 @@ class TestWaveletSpectrogramPlot:
         """Test plotting with series of different lengths."""
         short_series = pd.Series(np.random.randn(10))
         long_series = pd.Series(np.random.randn(500))
-        
+
         plotter_short = WaveletSpectrogramPlot(series=short_series)
         fig_short, ax_short = plotter_short.plot()
         assert isinstance(fig_short, Figure)
         plt.close(fig_short)
-        
+
         plotter_long = WaveletSpectrogramPlot(series=long_series)
         fig_long, ax_long = plotter_long.plot()
         assert isinstance(fig_long, Figure)
@@ -136,7 +136,7 @@ class TestWaveletSpectrogramPlot:
             # extent is (left, right, bottom, top)
             # right should match series length
             assert extent[1] == len(self.series)
-        
+
         plt.close(fig)
 
     def test_plot_creates_mock_data(self):
@@ -147,7 +147,7 @@ class TestWaveletSpectrogramPlot:
         # Should have an image (the spectrogram)
         images = ax.get_images()
         assert len(images) > 0
-        
+
         # The image should have data
         image_data = images[0].get_array()
         assert image_data is not None

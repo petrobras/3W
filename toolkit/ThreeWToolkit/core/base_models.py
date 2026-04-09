@@ -17,7 +17,9 @@ ParamsT: TypeAlias = (
 
 class ModelsConfig(BaseModel, Instantiable):
     """Base configuration class for all models."""
+
     _target: type["BaseModels"]
+
 
 class BaseModels(ABC):
     """
