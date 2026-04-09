@@ -159,8 +159,9 @@ class ModelAssessment(BaseAssessment):
         self.config = config
         self.metric_registry = MetricRegistry()
 
-        if self.config.generate_report:
-            self._report_generator = ReportGeneration
+        self._report_generator = (
+            ReportGeneration if self.config.generate_report else None
+        )
 
     def evaluate(
         self,
@@ -289,7 +290,7 @@ class ModelAssessment(BaseAssessment):
         if self.results is None:
             raise RuntimeError("No results to generate report.")
 
-        if not hasattr(self, "_report_generation_class"):
+        if self._report_generator is None:
             logger.warning("ReportGeneration not available.")
             return
 
