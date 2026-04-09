@@ -112,7 +112,6 @@ class ImputeMissing(BasePreprocessing):
         elif self.config.strategy == "mean":
             if self.global_average is None:
                 raise ValueError("Global average not computed. Call fit() first.")
-            print(self.global_average)
             signal = signal.fillna(self.global_average)
 
         elif (
