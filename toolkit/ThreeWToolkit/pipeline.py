@@ -74,14 +74,6 @@ class PipelineConfig(BasePipelineConfig):
         default="experiment", description="Name for this experiment run."
     )
 
-    # Task settings
-    metrics: list[str] = Field(
-        default_factory=lambda: ["accuracy"], description="Metrics to compute."
-    )
-    generate_report: bool = Field(
-        default=True, description="Whether to generate assessment report."
-    )
-
     _target: type = PrivateAttr(default_factory=lambda: Pipeline)
     model_config = {"arbitrary_types_allowed": True}
 
@@ -129,12 +121,9 @@ class Pipeline(BasePipeline):
 
         self.train_dataset: BaseDataset = config.train_dataset
 
-        self.val_dataset: BaseDataset | None = (
-            config.val_dataset if config.val_dataset is not None else None
-        )
-        self.test_dataset: BaseDataset | None = (
-            config.test_dataset if config.test_dataset is not None else None
-        )
+        self.val_dataset: BaseDataset | None = config.val_dataset or None
+
+        self.test_dataset: BaseDataset | None = config.test_dataset or None
 
         self.transform: BaseTransform | None = (
             config.transform_config.build()
@@ -160,20 +149,21 @@ class Pipeline(BasePipeline):
         """
         logger.info("Starting pipeline execution")
 
+        # train or cross-validate training
         if self.config.task == "cross_validation":
             if self.config.num_folds is None:
                 raise ValueError(
                     "num_folds must be specified for cross-validation task"
                 )
-            cv_result = self.cross_validate(
-                self.train_dataset, self.config.num_folds, self.config.stratify_by
+            training_result = self.cross_validate(
+                self.train_dataset,
+                self.config.num_folds,
+                self.config.stratify_by,
             )
-            training_result = cv_result.fold_results[0]  # First fold for evaluation
             logger.info(
                 "Cross-validation completed with %d folds", self.config.num_folds
             )
         elif self.config.task == "training":
-            cv_result = None
             training_result = self.train(self.train_dataset, self.val_dataset)
             logger.info("Training completed")
         else:
@@ -195,7 +185,7 @@ class Pipeline(BasePipeline):
                 logger.info("Transform saved to %s", transform_path)
 
             model_path = self.model_recorder.save_model(
-                training_result.model, self.config.experiment_name
+                self.trainer.model, self.config.experiment_name
             )
             logger.info("Model saved to %s", model_path)
 

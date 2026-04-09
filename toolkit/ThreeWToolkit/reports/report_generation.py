@@ -449,7 +449,7 @@ class ReportGeneration:
             "generation_date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
             "calculated_metrics": self.calculated_metrics,
             "model_type": type(self.model).__name__,
-            "model_config": self.model.config.__dict__,
+            "model_config": self.model.config.dict(),
             "train_samples": self.train_len or 0,
             "test_samples": self.test_len or 0,
             "plot_data": plot_data,

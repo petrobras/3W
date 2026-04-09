@@ -158,10 +158,43 @@ class ModelAssessment(BaseAssessment):
         """
         self.config = config
         self.metric_registry = MetricRegistry()
+        self._cv_summary: dict[str, float] | None = None
 
         self._report_generator = (
             ReportGeneration if self.config.generate_report else None
         )
+
+    def _compute_cv_summary(
+        self, training_results: CrossValidationResult
+    ) -> dict[str, float]:
+        """Compute final loss mean/std across folds."""
+        train_final_losses = np.array(
+            [fold.history.train_loss[-1] for fold in training_results.fold_results],
+            dtype=float,
+        )
+
+        summary = {
+            "num_folds": float(len(training_results.fold_results)),
+            "train_loss_mean": float(np.mean(train_final_losses)),
+            "train_loss_std": float(
+                np.std(train_final_losses, ddof=1)
+                if len(train_final_losses) > 1
+                else 0.0
+            ),
+        }
+
+        val_final_losses = [
+            fold.history.val_loss[-1]
+            for fold in training_results.fold_results
+            if fold.history.val_loss is not None and len(fold.history.val_loss) > 0
+        ]
+        if val_final_losses:
+            val_array = np.array(val_final_losses, dtype=float)
+            summary["val_loss_mean"] = float(np.mean(val_array))
+            summary["val_loss_std"] = float(
+                np.std(val_array, ddof=1) if len(val_array) > 1 else 0.0
+            )
+        return summary
 
     def evaluate(
         self,
@@ -180,32 +213,41 @@ class ModelAssessment(BaseAssessment):
         metric_fns = self.metric_registry.resolve(
             task_type=self.config.task_type, metrics=self.config.metrics
         )
-        if predictions is None:
-            raise ValueError(
-                "True labels (y_true) are required for metric calculation."
-            )
 
-        if predictions.y_true is None:
+        self._cv_summary = None
+        if isinstance(training_results, CrossValidationResult):
+            if len(training_results.fold_results) == 0:
+                raise ValueError("CrossValidationResult has no fold results.")
+            model = training_results.fold_results[-1].model
+            training_history = None
+            self._cv_summary = self._compute_cv_summary(training_results)
+        else:
+            model = training_results.model
+            training_history = training_results.history
+
+        metrics = None
+        if predictions is not None and predictions.y_true is not None:
+            metrics = {
+                k: float(fn(predictions.y_true, predictions.y_pred))
+                for k, fn in metric_fns.items()
+            }
+        elif not isinstance(training_results, CrossValidationResult):
             raise ValueError(
                 "True labels (y_true) are required for metric calculation."
             )
-        metrics = {
-            k: float(fn(predictions.y_true, predictions.y_pred))
-            for k, fn in metric_fns.items()
-        }
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         experiment_dir = self.config.output_dir / f"exp_{timestamp}"
         experiment_dir.mkdir(parents=True, exist_ok=True)
 
         self.results = AssessmentOutput(
-            model_name=training_results.model.model_name,
+            model=model,
             task_type=self.config.task_type,
             timestamp=timestamp,
-            predictions=predictions.y_pred,
-            true_values=predictions.y_true,
+            predictions=predictions.y_pred if predictions is not None else None,
+            true_values=predictions.y_true if predictions is not None else None,
             metrics=metrics,
-            training_history=training_results.history,
+            training_history=training_history,
             experiment_dir=str(experiment_dir),
         )
 
@@ -228,7 +270,7 @@ class ModelAssessment(BaseAssessment):
         lines = [
             "Model Assessment Summary",
             "========================",
-            f"Model: {self.results.model_name}",
+            f"Model: {type(self.results.model).__name__}",
             f"Task Type: {self.results.task_type.value}",
             f"Timestamp: {self.results.timestamp}",
             "",
@@ -238,6 +280,23 @@ class ModelAssessment(BaseAssessment):
         if self.results.metrics:
             for m, v in self.results.metrics.items():
                 lines.append(f"  {m}: {v:.4f}")
+
+        if self._cv_summary is not None:
+            lines.append("")
+            lines.append("Cross-Validation Summary:")
+            lines.append(f"  Folds: {int(self._cv_summary['num_folds'])}")
+            lines.append(
+                f"  Final train_loss: {self._cv_summary['train_loss_mean']:.4f} ± "
+                f"{self._cv_summary['train_loss_std']:.4f}"
+            )
+            if (
+                "val_loss_mean" in self._cv_summary
+                and "val_loss_std" in self._cv_summary
+            ):
+                lines.append(
+                    f"  Final val_loss: {self._cv_summary['val_loss_mean']:.4f} ± "
+                    f"{self._cv_summary['val_loss_std']:.4f}"
+                )
 
         if self.results.training_history:
             lines.append("")
@@ -257,22 +316,23 @@ class ModelAssessment(BaseAssessment):
 
         r = self.results
 
-        predictions_df = pd.DataFrame(
-            {
-                "true_values": r.true_values,
-                "predictions": r.predictions,
-            }
-        )
-        predictions_df["model_name"] = r.model_name
-        predictions_df["task_type"] = r.task_type.value
-        predictions_df["timestamp"] = r.timestamp
-        predictions_df.to_csv(
-            self.experiment_dir / f"predictions_{r.timestamp}.csv",
-            index=False,
-        )
+        if r.true_values is not None and r.predictions is not None:
+            predictions_df = pd.DataFrame(
+                {
+                    "true_values": r.true_values,
+                    "predictions": r.predictions,
+                }
+            )
+            predictions_df["model_name"] = type(r.model).__name__
+            predictions_df["task_type"] = r.task_type.value
+            predictions_df["timestamp"] = r.timestamp
+            predictions_df.to_csv(
+                self.experiment_dir / f"predictions_{r.timestamp}.csv",
+                index=False,
+            )
 
-        metrics_df = pd.DataFrame([r.metrics])
-        metrics_df["model_name"] = r.model_name
+        metrics_df = pd.DataFrame([r.metrics or {}])
+        metrics_df["model_name"] = type(r.model).__name__
         metrics_df["task_type"] = r.task_type.value
         metrics_df["timestamp"] = r.timestamp
         metrics_df.to_csv(
@@ -296,11 +356,11 @@ class ModelAssessment(BaseAssessment):
 
         title = (
             self.config.report_title
-            or f"Model Assessment Report - {self.results.model_name}"
+            or f"Model Assessment Report - {type(self.results.model).__name__} - {self.results.task_type.value}"
         )
 
         report_generator = self._report_generator(
-            model=self.results.model_name,
+            model=self.results.model,
             train_len=None,
             test_len=None,
             predictions=pd.Series(self.results.predictions),

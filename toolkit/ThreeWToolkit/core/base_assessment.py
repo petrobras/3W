@@ -2,6 +2,7 @@
 
 from abc import ABC
 
+from ThreeWToolkit.core.base_models import BaseModels
 from pydantic import BaseModel, ConfigDict, Field
 import numpy as np
 
@@ -13,7 +14,7 @@ from ..core.base_trainer import TrainingHistory
 class AssessmentOutput(BaseModel):
     """Output container for model assessment results."""
 
-    model_name: str = Field(..., description="Name of the model.")
+    model: BaseModels = Field(..., description="Trained model instance.")
     task_type: TaskTypeEnum = Field(..., description="Type of ML task.")
     timestamp: str = Field(..., description="Timestamp of the assessment.")
 
