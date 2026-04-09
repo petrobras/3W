@@ -51,5 +51,9 @@ class RenameColumns(BasePreprocessing):
                 f"RenameColumns: The following columns specified in columns_map are not present in the signal DataFrame: {missing_columns}"
             )
 
-        data.signal = data.signal.rename(columns=self.config.columns_map)
-        return data
+        renamed_signal = data.signal.rename(columns=self.config.columns_map)
+        return DatasetOutputs(
+            signal=renamed_signal,
+            label=data.label,
+            metadata=data.metadata.copy(),
+        )

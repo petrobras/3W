@@ -50,10 +50,15 @@ class RemapClass(BasePreprocessing):
         if self.class_map is None:
             raise ValueError("RemapClass: class_map is not set. Call fit first.")
 
+        mapped_label = data.label
         if data.label is not None:
-            data.label = data.label.map(self.class_map)
-            if data.label.isna().any():
+            mapped_label = data.label.map(self.class_map)
+            if mapped_label.isna().any():
                 # If there are any labels that were not in the class_map, they will be NaN after mapping.
                 raise ValueError("Some labels were not in the class_map.")
 
-        return data
+        return DatasetOutputs(
+            signal=data.signal,
+            label=mapped_label,
+            metadata=data.metadata.copy(),
+        )
