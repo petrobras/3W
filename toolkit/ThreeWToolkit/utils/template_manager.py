@@ -35,7 +35,7 @@ def copy_html_support_files(html_dir: Path, assets_dir: Path, report_path: Path)
             shutil.copytree(assets_dir, assets_dir_dest)
 
     except Exception as e:
-        logger.warning(f"Could not copy HTML support files: {e}")
+        logger.warning("Could not copy HTML support files: %s", e)
 
 
 def copy_latex_support_files(latex_dir: Path, report_path: Path):
@@ -67,4 +67,4 @@ def copy_latex_support_files(latex_dir: Path, report_path: Path):
             shutil.copytree(assets_dir_src, assets_dir_dest)
 
     except Exception as e:
-        logger.warning(f"Could not copy LaTeX support files: {e}")
+        logger.warning("Could not copy LaTeX support files: %s", e)

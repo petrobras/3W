@@ -163,4 +163,4 @@ class SklearnTrainer(BaseTrainer):
     def _initialize_training_state(
         self, train_data, train_dataset: BaseDataset
     ) -> None:
-        return super()._initialize_training_state(train_data, train_dataset)
+        return

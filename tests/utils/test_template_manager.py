@@ -68,7 +68,7 @@ def test_replaces_existing_figures_directory(tmp_path: Path):
     assert not (report_path / "assets" / "old_plot.svg").exists()
 
 
-def test_fails_if_no_css_files_found(tmp_path: Path, capsys):
+def test_fails_if_no_css_files_found(tmp_path: Path, caplog):
     """
     Tests that the function fails and prints a warning if no .css files are found.
     """
@@ -84,18 +84,17 @@ def test_fails_if_no_css_files_found(tmp_path: Path, capsys):
     report_path.mkdir()
 
     # 2. Act
-    copy_html_support_files(html_dir, assets_dir, report_path)
+    with caplog.at_level("WARNING"):
+        copy_html_support_files(html_dir, assets_dir, report_path)
 
     # 3. Assert
-    captured = capsys.readouterr()
-    # Note: The warning message incorrectly says "LaTeX". We test for the actual output.
-    assert "Warning: Could not copy LaTeX support files" in captured.out
-    assert "No .css files or 'assets' directory found to copy" in captured.out
+    assert "Could not copy HTML support files" in caplog.text
+    assert "No .css files or 'assets' directory found to copy" in caplog.text
     # Ensure no files were copied
     assert not list(report_path.iterdir())
 
 
-def test_fails_if_assets_dir_does_not_exist(tmp_path: Path, capsys):
+def test_fails_if_assets_dir_does_not_exist(tmp_path: Path, caplog):
     """
     Tests that the function fails and prints a warning if the assets directory
     does not exist.
@@ -112,12 +111,12 @@ def test_fails_if_assets_dir_does_not_exist(tmp_path: Path, capsys):
     report_path.mkdir()
 
     # 2. Act
-    copy_html_support_files(html_dir, non_existent_assets_dir, report_path)
+    with caplog.at_level("WARNING"):
+        copy_html_support_files(html_dir, non_existent_assets_dir, report_path)
 
     # 3. Assert
-    captured = capsys.readouterr()
-    assert "Warning: Could not copy LaTeX support files" in captured.out
-    assert "No 'assets' directory found to copy" in captured.out
+    assert "Could not copy HTML support files" in caplog.text
+    assert "No 'assets' directory found to copy" in caplog.text
     # Ensure no files were copied
     assert not list(report_path.iterdir())
 
@@ -235,7 +234,7 @@ def test_no_assets_directory_to_copy(tmp_path: Path):
     assert not (report_path / "assets").exists()
 
 
-def test_source_directory_does_not_exist(tmp_path: Path, capsys):
+def test_source_directory_does_not_exist(tmp_path: Path, caplog):
     """
     Tests that the function handles a non-existent source directory gracefully
     by catching the exception and printing a warning.
@@ -246,11 +245,10 @@ def test_source_directory_does_not_exist(tmp_path: Path, capsys):
     report_path.mkdir()
 
     # 2. Act
-    copy_latex_support_files(non_existent_dir, report_path)
+    with caplog.at_level("WARNING"):
+        copy_latex_support_files(non_existent_dir, report_path)
 
     # 3. Assert
-    captured = capsys.readouterr()
-    # Check that the warning message was printed to stdout
-    assert "Warning: Could not copy LaTeX support files" in captured.out
+    assert "Could not copy LaTeX support files" in caplog.text
     # Check that the destination directory remains empty
     assert not list(report_path.iterdir())
