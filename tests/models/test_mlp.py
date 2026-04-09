@@ -5,9 +5,7 @@ from pathlib import Path
 import pytest
 import torch
 from torch import nn
-from ThreeWToolkit.constants import CHECKPOINT_DIR
 from ThreeWToolkit.models.mlp import MLP, MLPConfig
-from ThreeWToolkit.core.enums import ModelTypeEnum
 
 
 class TestMLPConfig:

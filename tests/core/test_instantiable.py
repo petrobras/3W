@@ -1,6 +1,5 @@
 """Tests for Instantiable base class."""
 
-import pytest
 from pydantic import BaseModel
 
 from ThreeWToolkit.core import Instantiable

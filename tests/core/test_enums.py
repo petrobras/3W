@@ -1,7 +1,5 @@
 """Tests for core enums."""
 
-import pytest
-
 from ThreeWToolkit.core import (
     ModelTypeEnum,
     EventPrefixEnum,

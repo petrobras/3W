@@ -4,13 +4,10 @@ import pytest
 from pydantic import ValidationError
 
 from ThreeWToolkit.core import (
-    BaseFeatureExtractor,
-    BaseFeatureExtractorConfig,
     OverlapOffsetMixin,
     EpsMixin,
     WindowSizeMixin,
     FeatureSelectionMixin,
-    DatasetOutputs,
 )
 
 

@@ -2,9 +2,8 @@
 
 import pytest
 import pandas as pd
-import numpy as np
 
-from ThreeWToolkit.core import BaseDataset, BaseDatasetConfig, DatasetOutputs
+from ThreeWToolkit.core import BaseDataset, DatasetOutputs
 
 
 class TestBaseDatasetImplementation:

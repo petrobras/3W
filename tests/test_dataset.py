@@ -2,7 +2,6 @@ from pathlib import Path
 import pytest
 
 from ThreeWToolkit.dataset import ParquetDatasetConfig
-from ThreeWToolkit.core.enums import EventPrefixEnum
 
 
 @pytest.fixture(scope="session")

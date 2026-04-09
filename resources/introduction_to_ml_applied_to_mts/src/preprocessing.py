@@ -132,7 +132,9 @@ class DataPreprocessor:
 
         if len(numeric_cols) == 0:
             if df_index <= 5:
-                print(f"⚠️  DataFrame {df_index}: No numeric columns found, skipping...")
+                print(
+                    f"⚠️  DataFrame {df_index}: No numeric columns found, skipping..."
+                )
             return None
 
         # Extract numeric data and remove rows with NaN values

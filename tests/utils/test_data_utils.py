@@ -1,6 +1,4 @@
 import configparser
-import pytest
-from pathlib import Path
 
 from ThreeWToolkit.utils.data_utils import (
     load_config_in_dataset_ini,

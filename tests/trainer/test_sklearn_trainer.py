@@ -373,11 +373,11 @@ class TestSklearnTrainerIntegration:
         config = SklearnTrainerConfig(config_model=sklearn_config)
 
         trainer = SklearnTrainer(config)
-        result = trainer.train(dataset)
+        trainer.train(dataset)
 
         # Model should predict all classes (with correct num features)
         X_test = np.random.randn(20, 20)  # num_features only
-        predictions = trainer.model.model.predict(X_test)
+        _ = trainer.model.model.predict(X_test)
         probs = trainer.model.model.predict_proba(X_test)
 
         assert probs.shape[1] == num_classes
