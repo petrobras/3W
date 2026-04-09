@@ -80,9 +80,9 @@ class SklearnTrainer(BaseTrainer):
                 label_array = event.label.values
                 labels_list.append(label_array)
 
-        assert len(signals_list) == len(labels_list), (
-            "Mismatch between signals and labels"
-        )
+        assert len(signals_list) == len(
+            labels_list
+        ), "Mismatch between signals and labels"
 
         X = np.concatenate(signals_list, axis=0)
         y = np.concatenate(labels_list, axis=0)
