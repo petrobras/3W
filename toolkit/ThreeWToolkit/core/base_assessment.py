@@ -1,11 +1,11 @@
-from pathlib import Path
-
 import torch
+
+from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
 
-from ThreeWToolkit.constants import OUTPUT_DIR
+from ..constants import OUTPUT_DIR
+from ..core.enums import DataSplitEnum, TaskTypeEnum
 
-from ..core.enums import TaskTypeEnum
 from .base_step import BaseStep
 
 
@@ -16,13 +16,14 @@ class ModelAssessmentConfig(BaseModel):
     Args:
         metrics (list[str]): List of metric names to calculate.
         output_dir (Path): Directory to save assessment results.
-        export_results (bool): Whether to export results to CSV.
-        generate_report (bool): Whether to generate LaTeX report.
+        export_results (bool): Whether to export results to CSV files.
+        generate_report (bool): Whether to generate LaTeX report using ReportGeneration.
         task_type (TaskTypeEnum): Type of task (TaskTypeEnum.CLASSIFICATION or TaskTypeEnum.REGRESSION).
         batch_size (int): Batch size for PyTorch model predictions.
         device (str): Device for PyTorch computations.
         report_title (str | None): Title for the report.
         report_author (str): Author name for the report.
+        dataset_split (DataSplitEnum): Type of dataset to be evaluated.
 
     Example:
         >>> config = ModelAssessmentConfig(
@@ -34,36 +35,16 @@ class ModelAssessmentConfig(BaseModel):
         ... )
     """
 
-    metrics: list[str] = Field(
-        default=["accuracy", "f1"], description="List of metric names to calculate"
-    )
-    output_dir: Path = Field(
-        default=Path(OUTPUT_DIR), description="Directory to save assessment results"
-    )
-    export_results: bool = Field(
-        default=True, description="Whether to export results to CSV files"
-    )
-    generate_report: bool = Field(
-        default=False,
-        description="Whether to generate LaTeX report using ReportGeneration",
-    )
-    task_type: TaskTypeEnum = Field(
-        default=TaskTypeEnum.CLASSIFICATION,
-        description="Type of task (classification or regression)",
-    )
-    batch_size: int = Field(
-        default=64, gt=0, description="Batch size for PyTorch model predictions"
-    )
-    device: str = Field(
-        default="cuda" if torch.cuda.is_available() else "cpu",
-        description="Device for PyTorch computations",
-    )
-    report_title: str | None = Field(
-        default=None, description="Title for the generated report"
-    )
-    report_author: str = Field(
-        default="3W Toolkit Report", description="Author name for the report"
-    )
+    metrics: list[str] = Field(default=["accuracy", "f1"])
+    output_dir: Path = Field(default=Path(OUTPUT_DIR))
+    export_results: bool = Field(default=True)
+    generate_report: bool = Field(default=False)
+    task_type: TaskTypeEnum = Field(default=TaskTypeEnum.CLASSIFICATION)
+    batch_size: int = Field(default=64, gt=0)
+    device: str = Field(default="cuda" if torch.cuda.is_available() else "cpu")
+    report_title: str | None = Field(default=None)
+    report_author: str = Field(default="3W Toolkit Report")
+    dataset_split: DataSplitEnum = Field(default=DataSplitEnum.TEST)
 
     @field_validator("task_type")
     @classmethod

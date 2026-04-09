@@ -1,9 +1,10 @@
-import numpy as np
-import pandas as pd
+from pathlib import Path
+from numpy.typing import ArrayLike
 
-from typing import Callable, Iterable
+from typing import Mapping, Type
 from pydantic import Field
 
+from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -15,7 +16,12 @@ from sklearn.ensemble import GradientBoostingClassifier
 from ..core.base_models import BaseModels, ModelsConfig
 from ..core.enums import ModelTypeEnum
 from ..utils.model_recorder import ModelRecorder
-from ..metrics import _classification
+from ..assessment.strategies.sklearn_prediction_strategy import (
+    SklearnPredictionStrategy,
+)
+from ..core.base_prediction_strategies import PredictionStrategy
+from ..core.base_training_strategies import TrainingStrategy
+from ..trainer.strategies.fit_once_strategy import FitOnceStrategy
 
 # Dictionary to map the enum to the scikit-learn classes
 SKLEARN_MODELS = {
@@ -35,165 +41,103 @@ class SklearnModelsConfig(ModelsConfig):
     model_params: dict[str, int | float | str | bool | None] = Field(
         default_factory=dict, description="Hyperparameters for the scikit-learn model."
     )
+    target_: type[BaseModels] = Field(default_factory=lambda: SklearnModels)
 
 
 class SklearnModels(BaseModels):
-    """A wrapper for scikit-learn models."""
+    """
+    Wrapper for scikit-learn models following the BaseModels interface.
 
-    SUPPORTED_METRICS = {
-        _classification.accuracy_score,
-        _classification.balanced_accuracy_score,
-        _classification.precision_score,
-        _classification.recall_score,
-        _classification.f1_score,
-        _classification.roc_auc_score,
-        _classification.average_precision_score,
-    }
+    This class adapts sklearn estimators to the unified model interface,
+    allowing them to be trained, evaluated and persisted using the same
+    Strategy-based pipeline as torch models.
+    """
+
+    config: SklearnModelsConfig
 
     def __init__(self, config: SklearnModelsConfig):
-        """Initializes the wrapper and the underlying scikit-learn model."""
-        super().__init__(config)
-        model_type = config.model_type
-        if isinstance(model_type, str):
-            model_type = ModelTypeEnum(model_type)
-        model_class = SKLEARN_MODELS[model_type]
-        params = config.model_params.copy()
-        if "random_state" in model_class().get_params():
-            params["random_state"] = config.random_seed
-        self.model = model_class(**params)
-
-    def _ensure_dataframe(
-        self, x: pd.DataFrame | pd.Series | np.ndarray
-    ) -> pd.DataFrame | pd.Series | np.ndarray:
         """
-        Ensures input is in the correct format (DataFrame if possible).
-        Preserves DataFrame structure to avoid feature name warnings.
+        Initialize the sklearn model wrapper.
 
         Args:
-            x: Input data (can be DataFrame, Series, or array-like)
+            config (SklearnModelsConfig): Configuration object defining
+                the sklearn estimator type and its hyperparameters.
+        """
+        super().__init__(config)
+        self.config = config
+
+        model_class = SKLEARN_MODELS[config.model_type]
+        params = config.model_params.copy()
+
+        # Inject random_state if supported
+        if "random_state" in model_class().get_params():
+            params["random_state"] = config.random_seed
+
+        self.model_class: BaseEstimator = model_class(**params)
+        self._feature_names: list[str] | None = None
+
+    @property
+    def model_name(self) -> str:
+        return self.model_class.__class__.__name__
+
+    def forward(self, x: ArrayLike):
+        """
+        Sklearn model not implements forward function.
+        """
+        pass
+
+    def save(self, path: Path) -> None:
+        """
+        Save the sklearn model to disk.
+
+        Args:
+            path (Path): Destination file path (.pkl or .pickle).
+        """
+        if path.suffix not in {".pkl", ".pickle"}:
+            raise ValueError(
+                "Sklearn models must be saved with .pkl or .pickle extension"
+            )
+
+        ModelRecorder.save_best_model(
+            model=self.model_class,
+            filename=str(path),
+        )
+
+    def load(self, path: Path) -> "SklearnModels":
+        """
+        Load a sklearn model from disk into this instance.
+
+        Args:
+            path (Path): Path to the saved model file.
 
         Returns:
-            The input data, converted to DataFrame if it was originally a DataFrame
+            SklearnModels: Current instance with loaded model.
         """
-        if isinstance(x, pd.DataFrame):
-            return x
-        elif isinstance(x, pd.Series):
-            return x.to_frame() if x.ndim == 1 else x
-        elif isinstance(x, np.ndarray) and hasattr(self, "_feature_names"):
-            # If we stored feature names during fit, recreate DataFrame
-            return pd.DataFrame(x, columns=self._feature_names)
-        return x
+        self.model_class = ModelRecorder.load_model(filename=str(path))
+        return self
 
-    def fit(
-        self,
-        x: pd.DataFrame | pd.Series | np.ndarray,
-        y: pd.DataFrame | pd.Series | np.ndarray | None = None,
-        **kwargs,
-    ):
-        """Trains the model on the given data."""
-        # Store feature names if x is a DataFrame
-        if isinstance(x, pd.DataFrame):
-            self._feature_names = x.columns.tolist()
-
-        return self.model.fit(x, y, **kwargs)
-
-    def predict(self, x: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
-        """Makes predictions using the chosen sklearn model."""
-        # Ensure consistent format with training data
-        x = self._ensure_dataframe(x)
-        return self.model.predict(x)
-
-    def evaluate(
-        self,
-        x: pd.DataFrame | pd.Series | np.ndarray,
-        y: pd.DataFrame | pd.Series | np.ndarray,
-        metrics: list[Callable],
-    ):
+    def get_training_strategy(self) -> Type[TrainingStrategy]:
         """
-        Evaluates the model using a provided list of metric functions.
+        Return the sklearn-compatible training strategy.
+
+        Returns:
+            Type[TrainingStrategy]
         """
-        results: dict[str, float | None] = {}
+        return FitOnceStrategy
 
-        # Ensure consistent format
-        x = self._ensure_dataframe(x)
-
-        # Get standard class predictions first
-        predictions = self.predict(x)
-
-        y_scores = None
-        if hasattr(self.model, "predict_proba"):
-            y_scores = self.predict_proba(x)
-
-        for metric_func in metrics:
-            if metric_func not in self.SUPPORTED_METRICS:
-                raise ValueError(
-                    f"Metric '{metric_func.__name__}' is not a supported metric."
-                )
-
-            metric_name = metric_func.__name__
-
-            if (
-                "roc_auc_score" in metric_name
-                or "average_precision_score" in metric_name
-            ):
-                # Check if scores were successfully calculated beforehand
-                if y_scores is not None:
-                    if y_scores.shape[1] == 2:  # Binary case
-                        results[metric_name] = metric_func(
-                            y_true=y, y_pred=y_scores[:, 1]
-                        )
-                    else:  # Multiclass case
-                        results[metric_name] = metric_func(
-                            y_true=y, y_pred=y_scores, multi_class="ovr"
-                        )
-                else:
-                    # Model does not support predict_proba, so result is None
-                    results[metric_name] = None
-            else:
-                # For all other metrics, pass the standard class predictions
-                results[metric_name] = metric_func(y_true=y, y_pred=predictions)
-
-        return results
-
-    def get_params(self) -> Iterable[dict[str, int | float | str | bool | None]]:
-        """Gets the model's parameters."""
-        return self.model.get_params()
-
-    def set_params(self, **params: int | float | str | bool | None) -> None:
-        """Sets the model's parameters."""
-        self.model.set_params(**params)
-
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Makes probability predictions (for classification)."""
-        if not hasattr(self.model, "predict_proba"):
-            raise NotImplementedError(
-                f"{self.model.__class__.__name__} does not support probability predictions."
-            )
-
-        # Ensure consistent format
-        X = self._ensure_dataframe(X)
-        return self.model.predict_proba(X)
-
-    def save(self, filepath: str):
+    def get_prediction_strategy(self) -> Type[PredictionStrategy]:
         """
-        Saves the trained model to a file using the toolkit's ModelRecorder.
-        """
-        if not (filepath.endswith(".pkl") or filepath.endswith(".pickle")):
-            raise ValueError(
-                "Filename for scikit-learn models must end with .pkl or .pickle"
-            )
+        Return the sklearn-compatible prediction strategy.
 
-        ModelRecorder.save_best_model(model=self.model, filename=filepath)
-
-    @classmethod
-    def load(cls, filepath: str, config: SklearnModelsConfig):
+        Returns:
+            Type[PredictionStrategy]
         """
-        Loads a trained model from a file using the toolkit's ModelRecorder.
-        """
-        # The recorder will load the raw scikit-learn model object
-        loaded_model = ModelRecorder.load_model(filename=filepath)
+        return SklearnPredictionStrategy
 
-        # Create a new wrapper instance and inject the loaded model
-        model_wrapper = cls(config)
-        model_wrapper.model = loaded_model
-        return model_wrapper
+    def get_params(self) -> Mapping[str, object]:
+        """Return sklearn estimator parameters."""
+        return self.model_class.get_params()
+
+    def set_params(self, **params: object) -> None:
+        """Set sklearn estimator parameters."""
+        self.model_class.set_params(**params)

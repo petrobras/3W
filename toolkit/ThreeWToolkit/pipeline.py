@@ -3,13 +3,20 @@ import logging
 import pandas as pd
 from pydantic import BaseModel
 
-from .models.mlp import MLP
+from .models.mlp import MLPConfig
 from tqdm.auto import tqdm
 
-from .assessment import ModelAssessment, ModelAssessmentConfig
-
+from .assessment.model_assess import AssessmentInput, ModelAssessment
+from .core.base_assessment import ModelAssessmentConfig
+from .core.base_dataset import ParquetDatasetConfig
+from .core.base_preprocessing import (
+    ImputeMissingConfig,
+    NormalizeConfig,
+    RenameColumnsConfig,
+    WindowingConfig,
+)
 from .core.base_step import BaseStep
-from .dataset import ParquetDataset, ParquetDatasetConfig
+from .dataset import ParquetDataset
 
 from .feature_extraction import (
     ExtractWaveletFeatures,
@@ -19,19 +26,15 @@ from .feature_extraction import (
     EWStatisticalConfig,
     ExtractEWStatisticalFeatures,
 )
-from .models.sklearn_models import SklearnModels
 
-from .preprocessing import (
+from .models.sklearn_models import SklearnModels, SklearnModelsConfig
+from .preprocessing._data_processing import (
     ImputeMissing,
-    ImputeMissingConfig,
     Normalize,
-    NormalizeConfig,
     RenameColumns,
-    RenameColumnsConfig,
     Windowing,
-    WindowingConfig,
 )
-from .trainer.trainer import ModelTrainer, TrainerConfig
+from .trainer.trainer import ModelTrainer, TrainerConfig, TrainInput
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
@@ -283,7 +286,10 @@ class Pipeline:
         """
         # Train the model if training step exists
         if self.step_model_training:
-            if not isinstance(self.step_model_training.model, (MLP, SklearnModels)):
+            if not isinstance(
+                self.step_model_training.config.config_model,
+                (MLPConfig, SklearnModelsConfig),
+            ):
                 raise NotImplementedError("Model not implemented yet.")
 
             if self.step_data_loader is None:
@@ -308,17 +314,30 @@ class Pipeline:
 
             dfs_final = pd.concat(dfs, ignore_index=True, axis=0)
 
-            x_train, y_train, x_test, y_test = self.step_model_training.holdout(
-                X=dfs_final.iloc[:, :-1],
-                Y=dfs_final["label"].astype(int),
+            x_train, x_test, y_train, y_test = self.step_model_training._holdout(
+                x=dfs_final.iloc[:, :-1],
+                y=dfs_final["label"].astype(int),
                 test_size=self.step_model_training.test_size,
             )
-            results = self.step_model_training((x_train, y_train))
+            results = self.step_model_training(
+                TrainInput(x_train=x_train, y_train=y_train)
+            )
 
             if self.step_model_assessment is None:
                 raise ValueError("Model assessment step is not defined.")
 
-            self.step_model_assessment((results["model"], x_test, y_test))
+            self.step_model_assessment(
+                AssessmentInput(
+                    models=results.models,
+                    x=x_test,
+                    y=y_test,
+                    dataset_split=self.step_model_assessment.config.dataset_split,
+                    x_train_folds=results.x_train,
+                    y_train_folds=results.y_train,
+                    x_val_folds=results.x_val,
+                    y_val_folds=results.y_val,
+                )
+            )
         else:
             raise NotImplementedError("TODO: Implement pipeline without training")
 

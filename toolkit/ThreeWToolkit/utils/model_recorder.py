@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..models.mlp import MLP
     from ..models.sklearn_models import SklearnModels
+
+logger = logging.getLogger(__name__)
 
 
 class ModelRecorder:
@@ -50,6 +54,8 @@ class ModelRecorder:
 
         else:
             raise ValueError(f"Unsupported file extension: {ext}")
+
+        logger.info("Saving model to %s", path)
 
     @staticmethod
     def load_model(
@@ -98,3 +104,5 @@ class ModelRecorder:
 
         else:
             raise ValueError(f"Unsupported file extension: {ext}")
+
+        logger.info("Loading model from %s", path)

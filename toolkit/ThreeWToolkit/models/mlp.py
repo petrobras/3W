@@ -1,16 +1,17 @@
-import numpy as np
-import torch.nn as nn
 import torch
-from torch.utils.data import DataLoader
-import logging
+import torch.nn as nn
 
-from tqdm.auto import tqdm
-from ..core.base_models import ModelsConfig, BaseModels
-from ..core.enums import ModelTypeEnum, ActivationFunctionEnum
-from typing import Iterable, TypeAlias, Callable
+from pathlib import Path
 from pydantic import Field, field_validator
+from typing import Iterable, Type, TypeAlias
 
-logger = logging.getLogger(__name__)
+from ..core.base_models import ModelsConfig, BaseModels
+from ..utils.model_recorder import ModelRecorder
+from ..core.enums import ModelTypeEnum, ActivationFunctionEnum
+from ..core.base_training_strategies import TrainingStrategy
+from ..trainer.strategies.epoch_strategy import EpochTrainingStrategy
+from ..assessment.strategies.torch_prediction_strategy import TorchPredictionStrategy
+from ..core.base_prediction_strategies import PredictionStrategy
 
 # Type alias for PyTorch model parameters
 ParamsT: TypeAlias = (
@@ -37,8 +38,8 @@ class MLPConfig(ModelsConfig):
         hidden_sizes (tuple[int, ...]): Tuple specifying the size of each hidden layer.
             Must contain at least one positive integer.
         output_size (int): Number of output neurons. Must be greater than 0.
-        activation_function (str, optional): Activation function to use between layers.
-            Options: "relu", "sigmoid", "tanh". Defaults to "relu".
+        activation_function (str, optional): Activation function identifier.
+            Allowed values are defined in ActivationFunctionEnum: {"relu", "sigmoid", "tanh"}.
         regularization (float | None, optional): L2 regularization parameter.
             If specified, must be >= 0. Defaults to None (no regularization).
 
@@ -72,6 +73,9 @@ class MLPConfig(ModelsConfig):
         ...     regularization=0.01
         ... )
 
+    Attributes:
+        target_ (type): Reference to the concrete model class associated with this configuration.
+
     Note:
         - When input_size is `None`, the model will infer it from the first forward pass;
         - The model automatically adds activation functions between hidden layers;
@@ -104,6 +108,7 @@ class MLPConfig(ModelsConfig):
         ge=0,
         description="L2 regularization parameter (>=0 or None for no regularization).",
     )
+    target_: type[BaseModels] = Field(default_factory=lambda: MLP)
 
     @field_validator("input_size")
     @classmethod
@@ -188,6 +193,7 @@ class MLPConfig(ModelsConfig):
 
         Raises:
             ValueError: If input_size is not positive.
+            RuntimeError: If assignment fails due to immutable configuration.
         """
         if input_size <= 0:
             raise ValueError("Inferred input_size must be > 0")
@@ -202,50 +208,57 @@ class MLPConfig(ModelsConfig):
 
 
 class MLP(BaseModels, nn.Module):
-    """Multi-Layer Perceptron (MLP) implementation using PyTorch.
+    """Multi-Layer Perceptron (MLP) model implemented with PyTorch.
 
-    A flexible MLP neural network that supports multiple hidden layers,
-    various activation functions, and automatic task type detection based
-    on output dimensions. The model automatically infers input size from
-    the first batch of data during forward pass.
+    This class defines a flexible fully connected neural network architecture
+    with support for multiple hidden layers, configurable activation functions,
+    and dynamic input size inference during the first forward pass.
 
-    This implementation focuses on training efficiency and integrates with
-    the broader model ecosystem through the BaseModels interface while
-    providing PyTorch nn.Module functionality.
+    The MLP focuses exclusively on model architecture and forward computation.
+    Training and prediction logic are fully decoupled and delegated to external
+    strategy classes via the Strategy pattern:
+
+    - Training is handled by a `TrainingStrategy` (e.g., `EpochTrainingStrategy`);
+    - Inference is handled by a `PredictionStrategy` (e.g., `TorchPredictionStrategy`);
+    - Model persistence (save/load) is delegated to `ModelRecorder`.
+
+    This design improves modularity, testability, and extensibility, allowing
+    different training or prediction backends without modifying the model code.
 
     Args:
-        config (MLPConfig): Configuration object containing model architecture
-            and hyperparameter specifications. input_size can be None for
-            automatic inference.
+        config (MLPConfig): Configuration object specifying the model architecture
+            and hyperparameters. If `input_size` is None, the input dimensionality
+            is inferred automatically from the first batch during the forward pass.
 
     Attributes:
-        model (nn.Sequential | None): The sequential neural network layers.
-        activation_func (nn.Module): The activation function module used
-            between hidden layers.
-        config (MLPConfig): The configuration used to build this model.
-        _layers_built (bool): Flag indicating if layers have been built.
+        config (MLPConfig): Configuration used to build the model.
+        model (nn.Sequential | None): Sequential container holding the network layers.
+            Initialized lazily if input size is inferred dynamically.
+        activation_func (nn.Module): Activation function applied between hidden layers.
+        _layers_built (bool): Indicates whether the network layers have been initialized.
 
     Example:
-        Basic usage with automatic input size:
+        Basic usage with dynamic input size inference:
         >>> config = MLPConfig(
-        ...     input_size=None,  # Will be inferred automatically
+        ...     input_size=None,
         ...     hidden_sizes=(128, 64),
         ...     output_size=10
         ... )
         >>> model = MLP(config)
-        >>> # Input size will be inferred on first forward pass
-        >>> output = model(torch.randn(32, 784))  # input_size becomes 784
+        >>> x = torch.randn(32, 784)
+        >>> y = model(x)  # input_size is inferred as 784
 
-        Training example:
-        >>> optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-        >>> criterion = nn.CrossEntropyLoss()
-        >>> history = model.fit(
-        ...     train_loader=train_loader,
-        ...     epochs=100,
-        ...     optimizer=optimizer,
-        ...     criterion=criterion,
-        ...     val_loader=val_loader
-        ... )
+        Training using a strategy:
+        >>> train_strategy = model.get_training_strategy()()
+        >>> history = train_strategy.train(...)
+
+        Prediction using a strategy:
+        >>> pred_strategy = model.get_prediction_strategy()()
+        >>> y_pred = pred_strategy.predict(...)
+
+        Saving and loading the model:
+        >>> model.save("mlp_best.pth")
+        >>> model.load("mlp_best.pth")
     """
 
     # Explicitly type the config attribute
@@ -275,6 +288,69 @@ class MLP(BaseModels, nn.Module):
         if config.input_size is not None:
             self._build_layers(config.input_size)
             self._layers_built = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the network.
+
+        If layers haven't been built yet, they will be built based on
+        the input tensor's last dimension.
+
+        Args:
+            x (torch.Tensor): Input tensor where the last dimension represents the feature dimension (…, input_size).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, output_size).
+        """
+        # Ensure layers are built
+        self._ensure_model_built(x)
+
+        # Model is guaranteed to be non-None after _ensure_model_built
+        assert self.model is not None, "Model should be built at this point"
+        return self.model(x)
+
+    def save(self, path: str | Path) -> None:
+        """Save the MLP model weights to disk.
+
+        This method delegates persistence logic to ModelRecorder and stores
+        only the model's state_dict, following PyTorch best practices.
+
+        Args:
+            path (str | Path): Destination file path. Supported extensions:
+                - .pt
+                - .pth
+        """
+        ModelRecorder.save_best_model(self, path)
+
+    def load(self, path: str | Path) -> "MLP":
+        """Load model weights from disk.
+
+        This method loads a saved state_dict into the current model instance.
+        The model architecture must be compatible with the saved weights.
+
+        Args:
+            path (str | Path): Path to the saved model file (.pt or .pth).
+
+        Returns:
+            MLP: The current model instance with loaded weights.
+        """
+        ModelRecorder.load_model(path, model=self)
+        return self
+
+    def get_training_strategy(self) -> Type[TrainingStrategy]:
+        """Return the training strategy class associated with this model.
+
+        Returns:
+            Type[TrainingStrategy]: Training strategy implementation.
+        """
+        return EpochTrainingStrategy
+
+    def get_prediction_strategy(self) -> Type[PredictionStrategy]:
+        """Return the prediction strategy class associated with this model.
+
+        Returns:
+            Type[PredictionStrategy]: Prediction strategy implementation.
+        """
+        return TorchPredictionStrategy
 
     def _build_layers(self, input_size: int) -> None:
         """Build the network layers with the given input size.
@@ -307,27 +383,13 @@ class MLP(BaseModels, nn.Module):
         """
         if not self._layers_built:
             input_size = x.shape[-1]
+
             self._build_layers(input_size)
+            assert self.model is not None
+
+            self.model = self.model.to(x.device)
+
             self._layers_built = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the network.
-
-        If layers haven't been built yet, they will be built based on
-        the input tensor's last dimension.
-
-        Args:
-            x (torch.Tensor): Input tensor with shape (batch_size, input_size).
-
-        Returns:
-            torch.Tensor: Output tensor of shape (batch_size, output_size).
-        """
-        # Ensure layers are built
-        self._ensure_model_built(x)
-
-        # Model is guaranteed to be non-None after _ensure_model_built
-        assert self.model is not None, "Model should be built at this point"
-        return self.model(x)
 
     def _get_activation_function(self, activation: str) -> nn.Module:
         """Create and return the specified activation function module.
@@ -381,332 +443,3 @@ class MLP(BaseModels, nn.Module):
                 self._dummy_param = nn.Parameter(torch.tensor(0.0, requires_grad=True))
             return [self._dummy_param]
         return self.model.parameters()
-
-    def _update_optimizer_params(self, optimizer: torch.optim.Optimizer) -> None:
-        """Update optimizer with actual model parameters after model is built.
-
-        This method should be called after the model is built to replace
-        any dummy parameters in the optimizer with the actual model parameters.
-
-        Args:
-            optimizer (torch.optim.Optimizer): The optimizer to update.
-        """
-        if self.model is not None and hasattr(self, "_dummy_param"):
-            # Clear existing parameter groups
-            optimizer.param_groups.clear()
-
-            # Add real model parameters
-            optimizer.add_param_group({"params": list(self.model.parameters())})
-
-            # Remove dummy parameter reference
-            delattr(self, "_dummy_param")
-
-    def _train_epoch(
-        self,
-        model: nn.Module,
-        train_loader: DataLoader,
-        criterion: Callable,
-        optimizer: torch.optim.Optimizer,
-        device: str,
-    ) -> float:
-        """Execute one complete training epoch.
-
-        Performs forward pass, loss calculation, backward propagation,
-        and parameter updates for all batches in the training data.
-
-        Args:
-            model (nn.Module): The neural network model to train.
-            train_loader (DataLoader): DataLoader containing training batches.
-            criterion (Callable): Loss function for computing training loss.
-            optimizer (torch.optim.Optimizer): Optimizer for parameter updates.
-            device (str): Device ('cpu' or 'cuda') for tensor operations.
-
-        Returns:
-            float: Average training loss across all batches in the epoch.
-
-        Note:
-            - Automatically detects task type based on output dimensions
-            - Handles multiclass classification, binary classification, and regression
-            - Sets model to training mode and handles gradient computation
-        """
-        model.train()  # Set model to training mode
-        epoch_train_loss = 0.0
-
-        for x_values, y_values in train_loader:
-            # Move data to specified device
-            x_values, y_values = x_values.to(device), y_values.to(device)
-
-            # Clear gradients from previous iteration
-            optimizer.zero_grad()
-
-            # Forward pass
-            outputs = model(x_values)
-
-            # Automatic task type detection and loss computation
-            if outputs.shape[1] > 1:  # Multiclass classification
-                y_values = y_values.long()  # Convert to integer labels
-                loss = criterion(outputs, y_values)
-            else:  # Binary classification or regression
-                if isinstance(criterion, nn.BCEWithLogitsLoss):
-                    # Binary classification with logits
-                    y_values = y_values.float()
-                    loss = criterion(outputs.squeeze(1), y_values)
-                else:
-                    # Regression or other loss functions
-                    y_values = y_values.float()
-                    loss = criterion(outputs.squeeze(1), y_values)
-
-            # Backward pass and parameter update
-            loss.backward()
-            optimizer.step()
-            epoch_train_loss += loss.item()
-
-        return epoch_train_loss / len(train_loader)
-
-    def fit(
-        self,
-        train_loader: DataLoader,
-        epochs: int,
-        optimizer: torch.optim.Optimizer,
-        criterion: Callable,
-        val_loader: DataLoader | None = None,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu",
-    ) -> dict[str, list[float]]:
-        """Train the MLP model with the provided data and configuration.
-
-        Executes the complete training process including forward/backward passes,
-        parameter updates, and optional validation loss tracking. Provides
-        a progress bar for training monitoring.
-
-        Args:
-            train_loader (DataLoader): DataLoader containing training data batches.
-                Each batch should contain (features, targets) tuples.
-            epochs (int): Number of complete passes through the training data.
-                Must be positive.
-            optimizer (torch.optim.Optimizer): PyTorch optimizer for parameter
-                updates (e.g., Adam, SGD, AdamW).
-            criterion (Callable): Loss function for training. Should be appropriate
-                for the task (e.g., CrossEntropyLoss for classification, MSELoss
-                for regression).
-            val_loader (DataLoader | None, optional): DataLoader for validation
-                data. If provided, validation loss will be calculated and tracked.
-                Defaults to None.
-            device (str, optional): Computing device for training ('cpu' or 'cuda').
-                Defaults to 'cuda' if available, otherwise 'cpu'.
-
-        Returns:
-            dict[str, list[float]]: Training history dictionary containing:
-                - 'train_loss': List of average training losses per epoch
-                - 'val_loss': List of validation losses per epoch (if val_loader provided)
-
-        Example:
-            Basic training:
-            >>> model = MLP(config)
-            >>> optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-            >>> criterion = nn.CrossEntropyLoss()
-            >>> history = model.fit(
-            ...     train_loader=train_loader,
-            ...     epochs=100,
-            ...     optimizer=optimizer,
-            ...     criterion=criterion
-            ... )
-            >>> print(f"Final training loss: {history['train_loss'][-1]:.4f}")
-
-            Training with validation:
-            >>> history = model.fit(
-            ...     train_loader=train_loader,
-            ...     epochs=100,
-            ...     optimizer=optimizer,
-            ...     criterion=criterion,
-            ...     val_loader=val_loader,
-            ...     device='cuda'
-            ... )
-            >>> print(f"Final validation loss: {history['val_loss'][-1]:.4f}")
-
-        Note:
-            - Model is automatically moved to the specified device
-            - Training progress is displayed with a progress bar
-            - Validation loss is computed without gradient tracking for efficiency
-            - Loss values are averaged per epoch for consistent comparison
-        """
-        # Ensure model is built by doing a forward pass on the first batch
-        if not self._layers_built:
-            first_batch = next(iter(train_loader))
-            x_first, _ = first_batch
-            self._ensure_model_built(x_first)
-
-            # Update optimizer with real parameters after model is built
-            self._update_optimizer_params(optimizer)
-
-        # Model is guaranteed to be non-None at this point
-        assert self.model is not None, "Model should be built before training"
-
-        # Move model to specified device
-        self.model.to(device)
-
-        # Initialize loss tracking dictionary
-        loss_dict: dict[str, list[float]] = {"train_loss": []}
-
-        # Add validation loss tracking if validation data provided
-        if val_loader is not None:
-            loss_dict["val_loss"] = []
-
-        pbar = tqdm(
-            range(epochs), desc="[Pipeline] Training", unit="epoch", colour="#00b4d8"
-        )
-
-        for epoch_idx in pbar:
-            # Execute one training epoch
-            avg_epoch_train_loss = self._train_epoch(
-                model=self.model,
-                train_loader=train_loader,
-                criterion=criterion,
-                optimizer=optimizer,
-                device=device,
-            )
-            loss_dict["train_loss"].append(avg_epoch_train_loss)
-
-            # Calculate validation loss if validation data provided
-            if val_loader is not None:
-                val_loss = self._calculate_val_loss(val_loader, criterion, device)
-                loss_dict["val_loss"].append(val_loss)
-
-                pbar.set_description_str(
-                    f"[Pipeline] Training | train_loss: {avg_epoch_train_loss:.4f}, val_loss: {val_loss:.4f}"
-                )
-                logger.info(
-                    "Epoch %d/%d | train_loss=%.6f | val_loss=%.6f",
-                    epoch_idx + 1,
-                    epochs,
-                    avg_epoch_train_loss,
-                    val_loss,
-                )
-            else:
-                pbar.set_description_str(
-                    f"[Pipeline] Training | train_loss: {avg_epoch_train_loss:.4f}"
-                )
-                logger.info(
-                    "Epoch %d/%d | train_loss=%.6f",
-                    epoch_idx + 1,
-                    epochs,
-                    avg_epoch_train_loss,
-                )
-
-        return loss_dict
-
-    def _calculate_val_loss(
-        self, val_loader: DataLoader, criterion: Callable, device: str
-    ) -> float:
-        """Calculate validation loss without computing metrics.
-
-        Computes the average loss on validation data without gradient tracking
-        for memory efficiency. Uses the same task detection logic as training.
-
-        Args:
-            val_loader (DataLoader): DataLoader containing validation data.
-            criterion (Callable): Loss function used during training.
-            device (str): Device for tensor operations.
-
-        Returns:
-            float: Average validation loss across all batches.
-
-        Note:
-            - Model is set to evaluation mode during validation
-            - No gradients are computed for efficiency
-            - Uses same task detection as training for consistency
-        """
-        if self.model is None:
-            raise ValueError("Model should be built before validation")
-
-        self.model.eval()  # Set model to evaluation mode
-        running_loss = 0.0
-
-        # Disable gradient computation for efficiency
-        with torch.no_grad():
-            for x_values, y_values in val_loader:
-                # Move data to device
-                x_values, y_values = x_values.to(device), y_values.to(device)
-
-                # Forward pass only
-                outputs = self.model(x_values)
-
-                # Task detection and loss computation (same logic as training)
-                if outputs.shape[1] > 1:  # Multiclass classification
-                    y_values = y_values.long()
-                    loss = criterion(outputs, y_values)
-                else:  # Binary classification or regression
-                    if isinstance(criterion, nn.BCEWithLogitsLoss):
-                        y_values = y_values.float()
-                        loss = criterion(outputs.squeeze(1), y_values)
-                    else:
-                        y_values = y_values.float()
-                        loss = criterion(outputs.squeeze(1), y_values)
-
-                running_loss += loss.item()
-
-        return running_loss / len(val_loader)
-
-    def predict(
-        self,
-        loader: DataLoader,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu",
-    ) -> np.ndarray:
-        """Generate predictions for the given data.
-
-        Performs inference on the provided data and returns predictions
-        in the appropriate format based on the detected task type.
-
-        Args:
-            loader (DataLoader): DataLoader containing data for prediction.
-                Should have the same structure as training data.
-            device (str, optional): Computing device for inference.
-                Defaults to 'cuda' if available, otherwise 'cpu'.
-
-        Returns:
-            np.ndarray: Array of predictions with shape (n_samples,).
-                - For multiclass classification: predicted class indices
-                - For binary classification: predicted class labels (0 or 1)
-                - For regression: predicted continuous values
-
-        Example:
-            >>> test_predictions = model.predict(test_loader, device='cuda')
-            >>> print(f"Predicted classes: {test_predictions}")
-
-            >>> # For probability predictions in binary classification
-            >>> # You would need to modify the method or use forward() directly
-            >>> # with sigmoid activation
-
-        Note:
-            - Model is automatically set to evaluation mode
-            - No gradients are computed during prediction for efficiency
-            - Task type is automatically detected from output dimensions
-            - Predictions are converted to numpy arrays for compatibility
-        """
-        if self.model is None:
-            raise ValueError("Model should be built before prediction")
-
-        self.model.eval()  # Set model to evaluation mode
-        y_pred: list[int | float] = []
-
-        # Disable gradient computation for efficiency
-        with torch.no_grad():
-            for X_batch, _ in loader:  # Ignore labels in prediction
-                X_batch = X_batch.to(device).float()
-
-                # Forward pass to get raw outputs
-                outputs = self.model.forward(X_batch)
-
-                # Task detection and prediction conversion
-                if outputs.shape[1] > 1:  # Multiclass classification
-                    # Get class with highest probability
-                    _, preds = torch.max(outputs, 1)
-                elif outputs.shape[1] == 1:  # Binary classification
-                    # Apply sigmoid and threshold at 0.5
-                    preds = (torch.sigmoid(outputs) > 0.5).long().squeeze(1)
-                else:  # Regression (shouldn't happen with current architecture)
-                    preds = outputs.squeeze(1)
-
-                # Convert to CPU and add to prediction list
-                y_pred.extend(preds.cpu().numpy())
-
-        return np.array(y_pred)

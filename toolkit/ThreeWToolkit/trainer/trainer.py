@@ -1,175 +1,94 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import pandas as pd
 import numpy as np
+import torch
 import logging
+import torch.nn as nn
+import torch.optim as optim
 
-from pathlib import Path
-from typing import Callable, Union
-from torch.utils.data import DataLoader
-from pydantic import field_validator, ValidationInfo
+from typing import Callable, Mapping, TypeAlias
+from pydantic import Field, field_validator, model_validator
+from dataclasses import dataclass, field
 
 from tqdm.auto import tqdm
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+from sklearn.utils.class_weight import compute_class_weight
 
 from ..core.base_step import BaseStep
+from ..core.base_models import BaseModels
 from ..core.base_model_trainer import ModelTrainerConfig
 from ..core.enums import OptimizersEnum, CriterionEnum, TaskTypeEnum
-from ..models.mlp import MLPConfig, MLP
-from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
-from ..utils import ModelRecorder
-from torch.utils.data import TensorDataset
-from ..assessment.model_assess import ModelAssessment, ModelAssessmentConfig
+from ..models.mlp import MLPConfig
+from ..models.sklearn_models import SklearnModelsConfig
+from ..assessment.model_assess import (
+    AssessmentInput,
+    AssessmentOutput,
+    ModelAssessment,
+    ModelAssessmentConfig,
+)
+
+ArrayLike: TypeAlias = pd.DataFrame | pd.Series | np.ndarray
 
 logger = logging.getLogger(__name__)
 
 
 class TrainerConfig(ModelTrainerConfig):
-    """Configuration class for the ModelTrainer.
+    """
+    Configuration object for the training pipeline.
 
-    This class defines all the hyperparameters and settings needed to configure
-    the training process for machine learning models. It extends the base
-    ModelTrainerConfig with specific training-related parameters.
+    Defines hyperparameters, data splitting strategy, optimization settings,
+    and task-specific behavior.
 
-    Args:
-        batch_size (int): The number of samples per batch during training.
-            Must be greater than 0.
-        epochs (int): The total number of training epochs to run.
-            Must be greater than 0.
-        seed (int): Random seed for reproducibility across training runs.
-        learning_rate (float): The learning rate for the optimizer.
-            Must be greater than 0.
-        config_model (MLPConfig | SklearnModelsConfig): Configuration object
-            for the specific model type to be trained.
-        criterion (str, optional): Loss function to use during training.
-            Options: "cross_entropy", "binary_cross_entropy", "mse", "mae".
-            Defaults to "cross_entropy".
-        optimizer (str, optional): Optimization algorithm to use.
-            Options: "adam", "adamw", "sgd", "rmsprop".
-            Defaults to "adam".
-        device (str, optional): Computing device for training.
-            Options: "cpu", "cuda". Defaults to "cuda" if available, else "cpu".
-        cross_validation (bool | None, optional): Whether to use k-fold
-            cross-validation during training. Defaults to None (disabled).
-        n_splits (int, optional): Number of folds for cross-validation.
-            Only used when cross_validation is True. Defaults to 5.
-        test_size (float, optional): Proportion of dataset reserved for testing.
-            Defaults to 0.2.
-        val_size (float, optional): Proportion of training data used for validation.
-            Defaults to 0.3.
-        shuffle_train (bool, optional): Whether to shuffle training data
-            before each epoch. Defaults to True.
+    Attributes:
+        batch_size (int): Number of samples per batch. Must be > 0.
+        epochs (int): Number of training epochs. Must be > 0.
+        seed (int): Random seed for reproducibility.
+        learning_rate (float): Optimizer learning rate. Must be > 0.
+        config_model (MLPConfig | SklearnModelsConfig): Model configuration.
+        criterion (str): Loss function name. Must exist in CriterionEnum.
+        optimizer (str): Optimizer name. Must exist in OptimizersEnum.
+        device (str): "cpu" or "cuda". If "cuda", GPU must be available.
+        cross_validation (bool | None): Enable k-fold cross-validation.
+        n_splits (int): Number of folds when cross_validation=True. Must be > 1.
+        test_size (float): Test split proportion (0 < test_size < 1).
+        val_size (float): Validation split proportion (0 < val_size < 1).
+        shuffle_train (bool): Shuffle training data.
+        task_type (TaskTypeEnum): Classification or regression.
+        use_class_weights (bool): Enable class weighting.
+        class_weight_strategy (str): "balanced" or "manual".
+        manual_class_weights (dict[int, float] | None): Required if strategy="manual".
+        deterministic (bool): Enable deterministic CUDA behavior.
 
     Raises:
-        ValueError: If any validation constraint is violated (e.g., negative
-            batch_size, invalid optimizer name, etc.).
-
-    Example:
-        >>> config = TrainerConfig(
-        ...     batch_size=32,
-        ...     epochs=100,
-        ...     seed=42,
-        ...     learning_rate=0.001,
-        ...     config_model=MLPConfig(...),
-        ...     cross_validation=True,
-        ...     n_splits=5
-        ... )
+        ValueError: If configuration values are inconsistent or invalid.
     """
 
-    batch_size: int
-    epochs: int
-    seed: int
-    learning_rate: float
-    config_model: MLPConfig | SklearnModelsConfig
-    criterion: str = "cross_entropy"
-    optimizer: str = "adam"
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    cross_validation: bool | None = None
-    n_splits: int = 5
-    test_size: float = 0.2
-    val_size: float = 0.3
-    shuffle_train: bool = True
+    batch_size: int = Field(default=32, gt=0)
+    epochs: int = Field(default=50, gt=0)
+    seed: int = Field(default=42)
+    learning_rate: float = Field(default=1e-3, gt=0)
 
-    @field_validator("batch_size")
-    @classmethod
-    def check_batch_size(cls: type["TrainerConfig"], value: int) -> int:
-        """Validate that batch_size is positive.
+    config_model: MLPConfig | SklearnModelsConfig = Field(...)
 
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (int): The batch size value to validate.
+    criterion: str = Field(default="cross_entropy")
+    optimizer: str = Field(default="adam")
 
-        Returns:
-            int: The validated batch size.
+    device: str = Field(default="cuda" if torch.cuda.is_available() else "cpu")
 
-        Raises:
-            ValueError: If batch_size is not greater than 0.
-        """
-        if value <= 0:
-            raise ValueError("batch_size must be > 0")
-        return value
+    cross_validation: bool | None = Field(default=None)
+    n_splits: int = Field(default=5, gt=1)
 
-    @field_validator("epochs")
-    @classmethod
-    def check_epochs(cls: type["TrainerConfig"], value: int) -> int:
-        """Validate that epochs is positive.
+    test_size: float = Field(default=0.2, gt=0, lt=1)
+    val_size: float = Field(default=0.3, gt=0, lt=1)
 
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (int): The number of epochs to validate.
+    shuffle_train: bool = Field(default=True)
 
-        Returns:
-            int: The validated number of epochs.
+    task_type: TaskTypeEnum = Field(default=TaskTypeEnum.CLASSIFICATION)
 
-        Raises:
-            ValueError: If epochs is not greater than 0.
-        """
-        if value <= 0:
-            raise ValueError("epochs must be > 0")
-        return value
+    use_class_weights: bool = Field(default=False)
+    class_weight_strategy: str = Field(default="balanced")
+    manual_class_weights: dict[int, float] | None = Field(default=None)
 
-    @field_validator("learning_rate")
-    @classmethod
-    def check_learning_rate(cls: type["TrainerConfig"], value: float) -> float:
-        """Validate that learning_rate is positive.
-
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (float): The learning rate value to validate.
-
-        Returns:
-            float: The validated learning rate.
-
-        Raises:
-            ValueError: If learning_rate is not greater than 0.
-        """
-        if value <= 0:
-            raise ValueError("learning_rate must be > 0")
-        return value
-
-    @field_validator("n_splits")
-    @classmethod
-    def check_n_splits(
-        cls: type["TrainerConfig"], value: int | None, info: ValidationInfo
-    ) -> int | None:
-        """Validate n_splits when cross-validation is enabled.
-
-        Args:
-            cls (TrainerConfig): The class reference.
-            value (int | None): The number of splits to validate.
-            info (ValidationInfo): The validation context containing other field values.
-
-        Returns:
-            int | None: The validated number of splits.
-
-        Raises:
-            ValueError: If n_splits is not greater than 1 when cross_validation is True.
-        """
-        cross_val = info.data.get("cross_validation")
-        if cross_val and value is not None and value <= 1:
-            raise ValueError("n_splits must be > 1 for cross-validation")
-        return value
+    deterministic: bool = Field(default=False)
 
     @field_validator("optimizer")
     @classmethod
@@ -214,116 +133,133 @@ class TrainerConfig(ModelTrainerConfig):
     @field_validator("device")
     @classmethod
     def check_device(cls: type["TrainerConfig"], value: str) -> str:
-        """Validate that device is either 'cpu' or 'cuda'.
+        """
+        Validate computation device selection.
+
+        Ensures that the device is either 'cpu' or 'cuda'.
+        If 'cuda' is selected, verifies that CUDA is available.
 
         Args:
-            cls (TrainerConfig): The class reference.
-            value (str): The device name to validate.
+            value (str): Device name.
 
         Returns:
-            str: The validated device name.
+            str: Validated device name.
 
         Raises:
-            ValueError: If device is not 'cpu' or 'cuda'.
+            ValueError: If device is invalid or CUDA is unavailable.
         """
         valid = {"cpu", "cuda"}
         if value not in valid:
             raise ValueError("device must be 'cpu' or 'cuda'")
+
+        if value == "cuda" and not torch.cuda.is_available():
+            raise ValueError("CUDA selected but no GPU is available")
+
         return value
 
+    @field_validator("class_weight_strategy")
+    @classmethod
+    def validate_class_weight_strategy(cls, value: str) -> str:
+        """
+        Validate class weight strategy.
 
-# Type aliases for complex union types
-_ModelTrainerInput = Union[dict, tuple, list]
-_ModelTrainerPreProcessed = dict[str, Union[pd.DataFrame, pd.Series, dict, None]]
-_ModelTrainerRunOutput = dict[
-    str,
-    Union[pd.DataFrame, pd.Series, dict, MLP, SklearnModels, list, None],
-]
-_ModelTrainerOutput = dict[
-    str,
-    Union[
-        pd.DataFrame,
-        pd.Series,
-        dict,
-        MLP,
-        SklearnModels,
-        list,
-        bool,
-        str,
-        TrainerConfig,
-    ],
-]
+        Ensures that the strategy is either 'balanced' or 'manual'.
+
+        Args:
+            value (str): Strategy name.
+
+        Returns:
+            str: Validated strategy name.
+
+        Raises:
+            ValueError: If strategy is not supported.
+        """
+        valid = {"balanced", "manual"}
+        if value not in valid:
+            raise ValueError(f"class_weight_strategy must be one of {valid}")
+        return value
+
+    @model_validator(mode="after")
+    def validate_class_weights(self) -> "TrainerConfig":
+        """
+        Validate manual class weights configuration.
+
+        Ensures that when class weighting is enabled and the strategy
+        is set to 'manual', a valid dictionary of class weights is provided.
+
+        The dictionary must:
+            - Have integer keys (class labels)
+            - Have strictly positive float values (weights)
+
+        Returns:
+            TrainerConfig: The validated configuration instance.
+
+        Raises:
+            ValueError: If manual weights are missing or invalid.
+        """
+        if self.use_class_weights and self.class_weight_strategy == "manual":
+            if not self.manual_class_weights:
+                raise ValueError(
+                    "manual_class_weights must be provided when strategy='manual'"
+                )
+
+            if any(v <= 0 for v in self.manual_class_weights.values()):
+                raise ValueError("manual_class_weights values must be > 0")
+
+        return self
 
 
-class ModelTrainer(
-    BaseStep[
-        _ModelTrainerInput,
-        _ModelTrainerPreProcessed,
-        _ModelTrainerRunOutput,
-        _ModelTrainerOutput,
-    ]
-):
-    """Simplified model trainer focused on training with delegated evaluation.
+@dataclass
+class TrainInput:
+    """
+    Container for training input data.
 
-    This class handles the training process for both PyTorch neural networks (MLP)
-    and scikit-learn models. It supports regular training, cross-validation, and
-    provides convenient methods for model persistence and evaluation.
-
-    The trainer is designed to be lightweight and focused solely on training,
-    with evaluation capabilities delegated to the ModelAssessment class for
-    better separation of concerns.
-
-    Args:
-        config (TrainerConfig): Configuration object containing all training
-            parameters and model configuration.
+    This dataclass standardizes the data interface passed to the training step,
+    avoiding the use of positional indexing and improving type safety.
 
     Attributes:
-        config (TrainerConfig): The training configuration.
-        lr (float): Learning rate from configuration.
-        device (str): Computing device ('cpu' or 'cuda').
-        model (MLP | SklearnModels): The instantiated model to train.
-        optimizer (torch.optim.Optimizer | None): PyTorch optimizer (None for sklearn models).
-        criterion (Callable | None): Loss function (None for sklearn models).
-        cross_validation (bool | None): Whether cross-validation is enabled.
-        n_splits (int): Number of folds for cross-validation.
-        batch_size (int): Batch size for training.
-        epochs (int): Number of training epochs.
-        seed (int): Random seed for reproducibility.
-        shuffle_train (bool): Whether to shuffle training data.
-        history (list): Training history from completed training runs.
-
-    Example:
-        Basic usage:
-        >>> config = TrainerConfig(
-        ...     batch_size=32,
-        ...     epochs=100,
-        ...     seed=42,
-        ...     learning_rate=0.001,
-        ...     config_model=MLPConfig(...)
-        ... )
-        >>> trainer = ModelTrainer(config)
-        >>> trainer.train(X_train, y_train, X_val, y_val)
-        >>>
-        >>> # Save the trained model
-        >>> trainer.save(Path("model.pth"))
-        >>>
-        >>> # Evaluate using ModelAssessment
-        >>> results = trainer.assess(X_test, y_test)
-
-        Cross-validation usage:
-        >>> config = TrainerConfig(
-        ...     batch_size=32,
-        ...     epochs=100,
-        ...     seed=42,
-        ...     learning_rate=0.001,
-        ...     config_model=MLPConfig(...),
-        ...     cross_validation=True,
-        ...     n_splits=5
-        ... )
-        >>> trainer = ModelTrainer(config)
-        >>> trainer.train(X_train, y_train)  # No validation set needed
+        x_train (pd.DataFrame | np.ndarray): Training input features.
+        y_train (pd.DataFrame | np.ndarray): Training target labels.
+        x_val (pd.DataFrame | np.ndarray | None): Optional validation input features.
+        y_val (pd.DataFrame | np.ndarray | None): Optional validation target labels.
     """
 
+    x_train: pd.DataFrame | np.ndarray
+    y_train: pd.DataFrame | np.ndarray
+
+    x_val: pd.DataFrame | np.ndarray | None = None
+    y_val: pd.DataFrame | np.ndarray | None = None
+
+
+@dataclass
+class TrainOutput:
+    """
+    Container for training output results.
+
+    This dataclass encapsulates the artifacts produced by the training process
+    and metadata describing the training execution.
+
+    Attributes:
+        history (dict[str, list[float]]): Training history containing tracked loss values per epoch.
+        model_type (str | None): Name of the trained model class.
+        trainer_config (TrainerConfig | None): Trainer configuration used during training.
+        training_completed (bool): Flag indicating whether training finished successfully.
+    """
+
+    models: list[BaseModels] = field(default_factory=list)
+    x_train: list[np.ndarray] = field(default_factory=list)
+    y_train: list[np.ndarray] = field(default_factory=list)
+    x_val: list[np.ndarray] = field(default_factory=list)
+    y_val: list[np.ndarray] = field(default_factory=list)
+
+    model_name: str | None = None
+    trainer_config: TrainerConfig | None = None
+    training_completed: bool = False
+
+    history: dict[str, list[float]] | None = None
+
+
+class ModelTrainer(BaseStep):
     def __init__(self, config: TrainerConfig) -> None:
         """Initialize the ModelTrainer with the given configuration.
 
@@ -334,194 +270,299 @@ class ModelTrainer(
         self.config = config
         self.lr = config.learning_rate
         self.device = config.device
-        self.model = self._get_model(config.config_model)
-
-        # Only create optimizer and criterion for PyTorch models
-        if isinstance(self.model, MLP):
-            self.optimizer: torch.optim.Optimizer | None = self._get_optimizer(
-                self.config.optimizer
-            )
-            self.criterion: Callable | None = self._get_fn_cost(self.config.criterion)
-        else:
-            self.optimizer = None
-            self.criterion = None
 
         self.cross_validation = config.cross_validation
-        if self.config.cross_validation:
-            self.n_splits = config.n_splits
+        self.n_splits = config.n_splits if config.cross_validation else None
         self.batch_size = config.batch_size
         self.epochs = config.epochs
         self.seed = config.seed
         self.test_size = config.test_size
         self.val_size = config.val_size
         self.shuffle_train = config.shuffle_train
-        self.history: list = []
+        self.history = self._get_artifacts_history_dict()
 
-        logger.info(
-            "ModelTrainer initialized | model=%s | device=%s | lr=%s | epochs=%d | batch=%d | cv=%s",
-            type(self.model).__name__,
-            self.device,
-            self.lr,
-            self.epochs,
-            self.batch_size,
-            bool(self.cross_validation),
-        )
+    def pre_process(self, data: TrainInput) -> TrainInput:
+        """
+        Validate and standardize the training input.
 
-    def pre_process(
-        self, data: dict | tuple | list
-    ) -> dict[str, pd.DataFrame | pd.Series | dict | None]:
-        """Standardizes the input of the step.
-
-        Validates and standardizes the input data format for training.
+        This method ensures that the input follows the expected
+        TrainInput structure and validates basic consistency rules.
 
         Args:
-            data: Input data that should contain training data and optionally validation data.
-                  Can be a dict or any structure containing the required training data.
+            data (TrainInput): Input object expected to be a TrainInput instance.
 
         Returns:
-            dict[str, pd.DataFrame | pd.Series | dict | None]: Standardized data dictionary with required keys.
+            TrainInput: Validated training input container.
 
         Raises:
-            ValueError: If required training data is missing.
+            TypeError: If the input is not a TrainInput instance.
+            ValueError: If mandatory fields are missing or inconsistent.
         """
-        if isinstance(data, dict):
-            processed_data = data.copy()
+        # Case 1: Already a TrainInput instance
+        if isinstance(data, TrainInput):
+            train_input = data
         else:
-            # If data is not a dict, assume it's a tuple/list with (x_train, y_train, ...)
-            if hasattr(data, "__iter__") and len(data) >= 2:
-                processed_data = {"x_train": data[0], "y_train": data[1]}
-                if len(data) >= 4:
-                    processed_data.update({"x_val": data[2], "y_val": data[3]})
-                if len(data) >= 5:
-                    processed_data["kwargs"] = data[4]
-            else:
-                raise ValueError(
-                    "Input data must be a dict or iterable with at least (x_train, y_train)"
-                )
+            raise TypeError(
+                "Trainer input must be a TrainInput instance containing at least 'x_train' and 'y_train'."
+            )
 
-        # Validate required keys
-        required_keys = ["x_train", "y_train"]
-        missing_keys = [key for key in required_keys if key not in processed_data]
-        if missing_keys:
-            raise ValueError(f"Missing required keys in input data: {missing_keys}")
+        # Basic consistency validation
+        if train_input.x_train is None or train_input.y_train is None:
+            raise ValueError("x_train and y_train must not be None.")
 
-        # Ensure optional keys exist with None defaults
-        optional_keys = ["x_val", "y_val", "kwargs"]
-        for key in optional_keys:
-            if key not in processed_data:
-                processed_data[key] = None if key != "kwargs" else {}
+        # XOR check: both validation sets must be provided together
+        if (train_input.x_val is None) ^ (train_input.y_val is None):
+            raise ValueError(
+                "x_val and y_val must be provided together or both be None."
+            )
 
-        return processed_data
+        return train_input
 
-    def run(
-        self, data: dict[str, pd.DataFrame | pd.Series | dict | None]
-    ) -> dict[str, pd.DataFrame | pd.Series | dict | MLP | SklearnModels | list | None]:
-        """Main logic of the step.
+    def run(self, data: TrainInput) -> TrainOutput:
+        """
+        Execute the training process.
 
-        Performs the actual model training using the provided data.
+        This method performs the actual model training using the
+        preprocessed training data.
 
         Args:
-            data (dict[str, pd.DataFrame | pd.Series | dict | None]): Preprocessed data containing training information.
+            data (TrainInput): Validated training input container.
 
         Returns:
-            dict[str, pd.DataFrame | pd.Series | dict | MLP | SklearnModels | list | None]: Data with training results added.
+            TrainOutput: Object containing training artifacts and results.
         """
-        # Extract training parameters
-        x_train = data["x_train"]
-        y_train = data["y_train"]
-        x_val = data.get("x_val")
-        y_val = data.get("y_val")
-        kwargs_value = data.get("kwargs", {})
+        self._set_seed()
 
-        # Ensure kwargs is a dict for unpacking
-        if not isinstance(kwargs_value, dict):
-            kwargs = {}
-        else:
-            kwargs = kwargs_value
         logger.info("Training started")
 
         # Perform training
-        self.train(x_train, y_train, x_val, y_val, **kwargs)
+        self.train(
+            x_train=data.x_train,
+            y_train=data.y_train,
+            x_val=data.x_val,
+            y_val=data.y_val,
+        )
 
-        logger.info("Training finished | history_len=%d", len(self.history))
+        return TrainOutput(
+            models=self.history["models"],
+            x_train=self.history["x_train"],
+            y_train=self.history["y_train"],
+            x_val=self.history["x_val"],
+            y_val=self.history["y_val"],
+        )
 
-        # Add training results to data
-        data["model"] = self.model
-        data["history"] = self.history
-        data["trainer"] = self
+    def post_process(self, data: TrainOutput) -> TrainOutput:
+        """
+        Finalize and enrich training output.
 
-        return data
-
-    def post_process(
-        self,
-        data: dict[
-            str, pd.DataFrame | pd.Series | dict | MLP | SklearnModels | list | None
-        ],
-    ) -> dict[
-        str,
-        pd.DataFrame
-        | pd.Series
-        | dict
-        | MLP
-        | SklearnModels
-        | list
-        | bool
-        | str
-        | TrainerConfig,
-    ]:
-        """Standardizes the output of the step.
-
-        Performs any final processing and ensures output format consistency.
+        This method attaches metadata related to the training process
+        and ensures output consistency before passing it to the next
+        pipeline step.
 
         Args:
-            data (dict[str, pd.DataFrame | pd.Series | dict | MLP | SklearnModels | list | None]): Data with training results.
+            data (TrainOutput): Training output container.
 
         Returns:
-            dict[str, pd.DataFrame | pd.Series | dict | MLP | SklearnModels | list | bool | str | TrainerConfig]: Final processed data ready for next pipeline step.
+            TrainOutput: Finalized training output with metadata added.
         """
-        # Ensure all expected outputs are present
-        expected_outputs = ["model", "history", "trainer"]
-        for key in expected_outputs:
-            if key not in data:
-                raise RuntimeError(
-                    f"Training step failed to produce expected output: {key}"
-                )
-
         # Add metadata about the training step
-        data["training_completed"] = True
-        data["model_type"] = type(self.model).__name__
-        data["config"] = self.config
+        data.model_name = self.history["models"][0].model_name
+        data.trainer_config = self.config
+        data.history = {k: self.history[k] for k in ["train_losses", "val_losses"]}
 
         return data
 
-    def _get_model(
-        self, config_model: MLPConfig | SklearnModelsConfig
-    ) -> MLP | SklearnModels:
-        """Instantiate the appropriate model based on the configuration.
+    def train(
+        self,
+        x_train: ArrayLike,
+        y_train: ArrayLike,
+        x_val: ArrayLike | None = None,
+        y_val: ArrayLike | None = None,
+    ) -> None:
+        """Train model using configured strategy.
+
+        Handles three scenarios:
+        1. Cross-validation with k-fold splits
+        2. Validation data provided
+        3. Auto-split for validation
 
         Args:
-            config_model (MLPConfig | SklearnModelsConfig): Model configuration
-                object that determines which type of model to create.
+            x_train: Training features.
+            y_train: Training labels.
+            x_val: Validation features (optional).
+            y_val: Validation labels (optional).
+        """
+        if self.cross_validation:
+            self._train_with_cross_validation(x_train, y_train)
+        elif x_val is not None and y_val is not None:
+            self._train_with_validation(x_train, y_train, x_val, y_val)
+        else:
+            self._train_with_auto_split(x_train, y_train)
+
+    def _train_with_cross_validation(
+        self, x_train: ArrayLike, y_train: ArrayLike
+    ) -> None:
+        """Train using k-fold cross-validation.
+
+        Args:
+            x_train: Training features.
+            y_train: Training labels.
+        """
+        if self.config.task_type == TaskTypeEnum.CLASSIFICATION:
+            kf = StratifiedKFold(
+                n_splits=self.n_splits,
+                shuffle=self.config.shuffle_train,
+                random_state=self.seed,
+            )
+        else:
+            kf = KFold(
+                n_splits=self.n_splits,
+                shuffle=self.config.shuffle_train,
+                random_state=self.seed,
+            )
+
+        splits = list(kf.split(x_train, y_train))
+
+        logger.info("Cross-validation enabled | n_splits=%d", self.n_splits)
+
+        pbar = tqdm(
+            enumerate(splits),
+            total=self.n_splits,
+            desc="[Pipeline] Training Fold 1",
+            unit="fold",
+            colour="#0a2c53",
+        )
+
+        for fold, (train_idx, val_idx) in pbar:
+            logger.info("Fold %d/%d started", fold + 1, self.n_splits)
+            pbar.set_description_str(f"[Pipeline] Training Fold {fold + 1}")
+
+            # Split data
+            x_train_fold = self._select_rows(x_train, train_idx)
+            y_train_fold = self._select_rows(y_train, train_idx)
+            x_val_fold = self._select_rows(x_train, val_idx)
+            y_val_fold = self._select_rows(y_train, val_idx)
+
+            # Train on fold
+            results = self._call_training_strategy(
+                x_train_fold, y_train_fold, x_val_fold, y_val_fold
+            )
+
+            self._update_train_history(
+                results, x_train_fold, y_train_fold, x_val_fold, y_val_fold
+            )
+
+    def _train_with_validation(
+        self, x_train: ArrayLike, y_train: ArrayLike, x_val: ArrayLike, y_val: ArrayLike
+    ) -> None:
+        """Train using provided validation data.
+
+        Args:
+            x_train: Training features.
+            y_train: Training labels.
+            x_val: Validation features.
+            y_val: Validation labels.
+        """
+        logger.info("Using provided validation set")
+
+        results = self._call_training_strategy(x_train, y_train, x_val, y_val)
+
+        self._update_train_history(results, x_train, y_train, x_val, y_val)
+
+    def _train_with_auto_split(self, x_train: ArrayLike, y_train: ArrayLike) -> None:
+        """Train with automatic train/validation split.
+
+        Args:
+            x_train: Training features.
+            y_train: Training labels.
+        """
+        logger.info("Using auto split set")
+
+        x_train, x_val, y_train, y_val = self._holdout(x_train, y_train)
+
+        results = self._call_training_strategy(x_train, y_train, x_val, y_val)
+
+        self._update_train_history(results, x_train, y_train, x_val, y_val)
+
+    def _call_training_strategy(
+        self,
+        x_train: ArrayLike,
+        y_train: ArrayLike,
+        x_val: ArrayLike | None = None,
+        y_val: ArrayLike | None = None,
+    ) -> dict[str, list[float]]:
+        """Delegate training to the strategy.
+
+        Args:
+            x_train: Training features.
+            y_train: Training labels.
+            x_val: Validation features (optional).
+            y_val: Validation labels (optional).
 
         Returns:
-            MLP | SklearnModels: The instantiated model, moved to the appropriate
-                device if it's a PyTorch model.
-
-        Raises:
-            ValueError: If the model configuration type is not recognized.
+            Training history or None.
         """
-        match config_model:
-            case MLPConfig():
-                return MLP(config_model).to(self.device)
-            case SklearnModelsConfig():
-                return SklearnModels(config_model)
-            case _:
-                raise ValueError(f"Unknown model config: {config_model}")
+        # Prepare kwargs for strategy
+        strategy_kwargs = {
+            "epochs": self.epochs,
+            "batch_size": self.batch_size,
+            "shuffle": self.shuffle_train,
+            "device": self.device,
+        }
 
-    def _get_optimizer(self, optimizer: str) -> torch.optim.Optimizer:
+        model = self.config.config_model.setup()
+
+        training_strategy = model.get_training_strategy()
+        strategy = training_strategy()
+
+        # Reinitialize optimizer if model requires it
+        if strategy.requires_optimizer:
+            strategy_kwargs["optimizer"] = self._get_optimizer(
+                model, self.config.optimizer
+            )
+
+        if strategy.requires_criterion:
+            strategy_kwargs["criterion"] = self._get_fn_cost(
+                self.config.criterion,
+                y_train=y_train,
+            )
+
+        logger.info("Training started")
+
+        return strategy.train(model, x_train, y_train, x_val, y_val, **strategy_kwargs)
+
+    def _holdout(
+        self, x: ArrayLike, y: ArrayLike, test_size=None
+    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+        """Split dataset using holdout.
+
+        Args:
+            x: Features.
+            y: Targets.
+            test_size: Fraction for validation split.
+
+        Returns:
+            Tuple of (X_train, X_val, y_train, y_val).
+        """
+        if test_size is None:
+            test_size = self.val_size
+
+        X_train, X_val, y_train, y_val = train_test_split(
+            x,
+            y,
+            test_size=test_size,
+            shuffle=self.shuffle_train,
+            random_state=self.seed,
+        )
+        return X_train, X_val, y_train, y_val
+
+    def _get_optimizer(
+        self, model: BaseModels, optimizer: str
+    ) -> torch.optim.Optimizer:
         """Create and return the specified PyTorch optimizer.
 
         Args:
+            model (BaseModels): PyTorch model instance.
             optimizer (str): Name of the optimizer to create. Must be one of:
                 "adam", "adamw", "sgd", "rmsprop".
 
@@ -532,7 +573,8 @@ class ModelTrainer(
         Raises:
             ValueError: If the optimizer name is not recognized.
         """
-        model_params = self.model.get_params()
+        model_params = model.get_params()
+
         if optimizer == OptimizersEnum.ADAM.value:
             return optim.Adam(params=model_params, lr=self.lr)
         elif optimizer == OptimizersEnum.ADAMW.value:
@@ -544,23 +586,71 @@ class ModelTrainer(
         else:
             raise ValueError(f"Unknown optimizer: {optimizer}")
 
-    def _get_fn_cost(self, criterion: str | None) -> Callable:
-        """Create and return the specified loss function.
+    def _get_fn_cost(
+        self, criterion: str | None, y_train: ArrayLike | None = None
+    ) -> Callable:
+        """
+        Create and return the configured loss function.
+
+        This method instantiates the appropriate PyTorch loss function based on
+        the selected criterion and training configuration.
+
+        When class weighting is enabled (`use_class_weights=True`) and the task
+        is classification, the method automatically computes and injects class
+        weights into the loss function using the training labels.
+
+        Supported behaviors:
+            - Multi-class classification:
+                Uses `nn.CrossEntropyLoss(weight=class_weights)`
+            - Binary classification:
+                Uses `nn.BCEWithLogitsLoss(pos_weight=class_weights)`
+            - Regression:
+                Uses `nn.MSELoss` or `nn.L1Loss`
 
         Args:
-            criterion (str | None): Name of the loss function to create. Must be
-                one of: "cross_entropy", "binary_cross_entropy", "mse", "mae".
+            criterion (str | None):
+                Name of the loss function. Must be one of:
+                {"cross_entropy", "binary_cross_entropy", "mse", "mae"}.
+
+            y_train (ArrayLike | None):
+                Training labels used to compute class weights when
+                class weighting is enabled. Required only for classification
+                tasks with `use_class_weights=True`.
 
         Returns:
-            Callable: The configured loss function instance.
+            Callable:
+                Instantiated PyTorch loss function ready for training.
 
         Raises:
-            ValueError: If the criterion name is not recognized.
+            ValueError:
+                If the specified criterion name is not supported.
+
+            ValueError:
+                If class weighting is enabled but `y_train` is not provided.
+
+        Notes:
+            - `weight` in CrossEntropyLoss applies per-class weighting for
+            multi-class classification.
+
+            - `pos_weight` in BCEWithLogitsLoss controls positive class weighting
+            in binary classification and expects a tensor of size [1] or
+            matching output dimensions.
+
+            - For regression losses, class weighting is ignored.
         """
+        class_weights = None
+
+        if (
+            self.config.use_class_weights
+            and self._is_classification_task()
+            and y_train is not None
+        ):
+            class_weights = self._compute_class_weights(y_train)
+
         if criterion == CriterionEnum.CROSS_ENTROPY.value:
-            return nn.CrossEntropyLoss()
+            return nn.CrossEntropyLoss(weight=class_weights)
         elif criterion == CriterionEnum.BINARY_CROSS_ENTROPY.value:
-            return nn.BCEWithLogitsLoss()
+            return nn.BCEWithLogitsLoss(pos_weight=class_weights)
         elif criterion == CriterionEnum.MSE.value:
             return nn.MSELoss()
         elif criterion == CriterionEnum.MAE.value:
@@ -568,157 +658,7 @@ class ModelTrainer(
         else:
             raise ValueError(f"Unknown criterion: {criterion}")
 
-    def _create_dataloader(
-        self,
-        x: pd.DataFrame | pd.Series,
-        y: pd.DataFrame | pd.Series | None = None,
-        shuffle: bool = False,
-    ) -> DataLoader:
-        """Create a PyTorch DataLoader from pandas DataFrame/Series.
-
-        Converts pandas data structures to PyTorch tensors and wraps them
-        in a DataLoader for batch processing during training.
-
-        Args:
-            x (pd.DataFrame | pd.Series): Input features as pandas DataFrame or compatible structure.
-            y (pd.DataFrame | pd.Series | None, optional): Target labels as pandas DataFrame/Series or
-                compatible structure. If None, creates empty tensors.
-            shuffle (bool, optional): Whether to shuffle data in the DataLoader.
-                Defaults to False.
-
-        Returns:
-            DataLoader: PyTorch DataLoader configured with the specified
-                batch size and shuffle setting.
-        """
-        X_tensor = torch.tensor(x.values, dtype=torch.float32)
-        if y is not None:
-            y_tensor = torch.tensor(y.values, dtype=torch.float32)
-            dataset = TensorDataset(X_tensor, y_tensor)
-        else:
-            y_tensor = torch.empty_like(X_tensor)
-            dataset = TensorDataset(X_tensor, y_tensor)
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle)
-
-    def train(
-        self,
-        x_train: pd.DataFrame,
-        y_train: pd.DataFrame | pd.Series,
-        x_val: pd.DataFrame | None = None,
-        y_val: pd.DataFrame | pd.Series | None = None,
-        **kwargs,
-    ) -> None:
-        """Train the model using the provided training data.
-
-        This method handles three training scenarios:
-        1. Cross-validation: Uses k-fold cross-validation with stratified splits
-        2. Validation provided: Uses provided validation data
-        3. Auto-split: Automatically splits training data for validation
-
-        The training history is stored in self.history for later analysis.
-
-        Args:
-            x_train (pd.DataFrame): Training input features.
-            y_train (pd.DataFrame | pd.Series): Training target labels.
-            x_val (pd.DataFrame | None, optional): Validation input features.
-                If None and cross_validation is False, data will be auto-split.
-            y_val (pd.DataFrame | pd.Series | None, optional): Validation target
-                labels. If None and cross_validation is False, data will be auto-split.
-            **kwargs: Additional keyword arguments passed to the underlying
-                model's fit method.
-
-        Note:
-            - For cross-validation, x_val and y_val are ignored
-            - Model state is reset between cross-validation folds for PyTorch models
-            - Training history is stored as a list of fold histories (cross-validation)
-            or a single-element list (regular training)
-        """
-        if self.cross_validation:
-            logger.info("Cross-validation enabled | n_splits=%d", self.n_splits)
-            self.history = []
-
-            # Create stratified k-fold splits
-            skf = StratifiedKFold(
-                n_splits=self.n_splits, shuffle=True, random_state=self.seed
-            )
-            splits = list(skf.split(x_train, y_train))
-
-            # Store initial model configuration for resetting between folds
-            initial_config = self.config.config_model
-
-            # Perform stratified k-fold cross-validation with progress bar
-            pbar = tqdm(
-                enumerate(splits),
-                total=self.n_splits,
-                desc="[Pipeline] Training Fold 1",
-                unit="fold",
-                colour="#0a2c53",
-            )
-            for fold, (train_idx, val_idx) in pbar:
-                logger.info("Fold %d/%d started", fold + 1, self.n_splits)
-                # Updates the bar description for the current fold
-                pbar.set_description_str(f"[Pipeline] Training Fold {fold + 1}")
-
-                # Reinitialize model for each fold (fresh start)
-                if isinstance(self.model, MLP):
-                    self.model = self._get_model(initial_config)
-                    # Reinitialize optimizer with new model parameters
-                    self.optimizer = self._get_optimizer(self.config.optimizer)
-
-                # Split data for current fold
-                x_train_fold = self._select_rows(x_train, train_idx)
-                y_train_fold = self._select_rows(y_train, train_idx)
-                x_val_fold = self._select_rows(x_train, val_idx)
-                y_val_fold = self._select_rows(y_train, val_idx)
-
-                # Train on current fold and store history
-                fold_history = self.call_trainer(
-                    x_train_fold,
-                    y_train_fold,
-                    x_val=x_val_fold,
-                    y_val=y_val_fold,
-                    **kwargs,
-                )
-                self.history.append(fold_history)
-
-        elif x_val is not None and y_val is not None:
-            logger.info("Using provided validation set")
-            # Use provided validation data
-            self.history = [
-                self.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val, **kwargs)
-            ]
-        else:
-            # Automatically split training data for validation
-            x_train, y_train, x_val, y_val = self.holdout(x_train, y_train)
-            self.history = [
-                self.call_trainer(x_train, y_train, x_val=x_val, y_val=y_val, **kwargs)
-            ]
-
-    def holdout(self, X, Y, test_size=None):
-        """
-        Split any dataset into two subsets using holdout.
-
-        Args:
-            X (array-like): Features.
-            Y (array-like): Targets.
-            test_size (float, optional): Fraction of data for the second split.
-                If None, uses self.val_size. Should be between 0 and 1.
-
-        Returns:
-            Tuple: (X_train, Y_train, X_holdout, Y_holdout)
-        """
-        if test_size is None:
-            test_size = self.val_size
-
-        X_train, X_holdout, Y_train, Y_holdout = train_test_split(
-            X,
-            Y,
-            test_size=test_size,
-            shuffle=self.shuffle_train,
-            random_state=self.seed,
-        )
-        return X_train, Y_train, X_holdout, Y_holdout
-
-    def _select_rows(self, data, idx):
+    def _select_rows(self, data: ArrayLike, idx: list[int]):
         """Select rows from data using provided indices.
 
         Handles both pandas DataFrames/Series and other indexable data structures.
@@ -735,122 +675,26 @@ class ModelTrainer(
         else:
             return data[idx]
 
-    def call_trainer(
-        self,
-        x_train: pd.DataFrame | pd.Series,
-        y_train: pd.DataFrame | pd.Series,
-        x_val: pd.DataFrame | pd.Series | None = None,
-        y_val: pd.DataFrame | pd.Series | None = None,
-        **kwargs,
-    ) -> dict[str, list[float]] | None:
-        """Call the appropriate training method based on model type.
-
-        Dispatches training to either PyTorch neural network training loop
-        or scikit-learn model fitting, handling the different interfaces
-        transparently.
-
-        Args:
-            x_train (pd.DataFrame | pd.Series): Training input features.
-            y_train (pd.DataFrame | pd.Series): Training target labels.
-            x_val (pd.DataFrame | pd.Series | None, optional): Validation input features.
-            y_val (pd.DataFrame | pd.Series | None, optional): Validation target labels.
-            **kwargs: Additional arguments passed to the model's fit method.
-
-        Returns:
-            dict[str, list[float]] | None: Training history dictionary for PyTorch
-                models (containing loss/metric trajectories), or None for
-                scikit-learn models.
-        """
-        if isinstance(self.model, MLP):
-            # PyTorch model training
-            train_loader = self._create_dataloader(
-                x_train, y_train, shuffle=self.shuffle_train
-            )
-            val_loader = (
-                self._create_dataloader(x_val, y_val, shuffle=False)
-                if x_val is not None and y_val is not None
-                else None
-            )
-
-            # Use configured optimizer/criterion or fallback to defaults
-            optimizer = (
-                self.optimizer
-                if self.optimizer is not None
-                else torch.optim.Adam(self.model.parameters(), lr=self.lr)
-            )
-            criterion = self.criterion if self.criterion is not None else nn.MSELoss()
-
-            return self.model.fit(
-                train_loader,
-                self.epochs,
-                optimizer,
-                criterion,
-                val_loader,
-                device=self.device,
-            )
-        else:
-            # Scikit-learn model training
-            return self.model.fit(x_train, y_train, **kwargs)
-
-    def save(self, filepath: Path) -> None:
-        """Save the trained model to disk.
-
-        Uses the ModelRecorder utility to save model checkpoints in a
-        consistent format across different model types.
-
-        Args:
-            filepath (Path): The file path where the model should be saved.
-                The extension should be appropriate for the model type
-                (.pth for PyTorch models, .pkl for scikit-learn models).
-
-        Note:
-            The saved model can be loaded later using the load() method.
-        """
-        ModelRecorder.save_best_model(model=self.model, filename=filepath)
-        logger.info("Saving model to %s", filepath)
-
-    def load(self, filepath: Path) -> MLP | SklearnModels:
-        """Load a previously saved model from disk.
-
-        Loads model weights/parameters from the specified file and applies
-        them to the current model instance.
-
-        Args:
-            filepath (Path): The file path from which to load the model.
-                Should contain a model saved with the save() method.
-
-        Returns:
-            MLP | SklearnModels: The model instance with loaded weights/parameters.
-
-        Note:
-            For PyTorch models, this loads the state dict. For scikit-learn
-            models, this loads the entire model state.
-        """
-        return ModelRecorder.load_model(filename=filepath, model=self.model)
-
     def assess(
         self,
-        x_test: pd.DataFrame | pd.Series | np.ndarray,
-        y_test: pd.DataFrame | pd.Series | np.ndarray,
+        x: ArrayLike,
+        y: ArrayLike,
         assessment_config: ModelAssessmentConfig | None = None,
-        **kwargs,
-    ) -> dict[str, str | np.ndarray | dict[str, float] | dict | pd.Timestamp]:
+    ) -> AssessmentOutput:
         """Evaluate the trained model using ModelAssessment.
 
         This is a convenience method that creates a ModelAssessment instance
         and evaluates the current model on the provided test data.
 
         Args:
-            x_test (pd.DataFrame | pd.Series | np.ndarray): Test input features for evaluation.
-            y_test (pd.DataFrame | pd.Series | np.ndarray): Test target labels for evaluation.
+            x (ArrayLike): Input features for evaluation.
+            y (ArrayLike): Target labels for evaluation.
             assessment_config (ModelAssessmentConfig | None, optional):
                 Configuration for the assessment process. If None, creates
                 a default configuration based on the task type.
-            **kwargs: Additional arguments passed to ModelAssessment.evaluate().
 
         Returns:
-            dict[str, str | np.ndarray | dict[str, float] | dict | pd.Timestamp]: Dictionary containing evaluation results with
-                metrics, predictions, and other assessment information.
+            AssessmentOutput: Enriched assessment output.
 
         Example:
             >>> # Basic assessment with default configuration
@@ -863,6 +707,11 @@ class ModelTrainer(
             ...     task_type=TaskTypeEnum.CLASSIFICATION
             ... )
             >>> results = trainer.assess(X_test, y_test, assessment_config=config)
+
+        Note:
+            When cross-validation is enabled, all trained fold models
+            are passed to the assessment pipeline. The assessment strategy
+            is responsible for aggregating predictions if needed.
         """
         if assessment_config is None:
             # Create default assessment configuration based on task type
@@ -879,15 +728,19 @@ class ModelTrainer(
                 ),
             )
 
-        logger.debug(
-            "Assessment config | metrics=%s | task_type=%s",
-            assessment_config.metrics,
-            assessment_config.task_type,
+        assess_input = AssessmentInput(
+            models=self.history["models"],
+            x=x,
+            y=y,
+            dataset_split=assessment_config.dataset_split,
+            x_train_folds=self.history["x_train"],
+            y_train_folds=self.history["y_train"],
+            x_val_folds=self.history["x_val"],
+            y_val_folds=self.history["y_val"],
         )
 
         assessor = ModelAssessment(assessment_config)
-        assessor._setup_metrics()
-        return assessor.evaluate(self.model, x_test, y_test, **kwargs)
+        return assessor.evaluate(assess_input)
 
     def _is_classification_task(self) -> bool:
         """Determine if the current task is classification based on the loss function.
@@ -904,8 +757,191 @@ class ModelTrainer(
             precise control, specify the task_type explicitly in the
             assessment_config parameter of the assess() method.
         """
-        classification_criteria = {
-            CriterionEnum.CROSS_ENTROPY.value,
-            CriterionEnum.BINARY_CROSS_ENTROPY.value,
+        return self.config.task_type == TaskTypeEnum.CLASSIFICATION
+
+    def _update_train_history(self, results, x_train, y_train, x_val, y_val):
+        """
+        Update internal training history with artifacts from a training run.
+
+        This method collects and stores outputs produced by the training strategy,
+        including trained models, loss values, and the corresponding dataset
+        partitions used during training. It is called after each training execution,
+        including each fold during cross-validation.
+
+        Args:
+            results (dict[str, Any]): Dictionary returned by the training strategy.
+                Expected keys may include:
+                    - "model": Trained model instance.
+                    - "train_loss": Training loss value.
+                    - "val_loss": Validation loss value.
+            x_train (Any): Training feature subset used in the current training run.
+            y_train (Any): Training target subset used in the current training run.
+            x_val (Any): Validation feature subset used in the current training run.
+            y_val (Any): Validation target subset used in the current training run.
+
+        Note:
+            The method does not enforce strict key presence in `results` in order
+            to remain compatible with different training strategy implementations.
+            Only available artifacts are stored.
+
+        Side Effects:
+            Updates the internal `self.history` dictionary by appending new
+            training artifacts and dataset splits.
+        """
+        if "model" in results:
+            self.history["models"].append(results["model"])
+
+        if "train_loss" in results:
+            self.history["train_losses"].append(results["train_loss"])
+
+        if "val_loss" in results:
+            self.history["val_losses"].append(results["val_loss"])
+
+        self.history["x_train"].append(x_train)
+        self.history["y_train"].append(y_train)
+        self.history["x_val"].append(x_val)
+        self.history["y_val"].append(y_val)
+
+    def _get_artifacts_history_dict(self) -> Mapping[str, list]:
+        """
+        Initialize and return the training artifacts history structure.
+
+        This method creates the base dictionary used to store training artifacts
+        throughout the execution of the training pipeline. The structure supports
+        both single-run training and cross-validation by storing multiple entries
+        per key.
+
+        Returns:
+            Mapping[str, list]: Initialized history dictionary containing empty
+            lists for:
+                - "models": Trained model instances.
+                - "train_losses": Training loss values per run or fold.
+                - "val_losses": Validation loss values per run or fold.
+                - "x_train": Training feature subsets.
+                - "y_train": Training target subsets.
+                - "x_val": Validation feature subsets.
+                - "y_val": Validation target subsets.
+
+        Note:
+            Each list grows dynamically as training progresses, with one entry
+            added per training execution or fold.
+        """
+        return {
+            "models": [],
+            "train_losses": [],
+            "val_losses": [],
+            "x_train": [],
+            "x_val": [],
+            "y_train": [],
+            "y_val": [],
         }
-        return self.config.criterion in classification_criteria
+
+    def _set_seed(self) -> None:
+        """
+        Set global random seeds to improve experiment reproducibility.
+
+        This method configures random number generators for NumPy and PyTorch
+        (CPU and CUDA backends) to ensure deterministic behavior across
+        training runs when possible.
+
+        It also adjusts CuDNN backend settings to favor deterministic
+        operations over performance-optimized but non-deterministic kernels.
+
+        Notes:
+            - Setting `torch.backends.cudnn.deterministic = True` may reduce
+            training performance but improves reproducibility.
+            - Some GPU operations remain non-deterministic depending on
+            hardware and PyTorch version.
+            - For full reproducibility, dataset shuffling and data loader
+            worker seeds should also be controlled.
+
+        Side Effects:
+            Modifies global random generator states for NumPy and PyTorch,
+            affecting all subsequent random operations in the current process.
+        """
+        seed = self.seed
+
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+        if self.config.deterministic:
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+
+    def _compute_class_weights(self, y: ArrayLike) -> torch.Tensor:
+        """
+        Compute class weights for imbalanced classification problems.
+
+        This method generates class weighting tensors to be used by loss
+        functions such as CrossEntropyLoss in order to mitigate class
+        imbalance during training.
+
+        Two strategies are supported:
+
+        - Manual:
+            Uses user-provided weights defined in the trainer configuration.
+
+        - Automatic ("balanced"):
+            Computes weights using scikit-learn's `compute_class_weight`
+            with the "balanced" strategy, which assigns higher weights
+            to underrepresented classes.
+
+        Args:
+            y (ArrayLike): Target labels used to compute class distribution.
+                Can be a NumPy array, pandas Series/DataFrame, or any array-like
+                structure containing class indices.
+
+        Returns:
+            torch.Tensor: Tensor containing class weights ordered by class label,
+                with dtype float32 and moved to the configured training device.
+
+        Raises:
+            ValueError: If manual weighting strategy is selected but
+                `manual_class_weights` is not provided in the configuration.
+
+        Notes:
+            - For manual strategy, class weights are sorted by class label key
+            to ensure correct alignment with model output indices.
+            - For automatic strategy, class labels are inferred directly from `y`.
+            - Returned tensor is placed on the same device used for training
+            (CPU or GPU).
+            - This method assumes a classification task with discrete labels.
+
+        Example:
+            Automatic balancing:
+            >>> weights = trainer._compute_class_weights(y_train)
+            >>> criterion = nn.CrossEntropyLoss(weight=weights)
+
+            Manual balancing:
+            >>> config.manual_class_weights = {0: 1.0, 1: 3.5}
+            >>> weights = trainer._compute_class_weights(y_train)
+        """
+        if self.config.class_weight_strategy == "manual":
+            if self.config.manual_class_weights is None:
+                raise ValueError("manual_class_weights must be provided")
+
+            weights = self.config.manual_class_weights
+            return torch.tensor(
+                [weights[k] for k in sorted(weights.keys())],
+                dtype=torch.float32,
+                device=self.device,
+            )
+
+        # automatic balanced
+        y_np = np.asarray(y)
+
+        classes = np.unique(y_np)
+
+        class_weights = compute_class_weight(
+            class_weight="balanced",
+            classes=classes,
+            y=y_np,
+        )
+
+        return torch.tensor(
+            class_weights,
+            dtype=torch.float32,
+            device=self.device,
+        )
