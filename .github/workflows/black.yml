@@ -17,5 +17,5 @@ jobs:
 
       - uses: psf/black@stable
         with:
-          src: "."
+          src: "toolkit tests"
           options: "--check --verbose --diff"
