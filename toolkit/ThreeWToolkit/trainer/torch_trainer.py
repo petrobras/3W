@@ -11,7 +11,12 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm.auto import tqdm
 
 from ..core.base_dataset import BaseDataset
-from ..core.base_trainer import BaseTrainer, BaseTrainerConfig, PredictionResult, TrainingHistory
+from ..core.base_trainer import (
+    BaseTrainer,
+    BaseTrainerConfig,
+    PredictionResult,
+    TrainingHistory,
+)
 from ..models.torch_models import TorchModelsConfig, TorchModels
 
 logger = logging.getLogger(__name__)
@@ -90,7 +95,7 @@ class TorchTrainer(BaseTrainer):
         """Create optimizer based on config."""
         return self.config.optimizer(
             self.model.parameters(),
-            lr=self.config.learning_rate, # type: ignore
+            lr=self.config.learning_rate,  # type: ignore
             **self.config.optimizer_args,
         )
 
@@ -137,34 +142,11 @@ class TorchTrainer(BaseTrainer):
             batch_size, time_steps, features = X.shape
             X = X.reshape(batch_size, time_steps * features)
 
-        # Auto-detect input size if not set
-        if self.config.config_model.is_input_size_dynamic:
-            inferred_size = X.shape[1]
-            logger.info("Auto-detected input_size=%d", inferred_size)
-            self.config.config_model.input_size = inferred_size
-
-        # Instantiate model after input size is known
-        self.model = self.config.config_model.build().to(self.config.device)  # type: ignore
-        self.optimizer = self._create_optimizer()
-
         y = (
             torch.cat(labels_list)
             if labels_list
             else torch.zeros(X.shape[0], dtype=torch.long)
         )
-
-        # Compute class weights if enabled
-        if self.config.use_class_weights and labels_list:
-            class_weight_dict = self._compute_class_weights(dataset)
-            num_classes = max(class_weight_dict.keys()) + 1
-            weights = torch.zeros(num_classes, dtype=torch.float32)
-            for cls, weight in class_weight_dict.items():
-                weights[cls] = weight
-            self._class_weights = weights.to(self.config.device)
-            logger.info("Using class weights: %s", class_weight_dict)
-
-        # Create criterion with weights
-        self.criterion = self._create_criterion(self._class_weights)
 
         tensor_dataset = TensorDataset(X, y)
         dataloader = DataLoader(
@@ -257,7 +239,7 @@ class TorchTrainer(BaseTrainer):
                 x_batch = x_batch.to(self.config.device)
                 outputs = self.model(x_batch)
 
-                if outputs.shape[1] > 1: # multi-class classification
+                if outputs.shape[1] > 1:  # multi-class classification
                     outputs = torch.argmax(outputs, dim=1)
 
                 predictions.append(outputs.cpu())
@@ -267,6 +249,40 @@ class TorchTrainer(BaseTrainer):
         _predictions = torch.cat(predictions, dim=0).numpy()
 
         return PredictionResult(y_pred=_predictions, y_true=_true_labels)
+
+    def _infer_input_size(self, train_data: DataLoader) -> int:
+        """Infer the input size from the training data."""
+        for x_batch, _ in train_data:
+            return x_batch.shape[1]
+        raise ValueError("Training data is empty, cannot infer input size.")
+
+    def _initialize_training_state(
+        self, train_data, train_dataset: BaseDataset
+    ) -> None:
+        """Build model and intialize optimizer and criterion with class weights."""
+
+        # Auto-detect input size if not set
+        if self.config.config_model.is_input_size_dynamic:
+            input_size = self._infer_input_size(train_data)
+            self.config.config_model.input_size = input_size
+            logger.info("Initializing model with input_size=%d", input_size)
+
+        # Instantiate model after input size is known
+        self.model = self.config.config_model.build().to(self.config.device)  # type: ignore
+        self.optimizer = self._create_optimizer()
+
+        # Compute class weights if enabled
+        if self.config.use_class_weights:
+            class_weight_dict = self._compute_class_weights(train_dataset)
+            num_classes = max(class_weight_dict.keys()) + 1
+            weights = torch.zeros(num_classes, dtype=torch.float32)
+            for cls, weight in class_weight_dict.items():
+                weights[cls] = weight
+            self._class_weights = weights.to(self.config.device)
+            logger.info("Using class weights: %s", class_weight_dict)
+
+        # Create criterion with weights
+        self.criterion = self._create_criterion(self._class_weights)
 
     def _compute_loss(
         self, outputs: torch.Tensor, targets: torch.Tensor

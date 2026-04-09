@@ -210,11 +210,17 @@ class BaseTrainer(ABC):
         else:
             val_data = None
 
-        # 4. Execute training (framework-specific)
+        # 4. Initialize training state (e.g., model instantiation, optimizer setup)
+        logger.info("Initializing training state...")
+        self._initialize_training_state(
+            train_data=train_data, train_dataset=train_dataset
+        )  # type: ignore
+
+        # 5. Execute training (framework-specific)
         logger.info("Executing training...")
         history = self._execute_training(train_data, val_data)
 
-        # 5. Return results
+        # 6. Return results
         result = TrainingResult(
             model=self.model,
             history=history,
@@ -380,4 +386,11 @@ class BaseTrainer(ABC):
         self, train_data: Any, val_data: Any | None
     ) -> TrainingHistory:
         """Execute the training loop (framework-specific)."""
+        pass
+
+    @abstractmethod
+    def _initialize_training_state(
+        self, train_data, train_dataset: BaseDataset
+    ) -> None:
+        """Initialize training state, including random seeds and model instantiation."""
         pass
