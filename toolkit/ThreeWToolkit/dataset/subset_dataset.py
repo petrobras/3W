@@ -20,7 +20,9 @@ class SubsetDataset(BaseDataset):
     Similar to torch.utils.data.Subset but works with any BaseDataset.
     """
 
-    def __init__(self, dataset: BaseDataset, indices: Sequence[int] | npt.NDArray[np.integer]):
+    def __init__(
+        self, dataset: BaseDataset, indices: Sequence[int] | npt.NDArray[np.integer]
+    ):
         """
         Initialize subset dataset.
 
@@ -34,7 +36,7 @@ class SubsetDataset(BaseDataset):
         self.dataset = dataset
         self.indices = indices
 
-        if not self.indices:
+        if len(self.indices) == 0:
             raise ValueError("Indices list cannot be empty")
 
         # Validate indices are within bounds
