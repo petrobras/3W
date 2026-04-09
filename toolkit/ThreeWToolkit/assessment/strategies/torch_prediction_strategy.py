@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from typing import Any
 from ...core.base_prediction_strategies import PredictionStrategy
 from ...core.enums import TaskTypeEnum
 
@@ -52,7 +51,7 @@ class TorchPredictionStrategy(PredictionStrategy):
         model.eval()
         model.to(device)
 
-        y_pred: list[Any] = []
+        y_pred: list[float] = []
 
         with torch.no_grad():
             for X_batch, _ in loader:

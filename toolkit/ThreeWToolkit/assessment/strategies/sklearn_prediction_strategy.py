@@ -20,7 +20,7 @@ class SklearnPredictionStrategy(PredictionStrategy):
         """Generate predictions using a scikit-learn model.
 
         Args:
-            model (Any): Trained scikit-learn model implementing `predict`.
+            model (BaseEstimator): Trained scikit-learn model implementing `predict`.
             task (TaskTypeEnum | None): Task type indicating how predictions
                 should be interpreted. Defaults to TaskTypeEnum.CLASSIFICATION.
             **kwargs: Additional keyword arguments:
@@ -54,7 +54,7 @@ class SklearnPredictionStrategy(PredictionStrategy):
         scikit-learn convention.
 
         Args:
-            model (Any): Trained scikit-learn classification model implementing
+            model (BaseEstimator): Trained scikit-learn classification model implementing
                 `predict_proba`.
             **kwargs: Additional keyword arguments:
                 x (np.ndarray): Input feature matrix of shape (N, D).
