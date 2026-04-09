@@ -14,9 +14,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          filter: blob:none
           sparse-checkout: |
             /*
-            !*.parquet
+            !**/*.parquet
           sparse-checkout-cone-mode: false
 
       - name: Setup Python
@@ -26,14 +27,8 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v4
-
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
         with:
-          path: ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ matrix.python-version }}
+          enable-caching: true
 
       - name: Show versions
         run: |
