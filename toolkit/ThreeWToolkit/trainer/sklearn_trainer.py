@@ -1,5 +1,3 @@
-"""SklearnTrainer for training scikit-learn models with datasets."""
-
 import os
 import logging
 import numpy as np
@@ -17,7 +15,17 @@ logger = logging.getLogger(__name__)
 
 
 class SklearnTrainerConfig(BaseTrainerConfig):
-    """Configuration for scikit-learn trainer."""
+    """Configuration for scikit-learn trainer.
+
+    Args:
+        config_model: Sklearn model configuration
+        n_jobs: Number of parallel jobs. Automatic to number of CPUs if not set.
+        verbose: Verbosity level
+        seed: Random seed for reproducibility
+        use_class_weights: Whether to use class weights for imbalanced datasets
+        class_weight_strategy: Strategy for calculating class weights ('balanced', 'manual', or 'none')
+        manual_class_weights: Optional dictionary of class weights if strategy is 'manual'
+    """
 
     config_model: SklearnModelsConfig = Field(
         ..., description="Sklearn model configuration"
@@ -38,6 +46,10 @@ class SklearnTrainer(BaseTrainer):
     model: SklearnModels
 
     def __init__(self, config: SklearnTrainerConfig):
+        """Initialize SklearnTrainer with given configuration. Builds the specified sklearn model and sets parameters.
+        Args:
+            config: SklearnTrainerConfig containing model configuration and training parameters
+        """
         super().__init__(config)
         self.config: SklearnTrainerConfig = config
 
@@ -59,7 +71,14 @@ class SklearnTrainer(BaseTrainer):
     def _prepare_data(
         self, dataset: BaseDataset, shuffle: bool = True
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Convert dataset to numpy arrays (X, y)."""
+        """Convert dataset to numpy arrays (X, y).
+        Args:
+            dataset: BaseDataset containing signal and label data
+            shuffle: Whether to shuffle the data (default: True). Sklearn models typically handle\
+                    shuffling internally, so this parameter is not used in this implementation.
+        Returns:
+            Tuple of (X, y) where X is the feature array and y is the label array.
+        """
         _ = shuffle  # Sklearn models typically handle shuffling internally
 
         logger.info("Converting dataset to arrays (size=%d)", len(dataset))
@@ -95,7 +114,13 @@ class SklearnTrainer(BaseTrainer):
         train_data: tuple[np.ndarray, np.ndarray],
         val_data: tuple[np.ndarray, np.ndarray] | None,
     ) -> TrainingHistory:
-        """Execute sklearn fit() training."""
+        """Execute sklearn fit() training.
+        Args:
+            train_data: Tuple of (X_train, y_train) for training
+            val_data: Optional tuple of (X_val, y_val) for validation
+        Returns:
+            TrainingHistory containing training and validation scores
+        """
         X_train, y_train = train_data
 
         logger.info(
@@ -155,7 +180,12 @@ class SklearnTrainer(BaseTrainer):
         )
 
     def predict(self, dataset: BaseDataset) -> PredictionResult:
-        """Predict labels for given dataset."""
+        """Predict labels for given dataset.
+        Args:
+            dataset: BaseDataset containing signal data for prediction
+        Returns:
+            PredictionResult containing predicted labels and true labels
+        """
         X, y_true = self._prepare_data(dataset)
         predictions = self.model.model.predict(X)
         return PredictionResult(y_pred=predictions, y_true=y_true)
@@ -163,4 +193,10 @@ class SklearnTrainer(BaseTrainer):
     def _initialize_training_state(
         self, train_data, train_dataset: BaseDataset
     ) -> None:
+        """Run any necessary initialization before training starts. For sklearn, there is no special state to
+        initialize, so this is a no-op.
+        Args:
+            train_data: unused
+            train_dataset: unused
+        """
         return

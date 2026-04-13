@@ -205,7 +205,15 @@ class Pipeline(BasePipeline):
     def _prepare_data(
         self, dataset: BaseDataset | None, fit: bool = False
     ) -> BaseDataset | None:
-        """Apply transformation to dataset."""
+        """Apply transformation to dataset.
+        If fit=True, the transform will be fitted on the provided dataset before transforming.
+
+        Args:
+            dataset: The dataset to prepare.
+            fit: Whether to fit the transform on the dataset before transforming.
+        Returns:
+            The transformed dataset, or None if the input dataset is None.
+        """
         if dataset is None:
             return None
 
@@ -225,6 +233,15 @@ class Pipeline(BasePipeline):
         stratify_by: list[str] | None = None,
         random_state: int | None = None,
     ) -> CrossValidationResult:
+        """Perform k-fold cross-validation on the training dataset.
+        Args:
+            train_dataset: The dataset to perform cross-validation on.
+            num_folds: The number of folds to use for cross-validation.
+            stratify_by: Optional list of column names to stratify by during splitting.
+            random_state: Optional random state for reproducibility of splits.
+        Returns:
+            CrossValidationResult containing results from all folds and metadata.
+        """
         splitter = KFoldSplitter(
             num_splits=num_folds,
             stratify_by=stratify_by or [],

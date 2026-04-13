@@ -10,7 +10,13 @@ from ..dataset.subset_dataset import SubsetDataset
 
 
 class KFoldSplitter(BaseModel):
-    """Utility class for splitting data into training and testing sets."""
+    """Utility class for splitting data into training and testing sets.
+    Args:
+        num_splits (int): Number of folds for cross-validation (must be at least 2).
+        random_state (int | None): Random seed used when shuffling folds. Use None for non-deterministic splits.
+        stratify_by (list[str]): List of metadata keys to stratify by (e.g. ['event_class', 'event_type']).\
+                If empty, no stratification is applied.
+    """
 
     num_splits: int = Field(
         default=5,
@@ -30,6 +36,15 @@ class KFoldSplitter(BaseModel):
     def split_data(
         self, data: BaseDataset
     ) -> Iterator[tuple[SubsetDataset, SubsetDataset]]:
+        """Splits a dataset into training and testing partitions using K-fold.
+        Optionally stratifies the splits based on specified metadata keys.
+        Args:
+            data (BaseDataset): The dataset to split.
+        Yields:
+            tuple[SubsetDataset, SubsetDataset]: A tuple containing the training and testing subsets for each fold.
+        Raises:
+            ValueError: If any of the specified stratification keys are missing from the event metadata.
+        """
 
         if len(self.stratify_by) == 0:
             # No stratification, just use KFold

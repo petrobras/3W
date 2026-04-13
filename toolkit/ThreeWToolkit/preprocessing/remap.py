@@ -5,9 +5,22 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class RemapClassConfig(BasePreprocessingConfig):
+    """Configuration for RemapClass preprocessing step. Allows for an optional class_map to be provided.
+    If class_map is not provided, it will be generated in fit() by collecting all unique classes across events.
+
+    Any unique class labels found in the data will be mapped to a new set of integer labels starting from 0. The
+    original mapping is stored for convenience.
+
+    Args:
+        class_map (dict | None): Optional mapping from original class labels to new class labels. If None, it will
+        be generated in fit() by collecting all unique classes across events.
+    """
+
     class_map: dict | None = Field(
         default=None,
-        description="Mapping from original class labels to new class labels. If None, it will be generated in fit() by collecting all unique classes across events.",
+        description="Mapping from original class labels to new class labels.\
+                     If None, it will be generated in fit() by collecting all\
+                     unique classes across events.",
     )
     _target: type = PrivateAttr(default_factory=lambda: RemapClass)
 
@@ -20,11 +33,20 @@ class RemapClass(BasePreprocessing):
     """
 
     def __init__(self, config: RemapClassConfig):
+        """Initialize the RemapClass preprocessing step with the given configuration.
+
+        Args:
+            config: RemapClassConfig object containing the configuration for this preprocessing step.
+        """
         self.config: RemapClassConfig = config
 
     def fit(self, data: BaseDataset) -> None:
         """
         Collect all unique classes from the label Series if class_map is not provided.
+        If class_map is provided, this will be a no-op.
+
+        Args:
+            data: BaseDataset object from which to collect unique class labels if class_map is not provided.
         """
         if self.config.class_map is not None:
             self.class_map = self.config.class_map

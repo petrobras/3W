@@ -5,6 +5,13 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class RenameColumnsConfig(BasePreprocessingConfig):
+    """Configuration for RenameColumns preprocessing step. Requires a columns_map dictionary that maps old column names
+    to new column names.
+
+    Args:
+        columns_map (dict[str, str]): Mapping from old column names to new column names.
+    """
+
     columns_map: dict[str, str] = Field(
         ..., description="Mapping from old column names to new column names."
     )

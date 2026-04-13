@@ -18,7 +18,7 @@ class ModelRecorder:
         """
         Save a transform to CHECKPOINT_DIR. Supports Pickle (.pkl).
 
-        Parameters:
+        Args:
             transform: Trained transform object.
             filename: File name (saved inside CHECKPOINT_DIR).
 
@@ -41,7 +41,7 @@ class ModelRecorder:
         """
         Load a transform from CHECKPOINT_DIR. Supports Pickle (.pkl).
 
-        Parameters:
+        Args:
             filename: File name (looked up in CHECKPOINT_DIR if not absolute).
         Returns:
             Loaded transform.
@@ -61,7 +61,7 @@ class ModelRecorder:
         """
         Save a model to CHECKPOINT_DIR. Supports PyTorch and scikit-learn.
 
-        Parameters:
+        Args:
             model: Trained model object.
             filename: File name (saved inside CHECKPOINT_DIR).
 
@@ -84,7 +84,7 @@ class ModelRecorder:
         """
         Load a model from CHECKPOINT_DIR. Supports PyTorch (.pt, .pth) and Pickle (.pkl).
 
-        Parameters:
+        Args:
             filename: File name (looked up in CHECKPOINT_DIR if not absolute).
             model_type: Model class for loading (optional, can be inferred from file extension).
 

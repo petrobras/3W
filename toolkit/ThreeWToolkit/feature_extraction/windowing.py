@@ -152,7 +152,7 @@ class Windowing(BaseFeatureExtractor):
             DatasetOutputs: Windowed signals with corresponding labels
         """
 
-        signal = data.signal.values
+        signal = data.signal.to_numpy()
         n_samples, n_channels = signal.shape
 
         # We pad to the right so that (padding_start + n_samples + padding_end - window_size) % step == 0

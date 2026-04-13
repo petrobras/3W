@@ -1,5 +1,3 @@
-"""TorchTrainer for training PyTorch models with datasets."""
-
 import logging
 from typing import Literal, Any
 
@@ -76,6 +74,10 @@ class TorchTrainer(BaseTrainer):
     model: TorchModels
 
     def __init__(self, config: TorchTrainerConfig):
+        """Initialize trainer with config and set random seeds.
+        Args:
+            config: TorchTrainerConfig instance with training parameters
+        """
         super().__init__(config)
         self.config: TorchTrainerConfig = config
         self._class_weights: torch.Tensor | None = None
@@ -100,21 +102,37 @@ class TorchTrainer(BaseTrainer):
         )
 
     def _create_criterion(self, weights: torch.Tensor | None = None) -> nn.Module:
-        """Create loss function, optionally with class weights."""
-
+        """Create loss function, optionally with class weights.
+        Args:
+            weights: Optional tensor of class weights for imbalanced classification
+        Returns:
+            Instantiated loss function
+        """
         # Only CrossEntropyLoss supports class weights
         if weights is not None and self.config.criterion is nn.CrossEntropyLoss:
             return self.config.criterion(weight=weights)
         return self.config.criterion()
 
     def _set_random_seeds(self, seed: int) -> None:
+        """Override to set random seeds for reproducibility across PyTorch and CUDA.
+        Also calls the base implementation to set seeds for other libraries if needed.
+        Args:
+            seed: Integer seed value to set for all random number generators
+        """
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
         return super()._set_random_seeds(seed)
 
     def _prepare_data(self, dataset: BaseDataset, shuffle: bool = True) -> DataLoader:
-        """Convert dataset to PyTorch DataLoader."""
+        """Convert dataset to PyTorch DataLoader.
+        This method currently concatenates all signals into a single tensor.
+        Args:
+            dataset: BaseDataset instance containing signals and labels
+            shuffle: Whether to shuffle the data (default: True)
+        Returns:
+            DataLoader instance for the dataset
+        """
         logger.info("Converting dataset to DataLoader (size=%d)", len(dataset))
 
         signals_list = []
@@ -162,7 +180,13 @@ class TorchTrainer(BaseTrainer):
     def _execute_training(
         self, train_data: DataLoader, val_data: DataLoader | None
     ) -> TrainingHistory:
-        """Execute epoch-based training loop."""
+        """Execute epoch-based training loop.
+        Args:
+            train_data: DataLoader for training data
+            val_data: Optional DataLoader for validation data
+        Returns:
+            TrainingHistory object containing training and validation loss history
+        """
 
         train_loss: list[float] = []
         val_loss: list[float] | None = [] if val_data else None
@@ -212,7 +236,12 @@ class TorchTrainer(BaseTrainer):
         return running_loss / len(train_loader)
 
     def _validate_epoch(self, val_loader: DataLoader) -> float:
-        """Compute validation loss."""
+        """Compute validation loss.
+        Args:
+            val_loader: DataLoader for validation data
+        Returns:
+            Average validation loss for the epoch
+        """
         running_loss = 0.0
 
         with torch.inference_mode():
@@ -227,7 +256,12 @@ class TorchTrainer(BaseTrainer):
         return running_loss / len(val_loader)
 
     def predict(self, dataset: BaseDataset) -> PredictionResult:
-        """Predict labels for a dataset."""
+        """Predict labels for a dataset.
+        Args:
+            dataset: BaseDataset instance to predict on
+        Returns:
+            PredictionResult containing predicted and true labels
+        """
         dataloader = self._prepare_data(dataset, shuffle=False)
         self.model.eval()
 
@@ -259,7 +293,13 @@ class TorchTrainer(BaseTrainer):
     def _initialize_training_state(
         self, train_data, train_dataset: BaseDataset
     ) -> None:
-        """Build model and intialize optimizer and criterion with class weights."""
+        """Build model and intialize optimizer and criterion with class weights.
+        This method is called after data preparation, so the input size can be inferred
+
+        Args:
+            train_data: DataLoader for training data (used to infer input size if needed)
+            train_dataset: Original BaseDataset for training (used to compute class weights if enabled)
+        """
 
         # Auto-detect input size if not set
         if self.config.config_model.is_input_size_dynamic:
@@ -287,7 +327,13 @@ class TorchTrainer(BaseTrainer):
     def _compute_loss(
         self, outputs: torch.Tensor, targets: torch.Tensor
     ) -> torch.Tensor:
-        """Compute loss based on task type."""
+        """Compute loss based on task type.
+        Args:
+            outputs: Model outputs (logits)
+            targets: True labels
+        Returns:
+            Computed loss tensor
+        """
         if outputs.ndim == 1:
             outputs = outputs.unsqueeze(1)
 
