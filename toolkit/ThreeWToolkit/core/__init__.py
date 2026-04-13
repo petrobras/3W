@@ -8,10 +8,6 @@ from .base_visualizer import BaseVisualizer
 from .base_feature_extractor import (
     BaseFeatureExtractor,
     BaseFeatureExtractorConfig,
-    EpsMixin,
-    FeatureSelectionMixin,
-    OverlapOffsetMixin,
-    WindowSizeMixin,
 )
 from .base_instantiable import Instantiable
 from .base_models import BaseModels, ModelsConfig

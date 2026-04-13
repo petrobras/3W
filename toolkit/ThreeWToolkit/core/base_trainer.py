@@ -115,7 +115,7 @@ class BaseTrainerConfig(BaseModel, Instantiable):
 
     @field_validator("manual_class_weights")
     @classmethod
-    def validate_manual_class_weights(cls, manual_class_weights, info):
+    def validate_manual_class_weights(cls, manual_class_weights: dict[int, float] | None, info):
         if (
             info.data["class_weight_strategy"] == "manual"
             and manual_class_weights is None
