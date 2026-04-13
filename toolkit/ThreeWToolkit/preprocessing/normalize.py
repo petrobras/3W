@@ -26,7 +26,9 @@ class NormalizeConfig(BasePreprocessingConfig):
     _target: type = PrivateAttr(default_factory=lambda: Normalize)
 
     @field_validator("norm")
-    def validate_norm(cls, value):
+    def validate_norm(
+        cls, value: Literal["l1", "l2", "max"] | float
+    ) -> Literal["l1", "l2", "max"] | float:
         if isinstance(value, str) and value not in {"l1", "l2", "max"}:
             raise ValueError("norm must be 'l1', 'l2', 'max' or a float value.")
         if isinstance(value, (int, float)) and value <= 0:

@@ -8,7 +8,7 @@ from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
 from sklearn.utils.class_weight import compute_class_weight
 
 from .base_dataset import BaseDataset
@@ -115,7 +115,9 @@ class BaseTrainerConfig(BaseModel, Instantiable):
 
     @field_validator("manual_class_weights")
     @classmethod
-    def validate_manual_class_weights(cls, manual_class_weights: dict[int, float] | None, info):
+    def validate_manual_class_weights(
+        cls, manual_class_weights: dict[int, float] | None, info: ValidationInfo
+    ) -> dict[int, float] | None:
         if (
             info.data["class_weight_strategy"] == "manual"
             and manual_class_weights is None

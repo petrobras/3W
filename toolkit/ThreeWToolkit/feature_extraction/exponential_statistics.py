@@ -48,17 +48,9 @@ class EWStatisticalConfig(
 
     _target: type = PrivateAttr(default_factory=lambda: EWStatisticalFeatures)
 
-    @field_validator("decay")
-    @classmethod
-    def check_decay_range(cls, decay):
-        """Validates that decay is in the (0, 1] range."""
-        if not 0 < decay <= 1:
-            raise ValueError("Decay must be in the range (0, 1]")
-        return decay
-
     @field_validator("features")
     @classmethod
-    def validate_features(cls, features):
+    def validate_features(cls, features: list[str]) -> list[str]:
         """Validates that selected features are available."""
         if features is not None:
             invalid_features = set(features) - _AVAILABLE_FEATURES
@@ -105,7 +97,7 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
         # Normalize weights so they sum to 1
         self.weights = h / np.abs(h).sum()
 
-    def _ew_expectation(self, x):
+    def _ew_expectation(self, x: np.ndarray) -> np.ndarray:
         """Calculate the exponentially weighted expectation (mean) of x."""
         return np.einsum(
             "ij,j->i", x, self.weights

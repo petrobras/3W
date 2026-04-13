@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Any
 import logging
 
 from typing import Protocol, runtime_checkable
@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 from pathlib import Path
 import pickle
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import Field, PrivateAttr, field_validator, ValidationInfo
 
 from ..core.base_models import ModelsConfig, BaseModels
 
@@ -32,14 +32,16 @@ class SklearnModelsConfig(ModelsConfig):
         description="Type of sklearn model to use. Must be one of the supported models.",
     )
 
-    model_params: dict[str, int | float | str | bool | None] = Field(
+    model_params: dict[str, Any] = Field(
         default_factory=dict, description="Model-specific hyperparameters."
     )
     _target: type = PrivateAttr(default_factory=lambda: SklearnModels)
 
     @field_validator("model_params")
     @classmethod
-    def check_model_params(cls, model_params, info):
+    def check_model_params(
+        cls, model_params: dict[str, Any], info: ValidationInfo
+    ) -> dict[str, Any]:
         """Validate that model_type is supported."""
         try:  # try to instantiate the model with given parameters
             info.data["model_type"](**model_params)

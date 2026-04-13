@@ -34,14 +34,20 @@ class ImputeMissingConfig(BasePreprocessingConfig):
     _target: type = PrivateAttr(default_factory=lambda: ImputeMissing)
 
     @field_validator("fill_value")
-    def check_fill_value_for_constant(cls, fill_value, info: ValidationInfo):
+    def check_fill_value_for_constant(
+        cls, fill_value: float | None, info: ValidationInfo
+    ) -> float | None:
         strategy = info.data.get("strategy")
         if strategy == "constant" and fill_value is None:
             raise ValueError("You must provide `fill_value` when strategy='constant'")
         return fill_value
 
     @field_validator("interpolate_method")
-    def check_interpolate_method(cls, interpolate_method, info: ValidationInfo):
+    def check_interpolate_method(
+        cls,
+        interpolate_method: Literal["linear", "nearest", "zero"] | None,
+        info: ValidationInfo,
+    ) -> Literal["linear", "nearest", "zero"] | None:
         strategy = info.data.get("strategy")
         if strategy == "interpolate" and interpolate_method is None:
             raise ValueError(

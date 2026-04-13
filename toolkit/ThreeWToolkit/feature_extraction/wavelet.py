@@ -35,7 +35,7 @@ class WaveletConfig(BaseFeatureExtractorConfig):
 
     @field_validator("wavelet")
     @classmethod
-    def check_wavelet_name(cls, wavelet):
+    def check_wavelet_name(cls, wavelet: str) -> str:
         """Validates that the wavelet name is supported."""
         if wavelet not in pywt.wavelist():  # type: ignore
             raise ValueError(f"Unknown wavelet: '{wavelet}'.")

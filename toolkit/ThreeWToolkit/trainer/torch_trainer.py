@@ -1,7 +1,7 @@
 import logging
 from typing import Literal, Any
 
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import Field, PrivateAttr, field_validator, ValidationInfo
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -55,8 +55,8 @@ class TorchTrainerConfig(BaseTrainerConfig):
     @field_validator("optimizer_args")
     @classmethod
     def check_optimizer_args(
-        cls, optimizer_args, info
-    ) -> dict[str, int | float | str | bool | None]:
+        cls, optimizer_args: dict[str, Any], info: ValidationInfo
+    ) -> dict[str, Any]:
         """Validate that optimizer_args are compatible with the chosen optimizer."""
         optimizer_class = info.data["optimizer"]
         try:

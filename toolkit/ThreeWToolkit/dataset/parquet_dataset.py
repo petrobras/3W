@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 import pandas as pd
 from pandas import read_parquet
-from pydantic import Field, field_validator, PrivateAttr
+from pydantic import Field, field_validator, PrivateAttr, ValidationInfo
 from typing import Literal, Sequence, cast
 
 import numpy as np
@@ -83,7 +83,9 @@ class ParquetDatasetConfig(BaseDatasetConfig):
 
     @field_validator("file_list")
     @classmethod
-    def validate_file_list(cls, file_list, info):
+    def validate_file_list(
+        cls, file_list: list[str] | list[Path] | None, info: ValidationInfo
+    ) -> list[str] | list[Path] | None:
         """
         Ensure that `file_list` is only provided when `split=="list"`.
         Raise a ValueError otherwise.

@@ -49,7 +49,7 @@ class StatisticalConfig(
 
     @field_validator("features")
     @classmethod
-    def validate_features(cls, features):
+    def validate_features(cls, features: list[str]) -> list[str]:
         """Validates that selected features are available."""
         invalid_features = set(features) - set(_STATISTICAL_FEATURES)
         if invalid_features:

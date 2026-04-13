@@ -3,7 +3,7 @@
 import logging
 from typing import Literal
 
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import Field, PrivateAttr, field_validator, ValidationInfo
 
 from .assessment import ModelAssessment, ModelAssessmentConfig
 from .core.base_assessment import AssessmentOutput
@@ -79,7 +79,9 @@ class PipelineConfig(BasePipelineConfig):
 
     @field_validator("num_folds")
     @classmethod
-    def validate_num_folds(cls, num_folds, info):
+    def validate_num_folds(
+        cls, num_folds: int | None, info: ValidationInfo
+    ) -> int | None:
         if info.data.get("task") == "cross_validation" and num_folds is None:
             raise ValueError(
                 "num_folds must be provided when task is 'cross_validation'"

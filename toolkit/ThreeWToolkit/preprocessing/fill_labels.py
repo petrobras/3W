@@ -17,7 +17,7 @@ class FillLabelsConfig(BasePreprocessingConfig):
 
     @field_validator("fill_value")
     @classmethod
-    def validate_fill_value(cls, value, info: ValidationInfo):
+    def validate_fill_value(cls, value: int | None, info: ValidationInfo) -> int | None:
         if info.data.get("fill_method") == "constant" and value is None:
             raise ValueError(
                 "fill_value must be provided when fill_method is 'constant'."
