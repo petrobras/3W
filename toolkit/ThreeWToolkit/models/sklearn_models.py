@@ -25,7 +25,11 @@ class SklearnModelProtocol(Protocol):
 
 
 class SklearnModelsConfig(ModelsConfig):
-    """Sklearn model configuration. Use with SklearnTrainer for training."""
+    """Sklearn model configuration. Use with SklearnTrainer for training.
+    Args:
+    model_type: Type of sklearn model to use. Must be one of the supported models (e.g. LinearRegression).
+    model_params: Model-specific hyperparameters.
+    """
 
     model_type: type[SklearnModelProtocol] = Field(
         ...,
@@ -54,6 +58,10 @@ class SklearnModels(BaseModels):
     """Sklearn model wrapper. Use SklearnTrainer for training."""
 
     def __init__(self, config: SklearnModelsConfig):
+        """Initialize SklearnModels with given configuration.
+        Args:
+            config: SklearnModelsConfig instance containing model configuration.
+        """
         self.config: SklearnModelsConfig = config
 
         self.model: SklearnModelProtocol = self.config.model_type(
@@ -64,10 +72,20 @@ class SklearnModels(BaseModels):
 
     @property
     def model_name(self) -> str:
+        """Get the name of the model class.
+        Returns:
+            Name of the underlying model class.
+        """
         return self.model.__class__.__name__
 
     def save(self, filename: str | Path) -> Path:
-        """Save model to disk."""
+        """Save model to disk.
+        Args:
+            filename: Path to save the model. Must have .pkl or .pickle extension.\
+                    If no extension is provided, .pkl will be used by default.
+        Returns:
+            Path to the saved model.
+        """
         path = Path(filename)  # ensure path
         if path.suffix and path.suffix not in {".pkl", ".pickle"}:
             raise ValueError(
@@ -87,7 +105,12 @@ class SklearnModels(BaseModels):
 
     @classmethod
     def load(cls, filename: str | Path) -> "SklearnModels":
-        """Load model from disk."""
+        """Load model from disk.
+        Args:
+            filename: Path to the saved model.
+        Returns:
+            SklearnModels instance loaded from disk.
+        """
         path = Path(filename)
         with path.open("rb") as f:
             obj = pickle.load(f)
@@ -98,7 +121,15 @@ class SklearnModels(BaseModels):
             return obj
 
     def get_params(self) -> Mapping[str, object]:
+        """Return the parameters of the underlying model.
+        Returns:
+            A mapping of parameter names to their values.
+        """
         return self.model.get_params()
 
     def set_params(self, **params: object) -> None:
+        """Set the parameters of the underlying model.
+        Args:
+            **params: Parameter names and their new values.
+        """
         self.model.set_params(**params)
