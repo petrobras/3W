@@ -146,7 +146,7 @@ class BaseTrainer(ABC):
                 # Convert dataset to framework-specific format
                 ...
 
-            def _execute_training(self, model, train_data, val_data):
+            def _execute_training(self, train_data, val_data):
                 # Run training loop
                 ...
 
