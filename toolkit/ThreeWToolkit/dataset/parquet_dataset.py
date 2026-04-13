@@ -26,6 +26,21 @@ class ParquetDatasetConfig(BaseDatasetConfig):
 
     Defines the dataset location, splits, filtering options,
     and preprocessing behavior.
+
+    Args:
+        path (str | Path): Path to the dataset directory or file.
+        split (str | None): Dataset split to load. If None, load all available files.
+            Options: "train", "val", "test", "list".
+        file_list (list[str | Path] | None): List of files to load if split=="list".
+        event_type (list[str] | None): Event types to include. (e.g., "real", "simulated", "drawn").\
+                Loads all types if `None`.
+        target_class (Sequence[int] | npt.NDArray[np.integer] | None): Event classes to include.\
+                (e.g., 0, 1, 2, ...). Loads all classes if `None`.
+        columns (list[str] | None): Specific data columns to load. Loads all columns if `None`.
+        target_column (str | None): Target column used for supervised tasks. Default is "class".
+        force_download (bool): If True, dataset is downloaded even if it already exists.\
+                In this case, existing files will be overwritten. Default is False.
+        version (str): Dataset version to load. (e.g., "2.0.0", "2.0.1", ...). Default is "2.0.0".
     """
 
     model_config = {"arbitrary_types_allowed": True}
@@ -193,6 +208,11 @@ class ParquetDataset(BaseDataset):
     def _get_event_type_from_filename(self, event: Path) -> str:
         """
         Extract the event type prefix from the file name. Assumes the event type is indicated by a prefix in the file name.
+        Args:
+            event (Path): The path of the event file, relative to root. For example, "0/WELL_123.parquet" or\
+            "1/SIMULATED_456.parquet".
+        Returns:
+            str: The event type ("real", "simulated", "drawn", or "unknown").
         """
         for prefix in [
             ("WELL", "real"),
@@ -206,6 +226,10 @@ class ParquetDataset(BaseDataset):
     def _get_event_class_from_folder(self, event: Path) -> int:
         """
         Extract the event class from the parent folder name. Assumes the parent folder is named with the class number.
+        Args:
+            event (Path): The path of the event file, relative to root.
+        Returns:
+            int: The event class as an integer. Returns -1 if the parent folder name is not an integer.
         """
         try:
             return int(event.parent.name)
@@ -215,6 +239,11 @@ class ParquetDataset(BaseDataset):
     def _check_event_type(self, event: Path) -> bool:
         """
         Check if the event file name matches one of the requested event types.
+        Args:
+            event (Path): The path of the event file, relative to root.
+        Returns:
+            bool: True if the event type matches one of the requested types, False otherwise. If no event types are
+            specified in the config, returns True for all events.
         """
         if self.config.event_type is not None:
             return any(
@@ -227,6 +256,11 @@ class ParquetDataset(BaseDataset):
     def _check_event_class(self, event: Path) -> bool:
         """
         Check if the event folder name matches one of the requested target classes.
+        Args:
+            event (Path): The path of the event file, relative to root.
+        Returns:
+            bool: True if the event class matches one of the requested classes, False otherwise. If no target classes
+            are specified in the config, returns True for all events.
         """
         if isinstance(self.config.target_class, list):
             return int(event.parent.name) in self.config.target_class
@@ -236,6 +270,10 @@ class ParquetDataset(BaseDataset):
     def _filter_events(self, events: list[Path]) -> list[Path]:
         """
         Filter events that match both type and class constraints.
+        Args:
+            events (list[Path]): List of event file paths, relative to root.
+        Returns:
+            list[Path]: List of event file paths that match the specified type and class filters.
         """
         return [
             e

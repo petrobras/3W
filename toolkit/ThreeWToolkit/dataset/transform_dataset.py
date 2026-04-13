@@ -14,7 +14,18 @@ from .transformed_dataset import TransformedDataset
 
 
 class TransformConfig(BaseTransformConfig):
-    """Configuration for transforming a dataset."""
+    """Configuration for the TransformDataset class.
+    This configuration allows users to specify a sequence of preprocessing and\
+            feature extraction steps to apply to a dataset. The transformations\
+            will be applied in the order they are specified, ensuring that the\
+            output of one step is correctly fed into the next step.
+    Args:
+        pre_processing (BasePreprocessingConfig | None): A configuration for the\
+                preprocessing steps to apply to the dataset.
+        feature_extraction (BaseFeatureExtractorConfig | None): A configuration\
+                for the feature extraction steps to apply to the dataset after\
+                preprocessing.
+    """
 
     pre_processing: BasePreprocessingConfig | None = Field(
         default=None,
@@ -48,15 +59,31 @@ class TransformDataset(BaseTransform):
         It needs to run through the entire list of events in the order given by the user,
         so it will be slow if there are many steps that require statistics collection,
         but it will ensure that the statistics are collected in the correct order.
+
+        Args:
+            dataset (BaseDataset): The dataset to fit the transformations on.
         """
         if self.pre_processing_step is not None:
             self.pre_processing_step.fit(dataset)
 
     def transform(self, dataset: BaseDataset) -> TransformedDataset:
+        """Apply the fitted preprocessing and feature extraction steps to the entire dataset.
+        The transformations are actually lazyly applied to each event when accessed, so this method returns a new
+        dataset that applies the transformations to each event on-the-fly.
+        Args:
+            dataset (BaseDataset): The dataset to transform.
+        Returns:
+            TransformedDataset: A new dataset that applies the transformations to each event.
+        """
         return TransformedDataset(dataset, self.transform_event)
 
     def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
-        """Apply the fitted preprocessing and feature extraction steps to a single event."""
+        """Apply the fitted preprocessing and feature extraction steps to a single event.
+        Args:
+            data (DatasetOutputs): The input data to transform.
+        Returns:
+            DatasetOutputs: The transformed data after applying the preprocessing and feature extraction steps.
+        """
 
         if self.pre_processing_step is not None:
             data = self.pre_processing_step.transform(data)
