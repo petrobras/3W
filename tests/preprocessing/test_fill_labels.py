@@ -1,5 +1,6 @@
 """Tests for FillLabels preprocessing class."""
 
+from typing import Literal
 import pytest
 import numpy as np
 
@@ -65,7 +66,11 @@ class TestFillLabelsStrategies:
         "fill_method",
         ["nearest", "ffill", "bfill"],
     )
-    def test_nearest_fill_strategy(self, dataset_with_nan_labels, fill_method):
+    def test_nearest_fill_strategy(
+        self,
+        dataset_with_nan_labels,
+        fill_method: Literal["nearest", "ffill", "bfill", "constant"],
+    ):
         """Test nearest interpolation + bfill + ffill strategy."""
 
         fill_labels = FillLabelsConfig(fill_method=fill_method).build()

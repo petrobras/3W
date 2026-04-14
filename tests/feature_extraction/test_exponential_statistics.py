@@ -43,7 +43,7 @@ class TestExtractStatisticalFeatures:
         ],
     )
     def test_ew_stats_with_windowing(
-        self, simple_dataset, window_size, features, decay
+        self, simple_dataset, window_size: int, features: list, decay: float
     ):
         """Test that feature extraction works correctly with windowed data."""
 

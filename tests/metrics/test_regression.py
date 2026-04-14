@@ -16,7 +16,9 @@ class TestExplainedVarianceScore:
             ([1, 1, 1, 1], [1, 1, 1, 1], 1.0),  # Constant perfect
         ],
     )
-    def test_explained_variance_basic(self, y_true, y_pred, expected):
+    def test_explained_variance_basic(
+        self, y_true: list, y_pred: list, expected: float
+    ):
         """Test explained_variance_score basic calculations."""
         result = explained_variance_score(y_true=y_true, y_pred=y_pred)
 
@@ -35,7 +37,9 @@ class TestExplainedVarianceScore:
             ),  # None means just check it runs
         ],
     )
-    def test_explained_variance_with_weights(self, y_true, y_pred, weights, expected):
+    def test_explained_variance_with_weights(
+        self, y_true: list, y_pred: list, weights: list, expected: float | None
+    ):
         """Test explained_variance_score with sample weights."""
         result = explained_variance_score(
             y_true=y_true, y_pred=y_pred, sample_weight=weights
@@ -72,7 +76,12 @@ class TestExplainedVarianceScore:
         ],
     )
     def test_explained_variance_multioutput(
-        self, y_true, y_pred, multioutput, expected_type, expected_shape
+        self,
+        y_true: list,
+        y_pred: list,
+        multioutput: str,
+        expected_type: type,
+        expected_shape,
     ):
         """Test explained_variance_score with different multioutput options."""
         result = explained_variance_score(
@@ -81,7 +90,7 @@ class TestExplainedVarianceScore:
 
         assert isinstance(result, expected_type)
         if expected_shape:
-            assert result.shape == expected_shape
+            assert result.shape == expected_shape  # type: ignore
 
     @pytest.mark.parametrize(
         "multioutput,expected_value",
@@ -90,7 +99,9 @@ class TestExplainedVarianceScore:
             ("raw_values", np.array([0.96774194, 1.0])),
         ],
     )
-    def test_explained_variance_multioutput_values(self, multioutput, expected_value):
+    def test_explained_variance_multioutput_values(
+        self, multioutput: str, expected_value
+    ):
         """Test explained_variance_score multioutput expected values."""
         y_true = [[0.5, 1], [-1, 1], [7, -6]]
         y_pred = [[0, 2], [-1, 2], [8, -5]]
@@ -117,7 +128,9 @@ class TestExplainedVarianceScore:
             ),  # Weight mismatch
         ],
     )
-    def test_explained_variance_errors(self, y_true, y_pred, kwargs, error_type):
+    def test_explained_variance_errors(
+        self, y_true, y_pred, kwargs: dict, error_type: type | tuple
+    ):
         """Test explained_variance_score error handling."""
         with pytest.raises(error_type):
             explained_variance_score(y_true=y_true, y_pred=y_pred, **kwargs)
@@ -129,7 +142,7 @@ class TestExplainedVarianceScore:
             ([1, 1, 1], [0, 0, 0]),  # Opposite predictions
         ],
     )
-    def test_explained_variance_can_be_negative(self, y_true, y_pred):
+    def test_explained_variance_can_be_negative(self, y_true: list, y_pred: list):
         """Test that explained_variance_score can be negative for poor predictions."""
         result = explained_variance_score(y_true=y_true, y_pred=y_pred)
         assert isinstance(result, float)
@@ -207,7 +220,7 @@ class TestEdgeCases:
         "size",
         [2, 10, 100, 1000],
     )
-    def test_different_sizes(self, size):
+    def test_different_sizes(self, size: int):
         """Test with different array sizes."""
         np.random.seed(42)
         y_true = np.random.randn(size)

@@ -36,7 +36,7 @@ class TestMLPConfig:
         assert not config.is_input_size_dynamic
 
     @pytest.mark.parametrize("activation", [nn.ReLU(), nn.Sigmoid(), nn.Tanh()])
-    def test_valid_activation_functions(self, activation):
+    def test_valid_activation_functions(self, activation: nn.Module):
         """All valid activation functions should be accepted."""
         config = MLPConfig(
             hidden_sizes=(32,), output_size=2, activation_function=activation
@@ -135,7 +135,7 @@ class TestMLP:
         assert output.shape == (8, 3)
 
     @pytest.mark.parametrize("batch_size", [1, 16, 64])
-    def test_forward_various_batch_sizes(self, basic_config, batch_size):
+    def test_forward_various_batch_sizes(self, basic_config, batch_size: int):
         """Model should handle various batch sizes."""
         model = MLP(basic_config)
         x = torch.randn(batch_size, 100)
@@ -143,7 +143,7 @@ class TestMLP:
         assert output.shape == (batch_size, 3)
 
     @pytest.mark.parametrize("activation", [nn.ReLU(), nn.Sigmoid(), nn.Tanh()])
-    def test_activation_functions(self, activation):
+    def test_activation_functions(self, activation: nn.Module):
         """Model should use correct activation function."""
         config = MLPConfig(
             hidden_sizes=(32,),

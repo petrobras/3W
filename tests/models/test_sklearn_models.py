@@ -1,6 +1,7 @@
 """Tests for sklearn_models module."""
 
 import tempfile
+from typing import Type, Any
 
 from ThreeWToolkit.models.sklearn_models import SklearnModelsConfig, SklearnModels
 import pytest
@@ -11,7 +12,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-model_configs = {
+model_configs: dict[Type, dict[str, Any]] = {
     LinearRegression: {
         "fit_intercept": True,
     },
@@ -31,7 +32,7 @@ class TestSklearnModelsConfig:
     """Tests for SklearnModelsConfig validation and behavior."""
 
     @pytest.mark.parametrize("model_type", model_configs.keys())
-    def test_all_model_types(self, model_type):
+    def test_all_model_types(self, model_type: Type):
         """All supported model types should work."""
 
         try:  # try to build the config with default parameters

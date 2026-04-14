@@ -41,7 +41,9 @@ class TestExtractStatisticalFeatures:
             list(_STATISTICAL_FEATURES.keys()),
         ],
     )
-    def test_stats_with_windowing(self, simple_dataset, window_size, features):
+    def test_stats_with_windowing(
+        self, simple_dataset, window_size: int, features: list
+    ):
         """Test that statistical feature extraction works correctly with windowed data."""
 
         feature_extractor = SequentialFeatureAdapterConfig(

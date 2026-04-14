@@ -32,7 +32,7 @@ class TestWindowing:
     """Test basic windowing functionality."""
 
     @pytest.mark.parametrize("win_size", [64, 128, 256])
-    def test_window_size(self, simple_dataset, win_size):
+    def test_window_size(self, simple_dataset, win_size: int):
 
         windowing = WindowingConfig(window_size=win_size, overlap=0.5).build()
         windowed_dataset = TransformedDataset(simple_dataset, windowing.transform)
@@ -58,7 +58,12 @@ class TestWindowing:
     @pytest.mark.parametrize("pad_start", [True, False])
     @pytest.mark.parametrize("pad_last", [True, False])
     def test_window_padding(
-        self, simple_dataset, win_size, overlap, pad_start, pad_last
+        self,
+        simple_dataset,
+        win_size: int,
+        overlap: float,
+        pad_start: bool,
+        pad_last: bool,
     ):
 
         windowing = WindowingConfig(

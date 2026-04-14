@@ -7,6 +7,7 @@ from torch import nn
 from torch import optim
 import numpy as np
 import pandas as pd
+from typing import Type
 
 from ThreeWToolkit.trainer.torch_trainer import TorchTrainer, TorchTrainerConfig
 from ThreeWToolkit.models.mlp import MLPConfig
@@ -89,7 +90,7 @@ class TestTorchTrainerConfig:
     @pytest.mark.parametrize(
         "optimizer", [optim.Adam, optim.SGD, optim.AdamW, optim.RMSprop]
     )
-    def test_valid_optimizers(self, mlp_config, optimizer):
+    def test_valid_optimizers(self, mlp_config, optimizer: Type[optim.Optimizer]):
         """All valid optimizers should be accepted."""
         config = TorchTrainerConfig(config_model=mlp_config, optimizer=optimizer)
         assert config.optimizer == optimizer
@@ -100,7 +101,7 @@ class TestTorchTrainerConfig:
             TorchTrainerConfig(config_model=mlp_config, optimizer="invalid")  # type: ignore
 
     @pytest.mark.parametrize("criterion", [nn.CrossEntropyLoss, nn.MSELoss, nn.L1Loss])
-    def test_valid_criteria(self, mlp_config, criterion):
+    def test_valid_criteria(self, mlp_config, criterion: Type[nn.Module]):
         """All valid criteria should be accepted."""
         config = TorchTrainerConfig(config_model=mlp_config, criterion=criterion)
         assert config.criterion == criterion

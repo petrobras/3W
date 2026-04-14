@@ -3,6 +3,7 @@
 import pytest
 import numpy as np
 import pandas as pd
+from typing import Type
 
 from pydantic import ValidationError
 
@@ -308,7 +309,7 @@ class TestSklearnTrainerAllModels:
             GradientBoostingClassifier,
         ],
     )
-    def test_train_all_model_types(self, model_type, mock_dataset):
+    def test_train_all_model_types(self, model_type: Type, mock_dataset):
         """All model types should train successfully."""
         sklearn_config = SklearnModelsConfig(model_type=model_type)
         config = SklearnTrainerConfig(config_model=sklearn_config)

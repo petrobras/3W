@@ -2,6 +2,7 @@
 
 import pytest
 import numpy as np
+from typing import Literal
 
 from ThreeWToolkit.core.base_dataset import BaseDataset
 from ThreeWToolkit.dataset.transformed_dataset import TransformedDataset
@@ -18,7 +19,9 @@ class TestNormalizeStrategies:
     """Test different normalization strategies."""
 
     @pytest.mark.parametrize("norm", ["l1", "l2", "max", 1.0, 2.0, 3.0])
-    def test_normalize_dataset_named(self, simple_dataset, norm):
+    def test_normalize_dataset_named(
+        self, simple_dataset, norm: Literal["l1", "l2", "max"] | float
+    ):
         """Test L2 normalization."""
         normalizer = NormalizeConfig(norm=norm).build()
         normalizer.fit(simple_dataset)

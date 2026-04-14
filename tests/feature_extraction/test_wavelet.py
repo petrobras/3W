@@ -33,7 +33,7 @@ class TestExtractWaveletFeatures:
     @pytest.mark.parametrize("wavelet", ["haar", "db4", "sym5"])
     @pytest.mark.parametrize("full", [True, False])
     def test_wavelet_with_windowing(
-        self, simple_dataset, level, overlap, wavelet, full
+        self, simple_dataset, level: int, overlap: float, wavelet: str, full: bool
     ):
         """Test that wavelet feature extraction works correctly with windowed data."""
 
