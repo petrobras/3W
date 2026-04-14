@@ -15,17 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class SklearnTrainerConfig(BaseTrainerConfig):
-    """Configuration for scikit-learn trainer.
-
-    Args:
-        config_model: Sklearn model configuration
-        n_jobs: Number of parallel jobs. Automatic to number of CPUs if not set.
-        verbose: Verbosity level
-        seed: Random seed for reproducibility
-        use_class_weights: Whether to use class weights for imbalanced datasets
-        class_weight_strategy: Strategy for calculating class weights ('balanced', 'manual', or 'none')
-        manual_class_weights: Optional dictionary of class weights if strategy is 'manual'
-    """
+    """Configuration for scikit-learn trainer."""
 
     config_model: SklearnModelsConfig = Field(
         ..., description="Sklearn model configuration"

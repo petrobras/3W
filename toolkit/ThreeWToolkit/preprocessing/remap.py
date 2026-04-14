@@ -5,22 +5,11 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class RemapClassConfig(BasePreprocessingConfig):
-    """Configuration for RemapClass preprocessing step. Allows for an optional class_map to be provided.
-    If class_map is not provided, it will be generated in fit() by collecting all unique classes across events.
-
-    Any unique class labels found in the data will be mapped to a new set of integer labels starting from 0. The
-    original mapping is stored for convenience.
-
-    Args:
-        class_map (dict | None): Optional mapping from original class labels to new class labels. If None, it will
-        be generated in fit() by collecting all unique classes across events.
-    """
+    """Configuration for remapping class labels to integers starting from 0."""
 
     class_map: dict | None = Field(
         default=None,
-        description="Mapping from original class labels to new class labels.\
-                     If None, it will be generated in fit() by collecting all\
-                     unique classes across events.",
+        description="Optional mapping from original class labels to new labels. Auto-generated from data if None.",
     )
     _target: type = PrivateAttr(default_factory=lambda: RemapClass)
 

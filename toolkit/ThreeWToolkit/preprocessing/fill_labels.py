@@ -35,16 +35,21 @@ class FillLabels(BasePreprocessing):
         self.config: FillLabelsConfig = config
 
     def fit(self, data: BaseDataset) -> None:
-        """No need to fit anything for this preprocessing step."""
+        """No fitting needed for this preprocessing step.
+
+        Args:
+            data: Dataset (not used).
+        """
         pass
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
-        """
-        Fill missing values in the label Series according to the specified method.
-            - If fill_method is 'constant', fill missing values with the specified fill_value.
-            - If fill_method is 'ffill', fill missing values using forward fill then backward fill.
-            - If fill_method is 'bfill', fill missing values using backward fill then forward fill.
-            - If fill_method is 'nearest', fill missing values using nearest interpolation then bfill and ffill to handle any remaining NaNs.
+        """Fill missing label values using the configured strategy.
+
+        Args:
+            data: Dataset outputs with labels to fill.
+
+        Returns:
+            Dataset outputs with filled labels.
         """
 
         if data.label is None:  # Noop if there are no labels to fill

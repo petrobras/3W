@@ -48,7 +48,11 @@ class SubsetDataset(BaseDataset):
                 )
 
     def __len__(self) -> int:
-        """Return the number of samples in this subset."""
+        """Return the number of samples in this subset.
+
+        Returns:
+            Number of samples in the subset.
+        """
         return len(self.indices)
 
     def __getitem__(self, idx: int) -> DatasetOutputs:

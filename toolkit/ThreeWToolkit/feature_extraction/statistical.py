@@ -68,8 +68,13 @@ class StatisticalFeatures(BaseFeatureExtractor):
         self.config: StatisticalConfig = config
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
-        """
-        Computes selected statistical features for each window in the input data.
+        """Compute selected statistical features for each window in the input data.
+
+        Args:
+            data: Windowed dataset outputs with multi-index (window, variable).
+
+        Returns:
+            DatasetOutputs with extracted statistical features.
         """
         if data.signal.index.names != ["window", "variable"]:
             raise ValueError("StatisticalFeatures must operate on windowed data.")

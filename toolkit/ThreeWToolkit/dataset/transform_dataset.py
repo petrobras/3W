@@ -14,18 +14,7 @@ from .transformed_dataset import TransformedDataset
 
 
 class TransformConfig(BaseTransformConfig):
-    """Configuration for the TransformDataset class.
-    This configuration allows users to specify a sequence of preprocessing and\
-            feature extraction steps to apply to a dataset. The transformations\
-            will be applied in the order they are specified, ensuring that the\
-            output of one step is correctly fed into the next step.
-    Args:
-        pre_processing (BasePreprocessingConfig | None): A configuration for the\
-                preprocessing steps to apply to the dataset.
-        feature_extraction (BaseFeatureExtractorConfig | None): A configuration\
-                for the feature extraction steps to apply to the dataset after\
-                preprocessing.
-    """
+    """Configuration for sequential preprocessing and feature extraction on a dataset."""
 
     pre_processing: BasePreprocessingConfig | None = Field(
         default=None,

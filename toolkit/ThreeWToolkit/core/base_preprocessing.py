@@ -19,9 +19,20 @@ class BasePreprocessing(ABC):
 
     @abstractmethod
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
-        """Transform the data using the fitted preprocessing step."""
+        """Transform the data using the fitted preprocessing step.
+
+        Args:
+            data: Input dataset outputs to transform.
+
+        Returns:
+            Transformed dataset outputs.
+        """
         raise NotImplementedError("Subclasses must implement the transform method.")
 
     def fit(self, data: BaseDataset) -> None:
-        """If needed, fit the preprocessing step to the dataset."""
+        """Fit the preprocessing step to the dataset if needed.
+
+        Args:
+            data: Dataset to fit the step on.
+        """
         pass  # do nothing by default.

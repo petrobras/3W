@@ -31,56 +31,34 @@ _3W_CATEGORICAL_FEATURES = (
 
 
 class CleanSignalsConfig(BasePreprocessingConfig):
-    """
-    Configuration for the CleanSignals feature extractor.
-
-    This configuration includes thresholds for identifying frozen / out-of-range signals based on the interquartile
-    range (IQR) of the average and standard deviation of the signals.
-
-    Events whose statistics (standard deviation or average) fall outside the specified IQR thresholds may be considered faulty, and
-    will be replaced with NaN values.
-
-    Larger IQR thresholds will be more lenient, while smaller IQR thresholds will be more strict in identifying frozen /
-    out-of-range signals.
-
-    Categorical signals should not be processed by this feature extractor, as the IQR-based thresholds are designed for
-    continuous signals.
-
-    """
+    """Configuration for identifying and cleaning frozen or out-of-range signals using IQR thresholds."""
 
     average_iqr_threshold: float = Field(
         default=3.0,
         gt=0.0,
-        description="Threshold for identifying frozen signals based on the interquartile range (IQR) of the average.\
-                     Signals with average IQR below this threshold may be considered frozen.",
+        description="IQR threshold for average values. Signals below this may be considered frozen.",
     )
 
     std_iqr_threshold: float = Field(
         default=3.0,
         gt=0.0,
-        description="Threshold for identifying frozen signals based on the interquartile range (IQR) of the standard\
-        deviation. Signals with std IQR below this threshold may be considered frozen.",
+        description="IQR threshold for standard deviation. Signals below this may be considered frozen.",
     )
 
     absolute_std_threshold: float | None = Field(
         default=1e-6,
         gt=0.0,
-        description="Absolute threshold for identifying frozen signals based on standard deviation. Signals with std below\
-                     this threshold may be considered frozen, regardless of the IQR-based thresholds. Setting this to\
-                     None will disable the absolute std threshold.",
+        description="Absolute standard deviation threshold for frozen detection. Set to None to disable.",
     )
 
     missing_column_threshold: float = Field(
         default=0.6,
-        description="Drop columns that are all-NaN in more than this fraction of events.\
-                     This filtering occurs after the IQR-based thresholding.",
+        description="Drop columns that are all-NaN in more than this fraction of events.",
     )
 
     exclude_features: list[str] = Field(
         default=_3W_CATEGORICAL_FEATURES,
-        description="List of feature names to exclude from cleaning. These features will not be processed by the\
-                     CleanSignals preprocessor, and will be left unchanged. By default, this includes known categorical\
-                     features that should not be processed by the IQR-based thresholds.",
+        description="Feature names to exclude from cleaning. Categorical features left unchanged.",
     )
 
     _target: type = PrivateAttr(default_factory=lambda: CleanSignals)

@@ -8,10 +8,7 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class SequentialPreprocessingAdapterConfig(BasePreprocessingConfig):
-    """Configuration for SequentialPreprocessingAdapter, which applies a list of preprocessing steps sequentially.
-    Args:
-        steps (list[BasePreprocessingConfig]): A list of preprocessing step configurations to apply sequentially.
-    """
+    """Configuration for sequential preprocessing."""
 
     steps: list[BasePreprocessingConfig] = Field(
         ..., description="List of preprocessing steps to apply sequentially."

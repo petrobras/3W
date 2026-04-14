@@ -20,13 +20,21 @@ class BaseTransform(ABC):
 
     @abstractmethod
     def fit(self, dataset: BaseDataset) -> None:
-        """If needed, fit the transformation step to the data.
-        By default, this does nothing, as some methods won't need fitting."""
+        """Fit the transformation step to the dataset if needed.
+
+        Args:
+            dataset: Dataset to fit on.
+        """
         pass
 
     def transform_event(self, data: DatasetOutputs) -> DatasetOutputs:
         """Transform a single event using the fitted transformation step.
-        By default, this method raises NotImplementedError, as subclasses should implement it.
+
+        Args:
+            data: Single event's dataset outputs to transform.
+
+        Returns:
+            Transformed dataset outputs.
         """
         raise NotImplementedError(
             "Subclasses must implement the transform_event method."

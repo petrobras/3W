@@ -27,7 +27,11 @@ class TransformedDataset(BaseDataset):
         self.transform = transform
 
     def __len__(self) -> int:
-        """Return the length of the dataset, which is the same as the original dataset."""
+        """Return the length of the dataset, which is the same as the original dataset.
+
+        Returns:
+            Number of samples in the transformed dataset.
+        """
         return len(self.dataset)
 
     def __getitem__(self, idx: int) -> DatasetOutputs:

@@ -22,26 +22,7 @@ DATASET_VALIDATION_RULES = {
 
 
 class ParquetDatasetConfig(BaseDatasetConfig):
-    """Configuration schema for loading a Parquet dataset.
-
-    Defines the dataset location, splits, filtering options,
-    and preprocessing behavior.
-
-    Args:
-        path (str | Path): Path to the dataset directory or file.
-        split (str | None): Dataset split to load. If None, load all available files.
-            Options: "train", "val", "test", "list".
-        file_list (list[str | Path] | None): List of files to load if split=="list".
-        event_type (list[str] | None): Event types to include. (e.g., "real", "simulated", "drawn").\
-                Loads all types if `None`.
-        target_class (Sequence[int] | npt.NDArray[np.integer] | None): Event classes to include.\
-                (e.g., 0, 1, 2, ...). Loads all classes if `None`.
-        columns (list[str] | None): Specific data columns to load. Loads all columns if `None`.
-        target_column (str | None): Target column used for supervised tasks. Default is "class".
-        force_download (bool): If True, dataset is downloaded even if it already exists.\
-                In this case, existing files will be overwritten. Default is False.
-        version (str): Dataset version to load. (e.g., "2.0.0", "2.0.1", ...). Default is "2.0.0".
-    """
+    """Configuration schema for loading a Parquet dataset."""
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -314,7 +295,11 @@ class ParquetDataset(BaseDataset):
         return pass_validation, error_messages
 
     def __len__(self) -> int:
-        """Return the number of events in the dataset."""
+        """Return the number of events in the dataset.
+
+        Returns:
+            Total number of events in the dataset.
+        """
         return len(self.files_events)
 
     def __getitem__(self, idx: int) -> DatasetOutputs:

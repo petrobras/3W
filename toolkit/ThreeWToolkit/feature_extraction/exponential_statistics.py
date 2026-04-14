@@ -98,7 +98,14 @@ class EWStatisticalFeatures(BaseFeatureExtractor):
         self.weights = h / np.abs(h).sum()
 
     def _ew_expectation(self, x: np.ndarray) -> np.ndarray:
-        """Calculate the exponentially weighted expectation (mean) of x."""
+        """Calculate the exponentially weighted expectation (mean) of x.
+
+        Args:
+            x: Input array of shape (n_windows, n_features).
+
+        Returns:
+            Exponentially weighted means for each row.
+        """
         return np.einsum(
             "ij,j->i", x, self.weights
         )  # dot product of each row of x with weights

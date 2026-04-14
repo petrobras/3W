@@ -25,11 +25,7 @@ class SklearnModelProtocol(Protocol):
 
 
 class SklearnModelsConfig(ModelsConfig):
-    """Sklearn model configuration. Use with SklearnTrainer for training.
-    Args:
-    model_type: Type of sklearn model to use. Must be one of the supported models (e.g. LinearRegression).
-    model_params: Model-specific hyperparameters.
-    """
+    """Configuration for scikit-learn models."""
 
     model_type: type[SklearnModelProtocol] = Field(
         ...,

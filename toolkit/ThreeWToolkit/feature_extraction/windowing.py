@@ -16,7 +16,7 @@ from ..core.dataset_outputs import DatasetOutputs
 class WindowingConfig(BaseFeatureExtractorConfig):
     window: str | tuple = Field(
         default="boxcar",
-        description="Window type for signal data. str or tuple of (window_name, param1, param2, ...).",
+        description="Window type from scipy.signal.get_window: string ('boxcar', 'hamming', etc.) or tuple (name, param).",
     )
 
     label_strategy: Literal["last", "mode"] = Field(

@@ -94,7 +94,11 @@ class TorchTrainer(BaseTrainer):
         )
 
     def _create_optimizer(self) -> optim.Optimizer:
-        """Create optimizer based on config."""
+        """Create optimizer based on config.
+
+        Returns:
+            Configured PyTorch optimizer instance.
+        """
         return self.config.optimizer(
             self.model.parameters(),
             lr=self.config.learning_rate,  # type: ignore
@@ -217,7 +221,14 @@ class TorchTrainer(BaseTrainer):
         return TrainingHistory(train_loss=train_loss, val_loss=val_loss)
 
     def _train_epoch(self, train_loader: DataLoader) -> float:
-        """Run single training epoch."""
+        """Run a single training epoch.
+
+        Args:
+            train_loader: DataLoader providing training batches.
+
+        Returns:
+            Average loss for the epoch.
+        """
         self.model.train()
         running_loss = 0.0
 
@@ -285,7 +296,17 @@ class TorchTrainer(BaseTrainer):
         return PredictionResult(y_pred=_predictions, y_true=_true_labels)
 
     def _infer_input_size(self, train_data: DataLoader) -> int:
-        """Infer the input size from the training data."""
+        """Infer the input size from the training data.
+
+        Args:
+            train_data: DataLoader providing training batches.
+
+        Returns:
+            Number of input features.
+
+        Raises:
+            ValueError: If training data is empty.
+        """
         if len(train_data) > 0:
             return int(train_data.dataset.tensors[0].shape[1])  # type: ignore
         raise ValueError("Training data is empty, cannot infer input size.")

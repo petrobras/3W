@@ -11,17 +11,15 @@ from .clean_signals import _3W_CATEGORICAL_FEATURES
 class NormalizeConfig(BasePreprocessingConfig):
     norm: Literal["l1", "l2", "max"] | float = Field(
         default="l2",
-        description="Normalization method to apply. Can be 'l1', 'l2', 'max' for standard normalization, or a generic norm",
+        description="Normalization method: 'l1', 'l2', 'max' for standard methods, or a custom numeric norm value.",
     )
     exclude_features: list[str] = Field(
         default=_3W_CATEGORICAL_FEATURES,
-        description="List of feature names to exclude from normalization. These features will not be processed by the\
-                     Normalize preprocessor, and will be left unchanged. By default, this includes known categorical\
-                     features that should not be processed by normalization.",
+        description="Feature names to exclude from normalization. Categorical features left unchanged.",
     )
     eps: float = Field(
         default=1e-6,
-        description="Small constant added to denominator to prevent division by zero during normalization.",
+        description="Small constant added to denominator to prevent division by zero.",
     )
     _target: type = PrivateAttr(default_factory=lambda: Normalize)
 

@@ -39,6 +39,9 @@ class BaseModels(ABC):
 
         Args:
             filename: File path where model should be saved.
+
+        Returns:
+            Path to the saved model file.
         """
         pass
 

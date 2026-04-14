@@ -21,7 +21,8 @@ class MLPConfig(TorchModelsConfig):
         ..., min_length=1, description="Tuple of hidden layer sizes."
     )
     activation_function: nn.Module = Field(
-        default=nn.ReLU(), description="Activation function for hidden layers."
+        default=nn.ReLU(),
+        description="PyTorch activation function module (e.g., ReLU, Tanh, Sigmoid) applied to hidden layers.",
     )
     model_config = ConfigDict(arbitrary_types_allowed=True)
     _target: type = PrivateAttr(default_factory=lambda: MLP)

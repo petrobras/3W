@@ -60,7 +60,18 @@ class MetricRegistry:
     def resolve(
         self, task_type: TaskTypeEnum, metrics: list[str]
     ) -> dict[str, Callable[[np.ndarray, np.ndarray], float]]:
-        """Resolve metric names to callable functions."""
+        """Resolve metric names to callable functions.
+
+        Args:
+            task_type: Type of ML task (classification or regression).
+            metrics: List of metric names to resolve.
+
+        Returns:
+            Dictionary mapping metric names to callable score functions.
+
+        Raises:
+            ValueError: If a requested metric is not available for the task type.
+        """
         available = self._registry.get(task_type, {})
         resolved = {}
         for m in metrics:
@@ -71,18 +82,7 @@ class MetricRegistry:
 
 
 class ModelAssessmentConfig(BaseAssessmentConfig):
-    """
-    Configuration for model assessment and evaluation.
-
-    Args:
-        metrics (list[str]): List of metric names to calculate.
-        output_dir (Path): Directory to save assessment results.
-        export_results (bool): Whether to export results to CSV files.
-        generate_report (bool): Whether to generate LaTeX report using ReportGeneration.
-        task_type (TaskTypeEnum): Type of task (TaskTypeEnum.CLASSIFICATION or TaskTypeEnum.REGRESSION).
-        report_title (str | None): Title for the report.
-        report_author (str): Author name for the report.
-    """
+    """Configuration for model assessment and evaluation."""
 
     metrics: list[str] = Field(
         default=["accuracy", "f1"], description="Metrics to compute."
@@ -263,7 +263,11 @@ class ModelAssessment(BaseAssessment):
         return self.results
 
     def summary(self) -> str:
-        """Generate summary of assessment results."""
+        """Generate summary of assessment results.
+
+        Returns:
+            Formatted string containing assessment summary including model info and metrics.
+        """
         if not self.results:
             return "No evaluation results available."
 

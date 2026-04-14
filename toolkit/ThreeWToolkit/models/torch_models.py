@@ -92,5 +92,9 @@ class TorchModels(BaseModels, nn.Module):
 
     @abstractmethod
     def get_params(self) -> ParamsT:
-        """Return model parameters."""
+        """Return model parameters.
+
+        Returns:
+            Iterable of model parameters (Tensors or parameter tuples).
+        """
         pass

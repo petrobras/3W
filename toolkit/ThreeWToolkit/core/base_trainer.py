@@ -244,7 +244,14 @@ class BaseTrainer(ABC):
 
     @abstractmethod
     def predict(self, dataset: BaseDataset) -> PredictionResult:
-        """Make predictions on the test dataset."""
+        """Make predictions on a dataset.
+
+        Args:
+            dataset: Dataset to make predictions on.
+
+        Returns:
+            PredictionResult containing predictions and related metadata.
+        """
         pass
 
     def _validate_datasets(

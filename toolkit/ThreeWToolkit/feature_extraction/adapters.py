@@ -10,10 +10,7 @@ from pydantic import Field, PrivateAttr
 
 
 class SequentialFeatureAdapterConfig(BaseFeatureExtractorConfig):
-    """Configuration for SequentialFeatureAdapter, which applies a list of feature extractors sequentially.
-    Args:
-        steps (list[BaseFeatureExtractorConfig]): A list of feature extractor configurations to apply.
-    """
+    """Configuration for sequential feature extraction."""
 
     steps: list[BaseFeatureExtractorConfig] = Field(
         ..., description="List of feature extractors to apply sequentially."
@@ -22,11 +19,7 @@ class SequentialFeatureAdapterConfig(BaseFeatureExtractorConfig):
 
 
 class ConcatFeatureAdapterConfig(BaseFeatureExtractorConfig):
-    """Configuration for ConcatFeatureAdapter, which applies a list of feature extractors and concatenates their
-    outputs (contatenates side-by-side).
-    Args:
-        steps (list[BaseFeatureExtractorConfig]): A list of feature extractor configurations to apply and concatenate.
-    """
+    """Configuration for concatenating outputs from multiple feature extractors."""
 
     steps: list[BaseFeatureExtractorConfig] = Field(
         ...,
