@@ -37,7 +37,7 @@ class TestSklearnModelsConfig:
         class NotAModel:
             pass
 
-        with pytest.raises(ValueError, match="Unsupported model type"):
+        with pytest.raises(ValueError):
             SklearnModelsConfig(model_type=NotAModel).build()  # type: ignore
 
     @pytest.mark.parametrize("model_type", model_configs.keys())

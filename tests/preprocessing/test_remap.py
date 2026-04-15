@@ -35,7 +35,9 @@ class TestRemapClassManualMapping:
             class_map={200: 0}
         ).build()  # dataset does not have label 200.
 
-        remapper.fit(simple_dataset)
+        with pytest.raises(ValueError):
+            remapper.fit(simple_dataset)
+
         assert remapper.class_map == {200: 0}
 
         for event in simple_dataset:
