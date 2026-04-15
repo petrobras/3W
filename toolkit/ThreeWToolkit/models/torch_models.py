@@ -18,7 +18,9 @@ class TorchModelsConfig(ModelsConfig):
     output_size: int = Field(..., gt=0, description="Output size (number of classes).")
 
     input_size: int | None = Field(
-        default=None, gt=0, description="Input size (auto-detected if None), may be ignored if using LazyModules."
+        default=None,
+        gt=0,
+        description="Input size (auto-detected if None), may be ignored if using LazyModules.",
     )
 
     @property

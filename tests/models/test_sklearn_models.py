@@ -31,6 +31,15 @@ model_configs: dict[Type, dict[str, Any]] = {
 class TestSklearnModelsConfig:
     """Tests for SklearnModelsConfig validation and behavior."""
 
+    def test_invalid_model_type(self):
+        """Invalid model types should raise a validation error."""
+
+        class NotAModel:
+            pass
+
+        with pytest.raises(ValueError, match="Unsupported model type"):
+            SklearnModelsConfig(model_type=NotAModel).build()  # type: ignore
+
     @pytest.mark.parametrize("model_type", model_configs.keys())
     def test_all_model_types(self, model_type: Type):
         """All supported model types should work."""
