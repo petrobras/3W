@@ -24,6 +24,10 @@ class MLPConfig(TorchModelsConfig):
         default=nn.ReLU(),
         description="PyTorch activation function module (e.g., ReLU, Tanh, Sigmoid) applied to hidden layers.",
     )
+
+    input_size: int | None = Field(
+        default=None, description="Ignored. This module uses lazy-initialized modules."
+    )
     model_config = ConfigDict(arbitrary_types_allowed=True)
     _target: type = PrivateAttr(default_factory=lambda: MLP)
 
@@ -53,16 +57,12 @@ class MLP(TorchModels):
 
     def _build_layers(self) -> None:
         layers: list[nn.Module] = []
-        if self.config.input_size is None:
-            raise ValueError("Input size must be specified to build layers")
 
-        in_size = self.config.input_size
         for h in self.config.hidden_sizes:
-            layers.append(nn.Linear(in_size, h))
+            layers.append(nn.LazyLinear(h))
             layers.append(self.activation_func)
-            in_size = h
 
-        layers.append(nn.Linear(in_size, self.config.output_size))
+        layers.append(nn.LazyLinear(self.config.output_size))
         self.model = nn.Sequential(*layers)
 
     def get_params(self) -> ParamsT:
