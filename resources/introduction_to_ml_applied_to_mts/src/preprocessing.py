@@ -86,7 +86,7 @@ class DataPreprocessor:
                     skipped_dfs += 1
 
             except Exception as e:
-                print(f"❌ Error processing DataFrame {i + 1}: {str(e)}")
+                print(f"❌ Error processing DataFrame {i+1}: {str(e)}")
                 skipped_dfs += 1
                 continue
 
@@ -132,7 +132,9 @@ class DataPreprocessor:
 
         if len(numeric_cols) == 0:
             if df_index <= 5:
-                print(f"⚠️  DataFrame {df_index}: No numeric columns found, skipping...")
+                print(
+                    f"⚠️  DataFrame {df_index}: No numeric columns found, skipping..."
+                )
             return None
 
         # Extract numeric data and remove rows with NaN values
@@ -378,9 +380,9 @@ class DataPreprocessor:
                 validation["correct_scaling"][col] = np.isfinite(col_data).all()
             elif method == "normalizer":
                 # Normalizer - each sample should have unit norm
-                validation["correct_scaling"][col] = (
-                    True  # Complex validation for normalizer
-                )
+                validation["correct_scaling"][
+                    col
+                ] = True  # Complex validation for normalizer
 
         return validation
 
@@ -523,10 +525,10 @@ class DataPreprocessor:
             print("=" * 60)
             print(f"Total Samples: {split_stats['total_samples']:,}")
             print(
-                f"Training Samples: {split_stats['train_samples']:,} ({(split_stats['train_samples'] / split_stats['total_samples'] * 100):.1f}%)"
+                f"Training Samples: {split_stats['train_samples']:,} ({(split_stats['train_samples']/split_stats['total_samples']*100):.1f}%)"
             )
             print(
-                f"Test Samples: {split_stats['test_samples']:,} ({(split_stats['test_samples'] / split_stats['total_samples'] * 100):.1f}%)"
+                f"Test Samples: {split_stats['test_samples']:,} ({(split_stats['test_samples']/split_stats['total_samples']*100):.1f}%)"
             )
             print(f"Features Used: {len(split_stats['features_used'])}")
             print(
@@ -618,7 +620,7 @@ class DataPreprocessor:
         import numpy as np
 
         print(f"📊 Splitting {len(dfs)} dataframes into train/test sets")
-        print(f"🎯 Test size: {test_size * 100:.1f}%")
+        print(f"🎯 Test size: {test_size*100:.1f}%")
         print(f"🔢 Stratifying by class labels")
 
         # Create indices for stratified split
@@ -662,10 +664,10 @@ class DataPreprocessor:
         print(f"\n📈 Split Summary:")
         print(f"   Total samples: {len(dfs)} dataframes")
         print(
-            f"   Train samples: {len(train_dfs)} dataframes ({len(train_dfs) / len(dfs) * 100:.1f}%)"
+            f"   Train samples: {len(train_dfs)} dataframes ({len(train_dfs)/len(dfs)*100:.1f}%)"
         )
         print(
-            f"   Test samples: {len(test_dfs)} dataframes ({len(test_dfs) / len(dfs) * 100:.1f}%)"
+            f"   Test samples: {len(test_dfs)} dataframes ({len(test_dfs)/len(dfs)*100:.1f}%)"
         )
 
         print(f"\n🎯 Class Distribution:")
@@ -716,7 +718,7 @@ class DataPreprocessor:
             "expected_test_ratio": test_samples / total_samples,
         }
 
-        print(f"\n🔍 Validating Split Balance (tolerance: ±{tolerance * 100:.1f}%)")
+        print(f"\n🔍 Validating Split Balance (tolerance: ±{tolerance*100:.1f}%)")
         print("-" * 50)
 
         for class_label in original_dist.keys():
@@ -865,7 +867,7 @@ class DataPreprocessor:
         print(f"   Processed samples: {len(dfs) - skipped_samples}")
         print(f"   Total windows created: {total_windows}")
         print(
-            f"   Average windows per sample: {total_windows / (len(dfs) - skipped_samples):.1f}"
+            f"   Average windows per sample: {total_windows/(len(dfs) - skipped_samples):.1f}"
         )
 
         return windowed_dfs, windowed_classes, window_metadata
