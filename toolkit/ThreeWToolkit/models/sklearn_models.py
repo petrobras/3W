@@ -24,10 +24,19 @@ class SklearnModelProtocol(Protocol):
     def set_params(self, **params: object) -> None: ...
 
 
+@runtime_checkable
+class SklearnModelWithPredictProbaProtocol(SklearnModelProtocol, Protocol):
+    """Protocol for sklearn models that support predict_proba. Used for type hinting."""
+
+    def predict_proba(self, x) -> npt.NDArray[np.number]: ...
+
+
 class SklearnModelsConfig(ModelsConfig):
     """Configuration for scikit-learn models."""
 
-    model_type: type[SklearnModelProtocol] = Field(
+    model_type: (
+        type[SklearnModelProtocol] | type[SklearnModelWithPredictProbaProtocol]
+    ) = Field(
         ...,
         description="Type of sklearn model to use. Must be one of the supported models.",
     )

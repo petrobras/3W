@@ -266,7 +266,7 @@ class TorchTrainer(BaseTrainer):
 
         return running_loss / len(val_loader)
 
-    def predict(self, dataset: BaseDataset) -> PredictionResult:
+    def predict(self, dataset: BaseDataset, proba: bool = False) -> PredictionResult:
         """Predict labels for a dataset.
         Args:
             dataset: BaseDataset instance to predict on
@@ -285,7 +285,10 @@ class TorchTrainer(BaseTrainer):
                 outputs = self.model(x_batch)
 
                 if outputs.shape[1] > 1:  # multi-class classification
-                    outputs = torch.argmax(outputs, dim=1)
+                    if proba:
+                        outputs = torch.softmax(outputs, dim=1)
+                    else:
+                        outputs = torch.argmax(outputs, dim=1)
 
                 predictions.append(outputs.cpu())
                 true_labels.append(y_batch.cpu())
@@ -294,6 +297,15 @@ class TorchTrainer(BaseTrainer):
         _predictions = torch.cat(predictions, dim=0).numpy()
 
         return PredictionResult(y_pred=_predictions, y_true=_true_labels)
+
+    def predict_proba(self, dataset: BaseDataset) -> PredictionResult:
+        """Predict class probabilities for a dataset.
+        Args:
+            dataset: BaseDataset instance to predict on
+        Returns:
+            PredictionResult containing predicted probabilities and true labels
+        """
+        return self.predict(dataset, proba=True)
 
     def _infer_input_size(self, train_data: DataLoader) -> int:
         """Infer the input size from the training data.

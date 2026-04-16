@@ -28,6 +28,12 @@ class ConcreteTrainer(BaseTrainer):
             y_true=np.random.randint(0, 2, size=len(dataset)),
         )
 
+    def predict_proba(self, dataset: BaseDataset) -> PredictionResult:
+        return PredictionResult(
+            y_true=np.random.randint(0, 2, len(dataset)),  # two classes
+            y_pred=np.random.randn(len(dataset), 2),  # raw scores for two classes
+        )
+
     def _initialize_training_state(
         self, train_data, train_dataset: BaseDataset
     ) -> None:

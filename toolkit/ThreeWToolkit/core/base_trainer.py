@@ -254,6 +254,18 @@ class BaseTrainer(ABC):
         """
         pass
 
+    @abstractmethod
+    def predict_proba(self, dataset: BaseDataset) -> PredictionResult:
+        """Make probability predictions on a dataset (for classification).
+
+        Args:
+            dataset: Dataset to make predictions on.
+
+        Returns:
+            PredictionResult containing predicted probabilities and related metadata.
+        """
+        pass
+
     def _validate_datasets(
         self, train_dataset: BaseDataset, val_dataset: BaseDataset | None
     ) -> None:

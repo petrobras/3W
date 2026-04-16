@@ -9,7 +9,11 @@ from ..core.base_trainer import (
     TrainingHistory,
 )
 from ..core.base_dataset import BaseDataset
-from ..models.sklearn_models import SklearnModelsConfig, SklearnModels
+from ..models.sklearn_models import (
+    SklearnModelsConfig,
+    SklearnModels,
+    SklearnModelWithPredictProbaProtocol,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +183,22 @@ class SklearnTrainer(BaseTrainer):
         X, y_true = self._prepare_data(dataset)
         predictions = self.model.model.predict(X)
         return PredictionResult(y_pred=predictions, y_true=y_true)
+
+    def predict_proba(self, dataset: BaseDataset) -> PredictionResult:
+        """Predict class probabilities for given dataset. Only works if the model supports predict_proba.
+        Args:
+            dataset: BaseDataset containing signal data for prediction
+        Returns:
+            PredictionResult containing predicted probabilities and true labels
+        """
+        if not isinstance(self.model.model, SklearnModelWithPredictProbaProtocol):
+            raise NotImplementedError(
+                f"Model {self.model.model_name} does not support predict_proba"
+            )
+
+        X, y_true = self._prepare_data(dataset)
+        proba_predictions = self.model.model.predict_proba(X)
+        return PredictionResult(y_pred=proba_predictions, y_true=y_true)
 
     def _initialize_training_state(
         self, train_data: tuple[np.ndarray, np.ndarray], train_dataset: BaseDataset
