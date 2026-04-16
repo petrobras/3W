@@ -65,6 +65,11 @@ class StatisticalFeatures(BaseFeatureExtractor):
     """
 
     def __init__(self, config: StatisticalConfig):
+        """Initializes the StatisticalFeatures extractor with the given configuration.
+
+        Args:
+            config: StatisticalConfig object containing the list of features to compute.
+        """
         self.config: StatisticalConfig = config
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:

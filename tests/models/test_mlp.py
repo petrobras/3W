@@ -48,16 +48,6 @@ class TestMLPConfig:
         with pytest.raises(ValidationError):
             MLPConfig(hidden_sizes=(32,), output_size=2, activation_function=None)  # type: ignore
 
-    def test_invalid_input_size_zero(self):
-        """input_size of 0 should raise ValueError."""
-        with pytest.raises(ValidationError):
-            MLPConfig(hidden_sizes=(32,), output_size=2, input_size=0)
-
-    def test_invalid_input_size_negative(self):
-        """Negative input_size should raise ValueError."""
-        with pytest.raises(ValidationError):
-            MLPConfig(hidden_sizes=(32,), output_size=2, input_size=-5)
-
     def test_invalid_output_size_zero(self):
         """output_size of 0 should raise ValidationError."""
         with pytest.raises(ValidationError):
@@ -77,19 +67,6 @@ class TestMLPConfig:
         """Zero value in hidden_sizes should raise ValueError."""
         with pytest.raises(ValidationError):
             MLPConfig(hidden_sizes=(64, 0), output_size=2)
-
-    def test_set_inferred_input_size(self):
-        """set_inferred_input_size should update input_size."""
-        config = MLPConfig(hidden_sizes=(32,), output_size=2)
-        assert config.input_size is None
-        config.set_inferred_input_size(100)
-        assert config.input_size == 100
-
-    def test_set_inferred_input_size_invalid(self):
-        """set_inferred_input_size with invalid value should raise."""
-        config = MLPConfig(hidden_sizes=(32,), output_size=2)
-        with pytest.raises(ValueError, match="Inferred input_size must be > 0"):
-            config.set_inferred_input_size(0)
 
     def test_model_type_default(self):
         """Default model_type should be MLP."""
@@ -121,11 +98,10 @@ class TestMLP:
         assert model.model is not None
 
     def test_model_creation_without_input_size(self, dynamic_config):
-        """Model without input_size should fail building"""
+        """Model without input_size should succeed building"""
 
-        with pytest.raises(ValueError):
-            model = MLP(dynamic_config)
-            assert model.model is None
+        model = MLP(dynamic_config)
+        assert model.model is not None
 
     def test_forward_pass_with_input_size(self, basic_config):
         """Forward pass should work with pre-built layers."""
@@ -186,18 +162,15 @@ class TestMLP:
         """Layers should match config specification."""
         model = MLP(basic_config)
         layers = list(model.modules())
-        # Linear layers + activation layers
-        # Expected: Linear(100, 64), ReLU, Linear(64, 32), ReLU, Linear(32, 3)
+        # LazyLinear layers + activation layers
+        # Expected: LazyLinear(64), ReLU, LazyLinear(32), ReLU, LazyLinear(3)
         # Note: ReLU may be shared in Sequential, so count Linear layers
         linear_layers = [
-            layer for layer in layers if isinstance(layer, torch.nn.Linear)
+            layer for layer in layers if isinstance(layer, torch.nn.LazyLinear)
         ]
         assert len(linear_layers) == 3
-        assert linear_layers[0].in_features == 100
         assert linear_layers[0].out_features == 64
-        assert linear_layers[1].in_features == 64
         assert linear_layers[1].out_features == 32
-        assert linear_layers[2].in_features == 32
         assert linear_layers[2].out_features == 3
 
     def test_multiple_hidden_layers(self):

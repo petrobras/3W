@@ -103,6 +103,12 @@ class ParquetDataset(BaseDataset):
     """
 
     def __init__(self, config: ParquetDatasetConfig):
+        """
+        Initialize the ParquetDataset.
+
+        Args:
+            config (ParquetDatasetConfig): Configuration for the dataset.
+        """
         self.config = config
 
         # Check if dataset version is valid

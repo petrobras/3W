@@ -7,7 +7,7 @@ from pydantic import Field, PrivateAttr, field_validator, ValidationInfo
 
 from .assessment import ModelAssessment, ModelAssessmentConfig
 from .core.base_assessment import AssessmentOutput
-from .core.base_dataset import BaseDataset
+from .core.base_dataset import BaseDataset, BaseDatasetConfig
 from .core.base_pipeline import BasePipeline, BasePipelineConfig, PipelineResult
 from .core.base_trainer import (
     BaseTrainer,
@@ -35,14 +35,18 @@ class PipelineConfig(BasePipelineConfig):
     task: Literal["training", "cross_validation"] = Field(
         default="training", description="Task to perform on run()"
     )
-    train_dataset: BaseDataset = Field(
+    train_dataset_config: BaseDatasetConfig = Field(
         ..., description="Configuration for training dataset."
     )
-    test_dataset: BaseDataset | None = Field(
+    test_dataset_config: BaseDatasetConfig | None = Field(
         default=None, description="Configuration for test dataset (optional)."
     )
-    val_dataset: BaseDataset | None = Field(
+    val_dataset_config: BaseDatasetConfig | None = Field(
         default=None, description="Configuration for validation dataset (optional)."
+    )
+    pre_transform_config: BaseTransformConfig | None = Field(
+        default=None,
+        description="Configuration for data preprocessing transformation (optional). Should be BaseTransformConfig.",
     )
     transform_config: BaseTransformConfig | None = Field(
         default=None,
@@ -121,15 +125,29 @@ class Pipeline(BasePipeline):
         # Build components from configs
         self.trainer: BaseTrainer = config.trainer_config.build()
 
-        self.train_dataset: BaseDataset = config.train_dataset
+        self.train_dataset: BaseDataset = config.train_dataset_config.build()
 
-        self.val_dataset: BaseDataset | None = config.val_dataset or None
+        self.val_dataset: BaseDataset | None = (
+            config.val_dataset_config.build()
+            if config.val_dataset_config is not None
+            else None
+        )
 
-        self.test_dataset: BaseDataset | None = config.test_dataset or None
+        self.test_dataset: BaseDataset | None = (
+            config.test_dataset_config.build()
+            if config.test_dataset_config is not None
+            else None
+        )
 
         self.transform: BaseTransform | None = (
             config.transform_config.build()
             if config.transform_config is not None
+            else None
+        )
+
+        self.pre_transform: BaseTransform | None = (
+            config.pre_transform_config.build()
+            if config.pre_transform_config is not None
             else None
         )
 
@@ -150,6 +168,8 @@ class Pipeline(BasePipeline):
             PipelineResult containing training and assessment outputs.
         """
         logger.info("Starting pipeline execution")
+
+        self.pre_process_data()
 
         # train or cross-validate training
         training_result: TrainingResult | CrossValidationResult
@@ -227,6 +247,41 @@ class Pipeline(BasePipeline):
             self.transform.fit(dataset)
 
         return self.transform.transform(dataset)
+
+    def pre_process_data(
+        self,
+    ) -> None:
+        """Apply preprocessing transformation to dataset.
+        This is a separate step from the main transform, allowing for distinct preprocessing transformations.
+
+        Args:
+            train_dataset: The dataset to preprocess.
+            test_dataset: The test dataset to preprocess.
+            val_dataset: The validation dataset to preprocess.
+        Returns:
+            The preprocessed dataset, or None if the input dataset is None.
+        """
+        if self.pre_transform is None:
+            logger.debug(
+                "No preprocessing transform provided, skipping preprocessing step"
+            )
+            return
+
+        logger.info("Fitting preprocessing transform on training data...")
+        self.pre_transform.fit(self.train_dataset)
+
+        logger.info("Applying preprocessing transform to training data...")
+        self.train_dataset = self.pre_transform.transform(self.train_dataset)
+
+        if self.val_dataset is not None:
+            logger.info("Applying preprocessing transform to validation data...")
+            self.val_dataset = self.pre_transform.transform(self.val_dataset)
+
+        if self.test_dataset is not None:
+            logger.info("Applying preprocessing transform to test data...")
+            self.test_dataset = self.pre_transform.transform(self.test_dataset)
+
+        return
 
     def cross_validate(
         self,

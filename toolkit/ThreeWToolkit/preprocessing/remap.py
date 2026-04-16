@@ -32,13 +32,16 @@ class RemapClass(BasePreprocessing):
     def fit(self, data: BaseDataset) -> None:
         """
         Collect all unique classes from the label Series if class_map is not provided.
-        If class_map is provided, this will be a no-op.
+        If class_map is provided, this method will check that all classes in the data are present in the class_map.
 
         Args:
             data: BaseDataset object from which to collect unique class labels if class_map is not provided.
         """
         if self.config.class_map is not None:
             self.class_map = self.config.class_map
+
+            for event in data:
+                _ = self.transform(event)  # check that all labels can be mapped
             return
 
         unique_classes: set[int] = set()

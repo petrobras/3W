@@ -1,5 +1,3 @@
-"""Preprocessing class for cleaning possibly frozen or out-of-range signals."""
-
 from pydantic import Field, PrivateAttr
 
 import numpy as np
@@ -70,6 +68,12 @@ class CleanSignals(BasePreprocessing):
     """
 
     def __init__(self, config: CleanSignalsConfig):
+        """
+        Initializes the CleanSignals feature extractor with the given configuration.
+
+        Args:
+            config: CleanSignalsConfig object containing the IQR thresholds and other parameters for cleaning.
+        """
         self.config: CleanSignalsConfig = config
 
         self.average_bounds: tuple[pd.Series, pd.Series] | None = None
@@ -94,6 +98,13 @@ class CleanSignals(BasePreprocessing):
         self._fit_missing_thresholds(cleaned_data)
 
     def _fit_iqr_thresholds(self, data: BaseDataset) -> None:
+        """Compute the IQR-based thresholds for average and std of the signals based on the training data.
+        This method computes the average and standard deviation for each signal across all events in the dataset,
+        and then determines the IQR-based thresholds for identifying out-of-range signals.
+
+        Args:
+            data (BaseDataset): The input dataset to compute the thresholds from.
+        """
         _averages = []
         _stds = []
         for event in data:
@@ -125,6 +136,12 @@ class CleanSignals(BasePreprocessing):
         )
 
     def _fit_missing_thresholds(self, data: BaseDataset) -> None:
+        """
+        Compute the list of columns to drop based on the fraction of all-NaN values across events in the dataset.
+
+        Args:
+            data (BaseDataset): The input dataset to compute the missing column thresholds from.
+        """
         _all_nans = []
         for event in data:
             _all_nans.append(event.signal.isna().all())
@@ -135,6 +152,13 @@ class CleanSignals(BasePreprocessing):
         self.drop_list = drop_cols[drop_cols].index.tolist()
 
     def _filter_iqr_bounds(self, data: DatasetOutputs) -> DatasetOutputs:
+        """
+        Filter out signals that are outside the IQR-based thresholds by replacing them with NaN values.
+
+        Args:
+            data (DatasetOutputs): The input dataset outputs to filter.
+        Returns:
+            DatasetOutputs with out-of-range signals replaced by NaN values."""
         if self.average_bounds is None or self.std_bounds is None:
             raise ValueError(
                 "The CleanSignals feature extractor must be fitted before calling transform."
@@ -165,6 +189,12 @@ class CleanSignals(BasePreprocessing):
         return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
 
     def _filter_missing_cols(self, data: DatasetOutputs) -> DatasetOutputs:
+        """Filter out columns that are all-NaN in more than the specified fraction of events by dropping them from the signal.
+
+        Args:
+            data (DatasetOutputs): The input dataset outputs to filter.
+        Returns: DatasetOutputs with columns dropped according to the missing column threshold.
+        """
         if self.drop_list is None:
             raise RuntimeError(
                 "The CleanSignals feature extractor must be fitted before calling transform."
@@ -178,6 +208,11 @@ class CleanSignals(BasePreprocessing):
         return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
 
     def transform(self, data: DatasetOutputs) -> DatasetOutputs:
+        """Apply the cleaning transformations to the input dataset outputs.
+        Args:
+            data (DatasetOutputs): The input dataset outputs to transform.
+        Returns: DatasetOutputs with cleaned signals according to the fitted thresholds.
+        """
         data = self._filter_iqr_bounds(data)
         data = self._filter_missing_cols(data)
         return data
