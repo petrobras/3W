@@ -44,6 +44,11 @@ class MLP(TorchModels):
     """Multi-Layer Perceptron. Use TorchTrainer for training."""
 
     def __init__(self, config: MLPConfig) -> None:
+        """Initializes the MLP model with the given configuration.
+
+        Args:
+            config (MLPConfig): Configuration for the MLP model.
+        """
         super().__init__()
         self.config: MLPConfig = config
         self.activation_func = self.config.activation_function
@@ -52,10 +57,20 @@ class MLP(TorchModels):
         self._build_layers()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the MLP model.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor.
+        """
         assert self.model is not None
         return self.model(x)
 
     def _build_layers(self) -> None:
+        """Builds the MLP layers based on the configuration.
+        Uses LazyLinear layers to allow for flexible input sizes."""
         layers: list[nn.Module] = []
 
         for h in self.config.hidden_sizes:
@@ -66,6 +81,9 @@ class MLP(TorchModels):
         self.model = nn.Sequential(*layers)
 
     def get_params(self) -> ParamsT:
+        """Returns the parameters of the MLP model for optimization.
+        If the model is not yet built (e.g., due to lazy initialization), returns a dummy parameter to allow optimization to proceed without errors.
+        """
         if self.model is None:
             if not hasattr(self, "_dummy_param"):
                 self._dummy_param = nn.Parameter(torch.tensor(0.0, requires_grad=True))

@@ -8,6 +8,8 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class ImputeMissingConfig(BasePreprocessingConfig):
+    """Configuration for the ImputeMissing preprocessing step."""
+
     strategy: Literal["constant", "mean", "ffill", "bfill", "interpolate"] = Field(
         default="constant",
         description="Imputation strategy to use for filling missing values. Options include:\n"
@@ -148,6 +150,8 @@ class ImputeMissing(BasePreprocessing):
         return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
 
     def _compute_global_average(self, data: BaseDataset) -> None:
+        """Compute the global average (mean) for each signal column across all events."""
+
         _sums = []
         _counts = []
         for event in data:

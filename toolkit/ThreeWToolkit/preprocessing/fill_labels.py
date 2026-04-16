@@ -7,6 +7,8 @@ from ..core.dataset_outputs import DatasetOutputs
 
 
 class FillLabelsConfig(BasePreprocessingConfig):
+    """Configuration for FillLabels preprocessing step."""
+
     fill_method: Literal["nearest", "ffill", "bfill", "constant"] = Field(
         default="nearest", description="Method to fill missing values in labels."
     )
@@ -32,6 +34,10 @@ class FillLabels(BasePreprocessing):
     """
 
     def __init__(self, config: FillLabelsConfig):
+        """Initialize FillLabels preprocessing step with the given configuration.
+        Args:
+            config: Configuration for FillLabels preprocessing step.
+        """
         self.config: FillLabelsConfig = config
 
     def fit(self, data: BaseDataset) -> None:

@@ -34,6 +34,11 @@ class TransformDataset(BaseTransform):
     feature_extraction_step: BaseFeatureExtractor | None = None
 
     def __init__(self, config: TransformConfig):
+        """Initialize the TransformDataset with the given configuration.
+
+        Args:
+            config (TransformConfig): Configuration for the transformations to apply to the dataset.
+        """
         self.config = config
 
         if self.config.pre_processing is not None:

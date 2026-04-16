@@ -9,6 +9,8 @@ from .clean_signals import _3W_CATEGORICAL_FEATURES
 
 
 class NormalizeConfig(BasePreprocessingConfig):
+    """Configuration for the Normalize preprocessing step."""
+
     norm: Literal["l1", "l2", "max"] | float = Field(
         default="l2",
         description="Normalization method: 'l1', 'l2', 'max' for standard methods, or a custom numeric norm value.",
@@ -72,6 +74,7 @@ class Normalize(BasePreprocessing):
         self.global_moment: pd.Series | None = None
 
     def _compute_global_average(self, data: BaseDataset) -> None:
+        """Compute the global average (mean) for each signal column across all events."""
         _sums = []
         _counts = []
         for event in data:
@@ -84,6 +87,7 @@ class Normalize(BasePreprocessing):
         self.global_average = sums.mean() / counts.mean()
 
     def _compute_global_moments(self, data: BaseDataset) -> None:
+        """Compute the global moment (e.g., std for L2) for each signal column across all events."""
         _moments = []
         _counts = []
         for event in data:
@@ -101,6 +105,7 @@ class Normalize(BasePreprocessing):
         )  # take the root to get back to the original scale
 
     def _compute_global_max(self, data: BaseDataset) -> None:
+        """Compute the global max (for max normalization) for each signal column across all events."""
         _maxes = []
         for event in data:
             _maxes.append((event.signal - self.global_average).abs().max())
