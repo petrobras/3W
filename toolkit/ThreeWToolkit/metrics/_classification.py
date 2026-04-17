@@ -111,7 +111,7 @@ def average_precision_score(
         TypeError: If input types are invalid.
         ValueError: If inputs are inconsistent or average value is invalid.
     """
-    
+
     if num_classes is not None:
         classes = np.arange(num_classes)
         y_true = label_binarize(y_true, classes=classes)
