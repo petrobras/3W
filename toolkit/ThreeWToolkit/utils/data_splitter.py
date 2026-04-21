@@ -1,7 +1,7 @@
 from typing import Iterator
 
 import numpy as np
-from sklearn.model_selection import StratifiedKFold, KFold
+from sklearn.model_selection import StratifiedKFold, KFold, train_test_split
 
 from pydantic import BaseModel, Field
 from ..core.base_dataset import BaseDataset
@@ -57,26 +57,22 @@ class KFoldSplitter(BaseModel):
             return
 
         # Assign a pseudo-label for each event based on the requested stratification criteria
-        event_pseudo_label = []
+        pseudo_labels = []
         for event in data:
-            if not (all(key in event.metadata for key in self.stratify_by)):
-                missing_keys = [
-                    key for key in self.stratify_by if key not in event.metadata
-                ]
+            if not all(key in event.metadata for key in self.stratify_by):
+                missing_keys = set(self.stratify_by) - set(event.metadata.keys())
                 raise ValueError(
                     f"Event metadata missing required keys for stratification: {missing_keys}"
                 )
             pseudo_label = tuple(event.metadata[key] for key in self.stratify_by)
-            event_pseudo_label.append(pseudo_label)
+            pseudo_labels.append(pseudo_label)
 
         # assign unique integer values to each unique combination of class/type for stratification
-        pseudo_label_to_int = {
-            label: idx for idx, label in enumerate(set(event_pseudo_label))
-        }
+        pseudo_unique = {label: idx for idx, label in enumerate(set(pseudo_labels))}
 
         # map the pseudo labels to integers for stratification
-        stratify_y = [pseudo_label_to_int[label] for label in event_pseudo_label]
-        stratify_x = list(range(len(data)))  # dummy x
+        stratify_y = [pseudo_unique[label] for label in pseudo_labels]
+        stratify_x = np.arange(len(data))  # dummy x
 
         splitter = StratifiedKFold(
             n_splits=self.num_splits,
@@ -110,6 +106,10 @@ class TrainTestSplitter(BaseModel):
         le=1.0,
         description="Proportion of data to use for test (must be between 0 and 1).",
     )
+    stratify_by: list[str] = Field(
+        default_factory=list,
+        description="List of metadata keys to stratify by (e.g. ['event_class', 'event_type']). If empty, no stratification is applied.",
+    )
     shuffle: bool = Field(
         default=True,
         description="Whether to shuffle indices before splitting.",
@@ -137,18 +137,36 @@ class TrainTestSplitter(BaseModel):
                 f"size_test ({self.size_test}) must equal 1.0"
             )
 
-        len_dataset = len(data)
-        lst_indices = np.arange(len_dataset)
+        if len(self.stratify_by) > 0:
+            # Assign a pseudo-label for each event based on the requested stratification criteria
+            pseudo_labels = []
+            for event in data:
+                if not all(key in event.metadata for key in self.stratify_by):
+                    missing_keys = set(self.stratify_by) - set(event.metadata.keys())
+                    raise ValueError(
+                        f"Event metadata missing required keys for stratification: {missing_keys}"
+                    )
+                pseudo_label = tuple(event.metadata[key] for key in self.stratify_by)
+                pseudo_labels.append(pseudo_label)
+            # assign unique integer values to each unique combination of class/type for stratification
+            pseudo_unique = {label: idx for idx, label in enumerate(set(pseudo_labels))}
+            # map the pseudo labels to integers for stratification
+            stratify = [pseudo_unique[label] for label in pseudo_labels]
+        else:
+            stratify = None
 
-        if self.shuffle:
-            rng = np.random.RandomState(self.random_state)
-            rng.shuffle(lst_indices)
+        lst_indices = np.arange(len(data))
 
-        split_point = int(len_dataset * self.size_training)
-        training_indices = [int(i) for i in lst_indices[:split_point]]
-        test_indices = [int(i) for i in lst_indices[split_point:]]
+        training_indices, test_indices = train_test_split(
+            lst_indices,
+            test_size=self.size_test,
+            train_size=self.size_training,
+            random_state=self.random_state,
+            shuffle=self.shuffle,
+            stratify=stratify,
+        )
 
-        training_set = SubsetDataset(data, indices=training_indices)
-        test_set = SubsetDataset(data, indices=test_indices)
+        training_set = SubsetDataset(data, indices=list(training_indices))
+        test_set = SubsetDataset(data, indices=list(test_indices))
 
         return training_set, test_set
