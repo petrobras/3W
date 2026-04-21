@@ -1,7 +1,6 @@
-"""Class for splitting data into training and testing sets."""
-
 from typing import Iterator
 
+import numpy as np
 from sklearn.model_selection import StratifiedKFold, KFold
 
 from pydantic import BaseModel, Field
@@ -87,3 +86,69 @@ class KFoldSplitter(BaseModel):
 
         for train_idx, test_idx in splitter.split(stratify_x, stratify_y):
             yield SubsetDataset(data, train_idx), SubsetDataset(data, test_idx)
+
+
+class TrainTestSplitter(BaseModel):
+    """Utility class for splitting data into training and test sets.
+
+    Args:
+        size_training (float): Proportion of data to use for training (must be between 0 and 1).
+        size_test (float): Proportion of data to use for test (must be between 0 and 1).
+        shuffle (bool): Whether to shuffle indices before splitting.
+        random_state (int | None): Random seed for reproducible splits. Use None for non-deterministic splits.
+    """
+
+    size_training: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description="Proportion of data to use for training (must be between 0 and 1).",
+    )
+    size_test: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=1.0,
+        description="Proportion of data to use for test (must be between 0 and 1).",
+    )
+    shuffle: bool = Field(
+        default=True,
+        description="Whether to shuffle indices before splitting.",
+    )
+    random_state: int | None = Field(
+        default=None,
+        description="Random seed for reproducible splits. Use None for non-deterministic splits.",
+    )
+
+    def split_data(self, data: BaseDataset) -> tuple[SubsetDataset, SubsetDataset]:
+        """Splits a dataset into training and test subsets.
+
+        Args:
+            data (BaseDataset): The dataset to split.
+
+        Returns:
+            tuple[SubsetDataset, SubsetDataset]: A tuple containing (training_subset, test_subset).
+
+        Raises:
+            ValueError: If size_training + size_test != 1.
+        """
+        if self.size_training + self.size_test != 1.0:
+            raise ValueError(
+                f"The sum of size_training ({self.size_training}) and "
+                f"size_test ({self.size_test}) must equal 1.0"
+            )
+
+        len_dataset = len(data)
+        lst_indices = np.arange(len_dataset)
+
+        if self.shuffle:
+            rng = np.random.RandomState(self.random_state)
+            rng.shuffle(lst_indices)
+
+        split_point = int(len_dataset * self.size_training)
+        training_indices = [int(i) for i in lst_indices[:split_point]]
+        test_indices = [int(i) for i in lst_indices[split_point:]]
+
+        training_set = SubsetDataset(data, indices=training_indices)
+        test_set = SubsetDataset(data, indices=test_indices)
+
+        return training_set, test_set
