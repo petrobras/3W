@@ -46,8 +46,6 @@ class ReportGeneration:
             Generates a model evaluation report in either LaTeX (PDF) or HTML format.
         save_report(doc: Document | str, filename: str, format: str) -> None:
             Saves the report in both LaTeX (PDF) and HTML formats.
-        export_results_to_csv(results: dict[str, pd.DataFrame | np.ndarray | str | dict[str, float]], filename: str) -> pd.DataFrame:
-            Exports machine learning model results to a CSV file.
         get_visualization(format: str) -> dict:
             Generates and saves plots based on the provided plot configuration.
     Private Methods:
