@@ -1,4 +1,3 @@
-from .base_visualizer import BaseVisualizer
 from .plots import DataVisualization
 from .plot_series import PlotSeries
 from .plot_multiple_series import PlotMultipleSeries
@@ -9,7 +8,6 @@ from .wavelet_spectrogram import WaveletSpectrogramPlot
 from .three_w_chart import ThreeWChart
 
 __all__ = [
-    "BaseVisualizer",
     "DataVisualization",
     "PlotSeries",
     "PlotMultipleSeries",

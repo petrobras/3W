@@ -19,7 +19,11 @@ class TrainerLogger:
 
     @classmethod
     def _get_logger(cls) -> logging.Logger:
-        """Get or create the class logger with proper configuration."""
+        """Get or create the class logger with proper configuration.
+
+        Returns:
+            Configured logger instance.
+        """
         if cls._logger is None:
             cls._logger = logging.getLogger("TrainerLogger")
             if not cls._logger.handlers:

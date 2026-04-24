@@ -5,8 +5,7 @@ import hashlib
 from tqdm import tqdm
 from pathlib import Path
 
-from ..utils.general_utils import GeneralUtils
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, validate_call
 
 FIGSHARE_BASE_URL = "https://api.figshare.com/v2"
 FIGSHARE_VERSION_IDS = {
@@ -103,7 +102,7 @@ class GetFigshareDataValidator(BaseModel):
         return chunk_size
 
 
-@GeneralUtils.validate_func_args_with_pydantic(GetFigshareDataValidator)
+@validate_call
 def get_figshare_data(
     path: Path, version: str = "2.0.0", chunk_size: int = 1024 * 1024
 ) -> list[Path]:
@@ -129,10 +128,6 @@ def get_figshare_data(
             verification fails.
         ValueError: If an invalid version or chunk_size is provided.
 
-    Example:
-        >>> from pathlib import Path
-        >>> downloaded = get_figshare_data(Path("./data"), version="2.0.0")
-        >>> print(f"Downloaded {len(downloaded)} files")
 
     Notes:
         - Downloads are streamed with progress bars via tqdm

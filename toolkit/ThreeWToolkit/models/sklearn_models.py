@@ -1,143 +1,140 @@
+from typing import Mapping, Any
+import logging
+
+from typing import Protocol, runtime_checkable
+import numpy as np
+import numpy.typing as npt
 from pathlib import Path
-from numpy.typing import ArrayLike
+import pickle
+from pydantic import Field, PrivateAttr, field_validator, ValidationInfo
 
-from typing import Mapping, Type
-from pydantic import Field
+from ..core.base_models import ModelsConfig, BaseModels
 
-from sklearn.base import BaseEstimator
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import ComplementNB
-from sklearn.ensemble import GradientBoostingClassifier
+logger = logging.getLogger(__name__)
 
-from ..core.base_models import BaseModels, ModelsConfig
-from ..core.enums import ModelTypeEnum
-from ..utils.model_recorder import ModelRecorder
-from ..assessment.strategies.sklearn_prediction_strategy import (
-    SklearnPredictionStrategy,
-)
-from ..core.base_prediction_strategies import PredictionStrategy
-from ..core.base_training_strategies import TrainingStrategy
-from ..trainer.strategies.fit_once_strategy import FitOnceStrategy
 
-# Dictionary to map the enum to the scikit-learn classes
-SKLEARN_MODELS = {
-    ModelTypeEnum.LOGISTIC_REGRESSION: LogisticRegression,
-    ModelTypeEnum.DECISION_TREE: DecisionTreeClassifier,
-    ModelTypeEnum.RANDOM_FOREST: RandomForestClassifier,
-    ModelTypeEnum.SVM: SVC,
-    ModelTypeEnum.KNN: KNeighborsClassifier,
-    ModelTypeEnum.NAIVE_BAYES: ComplementNB,
-    ModelTypeEnum.GRADIENT_BOOSTING: GradientBoostingClassifier,
-}
+@runtime_checkable
+class SklearnModelProtocol(Protocol):
+    """Protocol for sklearn models. Used for type hinting."""
+
+    def fit(self, x, y, **fit_params): ...
+    def score(self, x, y, **score_params) -> float: ...
+    def predict(self, x) -> npt.NDArray[np.number]: ...
+    def get_params(self) -> Mapping[str, object]: ...
+    def set_params(self, **params: object) -> None: ...
+
+
+@runtime_checkable
+class SklearnModelWithPredictProbaProtocol(SklearnModelProtocol, Protocol):
+    """Protocol for sklearn models that support predict_proba. Used for type hinting."""
+
+    def predict_proba(self, x) -> npt.NDArray[np.number]: ...
 
 
 class SklearnModelsConfig(ModelsConfig):
-    """Configuration that extends the base ModelsConfig for scikit-learn models."""
+    """Configuration for scikit-learn models."""
 
-    model_params: dict[str, int | float | str | bool | None] = Field(
-        default_factory=dict, description="Hyperparameters for the scikit-learn model."
+    model_type: (
+        type[SklearnModelProtocol] | type[SklearnModelWithPredictProbaProtocol]
+    ) = Field(
+        ...,
+        description="Type of sklearn model to use. Must be one of the supported models.",
     )
-    target_: type[BaseModels] = Field(default_factory=lambda: SklearnModels)
+
+    model_params: dict[str, Any] = Field(
+        default_factory=dict, description="Model-specific hyperparameters."
+    )
+    _target: type = PrivateAttr(default_factory=lambda: SklearnModels)
+
+    @field_validator("model_params")
+    @classmethod
+    def check_model_params(
+        cls, model_params: dict[str, Any], info: ValidationInfo
+    ) -> dict[str, Any]:
+        """Validate that model_type is supported."""
+        try:  # try to instantiate the model with given parameters
+            info.data["model_type"](**model_params)
+        except Exception as e:
+            raise ValueError(f"Invalid model_params: {e}")
+        return model_params
 
 
 class SklearnModels(BaseModels):
-    """
-    Wrapper for scikit-learn models following the BaseModels interface.
-
-    This class adapts sklearn estimators to the unified model interface,
-    allowing them to be trained, evaluated and persisted using the same
-    Strategy-based pipeline as torch models.
-    """
-
-    config: SklearnModelsConfig
+    """Sklearn model wrapper. Use SklearnTrainer for training."""
 
     def __init__(self, config: SklearnModelsConfig):
-        """
-        Initialize the sklearn model wrapper.
-
+        """Initialize SklearnModels with given configuration.
         Args:
-            config (SklearnModelsConfig): Configuration object defining
-                the sklearn estimator type and its hyperparameters.
+            config: SklearnModelsConfig instance containing model configuration.
         """
-        super().__init__(config)
-        self.config = config
+        self.config: SklearnModelsConfig = config
 
-        model_class = SKLEARN_MODELS[config.model_type]
-        params = config.model_params.copy()
+        self.model: SklearnModelProtocol = self.config.model_type(
+            **self.config.model_params
+        )
 
-        # Inject random_state if supported
-        if "random_state" in model_class().get_params():
-            params["random_state"] = config.random_seed
-
-        self.model_class: BaseEstimator = model_class(**params)
         self._feature_names: list[str] | None = None
 
     @property
     def model_name(self) -> str:
-        return self.model_class.__class__.__name__
-
-    def forward(self, x: ArrayLike):
+        """Get the name of the model class.
+        Returns:
+            Name of the underlying model class.
         """
-        Sklearn model not implements forward function.
-        """
-        pass
+        return self.model.__class__.__name__
 
-    def save(self, path: Path) -> None:
-        """
-        Save the sklearn model to disk.
-
+    def save(self, filename: str | Path) -> Path:
+        """Save model to disk.
         Args:
-            path (Path): Destination file path (.pkl or .pickle).
+            filename: Path to save the model. Must have .pkl or .pickle extension.\
+                    If no extension is provided, .pkl will be used by default.
+        Returns:
+            Path to the saved model.
         """
-        if path.suffix not in {".pkl", ".pickle"}:
+        path = Path(filename)  # ensure path
+        if path.suffix and path.suffix not in {".pkl", ".pickle"}:
             raise ValueError(
                 "Sklearn models must be saved with .pkl or .pickle extension"
             )
+        elif not path.suffix:
+            path = path.with_suffix(".pkl")
+            logger.warning(
+                "No file extension provided. Saving sklearn model with .pkl extension: %s",
+                path,
+            )
 
-        ModelRecorder.save_best_model(
-            model=self.model_class,
-            filename=str(path),
-        )
+        with path.open("wb") as f:
+            pickle.dump(self, f)
 
-    def load(self, path: Path) -> "SklearnModels":
-        """
-        Load a sklearn model from disk into this instance.
+        return path
 
+    @classmethod
+    def load(cls, filename: str | Path) -> "SklearnModels":
+        """Load model from disk.
         Args:
-            path (Path): Path to the saved model file.
-
+            filename: Path to the saved model.
         Returns:
-            SklearnModels: Current instance with loaded model.
+            SklearnModels instance loaded from disk.
         """
-        self.model_class = ModelRecorder.load_model(filename=str(path))
-        return self
-
-    def get_training_strategy(self) -> Type[TrainingStrategy]:
-        """
-        Return the sklearn-compatible training strategy.
-
-        Returns:
-            Type[TrainingStrategy]
-        """
-        return FitOnceStrategy
-
-    def get_prediction_strategy(self) -> Type[PredictionStrategy]:
-        """
-        Return the sklearn-compatible prediction strategy.
-
-        Returns:
-            Type[PredictionStrategy]
-        """
-        return SklearnPredictionStrategy
+        path = Path(filename)
+        with path.open("rb") as f:
+            obj = pickle.load(f)
+            if not isinstance(obj, cls):
+                raise ValueError(
+                    f"Loaded object is not a SklearnModels instance: {type(obj)}"
+                )
+            return obj
 
     def get_params(self) -> Mapping[str, object]:
-        """Return sklearn estimator parameters."""
-        return self.model_class.get_params()
+        """Return the parameters of the underlying model.
+        Returns:
+            A mapping of parameter names to their values.
+        """
+        return self.model.get_params()
 
     def set_params(self, **params: object) -> None:
-        """Set sklearn estimator parameters."""
-        self.model_class.set_params(**params)
+        """Set the parameters of the underlying model.
+        Args:
+            **params: Parameter names and their new values.
+        """
+        self.model.set_params(**params)
