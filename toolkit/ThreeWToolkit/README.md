@@ -63,7 +63,7 @@ To better understand how the system is organized, we can divide all classes into
 ## 📊 3W Dataset <a id="dataset"></a>
 The **3W dataset** serves as a **reference dataset** for this project and is hosted on [Figshare](https://figshare.com/projects/3W_Dataset/251195). However, the toolkit is not limited to the 3W dataset and can be adapted for other datasets as well. 
 
-Further details on the 3W dataset’s structure, preprocessing, and usage are available in the [3W_DATASET_STRUCTURE.md](../3W_DATASET_STRUCTURE.md) file.
+Further details on the 3W dataset’s structure, preprocessing, and usage are available in the [3W_DATASET_STRUCTURE.md](../../3W_DATASET_STRUCTURE.md) file.
 
 
 ## ⚙️ Installation & Setup  <a id="installation"></a>
@@ -106,11 +106,11 @@ conda activate 3W
 ## 🪐 Jupyter Notebooks & Examples <a id="notebooks"></a>
 A curated set of ready-to-use jupyter notebooks that demonstrate how to use the toolkit to common fault detection tasks using the 3W dataset. These examples accelerate onboarding and reproducibility.
 
-The set of notebooks can be found in the [notebooks folder](../docs/notebooks/)
+The set of notebooks can be found in the [notebooks folder](../demos/)
 
 
 ## 🤝 Contributing  <a id="contributing"></a>
 
-We welcome contributions to help us improve and expand the functionality of the 3W toolkit. To ensure a smooth collaboration process, please follow our contrubuting guidelines [here](../CONTRIBUTING.md).
+We welcome contributions to help us improve and expand the functionality of the 3W toolkit. To ensure a smooth collaboration process, please follow our contrubuting guidelines [here](../../CONTRIBUTING.md).
 
 
