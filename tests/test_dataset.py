@@ -18,6 +18,7 @@ _COLUMNS = [
 ]  # some signal variables in the 2.0.0 version of the dataset
 _LABEL_NAME = "class"
 
+
 class TestParquetDataset:
     def test_full_loading(self, parquet_dataset_path: Path):
         """
