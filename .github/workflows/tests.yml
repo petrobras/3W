@@ -3,7 +3,7 @@ name: Tests and Coverage
 on: [push, pull_request]
 
 jobs:
- lint:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
