@@ -26,13 +26,6 @@ jobs:
         with:
           enable-caching: true
 
-      - name: Install lychee
-        run: |
-          curl -sSL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz \
-            | tar -xz
-          sudo mv lychee /usr/local/bin/
-          lychee --version
-
       - name: Make helper scripts executable
         run: chmod +x bin/lint
 
@@ -41,6 +34,11 @@ jobs:
 
       - name: Install package with dev extras
         run: uv pip install -e .[dev]
+
+      - name: Install lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --version
 
       - name: Run lint
         run: uv run ./bin/lint
