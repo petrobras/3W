@@ -1,8 +1,51 @@
 name: Tests and Coverage
 
-on: [push, pull_request]
-
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !**/*.parquet
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-caching: true
+
+      - name: Make helper scripts executable
+        run: chmod +x bin/lint
+
+      - name: Create venv
+        run: uv venv .venv
+
+      - name: Install package with dev extras
+        run: uv pip install -e .[dev]
+
+      - name: Install lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --version
+
+      - name: Run lint
+        run: uv run ./bin/lint
+
   test:
     runs-on: ubuntu-latest
 
@@ -36,7 +79,7 @@ jobs:
           uv --version
 
       - name: Make helper scripts executable
-        run: chmod +x bin/lint bin/test
+        run: chmod +x bin/test
 
       - name: Create venv
         run: uv venv .venv

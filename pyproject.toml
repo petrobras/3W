@@ -31,6 +31,7 @@ dependencies = [
     "ipywidgets==8.1.7",
     "jupyter-client==8.6.3",
     "jupyter-core==5.8.1",
+    "tornado>=6.5.5,<7",
     "Pillow>=11.0.0",
     "scikit-image>=0.25.2",
     "torch>=2.7.0",

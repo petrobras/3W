@@ -1,0 +1,17 @@
+exclude_path = [
+  "dataset/*.*",
+  "3W_DATASET_STRUCTURE.md",
+  "BACKLOG.md",
+  "LISTS_OF_CITATIONS.md",
+  "report_template.html",
+  "CODE_OF_CONDUCT.md"
+]
+
+accept = [
+  200,  # request succeeded
+  201,  # resource successfully created
+  202,  # request accepted, processing not completed yet
+  204,  # request succeeded, no response body
+  429   # too many requests
+]
+
