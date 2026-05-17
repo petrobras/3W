@@ -28,6 +28,7 @@ In this guide we present how you can propose each type of contributions that we 
     * [Levels for contributions](#levels-for-contributions)
     * [3W Dataset's structure](#3w-datasets-structure)
     * [3W Toolkit's structure](#3w-toolkits-structure)
+    * [3W Toolkit's contributing guide](#3w-toolkits-contributing-guide)
     * [Jupyter Notebooks](#jupyter-notebooks)
     * [Executing examples](#executing-examples)
 * [Proposing contributions](#proposing-contributions)
@@ -72,7 +73,7 @@ We expect to receive contributions at different levels, as shown in the figure b
     * You can recommend new specific problems.
 * Level 3:
     * You can develop and propose approaches and algorithms for already incorporated problems;
-    * You can elaborate and send us new overvies;
+    * You can elaborate and send us new overviews;
     * You can idealize, develop and propose new useful tools.
 * Level 4:
     * You can develop and submit us ensemble methods;
@@ -88,20 +89,27 @@ At level 1, the 3W Dataset consists of multiple Parquet files saved in subdirect
 
 ## 3W Toolkit's structure
 
-At level 2, the 3W Toolkit is implemented in sub-modules as discribed [here](3W_TOOLKIT_STRUCTURE.md).
+At level 2, the 3W Toolkit is implemented in sub-modules as described [here](3W_TOOLKIT_STRUCTURE.md).
+
+## 3W Toolkit's contributing guide
+
+If your contribution changes the 3W Toolkit source code, tests, demos, or developer workflow, please also read the [3W Toolkit contributing guide](3W_TOOLKIT_CONTRIBUTING.md). It describes the toolkit architecture, expected extension patterns, testing guidelines, and quality checks for contributions under `3W/toolkit/`, `3W/tests/`, and related toolkit examples.
 
 ## Jupyter Notebooks 
 
 Jupyter Notebooks play an important role in the 3W Project as a way to demonstrate usage, explore datasets, and present complete experimental pipelines. To keep the project organized, please follow this structure:
 
 - **Toolkit demos**  
-  Add notebooks demonstrating how to use the toolkit in: `3W/toolkit/demos/`
+  Add notebooks demonstrating how to use the toolkit in `3W/toolkit/demos/`.
 
 - **Dataset exploration**  
-  Add notebooks for dataset usage and analysis in: `3W/dataset/demos/`
+  Add notebooks for dataset usage, exploratory analyses, and dataset overviews in `3W/dataset/demos/`. When adding a contributor-specific overview, use a dedicated subdirectory such as `3W/dataset/demos/[your_name_here]/main.ipynb`.
 
 - **Benchmarks**  
-  Add complete and independent benchmarking projects in: `3W/benchmarks/`
+  Add complete and independent benchmarking projects in `3W/benchmarks/`.
+
+- **Learning resources and tutorials**
+  Add self-contained educational material, tutorials, and course-style notebooks in `3W/resources/`, preferably under a versioned or topic-specific subdirectory.
 
 - **Technical documents**  
   The `3W/docs/` folder is reserved for academic materials such as papers, theses in `.pdf` format. Do not place notebooks here.
@@ -142,13 +150,13 @@ It is important to keep in mind that all source code is implemented according to
 
 ## New 3W Dataset's overviews
 
-Visualization is one of the most important steps in this type of project. Therefore, you can propose [Jupyter Notebooks](https://jupyter.org/) with different views. For this, submit a **pull request** on a branch called `new_3w_datasets_overviews` with a file named `overviews\[your_name_here]\main.ipynb` that you've developed. If we like your overview, your file could be listed in this repository as a 3W Toolkit's example of use.
+Visualization is one of the most important steps in this type of project. Therefore, you can propose [Jupyter Notebooks](https://jupyter.org/) with different views of the 3W Dataset. For this, submit a **pull request** on a branch called `new_3w_datasets_overviews` with a notebook in `3W/dataset/demos/[your_name_here]/main.ipynb`. If we like your overview, your file could be listed in this repository as a 3W Dataset overview.
 
 ## New approaches and algorithms
 
-Would you like to share in this repository as 3W Toolkit's examples of use approaches and algorithms for already incorporated problems? The procedure for this is to submit a **pull request** on a branch called `new_approaches_and_algorithms` with [Jupyter Notebooks](https://jupyter.org/) that you've developed in the directory corresponding to the chosen problem. 
+Would you like to share approaches and algorithms for already incorporated problems in this repository? The procedure for this is to submit a **pull request** on a branch called `new_approaches_and_algorithms`. Use `3W/toolkit/demos/` for notebooks that demonstrate how to use the 3W Toolkit, `3W/benchmarks/` for complete and independent benchmarking projects, and `3W/resources/` for educational or tutorial material. Contributions that add reusable toolkit code should follow the [3W Toolkit contributing guide](3W_TOOLKIT_CONTRIBUTING.md).
 
-Specific benchmarls will be incorporated into this project gradually. All benchmarks will be included in the folder `3W/benchmarks/`
+Specific benchmarks will be incorporated into this project gradually. All benchmarks will be included in the folder `3W/benchmarks/`.
 
 ## Additional requirements
 
