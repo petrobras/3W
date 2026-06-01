@@ -375,3 +375,32 @@ class ParquetDataset(BaseDataset):
                 "event_type": event_type,
             },
         )
+
+    def load_instances_by_variable(
+        self, variables: list[str] | None = None
+    ) -> dict[str, list[np.ndarray]]:
+        """Load all filtered instances grouped by sensor variable.
+
+        Provides the ``{variable: [array, ...]}`` structure consumed by the
+        time series clustering sub-package.
+
+        Args:
+            variables (list[str] | None): Variables to load. If None, uses the
+                columns configured in ``config.columns``.
+
+        Returns:
+            dict[str, list[np.ndarray]]: Mapping from variable name to a list of
+                1-D arrays, one per instance that contains the variable.
+        """
+        target_vars = (
+            variables if variables is not None else (self.config.columns or [])
+        )
+        data_map: dict[str, list[np.ndarray]] = {var: [] for var in target_vars}
+
+        for idx in range(len(self)):
+            signal_df = self.load_file(idx).signal
+            for var in target_vars:
+                if var in signal_df.columns:
+                    data_map[var].append(signal_df[var].to_numpy())
+
+        return data_map
