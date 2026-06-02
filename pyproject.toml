@@ -45,7 +45,7 @@ dependencies = [
     "pylatex>=1.4.2",
     "statsmodels>=0.14.5",
     "requests>=2.31,<3",
-    "black[jupyter]>=26.1.0",
+    "black[jupyter]==26.5.0",
     "nbconvert",
     "nbformat",
     "dtaidistance>=2.3",
@@ -63,7 +63,7 @@ Changelog = "https://github.com/petrobras/3W/releases"
 [project.optional-dependencies]
 dev = [
     "mypy>=1.19.1",
-    "black>=26.1.0",
+    "black==26.5.0",
     "ruff>=0.14.13",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
@@ -112,4 +112,3 @@ target-version = ["py310"]
 python_version = "3.10"
 mypy_path = "toolkit/"
 ignore_missing_imports = true
-
