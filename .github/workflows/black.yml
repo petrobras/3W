@@ -15,7 +15,7 @@ jobs:
             !*.parquet
           sparse-checkout-cone-mode: false
 
-      - uses: psf/black@stable
+      - uses: psf/black@26.5.0
         with:
           src: "toolkit tests"
           options: "--check --verbose --diff"
