@@ -1,6 +1,7 @@
+import logging
+
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 import jinja2
 
 from pathlib import Path
@@ -10,10 +11,12 @@ from pylatex import Document, Section, Command, Center, Itemize
 from pylatex.utils import NoEscape
 from pylatex.package import Package
 
-from ThreeWToolkit.data_visualization import DataVisualization
+from ..data_visualization import DataVisualization
 
 from ..constants import LATEX_DIR, REPORTS_DIR, HTML_TEMPLATES_DIR, HTML_ASSETS_DIR
 from ..utils.template_manager import copy_html_support_files, copy_latex_support_files
+
+logger = logging.getLogger(__name__)
 
 
 class ReportGeneration:
@@ -26,10 +29,8 @@ class ReportGeneration:
 
     Attributes:
         model: The trained machine learning model object (MLP, SklearnModels, or sklearn-compatible model).
-        X_train (pd.Series): The training feature data.
-        y_train (pd.Series): The training target data.
-        X_test (pd.Series): The testing feature data.
-        y_test (pd.Series): The testing target data.
+        train_len (int | None): Size of the training dataset, or None if not provided.
+        test_len (int | None):  Size of the testing dataset, or None if not provided.
         predictions (pd.Series): The model's predictions on the test set.
         calculated_metrics (dict): A dictionary of pre-calculated performance metrics.
         plot_config (dict): A dictionary defining the plots to be included in the report.
@@ -45,8 +46,6 @@ class ReportGeneration:
             Generates a model evaluation report in either LaTeX (PDF) or HTML format.
         save_report(doc: Document | str, filename: str, format: str) -> None:
             Saves the report in both LaTeX (PDF) and HTML formats.
-        export_results_to_csv(results: dict[str, pd.DataFrame | np.ndarray | str | dict[str, float]], filename: str) -> pd.DataFrame:
-            Exports machine learning model results to a CSV file.
         get_visualization(format: str) -> dict:
             Generates and saves plots based on the provided plot configuration.
     Private Methods:
@@ -69,10 +68,8 @@ class ReportGeneration:
     def __init__(
         self,
         model,
-        X_train: pd.Series,
-        y_train: pd.Series,
-        X_test: pd.Series,
-        y_test: pd.Series,
+        train_len: int | None,
+        test_len: int | None,
         predictions: pd.Series,
         calculated_metrics: dict[str, float],
         plot_config: dict[str, dict] | None,
@@ -90,10 +87,8 @@ class ReportGeneration:
 
         Args:
             model: The trained machine learning model object (MLP, SklearnModels, or sklearn-compatible model).
-            X_train (pd.Series): The training feature data.
-            y_train (pd.Series): The training target data.
-            X_test (pd.Series): The testing feature data.
-            y_test (pd.Series): The testing target data.
+            train_len (int | None): Size of the training dataset, or None if not provided.
+            test_len (int | None):  Size of the testing dataset, or None if not provided.
             predictions (pd.Series): The model's predictions on the test set.
             calculated_metrics (dict): A dictionary of pre-calculated performance metrics.
             plot_config (dict | None): A dictionary defining the plots to be
@@ -110,10 +105,8 @@ class ReportGeneration:
         """
 
         self.model = model
-        self.X_train = X_train
-        self.y_train = y_train
-        self.X_test = X_test
-        self.y_test = y_test
+        self.train_len = train_len
+        self.test_len = test_len
         self.metrics = calculated_metrics
         self.predictions = predictions
         self.calculated_metrics = calculated_metrics
@@ -170,7 +163,7 @@ class ReportGeneration:
             pylatex.Document: The generated Beamer presentation as a PyLaTeX
                               Document object.
         """
-        print(f"Generating Beamer report: '{self.title}'...")
+        logger.info(f"Generating Beamer report: '{self.title}'...")
 
         doc = Document(documentclass="beamer", document_options=["t,compress"])
 
@@ -247,7 +240,7 @@ class ReportGeneration:
             with doc.create(Itemize()) as itemize:
                 itemize.add_item(
                     NoEscape(
-                        f"Training Samples: {len(self.X_train)} \\\\ Test Samples: {len(self.X_test)}"
+                        f"Training Samples: {self.train_len or 0} \\\\ Test Samples: {self.test_len or 0}"
                     )
                 )
             doc.append(NoEscape(r"\end{block}"))
@@ -277,7 +270,7 @@ class ReportGeneration:
                 doc.append(NoEscape(r"\end{figure}"))
                 doc.append(NoEscape(r"\end{frame}"))
 
-        print("Beamer document generated successfully.")
+        logger.info("Beamer document generated successfully.")
         if self.save_report_after_generate:
             self._save_report_latex(doc=doc, filename=self.title)
 
@@ -392,13 +385,13 @@ class ReportGeneration:
         """
 
         report_path = self.reports_dir / "latex"
-        print(f"Saving report to '{report_path}' folder'...")
+        logger.info(f"Saving report to '{report_path}' folder'...")
 
         report_path.mkdir(parents=True, exist_ok=True)
 
         doc.generate_tex(filepath=str(report_path / filename))
 
-        print(f"Report saved successfully to '{filename}.tex'")
+        logger.info(f"Report saved successfully to '{filename}.tex'")
 
         copy_latex_support_files(self.latex_dir, report_path)
 
@@ -421,7 +414,7 @@ class ReportGeneration:
         Returns:
             str: A string containing the complete, rendered report in HTML format.
         """
-        print(f"Generating HTML report from template: '{template_name}'...")
+        logger.info(f"Generating HTML report from template: '{template_name}'...")
 
         # Set up Jinja2 environment
         # This assumes your templates are in a 'templates' subdirectory.
@@ -454,15 +447,15 @@ class ReportGeneration:
             "generation_date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
             "calculated_metrics": self.calculated_metrics,
             "model_type": type(self.model).__name__,
-            "model_config": self.model.config.__dict__,
-            "train_samples": len(self.X_train),
-            "test_samples": len(self.X_test),
+            "model_config": self.model.config.dict(),
+            "train_samples": self.train_len or 0,
+            "test_samples": self.test_len or 0,
             "plot_data": plot_data,
         }
 
         # --- 4. Render the template with the data ---
         markdown_output = template.render(context)
-        print("Markdown report generated successfully.")
+        logger.info("Markdown report generated successfully.")
 
         if self.save_report_after_generate:
             self._save_report_html(
@@ -497,98 +490,15 @@ class ReportGeneration:
         report_path.mkdir(parents=True, exist_ok=True)
 
         file_path = report_path / filename
-        print(f"Saving HTML report to '{file_path}'...")
+        logger.info(f"Saving HTML report to '{file_path}'...")
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(report_content)
-            print(f"HTML report saved successfully to '{file_path}'")
+            logger.info(f"HTML report saved successfully to '{file_path}'")
         except IOError as e:
-            print(f"Error saving HTML file: {e}")
+            logger.error(f"Error saving HTML file: {e}")
 
         copy_html_support_files(HTML_TEMPLATES_DIR, HTML_ASSETS_DIR, report_path)
-
-    def export_results_to_csv(
-        self,
-        results: dict[str, pd.DataFrame | np.ndarray | str | dict[str, float]],
-        filename: str,
-    ) -> pd.DataFrame:
-        """Exports machine learning model results to a CSV file.
-
-        This method takes a dictionary of results from a model evaluation,
-        formats it into a pandas DataFrame, and saves it as a CSV file in the
-        designated reports directory (`self.reports_dir`). The directory is
-        created if it does not exist.
-
-        The output CSV file will contain the input features (`X_test`), the true
-        target values, the model's predictions, the model's name, and the
-        calculated performance metrics.
-
-        Args:
-            results (dict[str, pd.DataFrame | np.ndarray | str | dict[str, float]]): A dictionary containing the model evaluation
-                results. It must include the following keys:
-                - 'X_test' (pd.DataFrame or np.ndarray): The test features.
-                - 'true_values' (array-like): The actual target values.
-                - 'predictions' (array-like): The model's predicted values.
-                - 'model_name' (str): The name of the model.
-                - 'metrics' (dict[str, float]): A dictionary where keys are metric
-                  names (e.g., 'MAE', 'MSE') and values are the corresponding
-                  scores.
-            filename (str): The name for the output CSV file (e.g., 'results.csv').
-
-        Returns:
-            pd.DataFrame: The DataFrame containing the combined results that was
-                saved to the CSV file.
-
-        Raises:
-            ValueError: If the `results` dictionary does not contain all the
-                required keys.
-        """
-        print(f"Exporting results to '{filename}'...")
-
-        self.reports_dir.mkdir(parents=True, exist_ok=True)
-
-        required_keys = [
-            "X_test",
-            "true_values",
-            "predictions",
-            "model_name",
-            "metrics",
-        ]
-        if not all(key in results for key in required_keys):
-            raise ValueError(
-                f"The 'results' dictionary must contain all keys: {required_keys}"
-            )
-
-        # Handle X_test which can be a 2D array (matrix)
-        if isinstance(results["X_test"], pd.DataFrame):
-            df_features = results["X_test"].copy()
-        else:
-            # Assuming it's a NumPy array
-            X_test_arr = results["X_test"]
-            if not isinstance(X_test_arr, np.ndarray):
-                raise TypeError("X_test must be a pandas DataFrame or numpy array")
-            if X_test_arr.ndim == 1:
-                X_test_arr = X_test_arr.reshape(-1, 1)
-
-            num_features = X_test_arr.shape[1]
-            df_features = pd.DataFrame(
-                X_test_arr,
-                columns=[f"feature_{i + 1}" for i in range(num_features)],
-            )
-
-        df_export = df_features.copy()
-        df_export["true_values"] = results["true_values"]
-        df_export["predictions"] = results["predictions"]
-        df_export["model_name"] = results["model_name"]
-
-        metrics = results["metrics"]
-        if isinstance(metrics, dict):
-            for metric_name, metric_value in metrics.items():
-                df_export[metric_name] = metric_value
-
-        df_export.to_csv(self.reports_dir / filename, index=True)
-        print(f"Successfully exported results to '{self.reports_dir / filename}'.")
-        return df_export
 
     def generate_summary_report(
         self, format, template_name: str = "report_template.html"
@@ -603,7 +513,7 @@ class ReportGeneration:
             Document | str: A PyLaTeX Document for LaTeX reports or a string for HTML reports.
         """
         if self.save_report_after_generate:
-            print(f"Reports will be saved to directory: '{self.reports_dir}'")
+            logger.info(f"Reports will be saved to directory: '{self.reports_dir}'")
 
         if format == "latex":
             return self._generate_summary_report_latex()
@@ -622,10 +532,10 @@ class ReportGeneration:
         """
         if format == "latex":
             self._save_report_latex(doc, filename)
-            print("LaTeX report saved successfully")
+            logger.info("LaTeX report saved successfully")
         elif format == "html":
             self._save_report_html(doc, f"{filename}.html")
             # Convert Markdown to HTML and then to PDF using WeasyPrint
-            print("HTML report saved successfully")
+            logger.info("HTML report saved successfully")
         else:
             raise ValueError("Format must be either 'latex' or 'html'.")

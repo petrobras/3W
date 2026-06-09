@@ -1,51 +1,59 @@
-from abc import ABC
+from typing import Iterable, TypeAlias
+from abc import ABC, abstractmethod
 
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pathlib import Path
+from pydantic import BaseModel
 
-from ..core.enums import ModelTypeEnum
+import torch
+
+from .base_instantiable import Instantiable
+
+ParamsT: TypeAlias = (
+    Iterable[torch.Tensor]
+    | Iterable[dict[str, torch.Tensor | int | float | str | bool]]
+    | Iterable[tuple[str, torch.Tensor]]
+)
 
 
-class ModelsConfig(BaseModel):
-    model_type: ModelTypeEnum | str = Field(..., description="Type of model to use.")
-    random_seed: int | None = Field(42, description="Random seed for reproducibility.")
+class ModelsConfig(BaseModel, Instantiable):
+    """Base configuration class for all models."""
 
-    @field_validator("model_type")
-    @classmethod
-    def check_model_type(
-        cls: type["ModelsConfig"],
-        value: ModelTypeEnum | str | None,
-        info: ValidationInfo,
-    ) -> ModelTypeEnum | str:
-        """Validate that model_type is supported.
-
-        Args:
-            cls (ModelsConfig): The class reference.
-            value (ModelTypeEnum | str | None): The model type to validate.
-            info (ValidationInfo): Validation info.
-
-        Returns:
-            ModelTypeEnum | str: Validated model type.
-
-        Raises:
-            ValueError: If model_type is missing.
-            NotImplementedError: If model_type is not supported.
-        """
-        valid_types = {e for e in ModelTypeEnum}
-        valid_strs = {e.value for e in ModelTypeEnum}
-        if value is None:
-            raise ValueError("model_type is required.")
-        if value not in valid_types and value not in valid_strs:
-            raise NotImplementedError(f"`model_type` {value} not implemented yet.")
-        return value
+    _target: type["BaseModels"]
 
 
 class BaseModels(ABC):
-    def __init__(self, config: ModelsConfig):
-        """
-        Base model class constructor.
+    """
+    Abstract base class for all models.
+
+    Defines the core interface that all models must implement,
+    separating model architecture from training logic.
+    """
+
+    @property
+    def model_name(self) -> str:
+        return self.__class__.__name__
+
+    @abstractmethod
+    def save(self, filename: str | Path) -> Path:
+        """Save model to disk.
 
         Args:
-            config (ModelsConfig): Configuration object with model parameters.
+            filename: File path where model should be saved.
+
+        Returns:
+            Path to the saved model file.
         """
-        super().__init__()
-        self.config = config
+        pass
+
+    @classmethod
+    @abstractmethod
+    def load(cls, filename: str | Path) -> "BaseModels":
+        """Load model from disk.
+
+        Args:
+            filename: File path from which to load model.
+
+        Returns:
+            Loaded model instance.
+        """
+        pass

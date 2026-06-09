@@ -6,7 +6,7 @@ import seaborn as sns
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from .base_visualizer import BaseVisualizer
+from ..core.base_visualizer import BaseVisualizer
 
 
 class CorrelationHeatmap(BaseVisualizer):

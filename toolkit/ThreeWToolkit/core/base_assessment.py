@@ -1,151 +1,47 @@
-from pathlib import Path
+"""Definition for the base assessment class."""
 
-import torch
-from pydantic import BaseModel, Field, field_validator
+from abc import ABC
 
-from ThreeWToolkit.constants import OUTPUT_DIR
+from ThreeWToolkit.core.base_models import BaseModels
+from pydantic import BaseModel, ConfigDict, Field
+import numpy as np
 
+from .base_instantiable import Instantiable
 from ..core.enums import TaskTypeEnum
-from .base_step import BaseStep
+from ..core.base_trainer import TrainingHistory
 
 
-class ModelAssessmentConfig(BaseModel):
-    """
-    Configuration for model assessment and evaluation.
+class AssessmentOutput(BaseModel):
+    """Output container for model assessment results."""
 
-    Args:
-        metrics (list[str]): List of metric names to calculate.
-        output_dir (Path): Directory to save assessment results.
-        export_results (bool): Whether to export results to CSV.
-        generate_report (bool): Whether to generate LaTeX report.
-        task_type (TaskTypeEnum): Type of task (TaskTypeEnum.CLASSIFICATION or TaskTypeEnum.REGRESSION).
-        batch_size (int): Batch size for PyTorch model predictions.
-        device (str): Device for PyTorch computations.
-        report_title (str | None): Title for the report.
-        report_author (str): Author name for the report.
+    model: BaseModels = Field(..., description="Trained model instance.")
+    task_type: TaskTypeEnum = Field(..., description="Type of ML task.")
+    timestamp: str = Field(..., description="Timestamp of the assessment.")
 
-    Example:
-        >>> config = ModelAssessmentConfig(
-        ...     metrics=["accuracy", "f1", "precision", "recall"],
-        ...     output_dir=Path("./results"),
-        ...     task_type=TaskTypeEnum.CLASSIFICATION,
-        ...     generate_report=True,
-        ...     report_title="Model Performance Analysis"
-        ... )
-    """
-
-    metrics: list[str] = Field(
-        default=["accuracy", "f1"], description="List of metric names to calculate"
+    true_values: np.ndarray | None = Field(
+        default=None, description="Ground truth values."
     )
-    output_dir: Path = Field(
-        default=Path(OUTPUT_DIR), description="Directory to save assessment results"
+    predictions: np.ndarray | None = Field(
+        default=None, description="Model predictions."
     )
-    export_results: bool = Field(
-        default=True, description="Whether to export results to CSV files"
+    metrics: dict[str, float] | None = Field(
+        default=None, description="Computed metrics."
     )
-    generate_report: bool = Field(
-        default=False,
-        description="Whether to generate LaTeX report using ReportGeneration",
-    )
-    task_type: TaskTypeEnum = Field(
-        default=TaskTypeEnum.CLASSIFICATION,
-        description="Type of task (classification or regression)",
-    )
-    batch_size: int = Field(
-        default=64, gt=0, description="Batch size for PyTorch model predictions"
-    )
-    device: str = Field(
-        default="cuda" if torch.cuda.is_available() else "cpu",
-        description="Device for PyTorch computations",
-    )
-    report_title: str | None = Field(
-        default=None, description="Title for the generated report"
-    )
-    report_author: str = Field(
-        default="3W Toolkit Report", description="Author name for the report"
+    training_history: TrainingHistory | None = Field(
+        default=None, description="Training history from the trainer."
     )
 
-    @field_validator("task_type")
-    @classmethod
-    def validate_task_type(
-        cls: type["ModelAssessmentConfig"], task_type: TaskTypeEnum
-    ) -> TaskTypeEnum:
-        """
-        Validate that the task type is supported.
-
-        Args:
-            cls (ModelAssessmentConfig): The class reference.
-            task_type (TaskTypeEnum): Task type to validate.
-
-        Returns:
-            TaskTypeEnum: Validated task type.
-
-        Raises:
-            ValueError: If task_type is not supported.
-        """
-        valid_types = {TaskTypeEnum.CLASSIFICATION, TaskTypeEnum.REGRESSION}
-        if task_type not in valid_types:
-            raise ValueError(f"task_type must be one of {valid_types}")
-        return task_type
-
-    @field_validator("metrics")
-    @classmethod
-    def validate_metrics(
-        cls: type["ModelAssessmentConfig"], metrics: list[str]
-    ) -> list[str]:
-        """
-        Validate that the requested metrics are supported.
-
-        Args:
-            cls (ModelAssessmentConfig): The class reference.
-            metrics (list[str]): List of metric names.
-
-        Returns:
-            list[str]: Validated list of metrics.
-
-        Raises:
-            ValueError: If any metric is not supported.
-        """
-        valid_metrics = {
-            # Classification metrics
-            "accuracy",
-            "balanced_accuracy",
-            "precision",
-            "recall",
-            "f1",
-            "average_precision",
-            # Regression metrics
-            "explained_variance",
-        }
-        invalid_metrics = set(metrics) - valid_metrics
-        if invalid_metrics:
-            raise ValueError(
-                f"Invalid metrics: {invalid_metrics}. Valid metrics: {valid_metrics}"
-            )
-        return metrics
-
-    @field_validator("device")
-    @classmethod
-    def validate_device(cls: type["ModelAssessmentConfig"], device: str) -> str:
-        """
-        Validate that the computation device is supported.
-
-        Args:
-            cls (ModelAssessmentConfig): The class reference.
-            device (str): Device name ('cpu' or 'cuda').
-
-        Returns:
-            str: Validated device name.
-
-        Raises:
-            ValueError: If device is not supported.
-        """
-        valid_devices = {"cpu", "cuda"}
-        if device not in valid_devices:
-            raise ValueError(f"device must be one of {valid_devices}")
-        return device
+    experiment_dir: str | None = Field(
+        default=None, description="Directory where experiment results are saved."
+    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class BaseModelAssessment(BaseStep):
-    def __init__(self, config: ModelAssessmentConfig):
-        self.config = config
+class BaseAssessmentConfig(BaseModel, Instantiable):
+    """Base configuration for assessments."""
+
+    _target: type["BaseAssessment"]
+
+
+class BaseAssessment(ABC):
+    """Base class for assessments."""

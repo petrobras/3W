@@ -4,7 +4,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-from .base_visualizer import BaseVisualizer
+from ..core.base_visualizer import BaseVisualizer
 
 
 class SeasonalDecompositionPlot(BaseVisualizer):
