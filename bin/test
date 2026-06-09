@@ -6,7 +6,13 @@ cd "$(dirname "$0")/.."
 : "${RUN_SLOW_TESTS:=0}"
 echo "RUN_SLOW_TESTS is set to $RUN_SLOW_TESTS"
 
+extra_pytest_args=()
+if [ "$RUN_SLOW_TESTS" != "1" ]; then
+  extra_pytest_args+=(-m "not slow")
+fi
+
 pytest tests \
+  "${extra_pytest_args[@]}" \
   --cov=ThreeWToolkit \
   --cov-report=term \
   --cov-report=xml:coverage.xml

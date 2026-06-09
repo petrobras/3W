@@ -10,20 +10,15 @@ from sklearn.metrics import (
     f1_score as sk_f1,
     roc_auc_score as sk_roc_auc,
 )
-
-from ..utils.general_utils import GeneralUtils
-from ..core.base_metrics import (
-    AccuracyScoreConfig,
-    BalancedAccuracyScoreConfig,
-    AveragePrecisionScoreConfig,
-    PrecisionScoreConfig,
-    RecallScoreConfig,
-    F1ScoreConfig,
-    RocAucScoreConfig,
-)
+from sklearn.preprocessing import label_binarize
 
 
-@GeneralUtils.validate_func_args_with_pydantic(AccuracyScoreConfig)
+from pydantic import ConfigDict, validate_call
+
+_validate_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+@validate_call(config=_validate_config)
 def accuracy_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -56,7 +51,7 @@ def accuracy_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(BalancedAccuracyScoreConfig)
+@validate_call(config=_validate_config)
 def balanced_accuracy_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -87,13 +82,14 @@ def balanced_accuracy_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(AveragePrecisionScoreConfig)
+@validate_call(config=_validate_config)
 def average_precision_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
     average: str | None = "macro",
     pos_label: int | None = 1,
     sample_weight: np.ndarray | pd.Series | list | None = None,
+    num_classes: int | None = None,
 ) -> float:
     """
     Compute average precision (AP) from prediction scores.
@@ -106,6 +102,7 @@ def average_precision_score(
         pos_label: The label of the positive class. Only applied to binary y_true.
                    For multilabel-indicator y_true, pos_label is fixed to 1.
         sample_weight: Optional sample weights.
+        num_classes: Number of classes. If not None, y_true will be binarized.
 
     Returns:
         The average precision score.
@@ -114,6 +111,11 @@ def average_precision_score(
         TypeError: If input types are invalid.
         ValueError: If inputs are inconsistent or average value is invalid.
     """
+
+    if num_classes is not None:
+        classes = np.arange(num_classes)
+        y_true = label_binarize(y_true, classes=classes)
+
     return sk_avg_precision(
         y_true=y_true,
         y_score=y_pred,
@@ -123,13 +125,13 @@ def average_precision_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(PrecisionScoreConfig)
+@validate_call(config=_validate_config)
 def precision_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
     labels: list | None = None,
     pos_label: int = 1,
-    average: str = "binary",
+    average: str | None = "binary",
     sample_weight: np.ndarray | pd.Series | list | None = None,
     zero_division: str | int = "warn",
 ) -> float:
@@ -163,7 +165,7 @@ def precision_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(RecallScoreConfig)
+@validate_call(config=_validate_config)
 def recall_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -203,7 +205,7 @@ def recall_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(F1ScoreConfig)
+@validate_call(config=_validate_config)
 def f1_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -243,7 +245,7 @@ def f1_score(
     )
 
 
-@GeneralUtils.validate_func_args_with_pydantic(RocAucScoreConfig)
+@validate_call(config=_validate_config)
 def roc_auc_score(
     y_true: np.ndarray | pd.Series | list,
     y_pred: np.ndarray | pd.Series | list,
@@ -252,6 +254,7 @@ def roc_auc_score(
     max_fpr: float | None = None,
     multi_class: str = "raise",
     labels: list | None = None,
+    num_classes: int | None = None,
 ) -> float:
     """
     Compute the Area Under the Receiver Operating Characteristic Curve (ROC AUC).
@@ -264,13 +267,17 @@ def roc_auc_score(
         max_fpr: If not None, the standardized partial AUC over the range [0, max_fpr].
         multi_class: {'raise', 'ovr', 'ovo'}. Only used for multiclass targets.
         labels: List of labels to index the classes in y_true and y_pred.
-
+        num_classes: Number of classes. If not None, y_true will be binarized.
     Returns:
         ROC AUC score.
 
     Raises:
         ValueError, TypeError: For invalid inputs or arguments.
     """
+    if num_classes is not None:
+        classes = np.arange(num_classes)
+        y_true = label_binarize(y_true, classes=classes)
+
     return sk_roc_auc(
         y_true=y_true,
         y_score=y_pred,

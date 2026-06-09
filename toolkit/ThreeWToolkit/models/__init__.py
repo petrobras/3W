@@ -1,9 +1,4 @@
-from .sklearn_models import SklearnModels, SklearnModelsConfig
 from .mlp import MLP, MLPConfig
+from .sklearn_models import SklearnModels, SklearnModelsConfig
 
-__all__ = [
-    "SklearnModels",
-    "MLP",
-    "SklearnModelsConfig",
-    "MLPConfig",
-]
+__all__ = ["MLP", "MLPConfig", "SklearnModels", "SklearnModelsConfig"]

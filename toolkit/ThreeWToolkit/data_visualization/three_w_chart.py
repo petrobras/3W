@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import matplotlib.colors as mcolors
 import plotly.graph_objects as go
@@ -6,7 +8,9 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from ..utils.data_utils import get_config_dataset_ini
-from ..data_visualization.base_visualizer import BaseVisualizer
+from ..core.base_visualizer import BaseVisualizer
+
+logger = logging.getLogger(__name__)
 
 
 class ThreeWChart(BaseVisualizer):
@@ -130,7 +134,7 @@ class ThreeWChart(BaseVisualizer):
             current_class = df.iloc[i]["class"]
 
             if pd.isna(current_class):
-                print(f"Warning: NaN class value at index {i}")
+                logger.warning(f"Warning: NaN class value at index {i}")
                 continue
 
             if prev_class is not None and current_class != prev_class:
@@ -272,10 +276,12 @@ class ThreeWChart(BaseVisualizer):
                 ]
                 fig = go.Figure()
                 if self.y_axis not in available_y_axes:
-                    print(
+                    logger.warning(
                         f"Warning: Default y-axis '{self.y_axis}' not found in available columns."
                     )
-                    print("Using the first available column as the default y-axis.")
+                    logger.info(
+                        "Using the first available column as the default y-axis."
+                    )
                     self.y_axis = available_y_axes[0]
                 fig.add_trace(
                     go.Scatter(

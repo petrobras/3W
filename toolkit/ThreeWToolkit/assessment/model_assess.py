@@ -1,13 +1,23 @@
-import torch
+"""ModelAssessment for evaluating trained models."""
+
+import logging
 import numpy as np
 import pandas as pd
 
-from typing import Callable, Union
-from torch.utils.data import DataLoader, TensorDataset
+from pathlib import Path
+from pydantic import Field, field_validator, PrivateAttr
 
-from ..core.base_step import BaseStep
-from ..core.base_assessment import ModelAssessmentConfig
+from ..constants import OUTPUT_DIR
 from ..core.enums import TaskTypeEnum
+
+from datetime import datetime
+from typing import Callable
+
+from ..reports.report_generation import ReportGeneration
+from ..core.base_trainer import PredictionResult, TrainingResult, CrossValidationResult
+from ..core.base_assessment import AssessmentOutput
+from ..core import BaseAssessmentConfig, BaseAssessment
+
 from ..metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -18,826 +28,353 @@ from ..metrics import (
     explained_variance_score,
 )
 
-from ..models.mlp import MLP
-from ..models.sklearn_models import SklearnModels
-
-from pylatex import Document
-
-# Type aliases for complex union types
-_ModelAssessmentInput = Union[dict, tuple, list]
-_ModelAssessmentPreProcessed = dict[
-    str, Union[MLP, SklearnModels, pd.DataFrame, pd.Series, np.ndarray, dict]
-]
-_ModelAssessmentRunOutput = dict[
-    str,
-    Union[
-        MLP,
-        SklearnModels,
-        pd.DataFrame,
-        pd.Series,
-        np.ndarray,
-        dict,
-        str,
-        pd.Timestamp,
-    ],
-]
-_ModelAssessmentOutput = dict[
-    str,
-    Union[
-        MLP,
-        SklearnModels,
-        pd.DataFrame,
-        pd.Series,
-        np.ndarray,
-        dict,
-        str,
-        pd.Timestamp,
-        bool,
-        TaskTypeEnum,
-    ],
-]
+logger = logging.getLogger(__name__)
 
 
-class ModelAssessment(
-    BaseStep[
-        _ModelAssessmentInput,
-        _ModelAssessmentPreProcessed,
-        _ModelAssessmentRunOutput,
-        _ModelAssessmentOutput,
-    ]
-):
-    """Comprehensive model evaluation class for both PyTorch and scikit-learn models.
+class MetricRegistry:
+    """Maps task types to supported metrics."""
 
-    This class provides a unified interface for evaluating machine learning models
-    across different frameworks. It handles metric calculation, result export,
-    and report generation with support for both classification and regression tasks.
-
-    The class automatically adapts its evaluation strategy based on the model type
-    (PyTorch MLP vs scikit-learn) and provides flexible output options including
-    CSV export and LaTeX report generation.
-
-    Args:
-        config (ModelAssessmentConfig): Configuration object containing evaluation
-            parameters, output settings, and metric specifications.
-
-    Attributes:
-        config (ModelAssessmentConfig): The assessment configuration.
-        results (dict[str, str | np.ndarray | dict[str, float] | dict | pd.Timestamp]): Dictionary storing the latest evaluation results.
-        report_doc (Document | None): Generated LaTeX report document.
-        metric_functions (dict): Mapping of metric names to their calculation functions.
-
-    Example:
-        Basic usage for classification:
-        >>> config = ModelAssessmentConfig(
-        ...     metrics=["accuracy", "f1", "precision", "recall"],
-        ...     task_type=TaskTypeEnum.CLASSIFICATION,
-        ...     export_results=True
-        ... )
-        >>> assessor = ModelAssessment(config)
-        >>> results = assessor.evaluate(model, X_test, y_test)
-        >>> print(f"Accuracy: {results['metrics']['accuracy']:.4f}")
-        >>> print(assessor.summary())
-
-        Usage with report generation:
-        >>> config = ModelAssessmentConfig(
-        ...     metrics=["explained_variance"],
-        ...     task_type=TaskTypeEnum.REGRESSION,
-        ...     generate_report=True,
-        ...     report_title="Model Performance Analysis"
-        ... )
-        >>> assessor = ModelAssessment(config)
-        >>> results = assessor.evaluate(model, X_test, y_test)
-
-    Note:
-        - The class automatically creates output directories if they don't exist
-        - Report generation requires the ReportGeneration class to be available
-        - Metric calculations are robust with error handling and fallback values
-    """
-
-    def __init__(self, config: ModelAssessmentConfig):
-        """Initialize the ModelAssessment with the given configuration.
-
-        Sets up metric functions, creates output directories, and initializes
-        the report generation system if enabled.
-
-        Args:
-            config (ModelAssessmentConfig): Configuration object containing
-                all assessment parameters and settings.
-        """
-        self.config = config
-        self.results: dict[
-            str, str | np.ndarray | dict[str, float] | dict | pd.Timestamp
-        ] = {}
-        self.report_doc: Document | None = None
-
-        # Create output directory for results and reports
-        self.config.output_dir.mkdir(parents=True, exist_ok=True)
-
-        # Import ReportGeneration lazily to avoid circular imports
-        if self.config.generate_report:
-            try:
-                from ..reports.report_generation import ReportGeneration
-
-                self._report_generation_class = ReportGeneration
-            except ImportError:
-                print(
-                    "Warning: ReportGeneration class not available. Report generation disabled."
-                )
-                self.config.generate_report = False
-
-        self.metric_functions: dict[str, Callable] | None = None
-
-    def pre_process(
-        self, data: dict | tuple | list
-    ) -> dict[str, MLP | SklearnModels | pd.DataFrame | pd.Series | np.ndarray | dict]:
-        """Standardizes the input of the step.
-
-        Validates and standardizes the input data format for model assessment.
-
-        Args:
-            data: Input data that should contain trained model and test data.
-                  Can be a dict or any structure containing the required assessment data.
-
-        Returns:
-            dict[str, MLP | SklearnModels | pd.DataFrame | pd.Series | np.ndarray | dict]: Standardized data dictionary with required keys.
-
-        Raises:
-            ValueError: If required assessment data is missing.
-        """
-        if isinstance(data, dict):
-            processed_data = data.copy()
-        else:
-            # If data is not a dict, assume it's a tuple/list with (model, x_test, y_test, ...)
-            if hasattr(data, "__iter__") and len(data) >= 3:
-                processed_data = {
-                    "model": data[0],
-                    "x_test": data[1],
-                    "y_test": data[2],
-                }
-                if len(data) >= 4:
-                    processed_data["kwargs"] = data[3]
-            else:
-                raise ValueError(
-                    "Input data must be a dict or iterable with at least (model, x_test, y_test)"
-                )
-
-        # Validate required keys
-        required_keys = ["model", "x_test", "y_test"]
-        missing_keys = [key for key in required_keys if key not in processed_data]
-        if missing_keys:
-            raise ValueError(f"Missing required keys in input data: {missing_keys}")
-
-        # Ensure optional keys exist with defaults
-        if "kwargs" not in processed_data:
-            processed_data["kwargs"] = {}
-
-        # Validate that model exists and is not None
-        if processed_data["model"] is None:
-            raise ValueError("Model cannot be None for assessment")
-
-        return processed_data
-
-    def run(
-        self,
-        data: dict[
-            str, MLP | SklearnModels | pd.DataFrame | pd.Series | np.ndarray | dict
-        ],
-    ) -> dict[
-        str,
-        MLP
-        | SklearnModels
-        | pd.DataFrame
-        | pd.Series
-        | np.ndarray
-        | dict
-        | str
-        | pd.Timestamp,
-    ]:
-        """Main logic of the step.
-
-        Performs the actual model assessment using the provided data.
-
-        Args:
-            data (dict[str, MLP | SklearnModels | pd.DataFrame | pd.Series | np.ndarray | dict]): Preprocessed data containing model and test data.
-
-        Returns:
-            dict[str, MLP | SklearnModels | pd.DataFrame | pd.Series | np.ndarray | dict | str | pd.Timestamp]: Data with assessment results added.
-        """
-        # Extract assessment parameters
-        model = data["model"]
-        x_test = data["x_test"]
-        y_test = data["y_test"]
-        kwargs_value = data.get("kwargs", {})
-
-        # Type guards for evaluate method - required by mypy
-        if isinstance(model, (MLP, SklearnModels)):
-            pass
-        elif hasattr(model, "predict"):
-            pass
-        else:
-            raise TypeError(
-                f"Model must be MLP, SklearnModels, or have a 'predict' method, got {type(model)}"
-            )
-
-        if not isinstance(x_test, (pd.DataFrame, np.ndarray)):
-            raise TypeError(
-                f"x_test must be pd.DataFrame or np.ndarray, got {type(x_test)}"
-            )
-        if not isinstance(y_test, (pd.DataFrame, pd.Series, np.ndarray)):
-            raise TypeError(
-                f"y_test must be pd.DataFrame, pd.Series, or np.ndarray, got {type(y_test)}"
-            )
-
-        # Ensure kwargs is a dict for unpacking
-        if not isinstance(kwargs_value, dict):
-            kwargs = {}
-        else:
-            kwargs = kwargs_value
-
-        self._setup_metrics()
-
-        # Perform evaluation
-        # If model is MLP or SklearnModels, mypy understands the type here
-        # Otherwise, _get_predictions handles duck typing
-        if isinstance(model, (MLP, SklearnModels)):
-            assessment_results = self.evaluate(model, x_test, y_test, **kwargs)
-        else:
-            # We need tto satisfy the type checker
-            if not hasattr(model, "predict"):
-                raise ValueError("Model must have predict method")
-
-            assessment_results = self.evaluate(model, x_test, y_test, **kwargs)  # type: ignore[arg-type]
-
-        # Add assessment results to data
-        data["assessment_results"] = assessment_results
-        data["metrics"] = assessment_results["metrics"]
-        data["predictions"] = assessment_results["predictions"]
-        data["assessor"] = self
-
-        return data
-
-    def post_process(
-        self,
-        data: dict[
-            str,
-            MLP
-            | SklearnModels
-            | pd.DataFrame
-            | pd.Series
-            | np.ndarray
-            | dict
-            | str
-            | pd.Timestamp,
-        ],
-    ) -> dict[
-        str,
-        MLP
-        | SklearnModels
-        | pd.DataFrame
-        | pd.Series
-        | np.ndarray
-        | dict
-        | str
-        | pd.Timestamp
-        | bool
-        | TaskTypeEnum,
-    ]:
-        """Standardizes the output of the step.
-
-        Performs any final processing and ensures output format consistency.
-
-        Args:
-            data (dict[str, MLP | SklearnModels | pd.DataFrame | pd.Series | np.ndarray | dict | str | pd.Timestamp]): Data with assessment results.
-
-        Returns:
-            dict[str, MLP | SklearnModels | pd.DataFrame | pd.Series | np.ndarray | dict | str | pd.Timestamp | bool | TaskTypeEnum]: Final processed data ready for next pipeline step.
-        """
-        # Ensure all expected outputs are present
-        expected_outputs = ["assessment_results", "metrics", "predictions", "assessor"]
-        for key in expected_outputs:
-            if key not in data:
-                raise RuntimeError(
-                    f"Assessment step failed to produce expected output: {key}"
-                )
-
-        # Add metadata about the assessment step
-        data["assessment_completed"] = True
-        data["task_type"] = self.config.task_type
-        data["assessment_timestamp"] = pd.Timestamp.now().isoformat()
-
-        # Add summary for easy access
-        data["assessment_summary"] = self.summary()
-
-        return data
-
-    def _setup_metrics(self):
-        """Configure metric functions based on the task type.
-
-        Creates a mapping between metric names and their corresponding
-        calculation functions, with appropriate parameters for each task type.
-
-        For classification tasks, metrics use weighted averaging to handle
-        class imbalance. For regression tasks, standard regression metrics
-        are configured.
-
-        Note:
-            - Classification metrics use zero_division=0 to handle edge cases
-            - Average precision requires at least 2 classes to be meaningful
-            - All functions are wrapped with appropriate error handling
-        """
-        if self.config.task_type == TaskTypeEnum.CLASSIFICATION:
-            self.metric_functions = {
+    def __init__(self):
+        self._registry = {
+            TaskTypeEnum.CLASSIFICATION: {
                 "accuracy": accuracy_score,
                 "balanced_accuracy": balanced_accuracy_score,
-                "precision": lambda y_true, y_pred: precision_score(
-                    y_true, y_pred, average="weighted", zero_division=0
+                "precision": lambda y, p: precision_score(
+                    y, p, average="weighted", zero_division=0
                 ),
-                "recall": lambda y_true, y_pred: recall_score(
-                    y_true, y_pred, average="weighted", zero_division=0
+                "recall": lambda y, p: recall_score(
+                    y, p, average="weighted", zero_division=0
                 ),
-                "f1": lambda y_true, y_pred: f1_score(
-                    y_true, y_pred, average="weighted", zero_division=0
-                ),
-                "average_precision": lambda y_true, y_pred: (
-                    average_precision_score(y_true, y_pred, average="weighted")
-                    if len(np.unique(y_true)) > 1
+                "f1": lambda y, p: f1_score(y, p, average="weighted", zero_division=0),
+                "average_precision": lambda y, p: (
+                    average_precision_score(y, p, average="weighted")
+                    if len(np.unique(y)) > 1
                     else 0.0
                 ),
-            }
-        else:  # TaskTypeEnum.REGRESSION
-            self.metric_functions = {
+            },
+            TaskTypeEnum.REGRESSION: {
                 "explained_variance": explained_variance_score,
-            }
+            },
+        }
+
+    def resolve(
+        self, task_type: TaskTypeEnum, metrics: list[str]
+    ) -> dict[str, Callable[[np.ndarray, np.ndarray], float]]:
+        """Resolve metric names to callable functions.
+
+        Args:
+            task_type: Type of ML task (classification or regression).
+            metrics: List of metric names to resolve.
+
+        Returns:
+            Dictionary mapping metric names to callable score functions.
+
+        Raises:
+            ValueError: If a requested metric is not available for the task type.
+        """
+        available = self._registry.get(task_type, {})
+        resolved = {}
+        for m in metrics:
+            if m not in available:
+                raise ValueError(f"Metric '{m}' not available for task {task_type}")
+            resolved[m] = available[m]
+        return resolved
+
+
+class ModelAssessmentConfig(BaseAssessmentConfig):
+    """Configuration for model assessment and evaluation."""
+
+    metrics: list[str] = Field(
+        default=["accuracy", "f1"], description="Metrics to compute."
+    )
+    output_dir: Path = Field(
+        default=Path(OUTPUT_DIR), description="Directory for output files."
+    )
+    export_results: bool = Field(
+        default=True, description="Whether to export results to files."
+    )
+    generate_report: bool = Field(
+        default=False, description="Whether to generate a report."
+    )
+    task_type: TaskTypeEnum = Field(
+        default=TaskTypeEnum.CLASSIFICATION, description="Type of ML task."
+    )
+    report_title: str | None = Field(default=None, description="Title for the report.")
+    report_author: str = Field(
+        default="3W Toolkit Report", description="Author name for the report."
+    )
+    _target: type = PrivateAttr(default_factory=lambda: ModelAssessment)
+
+    @field_validator("metrics")
+    @classmethod
+    def validate_metrics(
+        cls: type["ModelAssessmentConfig"], metrics: list[str]
+    ) -> list[str]:
+        """
+        Validate that the requested metrics are supported.
+
+        Args:
+            cls (ModelAssessmentConfig): The class reference.
+            metrics (list[str]): List of metric names.
+
+        Returns:
+            list[str]: Validated list of metrics.
+
+        Raises:
+            ValueError: If any metric is not supported.
+        """
+        valid_metrics = {
+            # Classification metrics
+            "accuracy",
+            "balanced_accuracy",
+            "precision",
+            "recall",
+            "f1",
+            "average_precision",
+            # Regression metrics
+            "explained_variance",
+        }
+        invalid_metrics = set(metrics) - valid_metrics
+        if invalid_metrics:
+            raise ValueError(
+                f"Invalid metrics: {invalid_metrics}. Valid metrics: {valid_metrics}"
+            )
+        return metrics
+
+
+class ModelAssessment(BaseAssessment):
+    """Evaluates a trained model from a trainer instance."""
+
+    def __init__(
+        self,
+        config: ModelAssessmentConfig,
+    ):
+        """Initialize ModelAssessment with a trainer and its training result.
+
+        Args:
+            trainer: The trainer instance used for training.
+            training_result: The result from trainer.train().
+            config: Optional assessment configuration.
+        """
+        self.config = config
+        self.metric_registry = MetricRegistry()
+        self._cv_summary: dict[str, float] | None = None
+
+        self._report_generator = (
+            ReportGeneration if self.config.generate_report else None
+        )
+
+    def _compute_cv_summary(
+        self, training_results: CrossValidationResult
+    ) -> dict[str, float]:
+        """Compute final loss mean/std across folds."""
+        train_final_losses = np.array(
+            [fold.history.train_loss[-1] for fold in training_results.fold_results],
+            dtype=float,
+        )
+
+        summary = {
+            "num_folds": float(len(training_results.fold_results)),
+            "train_loss_mean": float(np.mean(train_final_losses)),
+            "train_loss_std": float(
+                np.std(train_final_losses, ddof=1)
+                if len(train_final_losses) > 1
+                else 0.0
+            ),
+        }
+
+        val_final_losses = [
+            fold.history.val_loss[-1]
+            for fold in training_results.fold_results
+            if fold.history.val_loss is not None and len(fold.history.val_loss) > 0
+        ]
+        if val_final_losses:
+            val_array = np.array(val_final_losses, dtype=float)
+            summary["val_loss_mean"] = float(np.mean(val_array))
+            summary["val_loss_std"] = float(
+                np.std(val_array, ddof=1) if len(val_array) > 1 else 0.0
+            )
+        return summary
 
     def evaluate(
         self,
-        model: MLP | SklearnModels,
-        X_test: pd.DataFrame | np.ndarray,
-        y_test: pd.DataFrame | pd.Series | np.ndarray,
-        **kwargs,
-    ) -> dict[str, str | np.ndarray | dict[str, float] | dict | pd.Timestamp]:
-        """Evaluate model performance on test data with comprehensive metrics.
-
-        This method performs a complete model evaluation including prediction
-        generation, metric calculation, result storage, and optional report
-        generation and export.
+        training_results: TrainingResult | CrossValidationResult,
+        predictions: PredictionResult | None,
+    ) -> AssessmentOutput:
+        """Evaluate training results and predictions to compute metrics and generate report.
 
         Args:
-            model (MLP | SklearnModels): Trained model instance.
-                Can be a PyTorch MLP or SklearnModels wrapper.
-            X_test (pd.DataFrame | np.ndarray): Test input features.
-                Will be automatically converted to numpy array for processing.
-            y_test (pd.DataFrame | pd.Series | np.ndarray): Test target
-                values. Will be flattened and converted to numpy array.
-            **kwargs: Additional keyword arguments passed to the model's
-                predict method.
+            training_results: The results from the training process, including model and history.
+            predictions: The predictions made by the model on the test set.
 
         Returns:
-            dict[str, str | np.ndarray | dict[str, float] | dict | pd.Timestamp]: Comprehensive evaluation results containing:
-                - model_name (str): Name of the evaluated model
-                - task_type (TaskTypeEnum): Classification or regression
-                - predictions (np.ndarray): Model predictions on test data
-                - true_values (np.ndarray): Actual target values
-                - X_test (np.ndarray): Test features (for report generation)
-                - metrics (dict[str, float]): Calculated metric values
-                - config (dict): Assessment configuration as dictionary
-                - timestamp (str): ISO format timestamp of evaluation
-
-        Example:
-            >>> results = assessor.evaluate(trained_model, X_test, y_test)
-            >>> print(f"Model: {results['model_name']}")
-            >>> print(f"Accuracy: {results['metrics']['accuracy']:.4f}")
-            >>>
-            >>> # Access predictions and true values
-            >>> predictions = results['predictions']
-            >>> true_values = results['true_values']
-
-        Note:
-            - Results are stored in self.results for later access
-            - Report generation and result export occur automatically if enabled
-            - Metric calculation is robust with error handling for edge cases
+            AssessmentOutput with predictions, metrics, and training history.
         """
-        # Store model reference for report generation
-        self._current_model = model
+        metric_fns = self.metric_registry.resolve(
+            task_type=self.config.task_type, metrics=self.config.metrics
+        )
 
-        # Convert inputs to consistent numpy array format
-        X_test_array = self._to_numpy(X_test)
-        y_test_array = self._to_numpy(y_test).flatten()
+        self._cv_summary = None
+        if isinstance(training_results, CrossValidationResult):
+            if len(training_results.fold_results) == 0:
+                raise ValueError("CrossValidationResult has no fold results.")
+            model = training_results.fold_results[-1].model
+            training_history = None
+            self._cv_summary = self._compute_cv_summary(training_results)
+        else:
+            model = training_results.model
+            training_history = training_results.history
 
-        # Generate predictions using appropriate method for model type
-        predictions = self._get_predictions(model, X_test_array, **kwargs)
+        metrics = None
+        if predictions is not None and predictions.y_true is not None:
+            metrics = {
+                k: float(fn(predictions.y_true, predictions.y_pred))
+                for k, fn in metric_fns.items()
+            }
+        elif not isinstance(training_results, CrossValidationResult):
+            raise ValueError(
+                "True labels (y_true) are required for metric calculation."
+            )
 
-        # Calculate all requested metrics
-        if self.metric_functions is None:
-            self._setup_metrics()
-        metrics_results = self._calculate_metrics(y_test_array, predictions)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        experiment_dir = self.config.output_dir / f"exp_{timestamp}"
+        experiment_dir.mkdir(parents=True, exist_ok=True)
 
-        # Store comprehensive results
-        self.results = {
-            "model_name": self._get_model_name(model),
-            "task_type": self.config.task_type,
-            "predictions": predictions,
-            "true_values": y_test_array,
-            "X_test": X_test_array,  # Store for report generation
-            "metrics": metrics_results,
-            "config": self.config.model_dump(),
-            "timestamp": pd.Timestamp.now().isoformat(),
-        }
+        self.results = AssessmentOutput(
+            model=model,
+            task_type=self.config.task_type,
+            timestamp=timestamp,
+            predictions=predictions.y_pred if predictions is not None else None,
+            true_values=predictions.y_true if predictions is not None else None,
+            metrics=metrics,
+            training_history=training_history,
+            experiment_dir=str(experiment_dir),
+        )
 
-        # Generate LaTeX report if enabled
-        if self.config.generate_report:
-            self._generate_report(X_test_array, y_test_array)
+        self.experiment_dir = experiment_dir
 
-        # Export results to CSV files if enabled
         if self.config.export_results:
             self._export_results()
 
-        print(self.summary())
+        if self.config.generate_report:
+            self._generate_report()
 
+        logger.info(self.summary())
         return self.results
 
-    def _get_predictions(
-        self, model: MLP | SklearnModels, X_test: np.ndarray, **kwargs
-    ) -> np.ndarray:
-        """Generate predictions from model with proper handling for different types.
-
-        Dispatches prediction generation to the appropriate method based on
-        the model type, handling the different interfaces transparently.
-
-        Args:
-            model (MLP | SklearnModels): Trained model instance.
-            X_test (np.ndarray): Test features as numpy array.
-            **kwargs: Additional arguments passed to the prediction method.
-
-        Returns:
-            np.ndarray: Model predictions as a numpy array.
-
-        Note:
-            - PyTorch MLP models require special DataLoader handling
-            - SklearnModels wrapper and sklearn models use direct predict method
-            - All predictions are returned in consistent numpy array format
-        """
-        if isinstance(model, MLP):
-            return self._get_mlp_predictions(model, X_test, **kwargs)
-        elif isinstance(model, SklearnModels):
-            return model.predict(X_test, **kwargs)
-        else:
-            # Assume it's a sklearn model or has predict method
-            return model.predict(X_test, **kwargs)
-
-    def _get_mlp_predictions(
-        self, model: MLP, X_test: np.ndarray, **kwargs
-    ) -> np.ndarray:
-        """Generate predictions from PyTorch MLP model using DataLoader.
-
-        Creates a DataLoader from test data and uses the model's predict method
-        to generate predictions on the specified device.
-
-        Args:
-            model (MLP): PyTorch MLP model instance.
-            X_test (np.ndarray): Test features as numpy array.
-            **kwargs: Additional arguments passed to model.predict().
-
-        Returns:
-            np.ndarray: Model predictions as numpy array.
-
-        Note:
-            - Creates dummy labels for DataLoader compatibility
-            - Uses configured batch_size and device from assessment config
-            - Maintains gradient tracking disabled for prediction efficiency
-        """
-        # Create PyTorch tensor from numpy array
-        X_tensor = torch.tensor(X_test, dtype=torch.float32)
-        # Create dummy labels for DataLoader compatibility
-        y_dummy = torch.zeros(X_tensor.shape[0])
-        dataset = TensorDataset(X_tensor, y_dummy)
-
-        # Create DataLoader with configured batch size
-        test_loader = DataLoader(
-            dataset, batch_size=self.config.batch_size, shuffle=False
-        )
-
-        # Generate predictions using model's predict method
-        return model.predict(test_loader, device=self.config.device, **kwargs)
-
-    def _calculate_metrics(
-        self, y_true: np.ndarray, y_pred: np.ndarray
-    ) -> dict[str, float]:
-        """Calculate evaluation metrics based on configuration.
-
-        Computes all requested metrics using the configured metric functions,
-        with robust error handling for edge cases and invalid configurations.
-
-        Args:
-            y_true (np.ndarray): True target values.
-            y_pred (np.ndarray): Model predictions.
-
-        Returns:
-            dict[str, float]: Dictionary mapping metric names to their values.
-                Metrics that fail to compute are set to NaN with a warning.
-
-        Note:
-            - Handles edge cases like single-class predictions gracefully
-            - Warns about unavailable metrics for the current task type
-            - All metric values are converted to Python float for JSON compatibility
-        """
-        metrics_results = {}
-
-        for metric_name in self.config.metrics:
-            if self.metric_functions and metric_name in self.metric_functions.keys():
-                try:
-                    metric_value = self.metric_functions[metric_name](y_true, y_pred)
-                    metrics_results[metric_name] = float(metric_value)
-                except Exception as e:
-                    print(f"Warning: Could not calculate {metric_name}: {e}")
-                    metrics_results[metric_name] = np.nan
-            else:
-                print(
-                    f"Warning: Metric '{metric_name}' not available for task type '{self.config.task_type}'"
-                )
-                metrics_results[metric_name] = np.nan
-
-        return metrics_results
-
-    def _get_model_name(self, model: MLP | SklearnModels) -> str:
-        """Extract a human-readable name from the model object.
-
-        Args:
-            model (MLP | SklearnModels): Model instance to extract name from.
-
-        Returns:
-            str: Model class name or "Unknown_Model" if name cannot be determined.
-        """
-        if hasattr(model, "__class__"):
-            return model.__class__.__name__
-        return "Unknown_Model"
-
-    def _to_numpy(self, data: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
-        """Convert various data types to numpy array format.
-
-        Handles pandas DataFrames/Series and numpy arrays uniformly,
-        ensuring consistent data format for all downstream processing.
-
-        Args:
-            data (pd.DataFrame | pd.Series | np.ndarray): Input data
-                in various supported formats.
-
-        Returns:
-            np.ndarray: Data converted to numpy array format.
-
-        Note:
-            - Preserves data structure and dtype when possible
-            - Handles both pandas and numpy input gracefully
-            - Falls back to np.array() for other array-like objects
-        """
-        if isinstance(data, (pd.DataFrame, pd.Series)):
-            return np.asarray(data.values)
-        elif isinstance(data, np.ndarray):
-            return data
-        else:
-            return np.array(data)
-
-    def _export_results(self):
-        """Export evaluation results to CSV files.
-
-        Creates two CSV files in the output directory:
-        1. predictions.csv: Contains predictions, true values, and metrics
-        2. metrics_summary.csv: Contains aggregated metrics and metadata
-
-        The export includes model metadata and timestamps for result tracking.
-
-        Note:
-            - Creates output directory if it doesn't exist
-            - Handles export errors gracefully with warning messages
-            - Files are timestamped and include model identification
-        """
-        try:
-            # Create DataFrame with predictions and true values
-            predictions_df = pd.DataFrame(
-                {
-                    "true_values": self.results["true_values"],
-                    "predictions": self.results["predictions"],
-                }
-            )
-
-            # Add metrics as additional columns for easy analysis
-            for metric_name, metric_value in self.results["metrics"].items():
-                predictions_df[f"metric_{metric_name}"] = metric_value
-
-            # Add metadata columns
-            predictions_df["model_name"] = self.results["model_name"]
-            predictions_df["task_type"] = self.results["task_type"].value
-
-            # Save predictions with metadata
-            predictions_path = self.config.output_dir / "predictions.csv"
-            predictions_df.to_csv(predictions_path, index=False)
-
-            # Create metrics summary DataFrame
-            metrics_df = pd.DataFrame([self.results["metrics"]])
-            metrics_df["model_name"] = self.results["model_name"]
-            metrics_df["task_type"] = self.results["task_type"].value
-            metrics_df["timestamp"] = self.results["timestamp"]
-
-            # Save metrics summary
-            metrics_path = self.config.output_dir / "metrics_summary.csv"
-            metrics_df.to_csv(metrics_path, index=False)
-
-            print(f"Results exported to {self.config.output_dir}")
-
-        except Exception as e:
-            print(f"Warning: Results export failed: {e}")
-
-    def _generate_report(self, X_test: np.ndarray, y_test: np.ndarray):
-        """Generate LaTeX report using the ReportGeneration class.
-
-        Creates a comprehensive report including model performance metrics,
-        visualizations, and analysis. Integrates with the legacy ReportGeneration
-        system while adapting to its expected data format.
-
-        Args:
-            X_test (np.ndarray): Test features for report generation.
-            y_test (np.ndarray): Test targets for report generation.
-
-        Note:
-            - Requires ReportGeneration class to be available
-            - Converts data to pandas Series format for legacy compatibility
-            - Uses pre-calculated metrics and predictions for efficiency
-            - Handles missing ReportGeneration gracefully with warnings
-        """
-        if not hasattr(self, "_report_generation_class"):
-            print("Warning: ReportGeneration not available")
-            return
-
-        # Convert numpy arrays to pandas Series for legacy compatibility
-        X_test_series = pd.Series(X_test.flatten() if len(X_test.shape) > 1 else X_test)
-        y_test_series = pd.Series(y_test)
-
-        # Create empty training data (required by legacy interface)
-        X_train_series = pd.Series([])
-        y_train_series = pd.Series([])
-
-        # Determine report title from configuration or use default
-        report_title = (
-            self.config.report_title
-            or f"Model Assessment Report - {self.results['model_name']}"
-        )
-
-        # plot_config = {
-        #     "PlotSeries": {
-        #         "series": y_test_series,
-        #         "title": "True Values",
-        #         "xlabel": "Sample Index",
-        #         "ylabel": "Value",
-        #     },
-        #     "PlotMultipleSeries": {
-        #         "series_list": [y_test_series, pd.Series(self.results["predictions"])],
-        #         "title": "True vs Predicted Values",
-        #         "xlabel": "Sample Index",
-        #         "ylabel": "Value",
-        #         "labels": ["True Values", "Predictions"],
-        #     },
-        #     # Additional plots can be added here
-        # }
-        plot_config = None  # Disable plots for now
-
-        # Ensure calculated_metrics is the correct type
-        metrics = self.results["metrics"]
-        if not isinstance(metrics, dict):
-            raise TypeError(f"Metrics must be a dict, got {type(metrics)}")
-        # Convert to dict[str, float] if needed
-        calculated_metrics: dict[str, float] = {
-            k: float(v) if isinstance(v, (int, float)) else 0.0
-            for k, v in metrics.items()
-        }
-
-        # Create ReportGeneration instance with legacy constructor
-        report_generator = self._report_generation_class(
-            model=self._current_model,
-            X_train=X_train_series,
-            y_train=y_train_series,
-            X_test=X_test_series,
-            y_test=y_test_series,
-            title=report_title,
-            author=self.config.report_author,
-            reports_dir=self.config.output_dir,
-            export_report_after_generate=True,
-            # Pass pre-calculated values to avoid recomputation
-            predictions=pd.Series(self.results["predictions"]),
-            calculated_metrics=calculated_metrics,
-            plot_config=plot_config,
-        )
-
-        # Generate the comprehensive report
-        self.report_doc = report_generator.generate_summary_report(format="html")
-
-    def _map_metrics_for_report(self) -> list[str]:
-        """Map assessment metrics to ReportGeneration format.
-
-        Adapts the current metric configuration to the format expected
-        by the legacy ReportGeneration system.
-
-        Returns:
-            list[str]: List of metric names in ReportGeneration format.
-
-        Note:
-            - Currently returns metrics as-is, but can be extended for
-              more complex mapping if needed
-            - Provides abstraction layer for future ReportGeneration updates
-        """
-        return self.config.metrics
-
-    def get_metric(self, metric_name: str) -> float:
-        """Retrieve a specific metric value from the last evaluation.
-
-        Provides convenient access to individual metric values without
-        accessing the full results dictionary.
-
-        Args:
-            metric_name (str): Name of the metric to retrieve.
-
-        Returns:
-            float: The metric value.
-
-        Raises:
-            ValueError: If no evaluation has been run or if the specified
-                metric was not calculated.
-
-        Example:
-            >>> assessor.evaluate(model, X_test, y_test)
-            >>> accuracy = assessor.get_metric("accuracy")
-            >>> f1_score = assessor.get_metric("f1")
-        """
-        if not self.results:
-            raise ValueError("No evaluation results found. Run evaluate() first.")
-
-        metrics = self.results["metrics"]
-        if not isinstance(metrics, dict):
-            raise ValueError("Metrics is not a dictionary")
-        if metric_name not in metrics:
-            available_metrics = list(metrics.keys())
-            raise ValueError(
-                f"Metric '{metric_name}' not found. Available metrics: {available_metrics}"
-            )
-
-        metric_value = metrics[metric_name]
-        if not isinstance(metric_value, (int, float)):
-            raise ValueError(f"Metric value is not a number: {type(metric_value)}")
-        return float(metric_value)
-
     def summary(self) -> str:
-        """Generate a formatted text summary of evaluation results.
-
-        Creates a human-readable summary including model information,
-        evaluation metadata, and all calculated metrics with appropriate
-        formatting.
+        """Generate summary of assessment results.
 
         Returns:
-            str: Formatted summary string suitable for printing or logging.
-
-        Example:
-            >>> assessor.evaluate(model, X_test, y_test)
-            >>> print(assessor.summary())
-            Model Assessment Summary
-            ========================
-            Model: RandomForestClassifier
-            Task Type: TaskTypeEnum.CLASSIFICATION
-            Timestamp: 2024-01-15T10:30:45.123456
-
-            Metrics:
-              accuracy: 0.8750
-              f1: 0.8542
-              precision: 0.8634
-              recall: 0.8750
-
-        Note:
-            - NaN values are displayed as "N/A"
-            - Numeric values are formatted to 4 decimal places
-            - Returns informative message if no evaluation has been performed
+            Formatted string containing assessment summary including model info and metrics.
         """
         if not self.results:
-            return "No evaluation results available. Run evaluate() first."
+            return "No evaluation results available."
 
-        summary_lines = [
+        lines = [
             "Model Assessment Summary",
             "========================",
-            f"Model: {self.results['model_name']}",
-            f"Task Type: {self.results['task_type']}",
-            f"Timestamp: {self.results['timestamp']}",
+            f"Model: {type(self.results.model).__name__}",
+            f"Task Type: {self.results.task_type.value}",
+            f"Timestamp: {self.results.timestamp}",
             "",
             "Metrics:",
         ]
 
-        # Add formatted metric values
-        metrics = self.results["metrics"]
-        if not isinstance(metrics, dict):
-            summary_lines.append("  Metrics: N/A (invalid format)")
-        else:
-            for metric_name, metric_value in metrics.items():
-                if isinstance(metric_value, (int, float)) and not np.isnan(
-                    metric_value
-                ):
-                    summary_lines.append(f"  {metric_name}: {metric_value:.4f}")
-                else:
-                    summary_lines.append(f"  {metric_name}: N/A")
+        if self.results.metrics:
+            for m, v in self.results.metrics.items():
+                lines.append(f"  {m}: {v:.4f}")
 
-        return "\n".join(summary_lines)
+        if self._cv_summary is not None:
+            lines.append("")
+            lines.append("Cross-Validation Summary:")
+            lines.append(f"  Folds: {int(self._cv_summary['num_folds'])}")
+            lines.append(
+                f"  Final train_loss: {self._cv_summary['train_loss_mean']:.4f} ± "
+                f"{self._cv_summary['train_loss_std']:.4f}"
+            )
+            if (
+                "val_loss_mean" in self._cv_summary
+                and "val_loss_std" in self._cv_summary
+            ):
+                lines.append(
+                    f"  Final val_loss: {self._cv_summary['val_loss_mean']:.4f} ± "
+                    f"{self._cv_summary['val_loss_std']:.4f}"
+                )
+
+        if self.results.training_history:
+            lines.append("")
+            lines.append("Training History:")
+            final_loss = self.results.training_history.train_loss[-1]
+            lines.append(f"  Final train_loss: {final_loss:.4f}")
+            if self.results.training_history.val_loss is not None:
+                final_val = self.results.training_history.val_loss[-1]
+                lines.append(f"  Final val_loss: {final_val:.4f}")
+
+        return "\n".join(lines)
+
+    def _export_results(self) -> None:
+        """Export results to disk."""
+        if self.results is None:
+            raise RuntimeError("No results to export.")
+
+        r = self.results
+
+        if r.true_values is not None and r.predictions is not None:
+            predictions_df = pd.DataFrame(
+                {
+                    "true_values": r.true_values,
+                    "predictions": r.predictions,
+                }
+            )
+            predictions_df["model_name"] = type(r.model).__name__
+            predictions_df["task_type"] = r.task_type.value
+            predictions_df["timestamp"] = r.timestamp
+            predictions_df.to_csv(
+                self.experiment_dir / f"predictions_{r.timestamp}.csv",
+                index=False,
+            )
+
+        metrics_df = pd.DataFrame([r.metrics or {}])
+        metrics_df["model_name"] = type(r.model).__name__
+        metrics_df["task_type"] = r.task_type.value
+        metrics_df["timestamp"] = r.timestamp
+        metrics_df.to_csv(
+            self.experiment_dir / f"metrics_{r.timestamp}.csv", index=False
+        )
+
+        if r.training_history:
+            history_df = pd.DataFrame(r.training_history)
+            history_df.to_csv(self.experiment_dir / "training_history.csv", index=False)
+
+        logger.info(f"Results exported to {self.experiment_dir}")
+
+    def _generate_report(self) -> None:
+        """Generate assessment report using ReportGeneration."""
+        if self.results is None:
+            raise RuntimeError("No results to generate report.")
+
+        if self._report_generator is None:
+            logger.warning("ReportGeneration not available.")
+            return
+
+        title = (
+            self.config.report_title
+            or f"Model Assessment Report - {type(self.results.model).__name__} - {self.results.task_type.value}"
+        )
+
+        report_generator = self._report_generator(
+            model=self.results.model,
+            train_len=None,
+            test_len=None,
+            predictions=pd.Series(self.results.predictions),
+            calculated_metrics=self.results.metrics or {},
+            plot_config=None,
+            title=title,
+            author=self.config.report_author,
+            reports_dir=self.experiment_dir,
+            export_report_after_generate=True,
+        )
+
+        self.report_doc = report_generator.generate_summary_report(format="html")
+        logger.info("Report generated at %s", self.experiment_dir)

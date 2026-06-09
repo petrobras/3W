@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Patch
 from scipy.cluster.hierarchy import dendrogram
 
-from .base_visualizer import BaseVisualizer
+from ThreeWToolkit.core.base_visualizer import BaseVisualizer
 
 
 class DataQualityHeatmap(BaseVisualizer):

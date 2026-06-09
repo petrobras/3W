@@ -1,15 +1,25 @@
-from .extract_statistical_features import ExtractStatisticalFeatures, StatisticalConfig
-from .extract_exponential_statistics_features import (
-    ExtractEWStatisticalFeatures,
-    EWStatisticalConfig,
+from .statistical import StatisticalConfig, StatisticalFeatures
+from .windowing import WindowingConfig, Windowing
+from .exponential_statistics import EWStatisticalFeatures, EWStatisticalConfig
+from .wavelet import WaveletConfig, WaveletFeatures
+from .adapters import (
+    ConcatFeatureAdapter,
+    ConcatFeatureAdapterConfig,
+    SequentialFeatureAdapter,
+    SequentialFeatureAdapterConfig,
 )
-from .extract_wavelet_features import ExtractWaveletFeatures, WaveletConfig
 
 __all__ = [
-    "ExtractStatisticalFeatures",
     "StatisticalConfig",
-    "ExtractEWStatisticalFeatures",
+    "StatisticalFeatures",
     "EWStatisticalConfig",
-    "ExtractWaveletFeatures",
+    "EWStatisticalFeatures",
     "WaveletConfig",
+    "WaveletFeatures",
+    "WindowingConfig",
+    "Windowing",
+    "ConcatFeatureAdapter",
+    "ConcatFeatureAdapterConfig",
+    "SequentialFeatureAdapter",
+    "SequentialFeatureAdapterConfig",
 ]

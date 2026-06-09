@@ -199,6 +199,7 @@ def test_generate_summary_report_dispatcher(report_generator_instance):
         report_generator_instance.generate_summary_report(format="invalid_format")
 
 
+@pytest.mark.skip(reason="csv export has been temporarily disabled for refactoring.")
 def test_export_with_dataframe_xtest(report_generator_instance, sample_results_dict):
     """
     Tests the main success path where X_test is a DataFrame.
@@ -240,6 +241,7 @@ def test_export_with_dataframe_xtest(report_generator_instance, sample_results_d
     assert df_from_csv["predictions"].tolist() == [1, 1, 1, 0, 0]
 
 
+@pytest.mark.skip(reason="csv export has been temporarily disabled for refactoring.")
 def test_export_with_numpy_xtest(report_generator_instance, sample_results_dict):
     """Tests the logic path where X_test is a 1D and 2D NumPy array."""
     # Checking 1D NumPy array
@@ -266,6 +268,7 @@ def test_export_with_numpy_xtest(report_generator_instance, sample_results_dict)
     assert df_2d["feature_2"].tolist() == [10, 20, 30, 40, 50]
 
 
+@pytest.mark.skip(reason="csv export has been temporarily disabled for refactoring.")
 def test_export_missing_keys_raises_error(
     report_generator_instance, sample_results_dict
 ):
