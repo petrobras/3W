@@ -1,4 +1,6 @@
 from pathlib import Path
+
+import numpy as np
 import pytest
 
 from ThreeWToolkit.dataset import ParquetDatasetConfig
@@ -126,3 +128,28 @@ class TestParquetDataset:
         assert (
             len(dataset) == 632
         )  # known number of events in classes 0 and 2 in the dataset (2.0.0 version)
+
+    def test_load_instances_by_variable(self, parquet_dataset_path):
+        """
+        Group loaded instances by sensor variable for the clustering pipeline.
+        """
+        flist = ["0/WELL-00001_20170201010207.parquet", "1/DRAWN_00001.parquet"]
+        config = ParquetDatasetConfig(
+            path=parquet_dataset_path,
+            target_column=_LABEL_NAME,
+            split="list",
+            file_list=flist,
+        )
+        dataset = config.build()
+        variables = ["P-TPT", "T-TPT"]
+
+        data_map = dataset.load_instances_by_variable(variables=variables)
+
+        assert set(data_map.keys()) == set(variables)
+        for var in variables:
+            present = sum(
+                var in dataset.load_file(i).signal.columns for i in range(len(dataset))
+            )
+            assert len(data_map[var]) == present
+            assert all(isinstance(a, np.ndarray) and a.ndim == 1 for a in data_map[var])
+        assert any(data_map[var] for var in variables)
