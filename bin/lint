@@ -22,3 +22,15 @@ else
     uv run black --extend-exclude "${EXCLUDE_IPYNB_REGEX}" ${LINT}
     uv run ruff check --fix --extend-exclude "${EXCLUDE_IPYNB_GLOB}" ${LINT}
 fi
+
+# Links checking with lychee
+if command -v lychee >/dev/null 2>&1; then
+    if [ "${CI}" = true ]; then
+        lychee --config lychee.toml --no-progress .
+    else
+        lychee --config lychee.toml .
+    fi
+else
+    echo "lychee is not installed. Skipping link check."
+    [ "${CI}" = true ] && exit 1
+fi

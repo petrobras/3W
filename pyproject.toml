@@ -1,6 +1,6 @@
 [project]
 name = "ThreeWToolkit"
-version = "3.0.0"
+version = "3.1.0"
 description = "A modular and open-source AI toolkit for time-series processing, aimed at fault detection and classification in oil well operation"
 readme = { file = "toolkit/ThreeWToolkit/README.md", content-type = "text/markdown" }
 license = { text = "Apache-2.0" }
@@ -31,6 +31,7 @@ dependencies = [
     "ipywidgets==8.1.7",
     "jupyter-client==8.6.3",
     "jupyter-core==5.8.1",
+    "tornado>=6.5.5,<7",
     "Pillow>=11.0.0",
     "scikit-image>=0.25.2",
     "torch>=2.7.0",
@@ -111,4 +112,3 @@ target-version = ["py310"]
 python_version = "3.10"
 mypy_path = "toolkit/"
 ignore_missing_imports = true
-

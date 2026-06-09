@@ -17,7 +17,6 @@ No matter how you choose to contribute, please be respectful and follow our [cod
 - **Run quality checks before submitting** - Use `./bin/lint` and ensure `./bin/test` passes
 - **Write clear commit messages** - Follow conventional commits format
 
-
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
@@ -43,6 +42,7 @@ This project adheres to a [code of conduct](https://github.com/petrobras/3W/blob
 ## Getting Started
 
 ### Prerequisites
+
 - Python >= 3.10
 - Git and GitHub knowledge
 - Familiarity with Pydantic for configuration
@@ -50,29 +50,53 @@ This project adheres to a [code of conduct](https://github.com/petrobras/3W/blob
 ### Setting Up Your Development Environment
 
 1. **Clone and navigate to repository:**
-   ```bash
+  ```bash
    git clone https://github.com/petrobras/3W.git
    cd 3W
-   ```
-
+  ```
 2. **Create a virtual environment:**
-   ```bash
+  ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
+  ```
 3. **Install development dependencies:**
-   ```bash
+  ```bash
    pip install -e '.[dev]'
    # or with uv:
    uv sync --all-extras
-   ```
+  ```
 
-4. **Verify installation:**
-   ```bash
+3.1. **Install additional tooling (required for linting):**
+
+Lychee is used for link checking in `./bin/lint`, but it is not installed via pip.
+
+- **macOS / Linux (Homebrew):**
+  ```bash
+  brew install lychee
+  ```
+- Using prebuilt binary (Linux / macOS):
+  ```bash
+  curl -sSL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz | tar -xz
+  sudo mv lychee /usr/local/bin/
+  ```
+- Using Rust (cargo):
+  ```bash
+  cargo install lychee
+  ```
+
+Verify installation:
+
+1. **Coding checks:**
+  ```bash
    ./bin/test  # Run tests
    ./bin/lint  # Run linting
-   ```
+  ```
+   These scripts are the same checks executed in the CI pipeline.
+  - `./bin/test` runs the test suite (pytest) to verify that your changes do not break existing functionality.
+  - `./bin/lint` runs code quality checks, including formatting, linting, and link validation.
+
+**Please run both commands locally before opening a Pull Request.**
+The CI pipeline will execute these checks automatically, and your PR will fail if any of them do not pass.
 
 ---
 
@@ -83,6 +107,7 @@ The 3W Toolkit follows a **modular, plugin-based architecture** using base class
 ### 1. Core Principles
 
 **Separation of Concerns:**
+
 - **Data Loading & Management** (`BaseDataset`): Handles dataset operations
 - **Preprocessing** (`BasePreprocessing`): Data transformation steps (non-destructive)
 - **Feature Extraction** (`BaseFeatureExtractor`): Feature engineering
@@ -91,11 +116,13 @@ The 3W Toolkit follows a **modular, plugin-based architecture** using base class
 - **Assessment** (`BaseAssessment`): Evaluation and visualization
 
 **Configuration-Driven:**
+
 - All components use **Pydantic configs** for type-safe configuration
 - Configs support dynamic instantiation via `_target` attribute (Instantiable pattern)
 - Field validators ensure configuration correctness
 
 **Lazy Evaluation:**
+
 - `BaseDataset` and transformations support property-based lazy evaluation
 - Prevents unnecessary data loading and copying
 
@@ -145,6 +172,7 @@ ThreeWToolkit/
 ### 3. Key Patterns
 
 **BaseModels:**
+
 ```python
 class BaseModels(ABC):
     """All models inherit from this."""
@@ -166,6 +194,7 @@ class BaseModels(ABC):
 ```
 
 **BaseTrainer:**
+
 ```python
 class BaseTrainer(ABC):
     """Framework-agnostic training orchestration."""
@@ -177,6 +206,7 @@ class BaseTrainer(ABC):
 ```
 
 **BasePreprocessing / BaseFeatureExtractor:**
+
 ```python
 class BasePreprocessing(ABC, BaseTransform):
     """Non-destructive data transformation."""
@@ -190,6 +220,7 @@ class BasePreprocessing(ABC, BaseTransform):
 ```
 
 **Configuration with Pydantic:**
+
 ```python
 from pydantic import BaseModel, Field, field_validator
 from ThreeWToolkit.core import Instantiable
@@ -224,6 +255,7 @@ We have labeled some issues as **Good First Issue** - these are beginner-friendl
 ### 🆕 Add New Models
 
 New ML models are constantly being released. If you want to implement a new model:
+
 - Check if someone is already working on it (search existing issues/PRs)
 - Open an issue describing the model and link to the paper
 - Follow our [Adding a New Model](#adding-a-new-model) guide
@@ -231,6 +263,7 @@ New ML models are constantly being released. If you want to implement a new mode
 ### 🔧 Create Preprocessing Steps
 
 Implement new data preprocessing operations:
+
 - Data cleaning, normalization, imputation, remapping
 - Non-destructive transformations (create new data, don't modify original)
 - Follow our [Creating Preprocessing Steps](#creating-preprocessing-steps) guide
@@ -238,6 +271,7 @@ Implement new data preprocessing operations:
 ### 📊 Create Feature Extractors
 
 Implement new feature engineering methods:
+
 - Statistical features, wavelets, domain-specific features
 - Support windowing and overlapping operations
 - Follow our [Creating Feature Extractors](#creating-feature-extractors) guide
@@ -245,6 +279,7 @@ Implement new feature engineering methods:
 ### 🚂 Create Trainers
 
 Implement framework-specific training logic:
+
 - Support for new ML frameworks (XGBoost, LightGBM, etc.)
 - Cross-validation integration
 - Follow our [Creating Trainers](#creating-trainers) guide
@@ -252,6 +287,7 @@ Implement framework-specific training logic:
 ### 📈 Create Assessment Strategies
 
 Implement new evaluation and visualization methods:
+
 - Custom metrics and evaluation functions
 - Specialized visualization strategies
 - Follow our [Creating Assessment Strategies](#creating-assessment-strategies) guide
@@ -259,6 +295,7 @@ Implement new evaluation and visualization methods:
 ### 📚 Improve Documentation
 
 Documentation improvements are always welcome:
+
 - Fix typos or unclear explanations
 - Add usage examples
 - Improve docstrings
@@ -267,11 +304,13 @@ Documentation improvements are always welcome:
 ### 🐞 Report Bugs
 
 Before reporting a bug:
+
 1. **Search existing issues** to avoid duplicates
 2. **Verify it's not your code** - Ask in Discussions if unsure
 3. **Provide minimal reproducible example** (< 30 lines if possible)
 
 Include in your bug report:
+
 - OS and Python version
 - Library version
 - Full traceback
@@ -280,6 +319,7 @@ Include in your bug report:
 ### 💡 Request Features
 
 When requesting a new feature:
+
 1. Describe the **motivation** - What problem does it solve?
 2. Provide **detailed description** of the proposed feature
 3. Include a **code snippet** showing desired usage
@@ -296,6 +336,7 @@ To add a new model (e.g., XGBoost, LightGBM, custom neural networks), follow the
 #### Step 1: Choose Model Category
 
 Determine which trainer your model needs:
+
 - **Scikit-learn compatible**: Use `SklearnTrainer` (models with `.fit()` and `.predict()`)
 - **PyTorch**: Use `TorchTrainer` (models extending `torch.nn.Module`)
 - **Custom**: Create custom trainer if needed
@@ -330,6 +371,7 @@ class YourModelConfig(ModelsConfig, Instantiable):
 Inherit from `BaseModels` and implement required methods:
 
 **For Scikit-learn models:**
+
 ```python
 from ThreeWToolkit.core import BaseModels
 import pickle
@@ -369,6 +411,7 @@ class YourModel(BaseModels):
 ```
 
 **For PyTorch models:**
+
 ```python
 import torch
 from torch import nn
@@ -701,6 +744,7 @@ Fixes #issue_number
 ```
 
 **Types:**
+
 - `feat` - New feature or component
 - `fix` - Bug fix
 - `docs` - Documentation only
@@ -711,6 +755,7 @@ Fixes #issue_number
 - `perf` - Performance improvements
 
 **Examples:**
+
 ```
 feat(models): add XGBoost model implementation
 
@@ -741,20 +786,18 @@ Fixes #135
 Every contribution should include tests:
 
 1. **Unit Tests** for your component:
-   - Configuration validation
-   - Initialization with various parameters
-   - Core functionality
-   - Error handling for edge cases
-
+  - Configuration validation
+  - Initialization with various parameters
+  - Core functionality
+  - Error handling for edge cases
 2. **Integration Tests**:
-   - Full pipeline execution
-   - Cross-validation (if supported)
-   - Model training and prediction together
-
+  - Full pipeline execution
+  - Cross-validation (if supported)
+  - Model training and prediction together
 3. **Data Integrity Tests** (important for preprocessing/feature extraction):
-   - Original data is not modified (for transformations)
-   - Output shapes and types are correct
-   - Handles missing/invalid data gracefully
+  - Original data is not modified (for transformations)
+  - Output shapes and types are correct
+  - Handles missing/invalid data gracefully
 
 ### Running Tests
 
@@ -778,12 +821,14 @@ pytest tests/models/test_your_model.py --cov=toolkit/ThreeWToolkit/models
 ### Test Structure
 
 Place tests alongside the module they test:
+
 ```
 toolkit/ThreeWToolkit/models/your_model.py
 tests/models/test_your_model.py
 ```
 
 Use class-based organization for related tests:
+
 ```python
 class TestYourModel:
     @pytest.fixture
@@ -824,13 +869,13 @@ def sample_dataset():
 
 ### Before Submitting
 
-- [ ] Code follows style guidelines (`./bin/lint` passes)
-- [ ] All tests pass (`./bin/test`)
-- [ ] New tests added for new functionality
-- [ ] Documentation updated and docstrings complete
-- [ ] No merge conflicts with main/dev branch
-- [ ] Commit messages follow convention
-- [ ] Related issues are linked
+- Code follows style guidelines (`./bin/lint` passes)
+- All tests pass (`./bin/test`)
+- New tests added for new functionality
+- Documentation updated and docstrings complete
+- No merge conflicts with main/dev branch
+- Commit messages follow convention
+- Related issues are linked
 
 ### PR Description Template
 
@@ -877,10 +922,10 @@ Any additional context or notes for reviewers.
 
 1. **Automated Checks**: Tests, linting, type checking run automatically
 2. **Code Review**: Maintainers review code for:
-   - Architecture alignment
-   - Code quality and style
-   - Test coverage
-   - Documentation completeness
+  - Architecture alignment
+  - Code quality and style
+  - Test coverage
+  - Documentation completeness
 3. **Address Comments**: Respond to review comments
 4. **Approval & Merge**: Maintainers approve and merge
 
@@ -899,6 +944,7 @@ Any additional context or notes for reviewers.
 ### Imports
 
 Organize imports in three groups (separated by blank lines):
+
 ```python
 # 1. Standard library
 import json
@@ -993,6 +1039,7 @@ mypy toolkit tests
 ```
 
 **Key tools:**
+
 - **Black** - Code formatter (line length: 88)
 - **Ruff** - Fast linter and auto-fixer
 - **Mypy** - Static type checker
@@ -1054,6 +1101,7 @@ class MyConfig(BaseModel):
 ## Recognition
 
 Contributors will be:
+
 - Listed in CONTRIBUTORS.md
 - Mentioned in release notes
 - Credited in relevant documentation
