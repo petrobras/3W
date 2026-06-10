@@ -93,17 +93,19 @@ Finally, the use of configuration-driven components (via dedicated configuration
 
 # Installation
 
-The **3W Toolkit** is currently distributed as part of the 3W Project repository. The source code can be obtained from: https://github.com/petrobras/3W.git.
-
-We provide a PyPy package for installation, using: 
+The 3W Toolkit can be installed directly from PyPI using pip:
 
 ```bash
 pip install ThreeWToolkit
 ```
 
-The toolkit is located in the `toolkit/ThreeWToolkit` directory. In addition, it is recommended to install the package within an isolated Python environment.
+This is the recommended option for users who only want to use the package.
 
-For example, using `uv`:
+Alternatively, users who want to inspect the source code, contribute to the project, or work from a cloned or forked repository can install the package locally. The source code is available at:
+
+https://github.com/petrobras/3W.git
+
+After cloning or forking the repository, we recommend creating an isolated Python environment before installing the package. For example, using uv:
 
 ```bash
 uv venv                    # Create virtual environment
@@ -113,14 +115,12 @@ source .venv/bin/activate  # On Linux/macOS
 cd toolkit/ThreeWToolkit
 uv pip install -e .
 ```
-Alternatively, installation can be performed using `pip`:
+
+The same local installation can also be performed with pip:
 
 ```bash
 pip install -e .
 ```
-
-This will install the toolkit in editable mode, allowing users to modify and extend its components if needed.
-
 
 # Features
 
