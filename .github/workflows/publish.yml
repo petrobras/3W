@@ -1,0 +1,90 @@
+name: Publish to PyPI on version change
+
+on:
+ push:
+   branches:
+     - main
+   paths:
+     - pyproject.toml
+
+jobs:
+ publish:
+   runs-on: ubuntu-latest
+   environment:
+     name: pypi
+     url: https://pypi.org/p/threewtoolkit
+   permissions:
+     id-token: write
+
+   steps:
+     - name: Check out main branch
+       uses: actions/checkout@v4
+       with:
+         fetch-depth: 2
+
+     - name: Check if project version changed
+       id: version_changed
+       run: |
+        OLD_VERSION=$(git show HEAD^:pyproject.toml | sed -n 's/^version = "\(.*\)"/\1/p' | head -n 1 || true)
+        NEW_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -n 1)
+
+        echo "Old version: $OLD_VERSION"
+        echo "New version: $NEW_VERSION"
+
+        if [ -z "$NEW_VERSION" ]; then
+          echo "Could not find version line in pyproject.toml"
+          exit 1
+        fi
+
+        if [ "$OLD_VERSION" = "$NEW_VERSION" ]; then
+          echo "Version did not change. Skipping publish."
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "Version changed. Continuing publish."
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        fi
+
+     - name: Validate package version
+       if: steps.version_changed.outputs.changed == 'true'
+       run: |
+        python3 <<'PY'
+        import re
+        import sys
+        from pathlib import Path
+        from packaging.version import Version
+
+        text = Path("pyproject.toml").read_text()
+
+        match = re.search(r'(?m)^version = "([^"]+)"', text)
+        if not match:
+            sys.exit('Could not find a line starting with: version = "..." in pyproject.toml')
+
+        version = match.group(1)
+
+        try:
+            Version(version)
+        except Exception as exc:
+            sys.exit(f"Invalid PEP 440 version {version!r}: {exc}")
+
+        print(f"Publishing version: {version!r}")
+        PY
+
+     - name: Set up Python
+       if: steps.version_changed.outputs.changed == 'true'
+       uses: actions/setup-python@v5
+       with:
+         python-version: "3.11"
+
+     - name: Install build tools
+       if: steps.version_changed.outputs.changed == 'true'
+       run: python -m pip install --upgrade pip build packaging
+
+     - name: Build distribution
+       if: steps.version_changed.outputs.changed == 'true'
+       run: python -m build
+
+     - name: Publish to PyPI
+       if: steps.version_changed.outputs.changed == 'true'
+       uses: pypa/gh-action-pypi-publish@release/v1
+       with:
+         password: ${{ secrets.PYPI_API_TOKEN }}
