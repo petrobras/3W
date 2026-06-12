@@ -19,7 +19,7 @@ authors:
   - name: Thadeu L. B. Dias
     affiliation: 1
     orcid: 0000-0003-3371-5291
-  - name: Matheus E. Santo
+  - name: Matheus F. do E. Santo
     affiliation: 1
     orcid: 0009-0009-5672-815X
   - name: Eduardo H. Banaczewski
