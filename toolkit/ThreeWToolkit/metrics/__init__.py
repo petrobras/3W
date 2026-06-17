@@ -6,6 +6,7 @@ from ._classification import (
     recall_score,
     f1_score,
     roc_auc_score,
+    matthews_corrcoef,
 )
 
 from ._regression import explained_variance_score
@@ -18,5 +19,6 @@ __all__ = [
     "recall_score",
     "f1_score",
     "roc_auc_score",
+    "matthews_corrcoef",
     "explained_variance_score",
 ]

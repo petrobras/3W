@@ -1,5 +1,6 @@
 """Tests for sklearn_models module."""
 
+import os
 import tempfile
 from typing import Type, Any
 
@@ -56,18 +57,16 @@ class TestSklearnModelsConfig:
         except Exception as e:
             pytest.fail(f"Model type {model_type} raised an exception: {e}")
 
-        # Test saving and loading the model
-        with tempfile.NamedTemporaryFile(suffix=".pkl") as tmp:
+        # Test saving and loading the model using TemporaryDirectory
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model_path = os.path.join(tmpdir, f"model_{model_type.__name__}.pkl")
             try:
-                model.save(tmp.name)
-            except Exception as e:
-                pytest.fail(f"Saving model type {model_type} raised an exception: {e}")
-            try:
-                loaded_model = SklearnModels.load(tmp.name)
+                model.save(model_path)
+                loaded_model = SklearnModels.load(model_path)
+                assert (
+                    loaded_model.get_params() == model.get_params()
+                ), f"Loaded model parameters do not match original for {model_type}"
             except Exception as e:
                 pytest.fail(
                     f"Saving/loading model type {model_type} raised an exception: {e}"
                 )
-            assert (
-                loaded_model.get_params() == model.get_params()
-            ), f"Loaded model parameters do not match original for {model_type}"

@@ -9,6 +9,7 @@ from sklearn.metrics import (
     recall_score as sk_recall,
     f1_score as sk_f1,
     roc_auc_score as sk_roc_auc,
+    matthews_corrcoef as sk_mcc,
 )
 from sklearn.preprocessing import label_binarize
 
@@ -286,4 +287,40 @@ def roc_auc_score(
         max_fpr=max_fpr,
         multi_class=multi_class,
         labels=labels,
+    )
+
+
+@validate_call(config=_validate_config)
+def matthews_corrcoef(
+    y_true: np.ndarray | pd.Series | list,
+    y_pred: np.ndarray | pd.Series | list,
+    sample_weight: np.ndarray | pd.Series | list | None = None,
+) -> float:
+    """
+    Calculates the Matthews Correlation Coefficient (MCC).
+
+    MCC is a balanced metric for evaluating classification models,
+    particularly useful for imbalanced datasets. Its value ranges
+    from -1 to 1:
+
+    - 1: Perfect prediction
+    - 0: Random prediction
+    - -1: Total disagreement between prediction and truth
+
+    Args:
+        y_true: True labels.
+        y_pred: Predicted labels.
+        sample_weight: Sample weights. Default is None.
+
+    Returns:
+        The calculated MCC value.
+
+    Raises:
+        TypeError: If any argument has an invalid type.
+        ValueError: If array dimensions are incompatible.
+    """
+    return sk_mcc(
+        y_true=y_true,
+        y_pred=y_pred,
+        sample_weight=sample_weight,
     )
