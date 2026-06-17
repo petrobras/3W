@@ -12,6 +12,7 @@ from ThreeWToolkit.metrics import (
     recall_score,
     f1_score,
     roc_auc_score,
+    matthews_corrcoef,
 )
 
 
@@ -310,6 +311,89 @@ class TestROCAUCScore:
         """Test roc_auc_score error handling."""
         with pytest.raises(error_type):
             roc_auc_score(y_true=y_true, y_pred=y_pred)
+
+
+class TestMatthewsCorrcoef:
+    @pytest.fixture(scope="class")
+    def sk_mcc(self):
+        from sklearn.metrics import matthews_corrcoef
+
+        return matthews_corrcoef
+
+    def test_binary_classification(self, sk_mcc):
+        y_true = [1, 1, 0, 0]
+        y_pred = [1, 0, 0, 0]
+
+        expected = sk_mcc(y_true, y_pred)
+        result = matthews_corrcoef(y_true, y_pred)
+
+        assert result == pytest.approx(expected)
+
+    def test_multiclass_classification(self, sk_mcc):
+        y_true = [0, 1, 2, 0, 1, 2]
+        y_pred = [0, 1, 1, 0, 2, 2]
+
+        expected = sk_mcc(y_true, y_pred)
+        result = matthews_corrcoef(y_true, y_pred)
+
+        assert result == pytest.approx(expected)
+
+    def test_numpy_arrays(self, sk_mcc):
+        y_true = np.array([1, 1, 0, 0])
+        y_pred = np.array([1, 0, 0, 0])
+
+        expected = sk_mcc(y_true, y_pred)
+        result = matthews_corrcoef(y_true, y_pred)
+
+        assert result == pytest.approx(expected)
+
+    def test_pandas_series(self, sk_mcc):
+        y_true = pd.Series([1, 1, 0, 0])
+        y_pred = pd.Series([1, 0, 0, 0])
+
+        expected = sk_mcc(y_true, y_pred)
+        result = matthews_corrcoef(y_true, y_pred)
+
+        assert result == pytest.approx(expected)
+
+    def test_sample_weight(self, sk_mcc):
+        y_true = [1, 1, 0, 0]
+        y_pred = [1, 0, 0, 0]
+        weights = [1.0, 2.0, 1.0, 1.0]
+
+        expected = sk_mcc(
+            y_true,
+            y_pred,
+            sample_weight=weights,
+        )
+
+        result = matthews_corrcoef(
+            y_true,
+            y_pred,
+            sample_weight=weights,
+        )
+
+        assert result == pytest.approx(expected)
+
+    def test_mismatched_lengths_raises_value_error(self):
+        y_true = [1, 0, 1]
+        y_pred = [1, 0]
+
+        with pytest.raises(ValueError):
+            matthews_corrcoef(y_true, y_pred)
+
+    @pytest.mark.parametrize(
+        "y_true,y_pred",
+        [
+            ("invalid", [1, 0, 1]),
+            ([1, 0, 1], "invalid"),
+            (123, [1, 0, 1]),
+            ([1, 0, 1], 123),
+        ],
+    )
+    def test_invalid_types_raise_error(self, y_true, y_pred):
+        with pytest.raises(Exception):
+            matthews_corrcoef(y_true, y_pred)
 
 
 class TestInputTypes:

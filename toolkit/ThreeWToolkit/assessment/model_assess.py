@@ -26,6 +26,7 @@ from ..metrics import (
     f1_score,
     average_precision_score,
     explained_variance_score,
+    matthews_corrcoef,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ class MetricRegistry:
                     if len(np.unique(y)) > 1
                     else 0.0
                 ),
+                "matthews_corrcoef": matthews_corrcoef,
             },
             TaskTypeEnum.REGRESSION: {
                 "explained_variance": explained_variance_score,
