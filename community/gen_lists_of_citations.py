@@ -6,7 +6,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent.resolve()
 EXCEL_PATH = BASE_DIR / "citations.xlsx"
 SHEET_NAME = "citations1"
-OUTPUT_DIR = BASE_DIR
+OUTPUT_DIR = BASE_DIR.parent
 MD_PATH = OUTPUT_DIR / "LISTS_OF_CITATIONS.md"
 
 # Categories mapped to Markdown sections
@@ -24,18 +24,17 @@ CATEGORIES = {
 }
 
 # Fixed header
-HEADER = """
-## Introduction
+HEADER = """## Introduction
 
-As far as we know, the 3W Dataset was useful and is cited by the {N} works listed in this document.
+As far as we know, 3W Project's resources (3W Dataset and 3W Toolkit) were useful and are cited in at least {N} works, which are listed in this document.
 
-There is a dedicated section below for each type of work. These sections are presented in alphabetical order. In each section the works are listed according to the years in which they were published, from the most recent to the oldest.
+There is a dedicated section below for each type of work. These sections are presented in alphabetical order. In each section, works are listed according to the years in which they were published, from the most recent to the oldest.
 
 ## Our requests
 
-If you know any other published work that cites the 3W Dataset, please let us know by commenting in [this](https://github.com/Petrobras/3W/discussions/3) discussion.
+If you know any other published work (not covered in this document) that cites the 3W Project itself and/or its main resources, please let us know by commenting in [this discussion](https://github.com/Petrobras/3W/discussions/3).
 
-If you use any resource published in this Git repository, we ask that it be properly cited in your work. Click on the ***Cite this repository*** link on this repository landing page to access different citation formats supported by the GitHub citation feature.
+If you wish to cite the 3W Project itself and/or its main resources, please refer to our suggestions at [CITATION.md](CITATION.md).
 
 ## Lists of Citations
 
@@ -48,8 +47,7 @@ If you use any resource published in this Git repository, we ask that it be prop
 * [Master's Degree Dissertations](#masters-degree-dissertations)
 * [Other Articles](#other-articles)
 * [Repository Articles](#repository-articles)
-* [Specialization Monographs](#specialization-monographs)
-"""
+* [Specialization Monographs](#specialization-monographs)"""
 
 
 def format_citation(row):

@@ -29,7 +29,7 @@ Each subsection below contains release notes for a specific 3W Dataset version. 
 
 Release: July 1, 2019.
 
-This was the first published version, which is fully described in [this](https://doi.org/10.1016/j.petrol.2019.106223) paper.
+This was the first published version, which is fully described in [this article](https://doi.org/10.1016/j.petrol.2019.106223).
 
 ## 1.1.0
 
@@ -42,7 +42,7 @@ Highlights:
 1. Instances were removed due to issues identified as follows:
 	* 3 instances of event type 0;
 	* 1 instance of event type 5;
-	* 3 instances of event type 8, when compared to what is described in the paper **A realistic and public dataset with rare undesirable real events in oil wells** published in the **Journal of Petroleum Science and Engineering** (link [here](https://doi.org/10.1016/j.petrol.2019.106223)).
+	* 3 instances of event type 8.
 1. Normal periods of certain instances with anomalies were increased as possible. We tried to have instances with minimum normal periods of 1 hour;
 1. Names of certain files with instances have changed due to increased normal periods;
 1. Labels in some real instances were adjusted by experts;
@@ -64,6 +64,8 @@ Highlights:
 ## 2.0.0
 
 Release: July 25, 2024.
+
+This version is fully described in [this data article](https://doi.org/10.1038/s41597-026-07225-z).
 
 Highlights:
 

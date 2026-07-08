@@ -1,10 +1,6 @@
 exclude_path = [
   "dataset/*.*",
-  "3W_DATASET_STRUCTURE.md",
-  "BACKLOG.md",
-  "LISTS_OF_CITATIONS.md",
   "report_template.html",
-  "CODE_OF_CONDUCT.md"
 ]
 
 accept = ["100..=103", "200..=299", "403", "429"]
