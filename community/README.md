@@ -15,19 +15,13 @@ The following sections provide more information about this community.
 
 # Citations
 
-The 3W Dataset was useful and is cited by the works listed [here](../LISTS_OF_CITATIONS.md). These are basically papers, final graduation projects, master's degree dissertations, and doctoral theses. In general, these works are carried out by representatives of institutions.
-
-
-
+As far as we know, 3W Project's resources (3W Dataset and 3W Toolkit) were useful and are cited by the works listed [here](../LISTS_OF_CITATIONS.md). In general, these works are carried out by representatives of institutions.
 
 ## Progress Over the Years
 
 The chart below shows the cumulative number of works citing the 3W Dataset since 2019, highlighting the growing academic and institutional engagement over the years. This steady increase demonstrates the dataset's relevance across different types of research and institutions worldwide.
 
-
 ![Progress Over the Years](../images/progress_over_the_years.svg)
-
-
 
 ## Main Institutions by Country
 

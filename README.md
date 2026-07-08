@@ -41,7 +41,7 @@
 
 This is the first repository published by Petrobras on GitHub. It supports the 3W Project, which aims to promote experimentation and development of Machine Learning-based approaches and algorithms for specific problems related to detection and classification of undesirable events that occur in offshore oil wells. 
 				
-The 3W Project is based on the 3W Dataset, a database described in [this paper](https://doi.org/10.1016/j.petrol.2019.106223), and on the 3W Toolkit, a software package that promotes experimentation with the 3W Dataset for specific problems. The name **3W** was chosen because this dataset is composed of instances from ***3*** different sources and which contain undesirable events that occur in oil ***W***ells.
+The 3W Project is based on the 3W Dataset and on the 3W Toolkit, a software package that promotes experimentation with the 3W Dataset for specific problems. The name **3W** was chosen because this dataset is composed of instances from ***3*** different sources and which contain undesirable events that occur in oil ***W***ells.
 
 ## Motivation
 
@@ -114,7 +114,7 @@ See the discussions section. If you don't get clarification, please open discuss
 
 # 3W Dataset
 
-To the best of its authors' knowledge, this is the first realistic and public dataset with rare undesirable real events in oil wells that can be readily used as a benchmark dataset for development of machine learning techniques related to inherent difficulties of actual data. For more information about the theory behind this dataset, refer to the paper **A realistic and public dataset with rare undesirable real events in oil wells** published in the **Journal of Petroleum Science and Engineering** (link [here](https://doi.org/10.1016/j.petrol.2019.106223)). 
+To the best of its authors' knowledge, this is the first realistic and public dataset with rare undesirable real events in oil wells that can be readily used as a benchmark dataset for development of machine learning techniques related to inherent difficulties of actual data. For more information about the theory behind each version of the 3W Dataset, please refer to publications listed in [CITATION.md](CITATION.md).
 
 ## Structure
 
@@ -133,6 +133,8 @@ The 3W Toolkit is a software package written in Python 3 that contains resources
 * Standardization of key points of the Machine Learning-based algorithm development pipeline.
 
 It is important to note that there are arbitrary choices in this toolkit, but they have been carefully made to allow adequate comparative analysis without compromising the ability to experiment with different approaches and algorithms.
+
+For more information about the theory behind each version of the 3W Toolkit, please refer to publications listed in [CITATION.md](CITATION.md).
 
 ## Structure
 
