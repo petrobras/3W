@@ -66,6 +66,15 @@ def process_excel_to_markdown():
 
     df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
+    # Strip leading/trailing whitespace and collapse multiple spaces into one
+    df = df.apply(
+        lambda col: (
+            col.str.strip().str.replace(r"\s+", " ", regex=True)
+            if col.dtype == "object"
+            else col
+        )
+    )
+
     required_columns = [
         "Author",
         "Title",
