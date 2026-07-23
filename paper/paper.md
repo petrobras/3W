@@ -59,7 +59,7 @@ It features a modular architecture with stages for data preprocessing, feature e
 
 It targets the early automatic detection and classification of failure events during the practical operation of oil and gas wells and pipelines, as depicted in \autoref{fig:toolkit}. The events currently being considered are part of the publicly available **3W Dataset** [@VazVargas2026;@3Wdataset_github] developed by Petrobras [@petro], the Brazilian oil holding company. The **3W Dataset** serves as a reference dataset for this project and is hosted on Figshare[@figshare].
 
-![3W Toolkit: Open-source tools for time series processing. \label{fig:toolkit}](3Wtoolkit_overview.png)
+![3W Toolkit: Open-source tools for time series processing. \label{fig:toolkit}](assets/3Wtoolkit_overview.png)
 
 # Statement of need
 
@@ -99,7 +99,7 @@ To better describe the internal organization of the toolkit, the architecture ca
 The *Application* layer provides concrete implementations of these abstractions. For instance, `ParquetDataset` handles structured dataset loading, while `Normalize` and `Windowing` represent examples of preprocessing and feature extraction steps, respectively. Model implementations are divided into two main groups: deep learning models, represented by classes such as `TorchModels`, and traditional machine learning models, encapsulated by `SklearnModels`. This separation allows the toolkit to support heterogeneous modeling approaches within a unified interface.
 
 
-![Toolkit schema. \label{fig:UML}](diagrama_classes_joss-background.drawio.svg)
+![Toolkit schema. \label{fig:UML}](assets/diagrama_classes_joss-background.drawio.svg)
 
 
 
@@ -241,10 +241,10 @@ The 3W Toolkit provides a data visualization module (`DataVisualization`) that s
 
 
 
-![Correlation heatmap of sensor measurements. \label{fig:heat}](correlation_heatmap.svg){ width=85% }
+![Correlation heatmap of sensor measurements. \label{fig:heat}](assets/correlation_heatmap.svg){ width=85% }
 
 
-![Temporal signals collected from multiple sensors. \label{fig:sensor}](sensor_signal_1.svg){ width=75% }
+![Temporal signals collected from multiple sensors. \label{fig:sensor}](assets/sensor_signal_1.svg){ width=75% }
 
 
 # Research impact statement
