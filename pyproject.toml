@@ -64,7 +64,7 @@ Changelog = "https://github.com/petrobras/3W/releases"
 dev = [
     "mypy>=1.19.1",
     "black==26.5.0",
-    "ruff>=0.14.13",
+    "ruff>=0.14.13,<0.16",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "jupyter",
