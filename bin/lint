@@ -28,7 +28,7 @@ if command -v lychee >/dev/null 2>&1; then
     if [ "${CI}" = true ]; then
         lychee --config lychee.toml --no-progress .
     else
-        lychee --config lychee.toml .
+        echo "Skipping link check."
     fi
 else
     echo "lychee is not installed. Skipping link check."
