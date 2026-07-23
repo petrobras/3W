@@ -12,7 +12,7 @@ user_agent = "Mozilla/5.0"
 # To prevent TLS certificate errors as in `certificate not valid for name "tbpetroleum.com.br"; certificate is only valid for DnsName("www.tbpetroleum.com.br")`
 insecure = true
 
-timeout = 40
+timeout = 60
 
 exclude = [
   '^https://prd\.hotsitespetrobras\.com\.br/en/contact-us/?$',
