@@ -19,7 +19,7 @@ authors:
   - name: Thadeu L. B. Dias
     affiliation: 1
     orcid: 0000-0003-3371-5291
-  - name: Matheus F. do E. Santo
+  - name: Matheus E. Santo
     affiliation: 1
     orcid: 0009-0009-5672-815X
   - name: Eduardo H. Banaczewski
@@ -59,7 +59,7 @@ It features a modular architecture with stages for data preprocessing, feature e
 
 It targets the early automatic detection and classification of failure events during the practical operation of oil and gas wells and pipelines, as depicted in \autoref{fig:toolkit}. The events currently being considered are part of the publicly available **3W Dataset** [@VazVargas2026;@3Wdataset_github] developed by Petrobras [@petro], the Brazilian oil holding company. The **3W Dataset** serves as a reference dataset for this project and is hosted on Figshare[@figshare].
 
-![3W Toolkit: Open-source tools for time series processing. \label{fig:toolkit}](assets/3Wtoolkit_overview.png)
+![3W Toolkit: Open-source tools for time series processing. \label{fig:toolkit}](3Wtoolkit_overview.png)
 
 # Statement of need
 
@@ -67,22 +67,40 @@ Implementing corrective actions promptly helps avoid costly interventions in pro
 
 The **3W Toolkit** is part of the **3W** project developed by Petrobras [@petro] and the Signal, Multimedia and Telecommunications Laboratory (SMT)[@smt] and Signal Processing Laboratory (LPS)[@lps] from Federal University of Rio de Janeiro (UFRJ), aimed at providing tools for the processing and analysis of large volumes of data from oil and gas exploration and production operations. This set of tools includes functions for well data analysis and fault detection.
 
-One motivation behind the design of the **3W Toolkit** is the need for integrated, accessible tools for professionals in the oil and gas industry who face challenges in handling large quantities of data. Undesirable event classification is performed using a modular framework with an efficient system design, allowing one to choose from several configurations of data pre-processing techniques, feature extraction, classifier algorithms, and desired performance metrics. The **3W Toolkit** provides a common ground of comparison. Without it, different researchers/companies would conduct different experiments with results that are difficult to compare. Another key point of the **3W Toolkit** is to make life easier for beginners in the 3W Community, who will have a ready-made package to explore the **3W Dataset**.
+One motivation behind the design of the **3W Toolkit** is the need for integrated, accessible tools for professionals in the oil and gas industry who face challenges in handling large quantities of data. Undesirable event classification is performed using a modular framework with an efficient system design, allowing one to choose from several configurations of data pre-processing techniques, feature extraction, classifier algorithms, and desired performance metrics. The **3W Toolkit** provides a common ground of comparison. Without it, different researchers/companies would conduct different experiments with results that are difficult to compare. Another key point of the **3W Toolkit** is to make life easier for beginners in the **3W Community** [@3Wcommunity], who will have a ready-made package to explore the **3W Dataset**.
 
 The toolkit is developed in Python and can be easily integrated with other Python-based systems and data analysis workflows. Additionally, the **3W Toolkit** is open-source, allowing the community to contribute and collaborate on its improvement.
 
-# Architecture
+The **3W Toolkit** has endured several transitional stages. This transformation spans architecture, software design, data structures, and feature capabilities.
+For example, the current version of the **3W Toolkit**  has been optimized to ingest and process `.parquet` files for better memory efficiency and faster querying. In addition to these file format enhancements, the current version includes several other optimizations designed to streamline large-scale data workflows and machine learning features specifically tailored for time-series anomaly detection and event classification. The current version of the **3W Toolkit** implements a highly modular, object-oriented package structure featuring dedicated sub-modules. While its initial framework consisted of standalone Python scripts and Jupyter Notebooks to parse raw sensor streams, its current release is a standardized, modular package that can be directly managed using modern dependency structures (pyproject.toml) and installed natively via PyPI. 
 
-A modular architecture is one of the cornerstones of the project, shaping both its design philosophy and its practical implementation. Therefore, software tools were designed so that each component or module operates independently, allowing it to be used, replaced, or updated without affecting the others. This type of architecture provides flexibility and scalability, enabling developers to customize and expand the toolkit according to their specific needs. With modules that can be reused across different projects, maintenance becomes easier, as issues can be fixed within individual modules without requiring changes to the entire system. In addition, customization is simplified by allowing different modules to be combined to create tailored solutions, while scalability is ensured by the ability to add new modules as demand grows, without major restructuring.
+
+# State of the field
+Petrobras launched the **3W Community** [@3Wcommunity], an open international collaboration of researchers, startups, companies, and independent data scientists developing artificial intelligence and machine learning tools for early event detection in offshore oil wells. Given the widespread adoption of the **3W Dataset** [@3Wdataset_github] across global research institutions, the **3W Toolkit** was designed to streamline and accelerate these ongoing research efforts.
+While general-time series toolkits (e.g., `sktime`, `tsfresh`) offer foundational algorithms, they lack domain-specific awareness of oil well variables, multi-source telemetry variations (simulated vs. real events), and the strict operational constraints native to the 3W framework. Rather than competing with general-purpose tools, the **3W Toolkit** bridges raw physical sensor data with standard machine learning paradigms. In doing so, it ensures that algorithmic comparisons published within the 3W Community remain fully reproducible and aligned with industry standards.
+
+There are currently no other specialized Python packages, frameworks, or toolkits 
+built specifically to address the heterogeneous composition and multi-source nature
+of the **3W Dataset**. In the absence of a unified framework like the **3W Toolkit**, researchers are forced to write custom, isolated ingestion scripts from scratch, leading to inconsistent handling of the dataset's unique mix of real, simulated, 
+and hand-drawn synthetic instances. Therefore, the **3W Toolkit** aims at consolidating one-off scripts into a standardized, reproducible platform.
+
+
+
+
+# Software design 
+
+A modular architecture is one of the cornerstones of the project, shaping both its software design philosophy and its practical implementation. Therefore, software tools were designed so that each component or module operates independently, allowing it to be used, replaced, or updated without affecting the others. This type of architecture provides flexibility and scalability, enabling developers to customize and expand the toolkit according to their specific needs. With modules that can be reused across different projects, maintenance becomes easier, as issues can be fixed within individual modules without requiring changes to the entire system. In addition, customization is simplified by allowing different modules to be combined to create tailored solutions, while scalability is ensured by the ability to add new modules as demand grows, without major restructuring.
 
 The **3W Toolkit** modularity facilitates constant system updates. Documentation allows for easier use by a wider community. A framework that is, to a certain extent, complete, incorporating various functionalities, encourages the use of this toolkit by a larger number of users. The schema shown in \autoref{fig:UML} illustrates the main classes of the toolkit.
+
 
 To better describe the internal organization of the toolkit, the architecture can be divided into two main abstraction layers: the *Core* layer and the *Application* layer. The *Core* layer defines the fundamental abstractions that standardize how each component operates. It includes base classes such as `BaseDataset`, `BasePreprocessing`, `BaseFeatureExtractor`, `BaseModels`, `BaseTrainer`, and `BasePipeline`. These abstractions establish consistent interfaces across the system, ensuring that different implementations remain interchangeable. In addition, lightweight data containers such as `DatasetOutputs`, `TrainingResult`, `PredictionResult`, and `AssessmentOutput` are used to standardize communication between modules, reducing coupling and improving traceability of results.
 
 The *Application* layer provides concrete implementations of these abstractions. For instance, `ParquetDataset` handles structured dataset loading, while `Normalize` and `Windowing` represent examples of preprocessing and feature extraction steps, respectively. Model implementations are divided into two main groups: deep learning models, represented by classes such as `TorchModels`, and traditional machine learning models, encapsulated by `SklearnModels`. This separation allows the toolkit to support heterogeneous modeling approaches within a unified interface.
 
 
-![Toolkit schema. \label{fig:UML}](assets/diagrama_classes_joss-background.drawio.svg)
+![Toolkit schema. \label{fig:UML}](diagrama_classes_joss-background.drawio.svg)
+
 
 
 Training is handled by specialized trainer classes such as `TorchTrainer` and `SklearnTrainer`, both derived from `BaseTrainer`. This design isolates training logic from model definitions, enabling reusage of training strategies across different models. Similarly, evaluation is performed through the `ModelAssessment` class, which produces standardized outputs independent of the underlying model type.
@@ -93,19 +111,11 @@ Finally, the use of configuration-driven components (via dedicated configuration
 
 # Installation
 
-The 3W Toolkit can be installed directly from PyPI using pip:
+The **3W Toolkit** is currently distributed as part of the 3W Project repository. The source code can be obtained from: https://github.com/petrobras/3W.git.
 
-```bash
-pip install ThreeWToolkit
-```
+The toolkit is located in the `toolkit/ThreeWToolkit` directory. In addition, it is recommended to install the package within an isolated Python environment.
 
-This is the recommended option for users who only want to use the package.
-
-Alternatively, users who want to inspect the source code, contribute to the project, or work from a cloned or forked repository can install the package locally. The source code is available at:
-
-https://github.com/petrobras/3W.git
-
-After cloning or forking the repository, we recommend creating an isolated Python environment before installing the package. For example, using uv:
+For example, using `uv`:
 
 ```bash
 uv venv                    # Create virtual environment
@@ -115,12 +125,14 @@ source .venv/bin/activate  # On Linux/macOS
 cd toolkit/ThreeWToolkit
 uv pip install -e .
 ```
-
-The same local installation can also be performed with pip:
+Alternatively, installation can be performed using `pip`:
 
 ```bash
 pip install -e .
 ```
+
+This will install the toolkit in editable mode, allowing users to modify and extend its components if needed.
+
 
 # Features
 
@@ -229,12 +241,14 @@ The 3W Toolkit provides a data visualization module (`DataVisualization`) that s
 
 
 
-![Correlation heatmap of sensor measurements. \label{fig:heat}](assets/correlation_heatmap.svg){ width=85% }
+![Correlation heatmap of sensor measurements. \label{fig:heat}](correlation_heatmap.svg){ width=85% }
 
 
-![Temporal signals collected from multiple sensors. \label{fig:sensor}](assets/sensor_signal_1.svg){ width=75% }
+![Temporal signals collected from multiple sensors. \label{fig:sensor}](sensor_signal_1.svg){ width=75% }
 
 
+# Research impact statement
+The **3W Toolkit** bridges industry and academia, as it has been developed via an active collaboration between Petrobras researchers and the Signal, Multimedia, and Telecommunications Laboratory (SMT) at the Federal University of Rio de Janeiro (UFRJ). Recently, researchers employed the **3W Toolkit** (v3.0.0) for standardizing the data pipeline of the 3W Dataset, utilizing automated cleaning, temporal alignment, and class selection for robust data loading [@pessoa2026multivariate; @deandrade2026operadores]. By providing standardized routines for selection, filtering, and loading of real-world event registries, the **3W Toolkit** guarantees strict reproducibility while ensuring compliance with the quality criteria defined by the dataset maintainers. Ultimately, the **3W Toolkit** provides an industry-validated sandbox, allowing academic contributions to be tested against real-world domain constraints, directly advancing the state of the art in well integrity and flow assurance automation.
 
 # Conclusions
 
