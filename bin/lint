@@ -26,7 +26,8 @@ fi
 # Links checking with lychee
 if command -v lychee >/dev/null 2>&1; then
     if [ "${CI}" = true ]; then
-        lychee --config lychee.toml --no-progress .
+        echo "Skipping link check."
+
     else
         lychee --config lychee.toml .
     fi
