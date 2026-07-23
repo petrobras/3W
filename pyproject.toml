@@ -64,7 +64,7 @@ Changelog = "https://github.com/petrobras/3W/releases"
 dev = [
     "mypy>=1.19.1",
     "black==26.5.0",
-    "ruff>=0.14.13",
+    "ruff>=0.14.13,<0.16",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "jupyter",
@@ -112,3 +112,10 @@ target-version = ["py310"]
 python_version = "3.10"
 mypy_path = "toolkit/"
 ignore_missing_imports = true
+
+# NumPy >=2.5 stubs use PEP 695 `type` statements; mypy rejects those when
+# python_version < 3.12. Skip numpy stubs so the 3.10 target stays intact.
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
