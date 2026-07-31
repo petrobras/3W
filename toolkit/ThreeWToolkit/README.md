@@ -85,22 +85,28 @@ git clone git@github.com:petrobras/3W.git
 ```
 
 **2. Install the package**  
-**Option A: Using `pip`** 
-```bash
-pip install -e .
-```
 
-**Option B: Using `uv`**
+Our recommended virtual environment manager is [uv](https://docs.astral.sh/uv/). Install `uv` according to the [official instructions](https://docs.astral.sh/uv/getting-started/installation/).
+
+**Option A: Using `uv` (recommended)**
+
+**Linux / macOS:**
 ```bash
 uv venv .venv
-source venv/bin/activate
+source .venv/bin/activate
 uv pip install -e .
 ```
 
-**Option C: Using `conda`**
+**Windows (PowerShell):**
+```powershell
+uv venv .venv
+.venv\Scripts\activate
+uv pip install -e .
+```
+
+**Option B: Using `pip`** 
 ```bash
-conda env create -f environment.yml
-conda activate 3W
+pip install -e .
 ```
 
 ## 🪐 Jupyter Notebooks & Examples <a id="notebooks"></a>
