@@ -1,12 +1,12 @@
 [![Apache 2.0][apache-shield]][apache] 
-[![Code style][black-shield]][black]
+[![Code style][ruff-shield]][ruff]
 [![Versioning][semver-shield]][semver]
 [![Coverage Status][coveralls-shield]][coveralls]
 
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
-[black]: https://github.com/psf/black
-[black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
+[ruff]: https://github.com/astral-sh/ruff
+[ruff-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.1-blue
 [coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev
