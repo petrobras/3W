@@ -43,7 +43,7 @@ class StableLSTMAutoencoder:
 
     def build_model(self):
         """Build the stable LSTM autoencoder architecture."""
-        print(f"🏗️ Building Stable LSTM Autoencoder:")
+        print("🏗️ Building Stable LSTM Autoencoder:")
         print(f"   • Input shape: ({self.time_steps}, {self.n_features})")
         print(f"   • Encoder LSTM units: {self.lstm_units}")
         print(f"   • Latent dimension: {self.latent_dim}")
@@ -107,7 +107,8 @@ class StableLSTMAutoencoder:
         # Compile model with stable settings and gradient clipping
         self.model.compile(
             optimizer=Adam(
-                learning_rate=0.0005, clipnorm=1.0  # Conservative learning rate
+                learning_rate=0.0005,
+                clipnorm=1.0,  # Conservative learning rate
             ),  # Gradient clipping
             loss="mse",
             metrics=["mae"],
@@ -115,8 +116,8 @@ class StableLSTMAutoencoder:
 
         print("✅ Stable LSTM Autoencoder model created")
         print(f"   • Total parameters: {self.model.count_params():,}")
-        print(f"   • Gradient clipping enabled (clipnorm=1.0)")
-        print(f"   • Conservative learning rate (0.0005)")
+        print("   • Gradient clipping enabled (clipnorm=1.0)")
+        print("   • Conservative learning rate (0.0005)")
 
         return self.model
 
@@ -137,12 +138,12 @@ class StableLSTMAutoencoder:
         if self.model is None:
             raise ValueError("Model not built. Call build_model() first.")
 
-        print(f"🚂 Training LSTM Autoencoder:")
+        print("🚂 Training LSTM Autoencoder:")
         print(f"   • Training samples: {len(train_data)}")
         if val_data is not None:
             print(f"   • Validation samples: {len(val_data)}")
         else:
-            print(f"   • No validation data - using all data for training")
+            print("   • No validation data - using all data for training")
         print(f"   • Max epochs: {epochs}")
         print(f"   • Batch size: {batch_size}")
 
@@ -193,22 +194,22 @@ class StableLSTMAutoencoder:
             final_val_loss = self.history.history["val_loss"][-1]
 
             if np.isfinite(final_loss) and np.isfinite(final_val_loss):
-                print(f"✅ Training successful - no NaN values")
+                print("✅ Training successful - no NaN values")
                 print(f"   • Final training loss: {final_loss:.6f}")
                 print(f"   • Final validation loss: {final_val_loss:.6f}")
                 return True
             else:
-                print(f"❌ Training failed - NaN values detected")
+                print("❌ Training failed - NaN values detected")
                 print(f"   • Final training loss: {final_loss}")
                 print(f"   • Final validation loss: {final_val_loss}")
                 return False
         else:
             if np.isfinite(final_loss):
-                print(f"✅ Training successful - no NaN values")
+                print("✅ Training successful - no NaN values")
                 print(f"   • Final training loss: {final_loss:.6f}")
                 return True
             else:
-                print(f"❌ Training failed - NaN values detected")
+                print("❌ Training failed - NaN values detected")
                 print(f"   • Final training loss: {final_loss}")
                 return False
 

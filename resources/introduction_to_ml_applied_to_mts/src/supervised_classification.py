@@ -28,8 +28,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
 
 # Local imports
 from .data_augmentation import quick_balance_classes
@@ -104,7 +103,7 @@ def load_3w_data(config, verbose=True):
                 all_test_fold_info.extend([fold_name] * len(fold_test_dfs))
 
         if verbose:
-            print(f"✅ Data loaded successfully!")
+            print("✅ Data loaded successfully!")
             print(f"   Training windows: {len(all_train_windows)}")
             print(f"   Test windows: {len(all_test_windows)}")
             if all_train_windows:
@@ -147,7 +146,7 @@ def validate_configuration(selected_classes, test_classes, verbose=True):
 
     if len(available_selected) == len(selected_classes):
         if verbose:
-            print(f"✅ All selected classes found in data")
+            print("✅ All selected classes found in data")
         return True
     else:
         return False
@@ -199,7 +198,7 @@ def analyze_results_by_category(results, verbose=True):
         }
 
     if verbose:
-        print(f"🔧 Algorithm Analysis:")
+        print("🔧 Algorithm Analysis:")
         print(f"   • Tree-Based: {len(tree_models)} models")
         print(f"   • Support Vector Machines: {len(svm_models)} models")
         print(f"   • Neural Networks: {len(nn_models)} models")
@@ -555,7 +554,7 @@ class SupervisedClassifier:
             print(f"   • Test Accuracy: {rf_test_acc:.3f}")
 
             # Show feature importance
-            print(f"\nTop 10 Most Important Features:")
+            print("\nTop 10 Most Important Features:")
             feature_importance = rf_classifier.feature_importances_
             top_features_idx = np.argsort(feature_importance)[-10:][::-1]
 
@@ -608,7 +607,7 @@ class SupervisedClassifier:
 
         # 1. LINEAR SVM
         if self.verbose:
-            print(f"\nTraining Linear SVM...")
+            print("\nTraining Linear SVM...")
 
         start_time = time.time()
         linear_svm = SVC(kernel="linear", C=1.0, random_state=self.random_state)
@@ -639,7 +638,7 @@ class SupervisedClassifier:
 
         # 2. RBF SVM
         if self.verbose:
-            print(f"\nTraining RBF SVM...")
+            print("\nTraining RBF SVM...")
 
         start_time = time.time()
         rbf_svm = SVC(
@@ -700,7 +699,7 @@ class SupervisedClassifier:
 
         # 1. SIMPLE NEURAL NETWORK
         if self.verbose:
-            print(f"\nTraining Simple Neural Network...")
+            print("\nTraining Simple Neural Network...")
 
         start_time = time.time()
         simple_nn = MLPClassifier(
@@ -744,7 +743,7 @@ class SupervisedClassifier:
 
         # 2. DEEP NEURAL NETWORK
         if self.verbose:
-            print(f"\nTraining Deep Neural Network...")
+            print("\nTraining Deep Neural Network...")
 
         start_time = time.time()
         deep_nn = MLPClassifier(
@@ -788,7 +787,7 @@ class SupervisedClassifier:
 
         # 3. REGULARIZED NEURAL NETWORK
         if self.verbose:
-            print(f"\nTraining Regularized Neural Network...")
+            print("\nTraining Regularized Neural Network...")
 
         start_time = time.time()
         regularized_nn = MLPClassifier(
@@ -911,7 +910,7 @@ class SupervisedClassifier:
             results, key=lambda x: abs(x["train_accuracy"] - x["test_accuracy"])
         )
 
-        print(f"\nModel Rankings:")
+        print("\nModel Rankings:")
         print(
             f"   Best Test Accuracy: {best_model['model_name']} ({best_model['test_accuracy']:.3f})"
         )
@@ -1425,7 +1424,7 @@ def tree_based_fold_analysis(
 
     # Print concise summary
     if verbose and not df_summary.empty:
-        print(f"\n📋 FOLD COMPARISON SUMMARY:")
+        print("\n📋 FOLD COMPARISON SUMMARY:")
 
         # Decision Tree summary
         dt_results = [r for r in all_results if r["model_name"] == "Decision Tree"]
@@ -1646,7 +1645,7 @@ def svm_based_fold_analysis(
 
     # Print concise summary
     if verbose and not df_summary.empty:
-        print(f"\n📋 SVM FOLD COMPARISON SUMMARY:")
+        print("\n📋 SVM FOLD COMPARISON SUMMARY:")
 
         # Linear SVM summary
         linear_results = [r for r in all_results if r["model_name"] == "Linear SVM"]
@@ -1934,7 +1933,7 @@ def neural_network_based_fold_analysis(
 
     # Print concise summary
     if verbose and not df_summary.empty:
-        print(f"\n📋 NEURAL NETWORK FOLD COMPARISON SUMMARY:")
+        print("\n📋 NEURAL NETWORK FOLD COMPARISON SUMMARY:")
 
         # Simple NN summary
         simple_results = [
@@ -2015,12 +2014,12 @@ def print_tree_analysis_results(
             f"🏆 Best Overall: {best_overall['model_name']} from {best_overall['fold']} ({best_overall['test_accuracy']:.3f})"
         )
 
-    print(f"\n📋 DETAILED RESULTS TABLE:")
+    print("\n📋 DETAILED RESULTS TABLE:")
     print("-" * 60)
     print(df_summary.to_string(index=False))
 
     # Fold comparison analysis
-    print(f"\n📊 DETAILED FOLD COMPARISON:")
+    print("\n📊 DETAILED FOLD COMPARISON:")
     print("-" * 40)
 
     # Decision Tree analysis
@@ -2031,7 +2030,7 @@ def print_tree_analysis_results(
     dt_results = [(fold, result) for fold, result in dt_results if result is not None]
 
     if dt_results:
-        print(f"\n🌲 Decision Tree by Fold:")
+        print("\n🌲 Decision Tree by Fold:")
         for fold, result in dt_results:
             overfitting = result["train_accuracy"] - result["test_accuracy"]
             print(
@@ -2046,7 +2045,7 @@ def print_tree_analysis_results(
     rf_results = [(fold, result) for fold, result in rf_results if result is not None]
 
     if rf_results:
-        print(f"\n🌳 Random Forest by Fold:")
+        print("\n🌳 Random Forest by Fold:")
         for fold, result in rf_results:
             overfitting = result["train_accuracy"] - result["test_accuracy"]
             print(
@@ -2058,15 +2057,15 @@ def print_tree_analysis_results(
         dt_accuracies = [result["test_accuracy"] for _, result in dt_results]
         rf_accuracies = [result["test_accuracy"] for _, result in rf_results]
 
-        print(f"\n📈 STATISTICAL COMPARISON:")
+        print("\n📈 STATISTICAL COMPARISON:")
         print(
-            f"   Decision Tree  - Avg: {sum(dt_accuracies)/len(dt_accuracies):.3f} | Range: {max(dt_accuracies)-min(dt_accuracies):.3f}"
+            f"   Decision Tree  - Avg: {sum(dt_accuracies) / len(dt_accuracies):.3f} | Range: {max(dt_accuracies) - min(dt_accuracies):.3f}"
         )
         print(
-            f"   Random Forest  - Avg: {sum(rf_accuracies)/len(rf_accuracies):.3f} | Range: {max(rf_accuracies)-min(rf_accuracies):.3f}"
+            f"   Random Forest  - Avg: {sum(rf_accuracies) / len(rf_accuracies):.3f} | Range: {max(rf_accuracies) - min(rf_accuracies):.3f}"
         )
         print(
-            f"   Forest Advantage: +{(sum(rf_accuracies)/len(rf_accuracies)) - (sum(dt_accuracies)/len(dt_accuracies)):.3f}"
+            f"   Forest Advantage: +{(sum(rf_accuracies) / len(rf_accuracies)) - (sum(dt_accuracies) / len(dt_accuracies)):.3f}"
         )
 
     # Feature importance from best Random Forest
@@ -2082,14 +2081,14 @@ def print_tree_analysis_results(
         for i, idx in enumerate(top_features_idx, 1):
             print(f"   {i:2d}. Feature {idx:4d}: {feature_importance[idx]:.4f}")
 
-    print(f"\n🎓 KEY INSIGHTS:")
-    print(f"   • Each fold represents different wells/conditions")
-    print(f"   • Random Forest typically outperforms Decision Tree")
-    print(f"   • Consistent performance across folds = robust algorithm")
-    print(f"   • High variation = algorithm sensitive to data distribution")
+    print("\n🎓 KEY INSIGHTS:")
+    print("   • Each fold represents different wells/conditions")
+    print("   • Random Forest typically outperforms Decision Tree")
+    print("   • Consistent performance across folds = robust algorithm")
+    print("   • High variation = algorithm sensitive to data distribution")
     print(f"   • Classes analyzed: {selected_classes}")
 
-    print(f"\n✅ Tree-based fold analysis complete!")
+    print("\n✅ Tree-based fold analysis complete!")
 
 
 def print_svm_analysis_results(
@@ -2102,7 +2101,6 @@ def print_svm_analysis_results(
         analysis_results: Results from svm_based_fold_analysis
         selected_classes: Classes that were analyzed
     """
-    import numpy as np
 
     fold_svm_results = analysis_results["fold_results"]
     df_summary = analysis_results["summary_df"]
@@ -2126,12 +2124,12 @@ def print_svm_analysis_results(
                 f"⚙️ Training limited to {all_results[0]['train_samples']} samples per fold for efficiency"
             )
 
-    print(f"\n📋 DETAILED RESULTS TABLE:")
+    print("\n📋 DETAILED RESULTS TABLE:")
     print("-" * 70)
     print(df_summary.to_string(index=False))
 
     # Fold comparison analysis
-    print(f"\n📊 DETAILED FOLD COMPARISON:")
+    print("\n📊 DETAILED FOLD COMPARISON:")
     print("-" * 40)
 
     # Linear SVM analysis
@@ -2144,7 +2142,7 @@ def print_svm_analysis_results(
     ]
 
     if linear_results:
-        print(f"\n📐 Linear SVM by Fold:")
+        print("\n📐 Linear SVM by Fold:")
         for fold, result in linear_results:
             overfitting = result["train_accuracy"] - result["test_accuracy"]
             print(
@@ -2159,7 +2157,7 @@ def print_svm_analysis_results(
     rbf_results = [(fold, result) for fold, result in rbf_results if result is not None]
 
     if rbf_results:
-        print(f"\n🔮 RBF SVM by Fold:")
+        print("\n🔮 RBF SVM by Fold:")
         for fold, result in rbf_results:
             overfitting = result["train_accuracy"] - result["test_accuracy"]
             print(
@@ -2173,23 +2171,23 @@ def print_svm_analysis_results(
         linear_times = [result["training_time"] for _, result in linear_results]
         rbf_times = [result["training_time"] for _, result in rbf_results]
 
-        print(f"\n📈 STATISTICAL COMPARISON:")
+        print("\n📈 STATISTICAL COMPARISON:")
         print(
-            f"   Linear SVM  - Avg: {sum(linear_accuracies)/len(linear_accuracies):.3f} | Range: {max(linear_accuracies)-min(linear_accuracies):.3f} | Avg Time: {sum(linear_times)/len(linear_times):.3f}s"
+            f"   Linear SVM  - Avg: {sum(linear_accuracies) / len(linear_accuracies):.3f} | Range: {max(linear_accuracies) - min(linear_accuracies):.3f} | Avg Time: {sum(linear_times) / len(linear_times):.3f}s"
         )
         print(
-            f"   RBF SVM     - Avg: {sum(rbf_accuracies)/len(rbf_accuracies):.3f} | Range: {max(rbf_accuracies)-min(rbf_accuracies):.3f} | Avg Time: {sum(rbf_times)/len(rbf_times):.3f}s"
+            f"   RBF SVM     - Avg: {sum(rbf_accuracies) / len(rbf_accuracies):.3f} | Range: {max(rbf_accuracies) - min(rbf_accuracies):.3f} | Avg Time: {sum(rbf_times) / len(rbf_times):.3f}s"
         )
         print(
-            f"   RBF Advantage: +{(sum(rbf_accuracies)/len(rbf_accuracies)) - (sum(linear_accuracies)/len(linear_accuracies)):.3f}"
+            f"   RBF Advantage: +{(sum(rbf_accuracies) / len(rbf_accuracies)) - (sum(linear_accuracies) / len(linear_accuracies)):.3f}"
         )
         print(
-            f"   Speed Ratio: Linear is {(sum(rbf_times)/len(rbf_times))/(sum(linear_times)/len(linear_times)):.1f}x faster than RBF"
+            f"   Speed Ratio: Linear is {(sum(rbf_times) / len(rbf_times)) / (sum(linear_times) / len(linear_times)):.1f}x faster than RBF"
         )
 
     # Training efficiency analysis
     if all_results:
-        print(f"\n⚡ TRAINING EFFICIENCY ANALYSIS:")
+        print("\n⚡ TRAINING EFFICIENCY ANALYSIS:")
         linear_efficiency = [
             (r["test_accuracy"] / r["training_time"])
             for r in all_results
@@ -2203,25 +2201,25 @@ def print_svm_analysis_results(
 
         if linear_efficiency:
             print(
-                f"   📐 Linear SVM Efficiency: {sum(linear_efficiency)/len(linear_efficiency):.1f} acc/sec"
+                f"   📐 Linear SVM Efficiency: {sum(linear_efficiency) / len(linear_efficiency):.1f} acc/sec"
             )
         if rbf_efficiency:
             print(
-                f"   🔮 RBF SVM Efficiency: {sum(rbf_efficiency)/len(rbf_efficiency):.1f} acc/sec"
+                f"   🔮 RBF SVM Efficiency: {sum(rbf_efficiency) / len(rbf_efficiency):.1f} acc/sec"
             )
 
-    print(f"\n🎓 KEY INSIGHTS:")
-    print(f"   • Linear SVM: Fast training, good for linearly separable data")
-    print(f"   • RBF SVM: Slower training, handles complex non-linear patterns")
-    print(f"   • Consistent performance across folds = robust algorithm")
+    print("\n🎓 KEY INSIGHTS:")
+    print("   • Linear SVM: Fast training, good for linearly separable data")
+    print("   • RBF SVM: Slower training, handles complex non-linear patterns")
+    print("   • Consistent performance across folds = robust algorithm")
     print(f"   • Classes analyzed: {selected_classes}")
 
-    print(f"\n💡 SVM PERFORMANCE NOTES:")
-    print(f"   • RBF kernel captures non-linear sensor relationships")
-    print(f"   • Linear SVM suitable for quick baseline models")
-    print(f"   • Training time scales with data complexity")
+    print("\n💡 SVM PERFORMANCE NOTES:")
+    print("   • RBF kernel captures non-linear sensor relationships")
+    print("   • Linear SVM suitable for quick baseline models")
+    print("   • Training time scales with data complexity")
 
-    print(f"\n✅ SVM-based fold analysis complete!")
+    print("\n✅ SVM-based fold analysis complete!")
 
 
 def print_neural_network_analysis_results(
@@ -2234,7 +2232,6 @@ def print_neural_network_analysis_results(
         analysis_results: Results from neural_network_based_fold_analysis
         selected_classes: Classes that were analyzed
     """
-    import numpy as np
 
     fold_nn_results = analysis_results["fold_results"]
     df_summary = analysis_results["summary_df"]
@@ -2262,12 +2259,12 @@ def print_neural_network_analysis_results(
             )
             print(f"🔄 Average training iterations: {int(avg_iterations)}")
 
-    print(f"\n📋 DETAILED RESULTS TABLE:")
+    print("\n📋 DETAILED RESULTS TABLE:")
     print("-" * 80)
     print(df_summary.to_string(index=False))
 
     # Fold comparison analysis
-    print(f"\n📊 DETAILED FOLD COMPARISON:")
+    print("\n📊 DETAILED FOLD COMPARISON:")
     print("-" * 40)
 
     # Simple Neural Network analysis
@@ -2285,7 +2282,7 @@ def print_neural_network_analysis_results(
     ]
 
     if simple_results:
-        print(f"\n🧠 Simple Neural Network by Fold:")
+        print("\n🧠 Simple Neural Network by Fold:")
         for fold, result in simple_results:
             overfitting = result["train_accuracy"] - result["test_accuracy"]
             print(
@@ -2307,7 +2304,7 @@ def print_neural_network_analysis_results(
     ]
 
     if deep_results:
-        print(f"\n🔗 Deep Neural Network by Fold:")
+        print("\n🔗 Deep Neural Network by Fold:")
         for fold, result in deep_results:
             overfitting = result["train_accuracy"] - result["test_accuracy"]
             print(
@@ -2328,7 +2325,7 @@ def print_neural_network_analysis_results(
     reg_results = [(fold, result) for fold, result in reg_results if result is not None]
 
     if reg_results:
-        print(f"\n⚙️ Regularized Neural Network by Fold:")
+        print("\n⚙️ Regularized Neural Network by Fold:")
         for fold, result in reg_results:
             overfitting = result["train_accuracy"] - result["test_accuracy"]
             print(
@@ -2344,15 +2341,15 @@ def print_neural_network_analysis_results(
         deep_times = [result["training_time"] for _, result in deep_results]
         reg_times = [result["training_time"] for _, result in reg_results]
 
-        print(f"\n📈 STATISTICAL COMPARISON:")
+        print("\n📈 STATISTICAL COMPARISON:")
         print(
-            f"   Simple NN     - Avg: {sum(simple_accuracies)/len(simple_accuracies):.3f} | Range: {max(simple_accuracies)-min(simple_accuracies):.3f} | Avg Time: {sum(simple_times)/len(simple_times):.3f}s"
+            f"   Simple NN     - Avg: {sum(simple_accuracies) / len(simple_accuracies):.3f} | Range: {max(simple_accuracies) - min(simple_accuracies):.3f} | Avg Time: {sum(simple_times) / len(simple_times):.3f}s"
         )
         print(
-            f"   Deep NN       - Avg: {sum(deep_accuracies)/len(deep_accuracies):.3f} | Range: {max(deep_accuracies)-min(deep_accuracies):.3f} | Avg Time: {sum(deep_times)/len(deep_times):.3f}s"
+            f"   Deep NN       - Avg: {sum(deep_accuracies) / len(deep_accuracies):.3f} | Range: {max(deep_accuracies) - min(deep_accuracies):.3f} | Avg Time: {sum(deep_times) / len(deep_times):.3f}s"
         )
         print(
-            f"   Regularized NN - Avg: {sum(reg_accuracies)/len(reg_accuracies):.3f} | Range: {max(reg_accuracies)-min(reg_accuracies):.3f} | Avg Time: {sum(reg_times)/len(reg_times):.3f}s"
+            f"   Regularized NN - Avg: {sum(reg_accuracies) / len(reg_accuracies):.3f} | Range: {max(reg_accuracies) - min(reg_accuracies):.3f} | Avg Time: {sum(reg_times) / len(reg_times):.3f}s"
         )
 
         best_avg = max(
@@ -2366,7 +2363,7 @@ def print_neural_network_analysis_results(
 
     # Training convergence analysis
     if all_results:
-        print(f"\n🔄 TRAINING CONVERGENCE ANALYSIS:")
+        print("\n🔄 TRAINING CONVERGENCE ANALYSIS:")
         simple_iters = [
             r["n_iterations"]
             for r in all_results
@@ -2385,31 +2382,31 @@ def print_neural_network_analysis_results(
 
         if simple_iters:
             print(
-                f"   🧠 Simple NN Convergence: {sum(simple_iters)/len(simple_iters):.1f} avg iterations"
+                f"   🧠 Simple NN Convergence: {sum(simple_iters) / len(simple_iters):.1f} avg iterations"
             )
         if deep_iters:
             print(
-                f"   🔗 Deep NN Convergence: {sum(deep_iters)/len(deep_iters):.1f} avg iterations"
+                f"   🔗 Deep NN Convergence: {sum(deep_iters) / len(deep_iters):.1f} avg iterations"
             )
         if reg_iters:
             print(
-                f"   ⚙️ Regularized NN Convergence: {sum(reg_iters)/len(reg_iters):.1f} avg iterations"
+                f"   ⚙️ Regularized NN Convergence: {sum(reg_iters) / len(reg_iters):.1f} avg iterations"
             )
 
-    print(f"\n🎓 KEY INSIGHTS:")
-    print(f"   • Simple NN: Fast training, good baseline performance")
-    print(f"   • Deep NN: More complex patterns, risk of overfitting")
-    print(f"   • Regularized NN: Balanced approach with L2 regularization")
-    print(f"   • Early stopping prevents overfitting by monitoring validation loss")
+    print("\n🎓 KEY INSIGHTS:")
+    print("   • Simple NN: Fast training, good baseline performance")
+    print("   • Deep NN: More complex patterns, risk of overfitting")
+    print("   • Regularized NN: Balanced approach with L2 regularization")
+    print("   • Early stopping prevents overfitting by monitoring validation loss")
     print(f"   • Classes analyzed: {selected_classes}")
 
-    print(f"\n💡 NEURAL NETWORK PERFORMANCE NOTES:")
-    print(f"   • Training limited to 1000 samples per fold for efficiency")
-    print(f"   • Early stopping used to prevent overfitting")
-    print(f"   • Convergence measured by iteration count")
-    print(f"   • MLPClassifier with different architectures")
+    print("\n💡 NEURAL NETWORK PERFORMANCE NOTES:")
+    print("   • Training limited to 1000 samples per fold for efficiency")
+    print("   • Early stopping used to prevent overfitting")
+    print("   • Convergence measured by iteration count")
+    print("   • MLPClassifier with different architectures")
 
-    print(f"\n✅ Neural network-based fold analysis complete!")
+    print("\n✅ Neural network-based fold analysis complete!")
 
 
 # ============================================================
@@ -2431,7 +2428,6 @@ def analyze_class_distribution_by_fold(
     Returns:
         Dictionary containing fold distribution analysis
     """
-    from collections import Counter
 
     # Normalize classes to handle both int and str representations
     def normalize_class(cls):
@@ -2524,7 +2520,7 @@ def print_class_distribution_analysis(
     grand_total = analysis["grand_total"]
     normalized_selected_classes = analysis["selected_classes"]
 
-    print(f"\n📊 CLASS DISTRIBUTION BY TEST FOLD")
+    print("\n📊 CLASS DISTRIBUTION BY TEST FOLD")
     print("=" * 45)
 
     # ============================================================
@@ -2560,7 +2556,7 @@ def print_class_distribution_analysis(
     # ============================================================
     # CROSS-FOLD SUMMARY TABLE
     # ============================================================
-    print(f"\n📈 CROSS-FOLD SUMMARY")
+    print("\n📈 CROSS-FOLD SUMMARY")
     print("=" * 25)
 
     # Create summary table header
@@ -2592,7 +2588,7 @@ def print_class_distribution_analysis(
     # SELECTED CLASSES SUMMARY
     # ============================================================
     if normalized_selected_classes:
-        print(f"\n🎯 SELECTED CLASSES SUMMARY")
+        print("\n🎯 SELECTED CLASSES SUMMARY")
         print("=" * 30)
         for cls in normalized_selected_classes:
             if cls in class_totals:
@@ -2611,4 +2607,4 @@ def print_class_distribution_analysis(
             else:
                 print(f"Class {cls}: ❌ Not found in test data")
 
-    print(f"\n✅ Class distribution analysis complete!")
+    print("\n✅ Class distribution analysis complete!")

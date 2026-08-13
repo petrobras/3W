@@ -63,9 +63,9 @@ class TestSklearnModelsConfig:
             try:
                 model.save(model_path)
                 loaded_model = SklearnModels.load(model_path)
-                assert (
-                    loaded_model.get_params() == model.get_params()
-                ), f"Loaded model parameters do not match original for {model_type}"
+                assert loaded_model.get_params() == model.get_params(), (
+                    f"Loaded model parameters do not match original for {model_type}"
+                )
             except Exception as e:
                 pytest.fail(
                     f"Saving/loading model type {model_type} raised an exception: {e}"

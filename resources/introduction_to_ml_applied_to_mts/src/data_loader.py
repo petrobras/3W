@@ -220,9 +220,9 @@ class DataLoader:
 
             # Update loaded counts for this class
             stats["classes_count"][class_folder]["real_loaded"] = loaded_real_count
-            stats["classes_count"][class_folder][
-                "simulated_loaded"
-            ] = loaded_simulated_count
+            stats["classes_count"][class_folder]["simulated_loaded"] = (
+                loaded_simulated_count
+            )
             stats["classes_count"][class_folder]["total_loaded"] = (
                 loaded_real_count + loaded_simulated_count
             )

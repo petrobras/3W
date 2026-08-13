@@ -11,7 +11,7 @@ implementing a smart train-test split strategy where:
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, KFold
 from collections import Counter
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any
 
 
 class CrossValidator:
@@ -81,7 +81,7 @@ class CrossValidator:
                 simulated_classes = classes[estimated_real_count:]
 
                 if self.verbose:
-                    print(f"📊 Enhanced Separation Results:")
+                    print("📊 Enhanced Separation Results:")
                     print(
                         f"   Original - Real: {total_real_original}, Simulated: {total_sim_original}"
                     )
@@ -110,7 +110,7 @@ class CrossValidator:
             )
 
             if self.verbose:
-                print(f"📊 Fallback Separation Results:")
+                print("📊 Fallback Separation Results:")
                 print(f"   Real data samples: {len(real_dfs)}")
                 print(f"   Simulated data samples: {len(simulated_dfs)}")
 
@@ -210,17 +210,17 @@ class CrossValidator:
             test_ratio = test_count / total_real * 100
 
             if self.verbose:
-                print(f"   Training Set:")
+                print("   Training Set:")
                 print(f"     • Real data: {train_real_count} samples")
                 print(f"     • Simulated data: {train_sim_count} samples")
                 print(f"     • Total training: {len(fold_train_dfs)} samples")
                 print(f"     • Training classes: {dict(Counter(fold_train_classes))}")
 
-                print(f"   Test Set (Real Only):")
+                print("   Test Set (Real Only):")
                 print(f"     • Real data: {test_count} samples")
                 print(f"     • Test classes: {dict(Counter(fold_test_classes))}")
 
-                print(f"   Real Data Split Ratio:")
+                print("   Real Data Split Ratio:")
                 print(f"     • Train: {train_ratio:.1f}% of real data")
                 print(f"     • Test: {test_ratio:.1f}% of real data")
 
@@ -255,7 +255,7 @@ class CrossValidator:
             real_dfs (List): Real data dataframes
             simulated_dfs (List): Simulated data dataframes
         """
-        print(f"\n📊 Cross-Validation Summary:")
+        print("\n📊 Cross-Validation Summary:")
         print("=" * 50)
 
         total_real_samples = len(real_dfs)
@@ -263,23 +263,23 @@ class CrossValidator:
         avg_train_real = np.mean([fold["train_real_count"] for fold in cv_folds])
         avg_test_real = np.mean([fold["test_count"] for fold in cv_folds])
 
-        print(f"Dataset Overview:")
+        print("Dataset Overview:")
         print(f"   • Total real samples: {total_real_samples}")
         print(f"   • Total simulated samples: {total_sim_samples}")
         print(f"   • Number of folds: {len(cv_folds)}")
 
-        print(f"\nPer-Fold Averages:")
+        print("\nPer-Fold Averages:")
         print(f"   • Avg real samples for training: {avg_train_real:.1f}")
         print(
             f"   • Avg simulated samples for training: {total_sim_samples} (constant)"
         )
         print(f"   • Avg real samples for testing: {avg_test_real:.1f}")
         print(
-            f"   • Avg train/test ratio: {avg_train_real/total_real_samples*100:.1f}% / {avg_test_real/total_real_samples*100:.1f}%"
+            f"   • Avg train/test ratio: {avg_train_real / total_real_samples * 100:.1f}% / {avg_test_real / total_real_samples * 100:.1f}%"
         )
 
         # Validation
-        print(f"\nValidation:")
+        print("\nValidation:")
         all_test_indices = []
         for fold in cv_folds:
             all_test_indices.extend(fold["test_real_indices"])
@@ -293,12 +293,12 @@ class CrossValidator:
             f"   • Each real sample tested exactly once: {'✅' if len(unique_test_indices) == total_real_samples else '❌'}"
         )
 
-        print(f"\n💾 Variables Created:")
+        print("\n💾 Variables Created:")
         print(
             f"   • cv_folds: List of {len(cv_folds)} cross-validation fold dictionaries"
         )
         print(
-            f"   • Each fold contains train_dfs, test_dfs, train_classes, test_classes"
+            "   • Each fold contains train_dfs, test_dfs, train_classes, test_classes"
         )
 
         print(
@@ -343,13 +343,13 @@ class CrossValidator:
 
         print(f"\n📁 FOLD {fold_number} SUMMARY:")
         print("-" * 30)
-        print(f"Training Data:")
+        print("Training Data:")
         print(f"  • Real samples: {fold['train_real_count']}")
         print(f"  • Simulated samples: {fold['train_sim_count']}")
         print(f"  • Total training: {len(fold['train_dfs'])}")
         print(f"  • Class distribution: {dict(Counter(fold['train_classes']))}")
 
-        print(f"Test Data (Real Only):")
+        print("Test Data (Real Only):")
         print(f"  • Test samples: {fold['test_count']}")
         print(f"  • Class distribution: {dict(Counter(fold['test_classes']))}")
 
@@ -357,7 +357,7 @@ class CrossValidator:
         train_points = sum(len(df) for df in fold["train_dfs"])
         test_points = sum(len(df) for df in fold["test_dfs"])
 
-        print(f"Data Points:")
+        print("Data Points:")
         print(f"  • Training points: {train_points:,}")
         print(f"  • Test points: {test_points:,}")
         print(f"  • Total points: {train_points + test_points:,}")

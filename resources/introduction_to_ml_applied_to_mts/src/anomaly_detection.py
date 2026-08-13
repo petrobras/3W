@@ -6,10 +6,6 @@ threshold determination, and evaluation metrics.
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve, roc_curve, auc
-from sklearn.manifold import TSNE
-import seaborn as sns
 
 
 class AnomalyDetector:
@@ -41,7 +37,7 @@ class AnomalyDetector:
         print("🔴 Computing reconstruction errors for anomaly data...")
         self.anomaly_errors = autoencoder.get_reconstruction_errors(anomaly_data)
 
-        print(f"✅ Reconstruction errors computed:")
+        print("✅ Reconstruction errors computed:")
         print(f"   • Normal errors: {len(self.normal_errors)} samples")
         print(f"   • Anomaly errors: {len(self.anomaly_errors)} samples")
         print(
@@ -130,7 +126,7 @@ class AnomalyDetector:
             "anomaly_false_negatives": anomaly_total - anomaly_correct,
         }
 
-        print(f"🎯 Detection Results:")
+        print("🎯 Detection Results:")
         print(f"   • Threshold: {self.threshold:.6f}")
         print(
             f"   • Normal data accuracy: {normal_accuracy:.3f} ({normal_correct}/{normal_total})"

@@ -144,16 +144,16 @@ class TestModelRecorderLoad:
         # Create a new model instance
         loaded_model = ModelRecorder.load_model(saved_path)
 
-        assert isinstance(
-            loaded_model, SimpleTorchModel
-        ), f"Loaded model is not of type SimpleTorchModel: {type(loaded_model)}"
+        assert isinstance(loaded_model, SimpleTorchModel), (
+            f"Loaded model is not of type SimpleTorchModel: {type(loaded_model)}"
+        )
 
         # Check that state dict was loaded
         original_state = pytorch_model.state_dict()
         loaded_state = loaded_model.state_dict()
-        assert set(original_state.keys()) == set(
-            loaded_state.keys()
-        ), "State dict keys do not match"
+        assert set(original_state.keys()) == set(loaded_state.keys()), (
+            "State dict keys do not match"
+        )
 
         # Cleanup
         if saved_path.exists():

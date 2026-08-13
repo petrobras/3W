@@ -14,9 +14,8 @@ and handle class imbalance effectively.
 
 import numpy as np
 import pandas as pd
-from sklearn.utils import resample
 from collections import Counter
-from typing import List, Tuple, Dict, Optional, Union
+from typing import List, Tuple, Dict, Optional
 import random
 
 
@@ -476,11 +475,11 @@ class DataAugmentor:
         if self.verbose:
             original_counts = Counter(classes)
             final_counts = Counter(augmented_classes)
-            print(f"\n📊 Pipeline Summary:")
+            print("\n📊 Pipeline Summary:")
             print(f"   • Original: {len(classes)} samples, {dict(original_counts)}")
             print(f"   • Final: {len(augmented_classes)} samples, {dict(final_counts)}")
             print(
-                f"   • Augmentation factor: {len(augmented_classes)/len(classes):.2f}x"
+                f"   • Augmentation factor: {len(augmented_classes) / len(classes):.2f}x"
             )
 
         return augmented_dfs, augmented_classes
