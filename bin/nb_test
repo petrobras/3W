@@ -1,18 +1,143 @@
 #!/bin/bash
-set -e
+set -u
 
-NB_DIR="${1:-docs/notebooks/}"  # If not set, default to docs/notebooks
+# Manual-only helper: this script is NOT executed by any CI workflow.
+# It exists to let contributors sanity-check notebooks locally before or
+# after 3W Toolkit changes, since some notebooks can take hours to run
+# (model training, large dataset processing) and standard GitHub-hosted
+# runners have no GPU and limited job/disk time.
+#
+# Usage:
+#   ./bin/nb_test [--all] [<path>]
+#
+# Categories:
+#   DEMOS_BASIC     - Notebooks the project is committed to keep working
+#                      across 3W Toolkit releases: toolkit/demos,
+#                      dataset/demos/_basic and benchmarks/*/demo/_basic
+#                      (once created). A failure here is an ERROR
+#                      (non-zero exit code).
+#   DEMOS_NOT_BASIC - All other demos/tutorials (no such commitment).
+#                      A failure here is a WARNING only and does not
+#                      affect the exit code.
+#
+# Parameter:
+#   (none)  - Default. Tests DEMOS_BASIC only.
+#   --all   - Tests DEMOS_BASIC + DEMOS_NOT_BASIC (DEMOS_ALL).
+#   <path>  - Legacy mode: run every *.ipynb found under an arbitrary
+#             path, reported as a single, non-categorized WARNING batch.
 
-echo "Testing notebooks from $NB_DIR"
+ALL=0
+LEGACY_PATH=""
+for arg in "$@"; do
+    case "$arg" in
+        --all) ALL=1 ;;
+        *) LEGACY_PATH="$arg" ;;
+    esac
+done
+
+cd "$(dirname "$0")/.."
+
+# benchmarks/*/demo/_basic and its sibling non-basic dirs don't exist yet;
+# only expand the glob into the arrays once they do.
+shopt -s nullglob
+BENCH_BASIC=(benchmarks/*/demo/_basic)
+shopt -u nullglob
+
+DEMOS_BASIC=(
+    "toolkit/demos"
+    "dataset/demos/_basic"
+    "${BENCH_BASIC[@]}"
+)
+
+DEMOS_NOT_BASIC=(
+    "dataset/demos"
+    "resources/introduction_to_3w_toolkit_v2.0.0"
+    "resources/introduction_to_3w_dataset_v2.0.0"
+    "resources/introduction_to_ml_applied_to_mts"
+)
+
+DEMOS_ALL=("${DEMOS_BASIC[@]}" "${DEMOS_NOT_BASIC[@]}")
+
+# Resolve the Python interpreter. On WSL running against a Windows conda/uv
+# env, "python" is not on PATH but "python.exe" is.
+PYTHON=python
+command -v "$PYTHON" >/dev/null 2>&1 || PYTHON=python.exe
 
 TEMPDIR="$(mktemp -d)"
 trap 'rm -rf -- "$TEMPDIR"' EXIT
 
+# Full nbconvert/traceback output is noisy; redirect it to per-notebook logs
+# here instead of the terminal. This directory is NOT auto-removed, so
+# failure logs remain available for inspection after the run.
+LOGDIR="$(mktemp -d)"
+
 echo "Saving executed notebooks to $TEMPDIR"
+echo "Saving execution logs to $LOGDIR"
 
+# Runs every *.ipynb found under the given directories. Notebooks living
+# under a "_basic" subdirectory of a DEMOS_NOT_BASIC dir are skipped, since
+# they belong to the corresponding DEMOS_BASIC entry instead.
+# Echoes one line per notebook (OK/FAIL) and returns the failure count.
+run_notebooks () {
+    local label="$1"
+    shift
+    local dirs=("$@")
+    local failures=0
+    local nb
+    local nbs=()
 
-for nb in $(find $NB_DIR -name "*.ipynb"); do
-    echo -e "\033[0;33mTesting $nb.\033[0m"
-    jupyter-nbconvert $nb --to notebook --execute --output-dir $TEMPDIR
-    echo -e "\033[0;32m$nb executed successfully.\033[0m"
-done
+    for dir in "${dirs[@]}"; do
+        if [ ! -d "$dir" ]; then
+            echo -e "\033[0;33m[$label] Directory not found, skipping: $dir\033[0m"
+            continue
+        fi
+        # Collect the notebook list into an array first: piping "find" directly
+        # into a "while read" loop shares stdin with jupyter-nbconvert's kernel
+        # subprocess, which can consume the pipe and silently skip notebooks.
+        mapfile -t nbs < <(find "$dir" -name "*.ipynb" -not -path "*/_basic/*")
+        for nb in "${nbs[@]}"; do
+            echo -e "\033[0;33m[$label] Testing $nb.\033[0m"
+            local log="$LOGDIR/${label}_$(basename "$nb").log"
+            if "$PYTHON" -m nbconvert "$nb" --to notebook --execute --output-dir "$TEMPDIR" >"$log" 2>&1; then
+                echo -e "\033[0;32m[$label] $nb executed successfully.\033[0m"
+            else
+                echo -e "\033[0;31m[$label] $nb FAILED. Log: $log\033[0m"
+                failures=$((failures + 1))
+            fi
+        done
+    done
+
+    return $failures
+}
+
+basic_failures=0
+not_basic_failures=0
+
+if [ -n "$LEGACY_PATH" ]; then
+    run_notebooks "OTHER" "$LEGACY_PATH"
+    not_basic_failures=$?
+elif [ "$ALL" -eq 1 ]; then
+    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
+    basic_failures=$?
+    run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
+    not_basic_failures=$?
+else
+    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
+    basic_failures=$?
+fi
+
+echo ""
+echo "Summary:"
+echo "  Basic demos failures (ERROR):      $basic_failures"
+echo "  Non-basic demos failures (WARNING): $not_basic_failures"
+
+if [ "$basic_failures" -gt 0 ]; then
+    echo -e "\033[0;31mBasic demos have failing notebooks. This must be fixed before release.\033[0m"
+    exit 1
+fi
+
+if [ "$not_basic_failures" -gt 0 ]; then
+    echo -e "\033[0;33mSome non-basic demos failed. Please review, but this does not block the build.\033[0m"
+fi
+
+exit 0
