@@ -1,7 +1,7 @@
 
 [![Apache 2.0][apache-shield]][apache] 
 [![CC BY 4.0][cc-by-shield]][cc-by]
-[![Code style][black-shield]][black]
+[![Code style][ruff-shield]][ruff]
 [![Versioning][semver-shield]][semver]
 [![Coverage Status][coveralls-shield]][coveralls]
 
@@ -9,8 +9,8 @@
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [cc-by]: http://creativecommons.org/licenses/by/4.0/
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
-[black]: https://github.com/psf/black
-[black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
+[ruff]: https://github.com/astral-sh/ruff
+[ruff-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 [coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev

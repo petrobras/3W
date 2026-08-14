@@ -937,7 +937,7 @@ Any additional context or notes for reviewers.
 
 - Follow **PEP 8**
 - Use **type hints** for all function parameters and returns
-- Maximum line length: **88 characters** (Black formatter)
+- Maximum line length: **88 characters** (Ruff formatter)
 - Use **meaningful variable names**
 - Prefer **explicit over implicit**
 
@@ -1029,19 +1029,18 @@ class YourClass:
 Before committing, run:
 
 ```bash
-# Format code with Black and fix with Ruff
+# Format and lint code with Ruff
 ./bin/lint
 
 # Or manually:
-black --extend-exclude '\.ipynb$' toolkit tests
+ruff format --extend-exclude '*.ipynb' toolkit tests
 ruff check --fix toolkit tests
 mypy toolkit tests
 ```
 
 **Key tools:**
 
-- **Black** - Code formatter (line length: 88)
-- **Ruff** - Fast linter and auto-fixer
+- **Ruff** - Fast formatter (line length: 88), linter and auto-fixer
 - **Mypy** - Static type checker
 
 ### Configuration Examples

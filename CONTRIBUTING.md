@@ -1,14 +1,14 @@
 [![Apache 2.0][apache-shield]][apache] 
 [![CC BY 4.0][cc-by-shield]][cc-by]
-[![Code style][black-shield]][black]
+[![Code style][ruff-shield]][ruff]
 [![Versioning][semver-shield]][semver]
 
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [cc-by]: http://creativecommons.org/licenses/by/4.0/
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
-[black]: https://github.com/psf/black
-[black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg
+[ruff]: https://github.com/astral-sh/ruff
+[ruff-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.1-blue
 
@@ -150,7 +150,7 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 If you intend to work and propose a more significant improvement, please consult our [backlog](BACKLOG.md) first. If you have any questions about the most aligned strategy for the 3W Project, please consult or create **discussions**. When your improvement is ready, please create a **pull request** on a branch called `other_improvements`.
 
-It is important to keep in mind that all source code is implemented according to the style guide established by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with the use of the [Black formatter](https://github.com/psf/black) with default options. Therefore, while codes have lines up to 88 characters (Black formatter's default option), each line with docstring or comment must be up to 72 characters long as established in PEP 8.
+It is important to keep in mind that all source code is implemented according to the style guide established by [PEP 8](https://peps.python.org/pep-0008/). This is guaranteed with the use of [Ruff](https://github.com/astral-sh/ruff)'s formatter (`ruff format`) with default options. Therefore, while codes have lines up to 88 characters (Ruff formatter's default option), each line with docstring or comment must be up to 72 characters long as established in PEP 8.
 
 ## New 3W Dataset's overviews
 
@@ -167,7 +167,7 @@ Specific benchmarks will be incorporated into this project gradually. All benchm
 Here are additional requirements for contributions to be incorporated into this project:
 
 * As the forking workflow is used, every PR needs to be generated in a fork. A tutorial about different Git Workflows is available [here](https://www.atlassian.com/git/tutorials/comparing-workflows#centralized-workflow); 
-* PRs will only be accepted if they pass the check automatically performed by the GitHub Action specified in [action-black.yml](.github/workflows/black.yml). If this check fails, check the generated log, use the latest version of [Black formatter](https://github.com/psf/black) to locally format the files as needed, then generate another PR.
+* PRs will only be accepted if they pass the checks automatically performed by the GitHub Action specified in [tests.yml](.github/workflows/tests.yml), which runs [`bin/lint`](bin/lint). If this check fails, check the generated log, run `./bin/lint` locally to format and fix the files as needed, then generate another PR.
 
 # Backlog
 

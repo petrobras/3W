@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Tuple
 
 
 class DataVisualizer:
@@ -274,7 +274,7 @@ class DataVisualizer:
 
         # Print memory usage summary
         if memory_optimized:
-            print(f"\n💾 Memory Optimization Results:")
+            print("\n💾 Memory Optimization Results:")
             print(f"   • Files available: {dataset_stats['total_files_available']:,}")
             print(f"   • Files loaded: {dataset_stats['total_files_loaded']:,}")
             print(
@@ -356,7 +356,7 @@ class DataVisualizer:
             alpha=0.7,
             density=True,
         )
-        axes[1, 0].set_title(f"Raw Pressure Distribution")
+        axes[1, 0].set_title("Raw Pressure Distribution")
         axes[1, 0].set_xlabel("Pressure Value")
         axes[1, 0].set_ylabel("Density")
         axes[1, 0].grid(True, alpha=0.3)
@@ -368,7 +368,7 @@ class DataVisualizer:
             alpha=0.7,
             density=True,
         )
-        axes[1, 1].set_title(f"Raw Temperature Distribution")
+        axes[1, 1].set_title("Raw Temperature Distribution")
         axes[1, 1].set_xlabel("Temperature Value")
         axes[1, 1].set_ylabel("Density")
         axes[1, 1].grid(True, alpha=0.3)
@@ -377,7 +377,7 @@ class DataVisualizer:
         plt.show()
 
         # Print statistics
-        print(f"\\n📈 Data Statistics:")
+        print("\\n📈 Data Statistics:")
         print(f"Shape: {clean_data.shape}")
         print(clean_data.describe())
 
@@ -406,7 +406,7 @@ class DataVisualizer:
                 pressure_col = pressure_col or numeric_cols[0]
                 temp_col = temp_col or numeric_cols[1]
             else:
-                print(f"❌ Insufficient numeric columns for plotting")
+                print("❌ Insufficient numeric columns for plotting")
                 return
 
         # Check if columns exist
@@ -504,7 +504,7 @@ class DataVisualizer:
             pressure_col (str): Name of pressure column
             temp_col (str): Name of temperature column
         """
-        print(f"\\n🔸 Creating scaling comparison plots...")
+        print("\\n🔸 Creating scaling comparison plots...")
 
         # Create comparison boxplots
         fig, axes = plt.subplots(1, 2, figsize=(15, 6))
@@ -635,7 +635,7 @@ class DataVisualizer:
 
     def print_scaling_summary(self) -> None:
         """Print a summary of different scaling methods and their use cases."""
-        print(f"\\n📋 Scaling Methods Summary:")
+        print("\\n📋 Scaling Methods Summary:")
         print("=" * 60)
         print("🔹 StandardScaler: Mean=0, Std=1 (assumes normal distribution)")
         print("🔹 MinMaxScaler: Scales to [0,1] range (preserves relationships)")
@@ -863,7 +863,7 @@ class DataVisualizer:
                     original_df[actual_pressure_col].iloc[start_idx:end_idx],
                     color=self.color_palette["pressure"],
                     linewidth=2,
-                    label=f"Window {i+1}",
+                    label=f"Window {i + 1}",
                 )
                 ax.axvspan(
                     start_idx,
@@ -872,7 +872,7 @@ class DataVisualizer:
                     color=self.color_palette["pressure"],
                 )
                 ax.set_title(
-                    f"Pressure Window {i+1} (indices {start_idx}-{end_idx})",
+                    f"Pressure Window {i + 1} (indices {start_idx}-{end_idx})",
                     fontweight="bold",
                 )
                 ax.set_ylabel("Pressure")
@@ -899,7 +899,7 @@ class DataVisualizer:
                     original_df[actual_temp_col].iloc[start_idx:end_idx],
                     color=self.color_palette["temperature"],
                     linewidth=2,
-                    label=f"Window {i+1}",
+                    label=f"Window {i + 1}",
                 )
                 ax.axvspan(
                     start_idx,
@@ -908,7 +908,7 @@ class DataVisualizer:
                     color=self.color_palette["temperature"],
                 )
                 ax.set_title(
-                    f"Temperature Window {i+1} (indices {start_idx}-{end_idx})",
+                    f"Temperature Window {i + 1} (indices {start_idx}-{end_idx})",
                     fontweight="bold",
                 )
                 ax.set_ylabel("Temperature")
@@ -1088,29 +1088,29 @@ class DataVisualizer:
         train_stats = windowing_results["train_statistics"]
         test_stats = windowing_results["test_statistics"]
 
-        print(f"\\n⚙️  Windowing Parameters:")
+        print("\\n⚙️  Windowing Parameters:")
         print(f"   Window size: {params['window_size']}")
         print(f"   Stride: {params['stride']}")
         print(f"   Minimum window size: {params['min_window_size']}")
 
-        print(f"\\n📊 Results Overview:")
+        print("\\n📊 Results Overview:")
         print(f"   Training windows: {train_stats['total_windows']}")
         print(f"   Test windows: {test_stats['total_windows']}")
         print(
             f"   Total windows: {train_stats['total_windows'] + test_stats['total_windows']}"
         )
 
-        print(f"\\n🎯 Class Distribution (Training):")
+        print("\\n🎯 Class Distribution (Training):")
         for class_id, count in sorted(train_stats["class_distribution"].items()):
             percentage = (count / train_stats["total_windows"]) * 100
             print(f"   Class {class_id}: {count} windows ({percentage:.1f}%)")
 
-        print(f"\\n🎯 Class Distribution (Test):")
+        print("\\n🎯 Class Distribution (Test):")
         for class_id, count in sorted(test_stats["class_distribution"].items()):
             percentage = (count / test_stats["total_windows"]) * 100
             print(f"   Class {class_id}: {count} windows ({percentage:.1f}%)")
 
-        print(f"\\n📏 Window Statistics:")
+        print("\\n📏 Window Statistics:")
         print(f"   Training - Avg size: {train_stats['window_size_stats']['mean']:.1f}")
         print(f"   Test - Avg size: {test_stats['window_size_stats']['mean']:.1f}")
         print(
@@ -1120,7 +1120,7 @@ class DataVisualizer:
             f"   Test - Windows per sample: {test_stats['windows_per_sample_stats']['mean']:.1f}"
         )
 
-        print(f"\\n💡 Next Steps:")
+        print("\\n💡 Next Steps:")
         print("   1. Use train_windowed_dfs for model training")
         print("   2. Each window is now an independent sample")
         print("   3. Consider sequence-based models (LSTM, CNN)")
@@ -1368,7 +1368,7 @@ class DimensionalityReductionVisualizer:
 
         # Validate shapes
         if X.shape[0] != y_labels.shape[0]:
-            print(f"⚠️ Shape mismatch, fixing...")
+            print("⚠️ Shape mismatch, fixing...")
             min_samples = min(X.shape[0], y_labels.shape[0])
             X = X[:min_samples]
             y_labels = y_labels[:min_samples]
@@ -1387,7 +1387,6 @@ class DimensionalityReductionVisualizer:
     def run_tsne_analysis(self, X_scaled, y_labels, configs=None):
         """Run t-SNE with multiple configurations."""
         from sklearn.manifold import TSNE
-        import time
 
         if configs is None:
             # Use default configs from config module if available
@@ -1413,7 +1412,7 @@ class DimensionalityReductionVisualizer:
 
         for i, config in enumerate(configs):
             print(
-                f"   • t-SNE #{i+1}: perplexity={config['perplexity']}, lr={config['learning_rate']}..."
+                f"   • t-SNE #{i + 1}: perplexity={config['perplexity']}, lr={config['learning_rate']}..."
             )
 
             try:
@@ -1458,8 +1457,6 @@ class DimensionalityReductionVisualizer:
             print("❌ UMAP not available. Install with: pip install umap-learn")
             return None
 
-        import time
-
         if configs is None:
             # Use default configs from config module if available
             import src.config as config
@@ -1500,7 +1497,7 @@ class DimensionalityReductionVisualizer:
 
         for i, config in enumerate(configs):
             print(
-                f"   • UMAP #{i+1}: neighbors={config['n_neighbors']}, dist={config['min_dist']}..."
+                f"   • UMAP #{i + 1}: neighbors={config['n_neighbors']}, dist={config['min_dist']}..."
             )
 
             try:
@@ -1662,7 +1659,7 @@ class DimensionalityReductionVisualizer:
         if successful_results:
             fastest_config = min(successful_results, key=lambda x: x["time"])
 
-            print(f"⚡ Configuration Performance:")
+            print("⚡ Configuration Performance:")
             for i, result in enumerate(results):
                 if result["embedding"] is not None:
                     status = (
@@ -1670,9 +1667,9 @@ class DimensionalityReductionVisualizer:
                         if result["time"] == fastest_config["time"]
                         else ""
                     )
-                    print(f"   • Config {i+1}: {result['time']:.1f}s{status}")
+                    print(f"   • Config {i + 1}: {result['time']:.1f}s{status}")
                 else:
-                    print(f"   • Config {i+1}: Failed")
+                    print(f"   • Config {i + 1}: Failed")
         else:
             print("   ❌ All configurations failed")
 
@@ -1767,7 +1764,7 @@ class DimensionalityReductionVisualizer:
 
                 # Customize subplot
                 ax.set_title(
-                    f"Class {class_label} - Sample {idx+1}",
+                    f"Class {class_label} - Sample {idx + 1}",
                     fontsize=12,
                     fontweight="bold",
                 )
@@ -2094,7 +2091,7 @@ class AnomalyDetectionVisualizer:
         plt.show()
 
         # Print threshold information
-        print(f"Threshold Analysis:")
+        print("Threshold Analysis:")
         print(f"  • {threshold_percentile}th percentile: {threshold_pct:.6f}")
         print(f"  • μ + {threshold_std_multiplier}σ: {threshold_std:.6f}")
 
@@ -2363,7 +2360,7 @@ class AnomalyDetectionVisualizer:
             color="red",
             linestyle="--",
             alpha=0.8,
-            label=f"Optimal Threshold",
+            label="Optimal Threshold",
         )
         ax.set_xlabel("Threshold")
         ax.set_ylabel("Rate")
@@ -2462,7 +2459,7 @@ class AnomalyDetectionVisualizer:
         plt.show()
 
         # Print detailed results
-        print(f"\n📊 ROC Analysis Results:")
+        print("\n📊 ROC Analysis Results:")
         print(f"   • ROC AUC: {roc_auc:.3f}")
         print(f"   • PR AUC: {pr_auc:.3f}")
         print(f"   • Optimal threshold (Youden's): {optimal_threshold:.6f}")
@@ -2470,7 +2467,7 @@ class AnomalyDetectionVisualizer:
             f"   • At optimal threshold - TPR: {optimal_tpr:.3f}, FPR: {optimal_fpr:.3f}"
         )
 
-        print(f"\n📋 Threshold Method Comparison:")
+        print("\n📋 Threshold Method Comparison:")
         print(
             f"{'Method':<15} {'Threshold':<12} {'TPR':<8} {'FPR':<8} {'Precision':<8}"
         )
@@ -2482,15 +2479,15 @@ class AnomalyDetectionVisualizer:
             )
 
         # Performance interpretation
-        print(f"\n🎯 Performance Interpretation:")
+        print("\n🎯 Performance Interpretation:")
         if roc_auc >= 0.9:
-            print(f"   • Excellent discrimination (AUC ≥ 0.9)")
+            print("   • Excellent discrimination (AUC ≥ 0.9)")
         elif roc_auc >= 0.8:
-            print(f"   • Good discrimination (0.8 ≤ AUC < 0.9)")
+            print("   • Good discrimination (0.8 ≤ AUC < 0.9)")
         elif roc_auc >= 0.7:
-            print(f"   • Fair discrimination (0.7 ≤ AUC < 0.8)")
+            print("   • Fair discrimination (0.7 ≤ AUC < 0.8)")
         else:
-            print(f"   • Poor discrimination (AUC < 0.7)")
+            print("   • Poor discrimination (AUC < 0.7)")
 
         return {
             "roc_auc": roc_auc,
@@ -2639,16 +2636,16 @@ class AnomalyDetectionVisualizer:
 Decision Boundary: score = 0
         
 Normal Data:
-• Correctly classified: {normal_correct}/{len(normal_scores)} ({normal_correct/len(normal_scores)*100:.1f}%)
+• Correctly classified: {normal_correct}/{len(normal_scores)} ({normal_correct / len(normal_scores) * 100:.1f}%)
 • Mean score: {normal_scores.mean():.3f}
 • Std score: {normal_scores.std():.3f}
 
 Anomaly Data:
-• Correctly classified: {anomaly_correct}/{len(anomaly_scores)} ({anomaly_correct/len(anomaly_scores)*100:.1f}%)
+• Correctly classified: {anomaly_correct}/{len(anomaly_scores)} ({anomaly_correct / len(anomaly_scores) * 100:.1f}%)
 • Mean score: {anomaly_scores.mean():.3f}
 • Std score: {anomaly_scores.std():.3f}
 
-Overall Accuracy: {(normal_correct + anomaly_correct)/(len(normal_scores) + len(anomaly_scores))*100:.1f}%
+Overall Accuracy: {(normal_correct + anomaly_correct) / (len(normal_scores) + len(anomaly_scores)) * 100:.1f}%
 ROC AUC: {roc_auc:.3f}"""
 
         ax.text(

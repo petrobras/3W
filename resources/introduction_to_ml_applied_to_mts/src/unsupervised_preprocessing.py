@@ -9,7 +9,6 @@ import numpy as np
 import random
 import time
 import os
-from collections import defaultdict, Counter
 
 
 class UnsupervisedDataLoader:
@@ -77,7 +76,7 @@ class UnsupervisedDataLoader:
             fold_dirs, use_single_fold, target_fold
         )
 
-        print(f"Configuration:")
+        print("Configuration:")
         print(f"   • Processing folds: {process_folds}")
         print(f"   • Selected anomaly classes: {selected_anomaly_classes}")
         print(f"   • Sampling enabled: {enable_sampling}")
@@ -188,7 +187,7 @@ class UnsupervisedDataLoader:
         """Load train and test data from a single fold."""
         all_fold_dfs, all_fold_classes = [], []
 
-        print(f"   Loading and merging train+test data...", end=" ")
+        print("   Loading and merging train+test data...", end=" ")
 
         for data_type in ["train", "test"]:
             pickle_file = os.path.join(
@@ -282,7 +281,7 @@ class UnsupervisedDataLoader:
     ):
         """Print loading summary and validation."""
         if normal_windows and anomaly_windows:
-            print(f"\n✅ Data loading completed successfully!")
+            print("\n✅ Data loading completed successfully!")
             print(f"   • Normal windows (class 0): {len(normal_windows)}")
             print(f"   • Anomaly windows: {len(anomaly_windows)}")
             print(f"   • Loading time: {load_time:.3f} seconds")
@@ -292,7 +291,7 @@ class UnsupervisedDataLoader:
             anomaly_unique, anomaly_counts = np.unique(
                 anomaly_classes, return_counts=True
             )
-            print(f"\nAnomaly Class Distribution:")
+            print("\nAnomaly Class Distribution:")
             for cls, count in zip(anomaly_unique, anomaly_counts):
                 print(f"   • Class {cls}: {count} windows")
 
@@ -305,14 +304,14 @@ class UnsupervisedDataLoader:
                 print(
                     f"\n⚠️ Warning: Missing classes from loaded data: {sorted(missing_classes)}"
                 )
-                print(f"   • Consider using more folds or increasing sample limits")
+                print("   • Consider using more folds or increasing sample limits")
             else:
-                print(f"\n✅ All expected anomaly classes found in the data!")
+                print("\n✅ All expected anomaly classes found in the data!")
 
             # Show sample window info
             if normal_windows:
                 sample_window = normal_windows[0]
-                print(f"\nSample Window Information:")
+                print("\nSample Window Information:")
                 print(f"   • Shape: {sample_window.shape}")
                 print(f"   • Features: {list(sample_window.columns)}")
         else:
@@ -766,7 +765,7 @@ class DistanceAnomalyDetector:
         self._is_fitted = True
 
         if verbose:
-            print(f"✅ One-Class SVM trained:")
+            print("✅ One-Class SVM trained:")
             print(f"   • Training samples: {len(normal_data)}")
             print(f"   • Features per sample: {X_flat.shape[1]}")
             print(f"   • Nu parameter: {self.nu}")

@@ -436,7 +436,7 @@ class ClusteringVisualizer:
             if silhouette_avg >= 0:
                 print(f"   • Silhouette Score: {silhouette_avg:.3f}")
             else:
-                print(f"   • Silhouette Score: N/A (single cluster)")
+                print("   • Silhouette Score: N/A (single cluster)")
             print(f"   • Adjusted Rand Index: {ari_score:.3f}")
             print(f"   • Normalized Mutual Info: {nmi_score:.3f}")
             print(f"   • Homogeneity: {homogeneity:.3f}")
@@ -510,7 +510,7 @@ class ClusteringVisualizer:
                     s=50,
                 )
                 axes[data_idx, 1].set_title(
-                    f"Ground Truth\\n(reference)", fontweight="bold"
+                    "Ground Truth\\n(reference)", fontweight="bold"
                 )
                 axes[data_idx, 1].set_xlabel("PCA Component 1")
                 axes[data_idx, 1].set_ylabel("PCA Component 2")
@@ -599,7 +599,9 @@ class ClusteringVisualizer:
                 (
                     "lightgray"
                     if metrics_data["Metric"][i] == "Silhouette" and silhouette_avg < 0
-                    else "skyblue" if score >= 0.5 else "lightcoral"
+                    else "skyblue"
+                    if score >= 0.5
+                    else "lightcoral"
                 )
                 for i, score in enumerate(display_scores)
             ]
@@ -703,21 +705,21 @@ class ClusteringVisualizer:
             print(f"   • Agreement with GT (ARI): {ari_score:.3f}")
 
             if ari_score > 0.5:
-                print(f"   ✅ Good agreement with ground truth")
+                print("   ✅ Good agreement with ground truth")
             elif ari_score > 0.2:
-                print(f"   ⚠️ Moderate agreement with ground truth")
+                print("   ⚠️ Moderate agreement with ground truth")
             else:
-                print(f"   ❌ Poor agreement with ground truth")
+                print("   ❌ Poor agreement with ground truth")
 
             if silhouette_avg >= 0:
                 if silhouette_avg > 0.5:
-                    print(f"   ✅ Well-separated clusters")
+                    print("   ✅ Well-separated clusters")
                 elif silhouette_avg > 0.2:
-                    print(f"   ⚠️ Moderately separated clusters")
+                    print("   ⚠️ Moderately separated clusters")
                 else:
-                    print(f"   ❌ Poorly separated clusters")
+                    print("   ❌ Poorly separated clusters")
             else:
-                print(f"   ⚠️ Cluster separation not applicable (single cluster)")
+                print("   ⚠️ Cluster separation not applicable (single cluster)")
 
     def plot_dbscan_analysis(
         self, dbscan_results_norm, dbscan_results_pca, clustering_data
@@ -836,7 +838,7 @@ class ClusteringVisualizer:
             if silhouette_avg >= 0:
                 print(f"   • Silhouette Score: {silhouette_avg:.3f}")
             else:
-                print(f"   • Silhouette Score: N/A (insufficient clusters)")
+                print("   • Silhouette Score: N/A (insufficient clusters)")
             print(f"   • Adjusted Rand Index: {ari_score:.3f}")
             print(f"   • Normalized Mutual Info: {nmi_score:.3f}")
             print(f"   • Homogeneity: {homogeneity:.3f}")
@@ -910,7 +912,7 @@ class ClusteringVisualizer:
                     s=50,
                 )
                 axes[data_idx, 1].set_title(
-                    f"Ground Truth\\n(reference)", fontweight="bold"
+                    "Ground Truth\\n(reference)", fontweight="bold"
                 )
                 axes[data_idx, 1].set_xlabel("PCA Component 1")
                 axes[data_idx, 1].set_ylabel("PCA Component 2")
@@ -1026,7 +1028,9 @@ class ClusteringVisualizer:
                 (
                     "lightgray"
                     if metrics_data["Metric"][i] == "Silhouette" and silhouette_avg < 0
-                    else "skyblue" if score >= 0.5 else "lightcoral"
+                    else "skyblue"
+                    if score >= 0.5
+                    else "lightcoral"
                 )
                 for i, score in enumerate(display_scores)
             ]
@@ -1135,33 +1139,33 @@ class ClusteringVisualizer:
             print(f"\n📊 {data_type.upper()} Data Performance:")
             print(f"   • Clusters found: {n_clusters_dbscan}")
             print(
-                f"   • Noise points: {n_noise} ({n_noise/len(dbscan_labels)*100:.1f}%)"
+                f"   • Noise points: {n_noise} ({n_noise / len(dbscan_labels) * 100:.1f}%)"
             )
             print(f"   • Silhouette score: {silhouette_display}")
             print(f"   • Agreement with GT (ARI): {ari_score:.3f}")
 
             if ari_score > 0.5:
-                print(f"   ✅ Good agreement with ground truth")
+                print("   ✅ Good agreement with ground truth")
             elif ari_score > 0.2:
-                print(f"   ⚠️ Moderate agreement with ground truth")
+                print("   ⚠️ Moderate agreement with ground truth")
             else:
-                print(f"   ❌ Poor agreement with ground truth")
+                print("   ❌ Poor agreement with ground truth")
 
             if silhouette_avg >= 0:
                 if silhouette_avg > 0.5:
-                    print(f"   ✅ Well-separated clusters")
+                    print("   ✅ Well-separated clusters")
                 elif silhouette_avg > 0.2:
-                    print(f"   ⚠️ Moderately separated clusters")
+                    print("   ⚠️ Moderately separated clusters")
                 else:
-                    print(f"   ❌ Poorly separated clusters")
+                    print("   ❌ Poorly separated clusters")
             else:
-                print(f"   ⚠️ Cluster separation not applicable")
+                print("   ⚠️ Cluster separation not applicable")
 
             # DBSCAN-specific insights
             if n_noise > len(dbscan_labels) * 0.1:  # More than 10% noise
-                print(f"   ⚠️ High noise ratio - consider adjusting eps or min_samples")
+                print("   ⚠️ High noise ratio - consider adjusting eps or min_samples")
             elif n_noise == 0:
-                print(f"   📝 No noise detected - data well-clustered or eps too large")
+                print("   📝 No noise detected - data well-clustered or eps too large")
 
     def clustering_analysis_suite(
         self,
@@ -1343,7 +1347,7 @@ class ClusteringVisualizer:
                 print(f"   ⚠️ Accuracy summary error: {str(e)}")
 
         # Summary
-        print(f"\n🎉 Visualization Suite Complete!")
+        print("\n🎉 Visualization Suite Complete!")
         print(f"   📊 Generated {visualizations_count} visualization(s)")
         print("-" * 65)
 
@@ -1379,7 +1383,7 @@ class AdvancedClusteringVisualizer:
         # Create visualizations
         self._plot_multi_algorithm_comparison(clustering_data, advanced_results)
 
-        print(f"\n🎨 Advanced Visualizations Complete!")
+        print("\n🎨 Advanced Visualizations Complete!")
 
     def _plot_multi_algorithm_comparison(self, clustering_data, advanced_results):
         """Create multi-algorithm comparison dashboard"""
@@ -1427,7 +1431,7 @@ class AdvancedClusteringVisualizer:
                     s=30,
                 )
                 axes[row, col].set_title(
-                    f'{name}\n(Silhouette: {advanced_results[alg]["silhouette"]:.3f})'
+                    f"{name}\n(Silhouette: {advanced_results[alg]['silhouette']:.3f})"
                 )
                 axes[row, col].set_xlabel("PCA Component 1")
                 axes[row, col].set_ylabel("PCA Component 2")

@@ -8,15 +8,12 @@ including data preparation, clustering algorithms, and evaluation metrics.
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 from sklearn.cluster import KMeans, MeanShift, DBSCAN, estimate_bandwidth
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.metrics import (
     silhouette_score,
-    silhouette_samples,
     adjusted_rand_score,
     confusion_matrix,
 )
@@ -189,7 +186,7 @@ class ClusteringDataLoader:
                     }
                 )
 
-            except Exception as e:
+            except Exception:
                 continue
 
         return {"time_series": time_series, "labels": labels, "file_info": file_info}
@@ -389,14 +386,14 @@ class KMeansAnalyzer:
         inertia = best_model.inertia_
         n_clusters = len(np.unique(final_labels))
 
-        print(f"   ✅ Model trained successfully")
+        print("   ✅ Model trained successfully")
         print(f"   📈 Silhouette Score: {silhouette_avg:.3f}")
         print(f"   📊 Inertia: {inertia:.2f}")
         print(f"   🎯 Clusters Found: {n_clusters}")
 
         # Step 3: Visualization (if visualizer and data provided)
         if visualizer and clustering_data:
-            print(f"📊 Step 3: Generating visualizations...")
+            print("📊 Step 3: Generating visualizations...")
             try:
                 if analysis_type == "pca50":
                     # For PCA analysis, use PCA-only visualization
@@ -414,7 +411,7 @@ class KMeansAnalyzer:
                         clustering_data=clustering_data,
                         use_scaled_only=True,
                     )
-                print(f"   ✅ Visualizations generated successfully")
+                print("   ✅ Visualizations generated successfully")
             except Exception as e:
                 print(f"   ⚠️ Visualization warning: {str(e)}")
 
@@ -432,7 +429,7 @@ class KMeansAnalyzer:
             "clustering_data_shape": clustering_X.shape,
         }
 
-        print(f"🎉 Complete K-means analysis finished!")
+        print("🎉 Complete K-means analysis finished!")
         print("-" * 60)
 
         return analysis_results
@@ -674,23 +671,23 @@ class ClusteringEvaluator:
         optimal_labels = kmeans_results["labels"]
         best_data = clustering_data["X_scaled"]  # We know it uses scaled data
 
-        print(f"Applying optimal K-means clustering...")
+        print("Applying optimal K-means clustering...")
         print(f"   • Method: {data_type}")
         print(f"   • Optimal K: {best_k}")
-        print(f"   • PCA usage: Visualization only (2D plots)")
+        print("   • PCA usage: Visualization only (2D plots)")
 
         # Calculate evaluation metrics
         y_true = clustering_data["y_labels"]
         metrics = self.evaluate_clustering(y_true, optimal_labels, best_data)
 
-        print(f"\nK-means Performance Evaluation:")
+        print("\nK-means Performance Evaluation:")
         print(f"   • Silhouette Score: {metrics['silhouette_score']:.3f}")
         print(f"   • Adjusted Rand Index: {metrics['adjusted_rand_index']:.3f}")
         print(f"   • WCSS: {best_model.inertia_:.2e}")
 
         # Cluster size analysis
         unique_clusters, cluster_counts = np.unique(optimal_labels, return_counts=True)
-        print(f"\nCluster Size Distribution:")
+        print("\nCluster Size Distribution:")
         for cluster, count in zip(unique_clusters, cluster_counts):
             percentage = (count / len(optimal_labels)) * 100
             print(f"   • Cluster {cluster}: {count} samples ({percentage:.1f}%)")
@@ -711,11 +708,11 @@ class ClusteringEvaluator:
             }
         )
 
-        print(f"\nK-means clustering analysis complete!")
+        print("\nK-means clustering analysis complete!")
         print(
             f"✅ Clustering performed on: SCALED data ({clustering_data['X_scaled'].shape})"
         )
-        print(f"✅ PCA used for: 2D visualization only")
+        print("✅ PCA used for: 2D visualization only")
 
         return updated_results
 
@@ -749,7 +746,7 @@ class ClusteringEvaluator:
         optimal_labels_pca = best_model_info_pca["optimal_labels"]
         best_data_pca = best_model_info_pca["best_data"]
 
-        print(f"Applying optimal K-means clustering (PCA 50D)...")
+        print("Applying optimal K-means clustering (PCA 50D)...")
         print(f"   • Method: {data_type_pca} (PCA 50D data)")
         print(f"   • Optimal K: {best_k_pca}")
         print(
@@ -762,7 +759,7 @@ class ClusteringEvaluator:
             y_true, optimal_labels_pca, best_data_pca
         )
 
-        print(f"\nK-means Performance Evaluation (PCA 50D):")
+        print("\nK-means Performance Evaluation (PCA 50D):")
         print(f"   • Silhouette Score: {metrics_pca['silhouette_score']:.3f}")
         print(f"   • Adjusted Rand Index: {metrics_pca['adjusted_rand_index']:.3f}")
         print(f"   • WCSS: {best_model_pca.inertia_:.2e}")
@@ -771,7 +768,7 @@ class ClusteringEvaluator:
         unique_clusters_pca, cluster_counts_pca = np.unique(
             optimal_labels_pca, return_counts=True
         )
-        print(f"\nCluster Size Distribution (PCA 50D):")
+        print("\nCluster Size Distribution (PCA 50D):")
         for cluster, count in zip(unique_clusters_pca, cluster_counts_pca):
             percentage = (count / len(optimal_labels_pca)) * 100
             print(f"   • Cluster {cluster}: {count} samples ({percentage:.1f}%)")
@@ -793,15 +790,15 @@ class ClusteringEvaluator:
             "optimal_k_pca": kmeans_optimization_pca["optimal_k_pca"],
         }
 
-        print(f"\nK-means clustering analysis (PCA 50D) complete!")
+        print("\nK-means clustering analysis (PCA 50D) complete!")
         print(
             f"✅ Clustering performed on: PCA 50D data ({clustering_data['X_pca_50'].shape})"
         )
-        print(f"✅ Centroids available in: 2D PCA space for visualization")
+        print("✅ Centroids available in: 2D PCA space for visualization")
 
         # Compare with previous scaled data results if provided
         if scaled_kmeans_results is not None:
-            print(f"\n📊 COMPARISON: Scaled Data vs PCA 50D Data")
+            print("\n📊 COMPARISON: Scaled Data vs PCA 50D Data")
             print("=" * 45)
             print(
                 f"   • Scaled Data   - K: {scaled_kmeans_results['optimal_k']}, Silhouette: {scaled_kmeans_results['silhouette_score']:.3f}, ARI: {scaled_kmeans_results['ari_score']:.3f}"
@@ -815,14 +812,14 @@ class ClusteringEvaluator:
                 metrics_pca["silhouette_score"]
                 > scaled_kmeans_results["silhouette_score"]
             ):
-                print(f"   🏆 PCA 50D performs better (higher silhouette score)")
+                print("   🏆 PCA 50D performs better (higher silhouette score)")
             elif (
                 metrics_pca["silhouette_score"]
                 < scaled_kmeans_results["silhouette_score"]
             ):
-                print(f"   🏆 Scaled Data performs better (higher silhouette score)")
+                print("   🏆 Scaled Data performs better (higher silhouette score)")
             else:
-                print(f"   🤝 Both methods perform similarly")
+                print("   🤝 Both methods perform similarly")
 
         return kmeans_results_pca
 
@@ -850,11 +847,6 @@ class AdvancedClusteringSuite:
         --------
         dict : Results from all clustering methods
         """
-        from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
-        from sklearn.mixture import GaussianMixture
-        from sklearn.neighbors import NearestNeighbors
-        from sklearn.metrics import silhouette_score, calinski_harabasz_score
-        import time
 
         results = {}
 
@@ -904,7 +896,7 @@ class AdvancedClusteringSuite:
         else:
             print("   ⚠️ No suitable DBSCAN parameters found")
 
-        print(f"\n🏆 Advanced Clustering Complete!")
+        print("\n🏆 Advanced Clustering Complete!")
         return results
 
     def _run_enhanced_kmeans(self, X_data, max_k):
@@ -974,7 +966,7 @@ class AdvancedClusteringSuite:
                             "aic": aic,
                             "time": time.time() - start,
                         }
-            except Exception as e:
+            except Exception:
                 continue
 
         return best_gmm
@@ -1012,7 +1004,7 @@ class AdvancedClusteringSuite:
                                 "silhouette": silhouette,
                                 "time": time.time() - start,
                             }
-                except Exception as e:
+                except Exception:
                     continue
 
         return best_hierarchical
@@ -1068,7 +1060,7 @@ class AdvancedClusteringSuite:
                                 "silhouette": silhouette,
                                 "time": time.time() - start,
                             }
-                except Exception as e:
+                except Exception:
                     continue
 
         return best_dbscan
@@ -1129,7 +1121,7 @@ def evaluate_clustering_accuracy(y_true, clustering_results, method_names=None):
         methods_to_evaluate = clustering_results.items()
     elif isinstance(clustering_results, list):
         if method_names is None:
-            method_names = [f"Method_{i+1}" for i in range(len(clustering_results))]
+            method_names = [f"Method_{i + 1}" for i in range(len(clustering_results))]
         methods_to_evaluate = zip(method_names, clustering_results)
     else:
         raise ValueError("clustering_results must be dict or list")
@@ -1185,7 +1177,7 @@ def evaluate_clustering_accuracy(y_true, clustering_results, method_names=None):
             }
 
             print(
-                f"   • {method_name:<25}: {accuracy:.3f} ({accuracy*100:.1f}%) | Clusters: {len(np.unique(labels_numeric))}"
+                f"   • {method_name:<25}: {accuracy:.3f} ({accuracy * 100:.1f}%) | Clusters: {len(np.unique(labels_numeric))}"
             )
 
         except Exception as e:
@@ -1198,7 +1190,7 @@ def evaluate_clustering_accuracy(y_true, clustering_results, method_names=None):
         unique_true_classes = np.unique(y_true_numeric)
 
         print(
-            f"\n🏆 Best Performing Method: {best_method[0]} ({best_method[1]['accuracy']*100:.1f}%)"
+            f"\n🏆 Best Performing Method: {best_method[0]} ({best_method[1]['accuracy'] * 100:.1f}%)"
         )
         print(
             f"📊 Ground Truth Classes: {len(unique_true_classes)} | Total Samples: {len(y_true_numeric)}"
@@ -1206,6 +1198,6 @@ def evaluate_clustering_accuracy(y_true, clustering_results, method_names=None):
     else:
         print("\n❌ No valid clustering results to evaluate")
 
-    print(f"\n✅ Accuracy evaluation complete!")
+    print("\n✅ Accuracy evaluation complete!")
 
     return accuracy_results
