@@ -11,7 +11,7 @@ The list of priority improvements for the 3W Project that we intend to develop c
 * Develop unit tests for the main methods and functions;
 * Set up action for automatic execution of unit tests after creating PRs;
 * Establish coding guidelines. Which one?
-* Reevaluate the use of the [rolling_window.py](toolkit/rolling_window.py). Is there a better option or a newer version?
+* Reevaluate the use of the `rolling_window.py` module. Is there a better option or a newer version?
 * Evaluate inclusion of specific features for hyperparameter optimization;
 * Assess feasibility and benefits of using [Sklearn Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html);
 * Evaluate the use of [Docker](https://www.docker.com/) to facilitate the use of the 3W Toolkit and the approval of contributions;
