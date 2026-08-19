@@ -12,16 +12,16 @@ If you wish to cite the 3W Project itself and/or its main resources, please refe
 
 ## Lists of Citations
 
-* [Books](#books)
-* [Conference Papers](#conference-papers)
-* [Data Articles](#data-articles)
-* [Doctoral Theses](#doctoral-theses)
-* [Final Graduation Projects](#final-graduation-projects)
-* [Journal Articles](#journal-articles)
-* [Master's Degree Dissertations](#masters-degree-dissertations)
-* [Other Articles](#other-articles)
-* [Repository Articles](#repository-articles)
-* [Specialization Monographs](#specialization-monographs)
+- [Books](#books)
+- [Conference Papers](#conference-papers)
+- [Data Articles](#data-articles)
+- [Doctoral Theses](#doctoral-theses)
+- [Final Graduation Projects](#final-graduation-projects)
+- [Journal Articles](#journal-articles)
+- [Master's Degree Dissertations](#masters-degree-dissertations)
+- [Other Articles](#other-articles)
+- [Repository Articles](#repository-articles)
+- [Specialization Monographs](#specialization-monographs)
 
 ## Books
 
@@ -48,18 +48,18 @@ If you wish to cite the 3W Project itself and/or its main resources, please refe
 1. A.A.M. Azevedo, S.L. Netto, R.E.V. Vargas, E.A.B. Silva, A.J.M. Junior. Exploratory Analysis of the 3W Dataset for Detecting Operational Failures in Oil Wells Using Machine Learning Techniques. OTC Brasil. 2025. https://doi.org/10.4043/36194-MS.
 1. R.A. Wibawa, M. Wang, B. Jha. Exploring Modern Feature Extraction Techniques for Improved Offshore Fault Detection in Oil and Gas Operations. SPE Annual Technical Conference and Exhibition. 2025. https://doi.org/10.2118/228061-MS.
 1. J.C.D. Araujo, P.H.R. Oliveira, C.J. Munaro, P.M. Ciarelli. Desenvolvimento e Aplicação de Sensores Virtuais para Detecção de Anormalidades em Poços de Petróleo Surgentes. Simpósio Brasileiro de Automação Inteligente. 2025. https://doi.org/10.29327/1842969.1-18.
-1. S. Pakhare, S. Hegde, P. Ramasamy, A. Giri. RareDetect: A Deep Federated Learning Framework for Multi-task Learning with RAG-Enhanced Conversational Interface for Low-Frequency Event Detection in Oil Extraction Industry. IEEE International Conference on Electronics, Computing and Communication Technologies. 2025. http://doi.org/10.1109/CONECCT65861.2025.11306901.
-1. G.A. Lima, J.L. Carbonera, J.C. Netto, M. Abel. Ontology-Guided Hybrid Loss for Fault Classification in Oil & Gas. IEEE 37th International Conference on Tools with Artificial Intelligence. 2025. http://doi.org/10.1109/ICTAI66417.2025.00184.
+1. S. Pakhare, S. Hegde, P. Ramasamy, A. Giri. RareDetect: A Deep Federated Learning Framework for Multi-task Learning with RAG-Enhanced Conversational Interface for Low-Frequency Event Detection in Oil Extraction Industry. IEEE International Conference on Electronics, Computing and Communication Technologies. 2025. https://doi.org/10.1109/CONECCT65861.2025.11306901.
+1. G.A. Lima, J.L. Carbonera, J.C. Netto, M. Abel. Ontology-Guided Hybrid Loss for Fault Classification in Oil & Gas. IEEE 37th International Conference on Tools with Artificial Intelligence. 2025. https://doi.org/10.1109/ICTAI66417.2025.00184.
 1. K.C. Schmöckel, G. Peixer, J. Lozano, J. Barbosa. Anomaly Detection in Oil-Producing Wells using LSTM Autoencoder. 28 ABCM International Congress of Mechanical Engineering. 2025. https://doi.org/10.26678/ABCM.COBEM2025.COB2025-0441.
-1. A. Petrovski, G. Abramenko, I. Kotenko. Machine Learning-Based Intelligent Measurement in Industrial Digital Twins. Intelligent Information Technologies for Industry. 2025. http://doi.org/10.1007/978-3-032-13612-1_2.
+1. A. Petrovski, G. Abramenko, I. Kotenko. Machine Learning-Based Intelligent Measurement in Industrial Digital Twins. Intelligent Information Technologies for Industry. 2025. https://doi.org/10.1007/978-3-032-13612-1_2.
 1. H. Nesse, K.J. Mann, S. Sæten, L.J. Mosser. Production Time Series Monitoring Using Vision-Language Models. SPE Europe Energy Conference and Exhibition. 2025. https://doi.org/10.2118/225545-MS.
-1. R. Villamil, J. May, R. Fallgatter, R.E.V. Vargas, A. Nakashima, G. Peixer, J. Lozano, J. Barbosa. Assessment of deep-learning techniques for anomaly detection in offshore oil wells. Brazilian Congress of Thermal Sciences and Engineering. 2024. http://dx.doi.org/10.26678/ABCM.ENCIT2024.CIT24-0603.
+1. R. Villamil, J. May, R. Fallgatter, R.E.V. Vargas, A. Nakashima, G. Peixer, J. Lozano, J. Barbosa. Assessment of deep-learning techniques for anomaly detection in offshore oil wells. Brazilian Congress of Thermal Sciences and Engineering. 2024. https://doi.org/10.26678/ABCM.ENCIT2024.CIT24-0603.
 1. O. Khankishiyev, S. Salehi, H. Karami, V. Mammadzada. Identification of Undesirable Events in Geothermal Fluid/Steam Production using Machine Learning. 49th Workshop on Geothermal Reservoir Engineering. 2024. https://pangea.stanford.edu/ERE/db/GeoConf/papers/SGW/2024/Khankishiyev1.pdf.
 1. A.O. Ifenaike, O.B. Oluwadare. Advancing Drilling Safety: Automated Anomaly Detection in Well Control Using Machine Learning Techniques. SPE Nigeria Annual International Conference and Exhibition. 2024. https://doi.org/10.2118/221626-MS.
-1. I.M.N. Oliveira, P.E. Aranha, T.M.A. Vieira, A.C.A. Silva, D.L. Ramos, E.T.L. Junior. Advancing Anomaly Detection in Oil Production Wells with TranAD: A Deep Transformer Network Approach. XLV Ibero-Latin American Congress on Computational Methods in Engineering. 2024. http://doi.org/10.55592/cilamce.v6i06.8224.
-1. B. Cunha, D.D. Ferreira, B.H.G. Barbosa. Desenvolvimento de soft sensor para poços de petróleo usando MGGP. Congresso Brasileiro de Inteligência Computacional. 2024. http://doi.org/10.21528/CBIC2023-064.
+1. I.M.N. Oliveira, P.E. Aranha, T.M.A. Vieira, A.C.A. Silva, D.L. Ramos, E.T.L. Junior. Advancing Anomaly Detection in Oil Production Wells with TranAD: A Deep Transformer Network Approach. XLV Ibero-Latin American Congress on Computational Methods in Engineering. 2024. https://doi.org/10.55592/cilamce.v6i06.8224.
+1. B. Cunha, D.D. Ferreira, B.H.G. Barbosa. Desenvolvimento de soft sensor para poços de petróleo usando MGGP. Congresso Brasileiro de Inteligência Computacional. 2024. https://doi.org/10.21528/CBIC2023-064.
 1. A.E. Sulavko, S.A. Klinovenko, G.A. Suvyrin, P.S. Lozhnikov, L.V. Pletnev, A.E. Samotuga. Recognition of pre-emergency situations during oil wells exploitation based on telemetry analysis. 6th International Conference on Signal Processing and Information Security. 2023. https://doi.org/10.1109/ICSPIS60075.2023.10343865.
-1. Y. Qu, B. Zhou, A. Waaler, D. Cameron. Real-Time Event Detection with Random Forests and Temporal Convolutional Networks for More Sustainable Petroleum Industry. Lecture Notes in Computer Science. 2023. http://dx.doi.org/10.1007/978-981-99-7025-4_41.
+1. Y. Qu, B. Zhou, A. Waaler, D. Cameron. Real-Time Event Detection with Random Forests and Temporal Convolutional Networks for More Sustainable Petroleum Industry. Lecture Notes in Computer Science. 2023. https://doi.org/10.1007/978-981-99-7025-4_41.
 1. R.E.V. Vargas, R.L.A. Pinto. The 3W Project and its Strategy to Foster the Development of Data-Driven Solutions for the Offshore Sector. Offshore Technology Conference Brasil. 2023. https://doi.org/10.4043/32875-MS.
 1. X. Deng; H. Yin. Industrial Process Fault Diagnosis in Case of Missing Sensor Data. Symposium on Fault Detection, Supervision and Safety for Technical Processes (SAFEPROCESS). 2023. https://doi.org/10.1109/SAFEPROCESS58597.2023.10295829.
 1. A. Das, A. Aiken. Prolego: Time-Series Analysis for Predicting Failures in Complex Systems. IEEE International Conference on Autonomic Computing and Self-Organizing Systems - ACSOS. 2023. https://doi.org/10.1109/ACSOS58161.2023.00025.
@@ -68,7 +68,7 @@ If you wish to cite the 3W Project itself and/or its main resources, please refe
 1. L.D. Gessoni, L.C.F. Domingos, D.P. Franco, L.C. Souza, C.G.C. Junior. Anomaly detection in oil well operation using recurrent neural networks and data augmentation. Rio Oil & Gas Expo and Conference. 2022. https://doi.org/10.48072/2525-7579.rog.2022.307.
 1. A.S. Vargas, R. Werneck, M. Gonçalves, E.S. Pereira, L.A.D.L. Filho, S. Salavati, M. Hossain, A. Ferreira, A.D. Gomes, D.J. Schiozer, A. R. Rocha. Detecting anomalies in production data using machine learning techniques. Rio Oil & Gas Expo and Conference. 2022. https://doi.org/10.48072/2525-7579.rog.2022.298.
 1. A. Harrouz, H. Toubakh, M.R. Kafi, S.M. Moamar, S. Hajer. Dynamic Linear Regression Models for Down Hole Safety Valve Remaining Useful Life Prediction. Annual conference of the prognostics and health management society 2022. 2022. https://doi.org/10.36001/phmconf.2022.v14i1.3227.
-1. R. Karl, J. Takeshita, T. Jung. Cryptonite: A Framework for Flexible Time-Series Secure Aggregation with Non-interactive Fault Recovery. Lecture Notes of the Institute for Computer Sciences, Social-Informatics and Telecommunications Engineering. 2021. http://dx.doi.org/10.1007/978-3-030-90019-9_16.
+1. R. Karl, J. Takeshita, T. Jung. Cryptonite: A Framework for Flexible Time-Series Secure Aggregation with Non-interactive Fault Recovery. Lecture Notes of the Institute for Computer Sciences, Social-Informatics and Telecommunications Engineering. 2021. http://doi.org/10.1007/978-3-030-90019-9_16.
 1. R.S.F. Nascimento, B.H.G. Barbosa, R.E.V. Vargas, I.H.F. Santos. Fault detection with Stacked Autoencoders and pattern recognition techniques in gas lift operated oil wells. XLII Ibero-Latin-American Congress on Computational Methods in Engineering. 2021. https://www.researchgate.net/publication/363279803_Fault_detection_with_Stacked_Autoencoders_and_pattern_recognition_tech-_niques_in_gas_lift_operated_oil_wells.
 1. Y. Li, T. Ge. Imminence Monitoring of Critical Events: A Representation Learning Approach. International Conference on Management of Data. 2021. https://doi.org/10.1145/3448016.3452804.
 1. B.G. Carvalho, R.E.V. Vargas, R.M. Salgado, C.J. Munaro, F.M. Varejão. Flow Instability Detection in Offshore Oil Wells with Multivariate Time Series Machine Learning Classifiers. 30th International Symposium on Industrial Electronics. 2021. https://doi.org/10.1109/ISIE45552.2021.9576310.
@@ -84,9 +84,9 @@ If you wish to cite the 3W Project itself and/or its main resources, please refe
 1. L. Müller, M.R. Martins. Proposition of Reliability-based Methodology for Well Integrity Management During Operational Phase. 30th European Safety and Reliability Conference and 15th Probabilistic Safety Assessment and Management Conference. 2020. https://doi.org/10.3850%2F978-981-14-8593-0_3682-cd.
 1. R.S.F. Nascimento, B.H.G. Barbosa, R.E.V. Vargas, I.H.F. Santos. Detecção de falhas com Stacked Autoencoders e técnicas de reconhecimento de padrões em poços de petróleo operados por gas lift. XXIII Congresso Brasileiro de Automática. 2020. https://www.sba.org.br/open_journal_systems/index.php/cba/article/view/1462/1300.
 1. R.S.F. Nascimento, B.H.G. Barbosa, R.E.V. Vargas, I.H.F. Santos. Detecção de anomalias em poços de petróleo surgentes com Stacked Autoencoders. Simpósio Brasileiro de Automação Inteligente. 2020. https://doi.org/10.20906/sbai.v1i1.2856.
-1. L.H.S. Mello, M.P. Ribeiro, T.O. Santos, F.M. Varejão, A.L. Rodrigues. Metric Learning for Electrical Submersible Pump Fault Diagnosis. International Joint Conference on Neural Networks. 2020. http://doi.org/10.1109/IJCNN48605.2020.9207133.
-1. I. Figueiredo, W.J.D. Silva, T.F. Carvalho, U.A. Miranda, L.S.M. Filho, R.E.V. Vargas, E.G.S. Nascimento. Multivariate anomaly detection in rotating machinery of the oil and gas industry using unsupervised machine learning. Rio Oil & Gas Expo and Conference. 2020. https://doi.org/10.48072/2525-7579.rog.2020.405.
-1. Y. Li, T. Ge, C. Chen. Data Stream Event Prediction Based on Timing Knowledge and State Transitions. Very Large Data Base Endowment. 2020. http://www.vldb.org/pvldb/vol13/p1779-li.pdf.
+1. L.H.S. Mello, M.P. Ribeiro, T.O. Santos, F.M. Varejão, A.L. Rodrigues. Metric Learning for Electrical Submersible Pump Fault Diagnosis. International Joint Conference on Neural Networks. 2020. https://doi.org/10.1109/IJCNN48605.2020.9207133.
+1. I. Figueiredo, W.J.D. Silva, T.F. Carvalho, U.A. Miranda, L.S.M. Filho, R.E.V. Vargas, E.G.S. Nascimento. Multivariate anomaly detection in rotating machinery of the oil and gas industry using unsupervised machine learning. Rio Oil & Gas Expo and Conference. 2020. https://openresearch.surrey.ac.uk/esploro/outputs/conferenceProceeding/Multivariate-anomaly-detection-in-rotating-machinery/99679664702346.
+1. Y. Li, T. Ge, C. Chen. Data Stream Event Prediction Based on Timing Knowledge and State Transitions. Very Large Data Base Endowment. 2020. https://www.vldb.org/pvldb/vol13/p1779-li.pdf.
 1. R.E.V. Vargas, C.J. Munaro, P.M. Ciarelli. A methodology for generating datasets for development of anomaly detectors in oil wells based on Artificial Intelligence techniques. I Congresso Brasileiro em Engenharia de Sistemas em Processos. 2019. https://www.ufrgs.br/psebr/wp-content/uploads/2019/04/Abstract_A019_Vargas.pdf.
 
 ## Data Articles
@@ -141,8 +141,8 @@ If you wish to cite the 3W Project itself and/or its main resources, please refe
 1. H.N. Noura, J.P.A. Yaacoub, O. Salman, A. Chehab. Advanced Machine Learning in Smart Grids: An Overview. Internet of Things and Cyber‑Physical Systems. 2025. https://doi.org/10.1016/j.iotcps.2025.05.002.
 1. D.S.D. Lara, R.A. Coelho, C.L. Castro, W.M. Caminhas. An unsupervised noise-resistant method for detection of incremental drifts. Springer Nature. 2025. https://link.springer.com/article/10.1007/s10115-025-02592-2.
 1. N.V.C. Silva, F.A. Pontes, M.S. Silva, B.C. Fialho, J.E. Delesposte, D.G.B. Souza, L.A.O. Chaves, R. Cardoso. Leveraging FMMEA for Digital Twin Development: A Case Study on Intelligent Completion in Oil and Gas. Sensors. 2025. https://doi.org/10.3390/s25185846.
-1. A. Vahdani, A. Daneshpour, M. Ghatee, M. Sharifi. A Hybrid Deep Learning Framework for Critical Failure Diagnosis in Offshore Oil Wells: Integrating AutoEncoders and MobileNet. SSRN. 2025. http://doi.org/10.2139/ssrn.5761405.
-1. X. Zou, S. Wang, Y. Shi, X. Chen, S. Jin, D. Tao, W. Xia. The Design of an Efficient Lossy Compressor for Time Series Databases. ACM Transactions on Architecture and Code Optimization. 2025. http://doi.org/10.1145/3767158.
+1. A. Vahdani, A. Daneshpour, M. Ghatee, M. Sharifi. A Hybrid Deep Learning Framework for Critical Failure Diagnosis in Offshore Oil Wells: Integrating AutoEncoders and MobileNet. SSRN. 2025. https://doi.org/10.2139/ssrn.5761405.
+1. X. Zou, S. Wang, Y. Shi, X. Chen, S. Jin, D. Tao, W. Xia. The Design of an Efficient Lossy Compressor for Time Series Databases. ACM Transactions on Architecture and Code Optimization. 2025. https://doi.org/10.1145/3767158.
 1. D.A. Maharsi, S.Z. Tampi, A.P.P. Oktaviani. An Lstm-Based Anomaly Detection on Subsea Oil-Producing Well. Scientific Contributions Oil and Gas. 2025. https://doi.org/10.29017/scog.v48i4.1819.
 1. R. Oliveira, A. Sant’Anna, P. Silva. Seleção Adaptativa de Hiperparâmetros com Aprendizado por Reforço para Modelos de Detecção de Anomalias em Séries Temporais Multivariadas. Sociedade Brasileira de Inteligência Artificial. 2025. https://doi.org/10.21528/CBIC2025-1162938.
 1. L.G. Tavares, J. Lima, M. Melo, C. Chen, J. Garibaldi, G.S. Scatena, A.H.R. Costa, E.S. Gomi, R. Salles, E. Pacitti, I.H.F. Santos, I. G. Siqueira, D. Carvalho, R. Coutinho, F. Porto, E. Ogasawara. Fuzzy-Based Ensemble Method for Robust Concept Drift Detection in Multivariate Time Series. IEEE Access. 2025. https://doi.org/10.1109/IJCNN64981.2025.11228919.
@@ -159,7 +159,7 @@ If you wish to cite the 3W Project itself and/or its main resources, please refe
 1. C. Shyalika, R. Wickramarachchi, A. P. Sheth. A Comprehensive Survey on Rare Event Prediction. Association for Computing Machinery. 2024. https://doi.org/10.1145/3699955.
 1. J.V. Autran, V. Kuhn, J.P. Diguet, M. Dubois, C. Buche. AI4I-PMDI: Predictive maintenance datasets with complex industrial settings’ irregularities. 28th International Conference on Knowledge Based and Intelligent information and Engineering Systems. 2024. https://doi.org/10.1016/j.procs.2024.09.546.
 1. M.A. Farahani, M.R. McCormick, R. Harik, T. Wuest. Time-Series Classification in Smart Manufacturing Systems: An Experimental Evaluation of State-of-the-Art Machine Learning Algorithms. Robotics and Computer-Integrated Manufacturing. 2024. https://doi.org/10.1016/j.rcim.2024.102839.
-1. S.M.S. Aguilar, A.P.B. Sobral, M.C. Amaral, M.F.D. Vianna, F.S. Machado, M.A.C. Moreira. Analysis of candidate oil wells for workover interventions using machine learning tools. International Journal of Scientific Management and Tourism. 2024. http://doi.org/10.55905/ijsmtv10n4-041.
+1. S.M.S. Aguilar, A.P.B. Sobral, M.C. Amaral, M.F.D. Vianna, F.S. Machado, M.A.C. Moreira. Analysis of candidate oil wells for workover interventions using machine learning tools. International Journal of Scientific Management and Tourism. 2024. https://dialnet.unirioja.es/descarga/articulo/10701628.pdf.
 1. A.P.F. Machado, C.J. Munaro, P.M. Ciarelli, R.E.V. Vargas. Time series clustering to improve one-class classifier performance. Expert Systems with Applications. 2023. https://doi.org/10.1016/j.eswa.2023.122895.
 1. B. Chen, X. Zeng, W. Zhang, L. Fan, S. Cao, J. Zhou. Knowledge sharing-based multi-block federated learning for few-shot oil layer identification. Energy. 2023. https://doi.org/10.1016/j.energy.2023.128406.
 1. R.M.F.U. Foronda, V.M. Fracassio, R.B. Santos, B.F. Santos. Statistical Analysis in Database of Offshore Naturally Flowing Wells with Abnormal Events. Chemical Engineering Transactions. 2023. https://doi.org/10.3303/CET2399101.
@@ -189,10 +189,10 @@ If you wish to cite the 3W Project itself and/or its main resources, please refe
 1. A.O.S. Castro, M.J.R. Santos, F.R. Leta, C.B.C. Lima, G.B.A. Lima. Unsupervised Methods to Classify Real Data from Offshore Wells. American Journal of Operations Research. 2021. https://doi.org/10.4236/ajor.2021.115014.
 1. I.S. Figueirêdo, T.F. Carvalho, W.J.D. Silva, L.L.N. Guarieiro, A.A.B. Santos, L.S.M. Filho, R.E.V. Vargas, E.G.S. Nascimento. Unsupervised Machine Learning for Anomaly Detection in Multivariate Time Series Data of a Rotating Machine from an Oil and Gas Platform. Journal of Systemics, Cybernetics and Informatics. 2021. https://www.iiisci.org/journal/PDV/sci/pdfs/ZA422HO21.pdf.
 1. M.J.R. Santos, A.O.S. Castro, F.R. Leta, J.F.M. Araujo, G.S. Ferreira, R.A. Santos, C.B.C. Lima, G.B.A. Lima. Statistical analysis of offshore production sensors for failure detection applications. Brazilian Journal of Development. 2021. https://doi.org/10.34117/bjdv7n8-681.
-1. S.V. Tsyplenkov, E.D. Agafonov. The concept of an integrated system of energy efficiency control of artifical oil lift. Power Engineering Research Equipment Technology. 2021. http://dx.doi.org/10.30724/1998-9903-2021-23-4-180-196.
-1. F.M. Varejão. Diagnóstico Inteligente de Falhas em Equipamentos Industriais. Revista de Sistemas de Informação da FSMA. 2021. http://www.fsma.edu.br/si/edicao28/FSMA_SI_2021_2_04_Varejao_Final.pdf.
+1. S.V. Tsyplenkov, E.D. Agafonov. The concept of an integrated system of energy efficiency control of artifical oil lift. Power Engineering Research Equipment Technology. 2021. http://doi.org/10.30724/1998-9903-2021-23-4-180-196.
+1. F.M. Varejão. Diagnóstico Inteligente de Falhas em Equipamentos Industriais. Revista de Sistemas de Informação da FSMA. 2021. https://www.catolicamacae.com.br/si/edicao28/FSMA_SI_2021_2_Principal_04.html.
 1. J. Liu, J. Gu, H. Li, K.H. Carlson. Machine learning and transport simulations for groundwater anomaly detection. Journal of Computational and Applied Mathematics. 2020. https://doi.org/10.1016/j.cam.2020.112982.
-1. A. Agarwal. Early Detection of Hydrate Formation in Deepwater Drilling Using an Ensemble of LSTM Networks. SSRN. 2020. http://dx.doi.org/10.2139/ssrn.3714257.
+1. A. Agarwal. Early Detection of Hydrate Formation in Deepwater Drilling Using an Ensemble of LSTM Networks. SSRN. 2020. https://doi.org/10.2139/ssrn.3714257.
 1. M.A. Marins, B.D. Barros, I.H.F. Santos, D.C. Barrionuevo, R.E.V. Vargas, T.M. Prego, A.A. Lima, M.L.R. Campos, E.A.B. Silva, S.L. Netto. Fault detection and classification in oil wells and production/service lines using random forest. Journal of Petroleum Science and Engineering. 2020. https://doi.org/10.1016/j.petrol.2020.107879.
 1. R.E.V, Vargas, C.J. Munaro, P.M. Ciarelli, A.G. Medeiros, B.G. Amaral, D.C. Barrionuevo, J.C.D. Araujo, J.L. Ribeiro, L.P. Magalhães. A realistic and public dataset with rare undesirable real events in oil wells. Journal of Petroleum Science and Engineering. 2019. https://doi.org/10.1016/j.petrol.2019.106223.
 

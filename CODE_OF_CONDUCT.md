@@ -16,26 +16,26 @@ We believe that healthy debate and disagreement are essential to a healthy proje
 
 These are the values to which people in the 3W community should aspire:
 
-* **Be friendly and welcoming;**
-* **Be patient;** 
-  * Remember that people have varying communication styles and that not everyone is using their native language. Meaning and tone can be lost in translation.
-* **Be thoughtful;** 
-  * Productive communication requires effort. Think about how your words will be interpreted;
-  * Remember that sometimes it is best to refrain entirely from commenting.
-* **Be respectful;** 
-  * In particular, respect differences of opinion.
-* **Be charitable;** 
-  * Interpret the arguments of others in good faith, do not seek to disagree;
-  * When we do disagree, try to understand why.
-* **Be constructive;** 
-  * Avoid derailing: stay on topic; if you want to talk about something else, start a new conversation;
-  * Avoid unconstructive criticism: don't merely decry the current state of affairs; offer—or at least solicit—suggestions as to how things may be improved;
-  * Avoid snarking (pithy, unproductive, sniping comments);
-  * Avoid discussing potentially offensive or sensitive matters; this all too often leads to unnecessary conflict;
-  * Avoid microaggressions (brief and commonplace verbal, behavioral and environmental indignities that communicate hostile, derogatory or negative slights and insults to a person or group).
-* **Be responsible.**
-  * What you say and do matters. Take responsibility for your words and actions, including their consequences, whether intended or otherwise.
-  
+- **Be friendly and welcoming;**
+- **Be patient;**
+  - Remember that people have varying communication styles and that not everyone is using their native language. Meaning and tone can be lost in translation.
+- **Be thoughtful;**
+  - Productive communication requires effort. Think about how your words will be interpreted;
+  - Remember that sometimes it is best to refrain entirely from commenting.
+- **Be respectful;**
+  - In particular, respect differences of opinion.
+- **Be charitable;**
+  - Interpret the arguments of others in good faith, do not seek to disagree;
+  - When we do disagree, try to understand why.
+- **Be constructive;**
+  - Avoid derailing: stay on topic; if you want to talk about something else, start a new conversation;
+  - Avoid unconstructive criticism: don't merely decry the current state of affairs; offer—or at least solicit—suggestions as to how things may be improved;
+  - Avoid snarking (pithy, unproductive, sniping comments);
+  - Avoid discussing potentially offensive or sensitive matters; this all too often leads to unnecessary conflict;
+  - Avoid microaggressions (brief and commonplace verbal, behavioral and environmental indignities that communicate hostile, derogatory or negative slights and insults to a person or group).
+- **Be responsible.**
+  - What you say and do matters. Take responsibility for your words and actions, including their consequences, whether intended or otherwise.
+
 People are complicated. You should expect to be misunderstood and to misunderstand others; when this inevitably occurs, resist the urge to be defensive or assign blame. Try not to take offense where no offense was intended. Give people the benefit of the doubt. Even if the intent was to provoke, do not rise to it. It is the responsibility of _all parties_ to de-escalate conflict when it arises.
 
 ## Our Pledge
@@ -46,19 +46,19 @@ In the interest of fostering an open and welcoming environment, we as contributo
 
 Examples of behavior that contributes to creating a positive environment include:
 
-* Using welcoming and inclusive language;
-* Being respectful of differing viewpoints and experiences;
-* Gracefully accepting constructive criticism;
-* Focusing on what is best for the community;
-* Showing empathy towards other community members.
+- Using welcoming and inclusive language;
+- Being respectful of differing viewpoints and experiences;
+- Gracefully accepting constructive criticism;
+- Focusing on what is best for the community;
+- Showing empathy towards other community members.
 
 Examples of unacceptable behavior by participants include:
 
-* The use of sexualized language or imagery and unwelcome sexual attention or advances;
-* Trolling, insulting/derogatory comments, and personal or political attacks;
-* Public or private harassment;
-* Publishing others’ private information, such as a physical or electronic address, without explicit permission;
-* Other conduct which could reasonably be considered inappropriate in a professional setting.
+- The use of sexualized language or imagery and unwelcome sexual attention or advances;
+- Trolling, insulting/derogatory comments, and personal or political attacks;
+- Public or private harassment;
+- Publishing others’ private information, such as a physical or electronic address, without explicit permission;
+- Other conduct which could reasonably be considered inappropriate in a professional setting.
 
 ## Our Responsibilities
 
@@ -82,7 +82,7 @@ This code of conduct is adapted from the Go Community Code of Conduct, available
 
 ## Summary
 
-* Treat everyone with respect and kindness;
-* Be thoughtful in how you communicate;
-* Don’t be destructive or inflammatory;
-* If necessary, register complaints directly one the official Petrobras' channels listed [here](https://prd.hotsitespetrobras.com.br/en/contact-us/).
+- Treat everyone with respect and kindness;
+- Be thoughtful in how you communicate;
+- Don’t be destructive or inflammatory;
+- If necessary, register complaints directly one the official Petrobras' channels listed [here](https://petrobras.com.br/en/fale-conosco).
