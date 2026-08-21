@@ -22,8 +22,10 @@ The material in this notebook was presented at the **4th Workshop on 3W** (Day 1
    # Create an empty virtual environment
    python -m venv i3wds
 
-   # Activate the created virtual environment  
-   .\i3wds\Scripts\activate
+   # Activate the created virtual environment (depends on your terminal)
+   # Command Prompt (cmd):  i3wds\Scripts\activate.bat
+   # PowerShell:            i3wds\Scripts\Activate.ps1
+   # Git Bash / Linux / macOS: source i3wds/Scripts/activate (Windows) or source i3wds/bin/activate (Linux/macOS)
 
    # Install required packages from the local requirements.txt
    cd resources\introduction_to_3w_dataset_2.0.0

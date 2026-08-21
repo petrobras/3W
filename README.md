@@ -169,10 +169,12 @@ source .venv/bin/activate
 uv pip install -e .
 ```
 
-**Windows (PowerShell):**
+**Windows:**
 ```powershell
 uv venv .venv
-.venv\Scripts\activate
+# Command Prompt (cmd):  .venv\Scripts\activate.bat
+# PowerShell:            .venv\Scripts\Activate.ps1
+# Git Bash:              source .venv/Scripts/activate
 uv pip install -e .
 ```
 

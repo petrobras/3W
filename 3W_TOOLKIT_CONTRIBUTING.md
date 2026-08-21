@@ -64,10 +64,12 @@ Our recommended virtual environment manager is [uv](https://docs.astral.sh/uv/).
    source .venv/bin/activate
   ```
 
-  **Windows (PowerShell):**
+  **Windows:**
   ```powershell
    uv venv .venv
-   .venv\Scripts\activate
+   # Command Prompt (cmd):  .venv\Scripts\activate.bat
+   # PowerShell:            .venv\Scripts\Activate.ps1
+   # Git Bash:              source .venv/Scripts/activate
   ```
 
 3. **Install development dependencies:**

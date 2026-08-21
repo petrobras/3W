@@ -68,10 +68,26 @@ Further details on the 3W dataset’s structure, preprocessing, and usage are av
 
 ## ⚙️ Installation & Setup  <a id="installation"></a>
 
-It is possible to perform the installation in different ways.
+It is possible to perform the installation in different ways, depending on what you want to do:
+
+- **Just want to use the 3W Toolkit?** Install the published package from PyPI. You don't need to clone the repository.
+- **Want to develop or contribute to the 3W Toolkit?** Clone (or fork) the repository and install it locally in editable mode, so your changes are picked up immediately without reinstalling.
+
+### Option A: Install from PyPI (for using the toolkit)
+
+```bash
+pip install ThreeWToolkit
+```
+
+or, using `uv`:
+```bash
+uv pip install ThreeWToolkit
+```
+
+### Option B: Clone/Fork and install in editable mode (for development/contribution)
 
 **1. Fork or clone the repository**  
-**Option A: Fork** 
+**Fork** 
 1. Go to [https://github.com/petrobras/3W](https://github.com/petrobras/3W)
 2. Click “Fork” in the top-right corner to create a copy under your GitHub account.
 3. Clone your forked repository:
@@ -79,16 +95,16 @@ It is possible to perform the installation in different ways.
 git clone git@github.com:<your-username>/3W.git
 ```
 
-**Option B: Clone**
+**Clone**
 ```bash
 git clone git@github.com:petrobras/3W.git
 ```
 
-**2. Install the package**  
+**2. Install the package in editable mode**  
 
 Our recommended virtual environment manager is [uv](https://docs.astral.sh/uv/). Install `uv` according to the [official instructions](https://docs.astral.sh/uv/getting-started/installation/).
 
-**Option A: Using `uv` (recommended)**
+**Using `uv` (recommended)**
 
 **Linux / macOS:**
 ```bash
@@ -97,14 +113,16 @@ source .venv/bin/activate
 uv pip install -e .
 ```
 
-**Windows (PowerShell):**
+**Windows:**
 ```powershell
 uv venv .venv
-.venv\Scripts\activate
+# Command Prompt (cmd):        .venv\Scripts\activate.bat
+# PowerShell:                  .venv\Scripts\Activate.ps1
+# Git Bash:                    source .venv/Scripts/activate
 uv pip install -e .
 ```
 
-**Option B: Using `pip`** 
+**Using `pip`** 
 ```bash
 pip install -e .
 ```
