@@ -455,7 +455,7 @@ plt.show()
 
 RANDOM_SEED = 2026
 
-dataset_path = "../../dataset"
+dataset_path = "dataset"
 classes = [0, 1, 2]
 
 ds = ParquetDatasetConfig(
@@ -605,7 +605,7 @@ from ThreeWToolkit.models import MLPConfig
 from ThreeWToolkit.trainer import TorchTrainerConfig
 from ThreeWToolkit.assessment import ModelAssessmentConfig
 
-path = "../../dataset"
+path = "dataset"
 pipeline = PipelineConfig(
     train_dataset_config=ParquetDatasetConfig(
         path=path,
