@@ -178,27 +178,7 @@ Verify installation:
 
   \- \`./bin/lint\` runs code quality checks, including formatting, linting, and link validation.
 
-2\. **\*\*Notebook checks:\*\***
-
-  The \`bin/nb_test\` script can be used to execute notebook demos locally.
-
-  By default, it runs only the BASIC notebooks:
-
-  \`\`\`bash
-
-  ./bin/nb_test
-
-  \`\`\`
-
-  To also include NOT_BASIC notebooks, set the \`INCLUDE_NOT_BASIC\` environment variable:
-
-  \`\`\`bash
-
-  INCLUDE_NOT_BASIC=True ./bin/nb_test
-
-  \`\`\`
-
-  Failures in BASIC notebooks are treated as errors and cause the script to return a non-zero exit code. Failures in NOT_BASIC notebooks are reported as warnings and do not block the build.
+  \- \`./bin/nb_test\` runs the BASIC notebook demos locally. To also include the NOT_BASIC notebooks, run \`INCLUDE_NOT_BASIC=True ./bin/nb_test\`. BASIC notebook failures are treated as errors, while NOT_BASIC notebook failures are reported as warnings.
 
 **\*\*Please run both commands locally before opening a Pull Request.\*\***
 
