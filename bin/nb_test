@@ -26,14 +26,21 @@ set -u
 #   <path>  - Legacy mode: run every *.ipynb found under an arbitrary
 #             path, reported as a single, non-categorized WARNING batch.
 
-ALL=0
-LEGACY_PATH=""
-for arg in "$@"; do
-    case "$arg" in
-        --all) ALL=1 ;;
-        *) LEGACY_PATH="$arg" ;;
-    esac
-done
+LEGACY_PATH="${1:-}"
+
+case "${INCLUDE_NOT_BASIC:-False}" in
+    True|true|TRUE|1|yes|YES)
+        INCLUDE_NOT_BASIC=1
+        ;;
+    False|false|FALSE|0|no|NO|"")
+        INCLUDE_NOT_BASIC=0
+        ;;
+    *)
+        echo "Invalid value for INCLUDE_NOT_BASIC: ${INCLUDE_NOT_BASIC}"
+        echo "Use True or False."
+        exit 2
+        ;;
+esac
 
 cd "$(dirname "$0")/.."
 
@@ -56,7 +63,6 @@ DEMOS_NOT_BASIC=(
     "resources/introduction_to_ml_applied_to_mts"
 )
 
-DEMOS_ALL=("${DEMOS_BASIC[@]}" "${DEMOS_NOT_BASIC[@]}")
 
 # Resolve the Python interpreter. On WSL running against a Windows conda/uv
 # env, "python" is not on PATH but "python.exe" is.
@@ -149,14 +155,14 @@ not_basic_failures=0
 if [ -n "$LEGACY_PATH" ]; then
     run_notebooks "OTHER" "$LEGACY_PATH"
     not_basic_failures=$?
-elif [ "$ALL" -eq 1 ]; then
-    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
-    basic_failures=$?
-    run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
-    not_basic_failures=$?
 else
     run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
     basic_failures=$?
+
+    if [ "$INCLUDE_NOT_BASIC" -eq 1 ]; then
+        run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
+        not_basic_failures=$?
+    fi
 fi
 
 echo ""
