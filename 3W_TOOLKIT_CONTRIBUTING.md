@@ -118,6 +118,7 @@ Verify installation:
    These scripts are the same checks executed in the CI pipeline.
   - `./bin/test` runs the test suite (pytest) to verify that your changes do not break existing functionality.
   - `./bin/lint` runs code quality checks, including formatting, linting, and link validation.
+  - `./bin/nb_test` runs the BASIC notebook demos locally. To also include the NOT_BASIC notebooks, run \`INCLUDE_NOT_BASIC=True ./bin/nb_test\`. BASIC notebook failures are treated as errors, while NOT_BASIC notebook failures are reported as warnings.
 
 **Please run both commands locally before opening a Pull Request.**
 The CI pipeline will execute these checks automatically, and your PR will fail if any of them do not pass.
