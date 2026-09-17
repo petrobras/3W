@@ -115,10 +115,10 @@ def copy_demos(app):
     if demos_dst.exists():
         shutil.rmtree(demos_dst)
 
-    shutil.copytree(demos_src, demos_dst)
+    shutil.copytree(demos_src, demos_dst, dirs_exist_ok=True)
 
     print("[ThreeWToolkit] Demos copied successfully")
 
 
 def setup(app):
-    app.connect("builder-inited", copy_demos)
+    app.connect("config-inited", lambda app, config: copy_demos(app))

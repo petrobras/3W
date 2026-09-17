@@ -120,7 +120,7 @@ class BaseTrainer(ABC):
     Subclasses (TorchTrainer, SklearnTrainer) implement framework-specific
     data preparation and training execution.
 
-    Example:
+    Example::
 
         # Subclass must implement abstract methods
         class MyTrainer(BaseTrainer):
@@ -311,6 +311,7 @@ class BaseTrainer(ABC):
         Sets seeds for:
         - Python random module
         - NumPy
+
         Args:
             seed: Random seed value.
         """
