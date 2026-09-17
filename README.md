@@ -201,7 +201,7 @@ For development, including the optional `dev` dependencies:
 uv sync --locked --extra dev
 ```
 
-Or include all dependencies (dev, docs, images):
+Or include all dependencies (dev, docs, images, notebooks, scikit-extras, torch-extras):
 ```bash
 uv sync --locked --all-extras
 ```

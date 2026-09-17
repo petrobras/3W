@@ -59,7 +59,7 @@ Our recommended virtual environment manager is [uv](https://docs.astral.sh/uv/).
   ```
 
 2. **Synchronize the environment with `uv`:**
-  From the project root, install the project and all optional extras (`dev`, `docs`, `images`) using the exact versions in `uv.lock`:
+  From the project root, install the project and all optional extras (`dev`, `docs`, `images`, `notebooks`, `scikit-extras`, `torch-extras`) using the exact versions in `uv.lock`:
 
   ```bash
    uv sync --locked --all-extras
