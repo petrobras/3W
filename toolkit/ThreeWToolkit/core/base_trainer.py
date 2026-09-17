@@ -1,10 +1,8 @@
-"""Base trainer class with framework-agnostic training logic."""
-
-from abc import ABC, abstractmethod
 import logging
 import random
 from typing import Any
 from typing import Literal
+from abc import ABC, abstractmethod
 
 import numpy as np
 import numpy.typing as npt
@@ -22,10 +20,6 @@ logger = logging.getLogger(__name__)
 class TrainingHistory(BaseModel):
     """
     Container for training history.
-
-    Attributes:
-        train_loss: List of training loss values per epoch (for PyTorch).
-        val_loss: List of validation loss values per epoch (for PyTorch).
     """
 
     train_loss: list[float] = Field(..., description="Training loss values per epoch.")
@@ -38,13 +32,6 @@ class TrainingHistory(BaseModel):
 class TrainingResult(BaseModel):
     """
     Container for training results.
-
-    Attributes:
-        model: Trained model instance.
-        history: Training history with metrics per epoch/iteration.
-        train_dataset_size: Number of events in training dataset.
-        val_dataset_size: Number of events in validation dataset (0 if no validation).
-        metadata: Additional metadata about training.
     """
 
     model: BaseModels = Field(..., description="Trained model instance.")
@@ -64,10 +51,6 @@ class TrainingResult(BaseModel):
 class CrossValidationResult(BaseModel):
     """
     Container for cross-validation results.
-
-    Attributes:
-        fold_results: List of TrainingResult for each fold.
-        metadata: Additional metadata about cross-validation.
     """
 
     fold_results: list[TrainingResult] = Field(
@@ -81,10 +64,6 @@ class CrossValidationResult(BaseModel):
 class PredictionResult(BaseModel):
     """
     Container for prediction results.
-
-    Attributes:
-        predictions: Model predictions (e.g., class probabilities or regression outputs).
-        metadata: Additional metadata about the prediction.
     """
 
     y_true: npt.NDArray[np.integer] | None = Field(
@@ -133,15 +112,16 @@ class BaseTrainer(ABC):
     Abstract base trainer with framework-agnostic logic.
 
     This class provides common functionality for all trainers:
-    - Dataset validation
-    - Random seed setting
-    - Class weight computation
-    - Training flow orchestration
+        - Dataset validation
+        - Random seed setting
+        - Class weight computation
+        - Training flow orchestration
 
     Subclasses (TorchTrainer, SklearnTrainer) implement framework-specific
     data preparation and training execution.
 
-    Usage:
+    Example::
+
         # Subclass must implement abstract methods
         class MyTrainer(BaseTrainer):
             def _prepare_data(self, dataset):
@@ -331,6 +311,7 @@ class BaseTrainer(ABC):
         Sets seeds for:
         - Python random module
         - NumPy
+
         Args:
             seed: Random seed value.
         """

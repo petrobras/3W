@@ -19,6 +19,7 @@ from .base_trainer import (
     BaseTrainerConfig,
     TrainingResult,
     TrainingHistory,
+    PredictionResult
 )
 from .base_transform import BaseTransform, BaseTransformConfig
 from .dataset_outputs import DatasetOutputs
@@ -47,10 +48,6 @@ __all__ = [
     # Feature Extraction
     "BaseFeatureExtractor",
     "BaseFeatureExtractorConfig",
-    "EpsMixin",
-    "FeatureSelectionMixin",
-    "OverlapOffsetMixin",
-    "WindowSizeMixin",
     # Instantiable
     "Instantiable",
     # Models
@@ -65,6 +62,7 @@ __all__ = [
     "BaseTransformConfig",
     # Prediction
     "PredictionStrategy",
+    "PredictionResult",
     # Preprocessing
     "BasePreprocessing",
     "BasePreprocessingConfig",

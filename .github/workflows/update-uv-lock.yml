@@ -1,0 +1,80 @@
+name: Update uv.lock and run tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pull-request-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  update-uv-lock:
+    name: Update uv.lock
+    runs-on: ubuntu-latest
+
+    outputs:
+      commit_sha: ${{ steps.commit.outputs.commit_sha }}
+      repository: ${{ steps.commit.outputs.repository }}
+
+    steps:
+      - name: Checkout pull request branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+
+      - name: Update uv.lock
+        run: uv lock
+
+      - name: Commit uv.lock to the pull request branch
+        id: commit
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPOSITORY: ${{ github.repository }}
+        run: |
+          if [[ -n "$(git status --porcelain -- uv.lock)" ]]; then
+            if [[ "${PR_REPOSITORY}" != "${BASE_REPOSITORY}" ]]; then
+              echo "uv.lock is outdated. Pull requests from forks must commit the updated uv.lock manually."
+              exit 1
+            fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add uv.lock
+            git commit -m "Update uv.lock"
+            git push origin "HEAD:${PR_BRANCH}"
+          else
+            echo "uv.lock is already up to date."
+          fi
+
+          echo "commit_sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          echo "repository=${PR_REPOSITORY}" >> "${GITHUB_OUTPUT}"
+
+  tests:
+    name: Run lint and pytest
+    needs:
+      - update-uv-lock
+    uses: ./.github/workflows/tests.yml
+    with:
+      ref: ${{ needs.update-uv-lock.outputs.commit_sha }}
+      repository: ${{ needs.update-uv-lock.outputs.repository }}
+    secrets: inherit

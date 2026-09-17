@@ -1,6 +1,6 @@
 # 🤝 Contributing Guide
 
-Welcome to our **3W Toolkit**! 🎉 We're excited that you're interested in contributing. This guide will help you understand our modular architecture and how to extend the toolkit with new models, preprocessing steps, feature extractors, trainers, and assessments.
+Welcome to our **ThreeWToolkit**! 🎉 We're excited that you're interested in contributing. This guide will help you understand our modular architecture and how to extend the toolkit with new models, preprocessing steps, feature extractors, trainers, and assessments.
 
 We welcome contributions in all forms and truly appreciate every effort. 💙 Helping the community goes beyond writing code — answering questions, supporting other users, and improving documentation are just as important.
 
@@ -14,6 +14,7 @@ No matter how you choose to contribute, please be respectful and follow our [cod
 - **Follow the architecture patterns** - Use base classes and existing implementations as templates
 - **Use Pydantic configs** - All new components should support configuration-driven instantiation
 - **Include tests and documentation** - Essential for all contributions
+- **Update uv.lock after dependency changes** - Run `uv lock` and commit the updated lock file whenever a package is added, removed or updated in `pyproject.toml`
 - **Run quality checks before submitting** - Use `./bin/lint` and ensure `./bin/test` passes
 - **Write clear commit messages** - Follow conventional commits format
 
@@ -56,35 +57,37 @@ Our recommended virtual environment manager is [uv](https://docs.astral.sh/uv/).
    git clone https://github.com/petrobras/3W.git
    cd 3W
   ```
-2. **Create a virtual environment with `uv`:**
 
-  **Linux / macOS (terminal):**
+2. **Synchronize the environment with `uv`:**
+  From the project root, install the project and all optional extras (`dev`, `docs`, `images`, `notebooks`, `scikit-extras`, `torch-extras`) using the exact versions in `uv.lock`:
+
   ```bash
-   uv venv .venv
+   uv sync --locked --all-extras
+  ```
+
+  This command automatically creates the `.venv` virtual environment and installs the locked dependencies.
+
+3. **Activate the environment:**
+
+  **Linux / macOS:**
+  ```bash
    source .venv/bin/activate
   ```
 
   **Windows (cmd):**
-  ```cmd
+  ```console
    uv venv .venv
    .venv\Scripts\activate.bat
   ```
 
   **Windows (PowerShell):**
   ```powershell
-   uv venv .venv
    .venv\Scripts\Activate.ps1
   ```
 
   **Windows (Bash):**
   ```bash
-   uv venv .venv
    source .venv/Scripts/activate
-  ```
-
-3. **Install development dependencies:**
-  ```bash
-   uv pip install -e '.[dev]'
   ```
 
 3.1. **Install additional tooling (required for linting):**
@@ -115,6 +118,7 @@ Verify installation:
    These scripts are the same checks executed in the CI pipeline.
   - `./bin/test` runs the test suite (pytest) to verify that your changes do not break existing functionality.
   - `./bin/lint` runs code quality checks, including formatting, linting, and link validation.
+  - `./bin/nb_test` runs the BASIC notebook demos locally. To also include the NOT_BASIC notebooks, run \`INCLUDE_NOT_BASIC=True ./bin/nb_test\`. BASIC notebook failures are treated as errors, while NOT_BASIC notebook failures are reported as warnings.
 
 **Please run both commands locally before opening a Pull Request.**
 The CI pipeline will execute these checks automatically, and your PR will fail if any of them do not pass.
@@ -123,7 +127,7 @@ The CI pipeline will execute these checks automatically, and your PR will fail i
 
 ## Architecture Overview
 
-The 3W Toolkit follows a **modular, plugin-based architecture** using base classes and the **Strategy Pattern** to enable extensibility.
+The ThreeWToolkit follows a **modular, plugin-based architecture** using base classes and the **Strategy Pattern** to enable extensibility.
 
 ### 1. Core Principles
 

@@ -170,4 +170,5 @@ processed_data/
 output/
 */download/
 
-uv.lock
+# Ignore generated demo files for read the docs compilation
+toolkit/docs/source/_demos_gen/
