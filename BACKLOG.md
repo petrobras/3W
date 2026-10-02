@@ -12,5 +12,4 @@ The list of priority improvements for the 3W Project that we intend to develop c
     - Event types that are rare cease to be rare (with more instances).
 1. Configure other resources that may be useful for our collaborative development. For example:
     - Technical documentation on [Read the Docs](https://about.readthedocs.com/);
-    - Configuration files for AI agents;
     - Configuration files for [Docker](https://www.docker.com/).
