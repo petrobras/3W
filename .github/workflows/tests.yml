@@ -1,35 +1,18 @@
 name: Tests and Coverage
 
 on:
-  workflow_call:
-    inputs:
-      ref:
-        description: Commit SHA to test
-        required: true
-        type: string
-      repository:
-        description: Repository containing the commit
-        required: true
-        type: string
-
+  pull_request:
   push:
     branches:
       - main
-
-permissions:
-  contents: read
-
 jobs:
   lint:
-    name: Lint
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.repository || github.repository }}
-          ref: ${{ inputs.ref || github.sha }}
           filter: blob:none
           sparse-checkout: |
             /*
@@ -42,44 +25,33 @@ jobs:
           python-version: "3.12"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v4
         with:
-          enable-cache: true
-          cache-dependency-glob: |
-            pyproject.toml
-            uv.lock
-
-      - name: Show versions
-        run: |
-          python --version
-          uv --version
+          enable-caching: true
 
       - name: Make helper scripts executable
         run: chmod +x bin/lint
 
-      - name: Install locked dependencies
-        run: uv sync --locked --extra dev
+      - name: Create venv
+        run: uv venv .venv
+
+      - name: Install package with dev extras
+        run: uv pip install -e .[dev]
 
       - name: Run lint
-        run: uv run --no-sync ./bin/lint
+        run: uv run ./bin/lint
 
   test:
-    name: Test with Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        python-version:
-          - "3.10"
-          - "3.11"
-          - "3.12"
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.repository || github.repository }}
-          ref: ${{ inputs.ref || github.sha }}
           filter: blob:none
           sparse-checkout: |
             /*
@@ -92,12 +64,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v4
         with:
-          enable-cache: true
-          cache-dependency-glob: |
-            pyproject.toml
-            uv.lock
+          enable-caching: true
 
       - name: Show versions
         run: |
@@ -107,11 +76,14 @@ jobs:
       - name: Make helper scripts executable
         run: chmod +x bin/test
 
-      - name: Install locked dependencies
-        run: uv sync --locked --extra dev
+      - name: Create venv
+        run: uv venv .venv
 
-      - name: Run tests
-        run: uv run --no-sync ./bin/test
+      - name: Install package with dev extras
+        run: uv pip install -e .[dev]
+
+      - name: Testing
+        run: uv run ./bin/test
 
       - name: Upload coverage to Coveralls
         if: matrix.python-version == '3.10'
