@@ -168,7 +168,6 @@ Here are additional requirements for contributions to be incorporated into this 
 
 * As the forking workflow is used, every PR needs to be generated in a fork. A tutorial about different Git Workflows is available [here](https://www.atlassian.com/git/tutorials/comparing-workflows#centralized-workflow); 
 * PRs will only be accepted if they pass the checks automatically performed by the GitHub Action specified in [tests.yml](.github/workflows/tests.yml), which runs [`bin/lint`](bin/lint). If this check fails, check the generated log, run `./bin/lint` locally to format and fix the files as needed, then generate another PR.
-* Whenever package dependencies are added, removed, or updated in `pyproject.toml`, the corresponding `uv.lock` file must also be updated. The `update-uv-lock.yml` GitHub Actions workflow detects inconsistencies, regenerates `uv.lock`, and commits the updated file to the PR branch automatically. If the workflow cannot commit the file because it lacks permission to write to the PR branch, the CI pipeline will fail. In that case, run `uv lock` locally and commit the updated `uv.lock` file to your PR.
 
 # Backlog
 
