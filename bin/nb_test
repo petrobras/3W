@@ -26,14 +26,21 @@ set -u
 #   <path>  - Legacy mode: run every *.ipynb found under an arbitrary
 #             path, reported as a single, non-categorized WARNING batch.
 
-ALL=0
-LEGACY_PATH=""
-for arg in "$@"; do
-    case "$arg" in
-        --all) ALL=1 ;;
-        *) LEGACY_PATH="$arg" ;;
-    esac
-done
+LEGACY_PATH="${1:-}"
+
+case "${INCLUDE_NOT_BASIC:-False}" in
+    True|true|TRUE|1|yes|YES)
+        INCLUDE_NOT_BASIC=1
+        ;;
+    False|false|FALSE|0|no|NO|"")
+        INCLUDE_NOT_BASIC=0
+        ;;
+    *)
+        echo "Invalid value for INCLUDE_NOT_BASIC: ${INCLUDE_NOT_BASIC}"
+        echo "Use True or False."
+        exit 2
+        ;;
+esac
 
 cd "$(dirname "$0")/.."
 
@@ -56,7 +63,6 @@ DEMOS_NOT_BASIC=(
     "resources/introduction_to_ml_applied_to_mts"
 )
 
-DEMOS_ALL=("${DEMOS_BASIC[@]}" "${DEMOS_NOT_BASIC[@]}")
 
 # Resolve the Python interpreter. On WSL running against a Windows conda/uv
 # env, "python" is not on PATH but "python.exe" is.
@@ -91,14 +97,47 @@ run_notebooks () {
             echo -e "\033[0;33m[$label] Directory not found, skipping: $dir\033[0m"
             continue
         fi
+
         # Collect the notebook list into an array first: piping "find" directly
         # into a "while read" loop shares stdin with jupyter-nbconvert's kernel
         # subprocess, which can consume the pipe and silently skip notebooks.
-        mapfile -t nbs < <(find "$dir" -name "*.ipynb" -not -path "*/_basic/*")
+        #
+        # "_basic" notebooks are excluded only from NOT_BASIC searches, since
+        # they are already covered by DEMOS_BASIC.
+        if [ "$label" = "NOT_BASIC" ]; then
+            mapfile -t nbs < <(
+                find "$dir" \
+                    -type f \
+                    -name "*.ipynb" \
+                    -not -path "*/_basic/*" \
+                    -not -path "*/.ipynb_checkpoints/*" \
+                    | sort
+            )
+        else
+            mapfile -t nbs < <(
+                find "$dir" \
+                    -type f \
+                    -name "*.ipynb" \
+                    -not -path "*/.ipynb_checkpoints/*" \
+                    | sort
+            )
+        fi
+
         for nb in "${nbs[@]}"; do
             echo -e "\033[0;33m[$label] Testing $nb.\033[0m"
-            local log="$LOGDIR/${label}_$(basename "$nb").log"
-            if "$PYTHON" -m nbconvert "$nb" --to notebook --execute --output-dir "$TEMPDIR" >"$log" 2>&1; then
+
+            # Preserve the notebook path in the log filename so notebooks with
+            # the same basename do not overwrite each other's logs.
+            local safe_name="${nb//\//_}"
+            local log="$LOGDIR/${label}_${safe_name}.log"
+
+            if "$PYTHON" -m nbconvert \
+                "$nb" \
+                --to notebook \
+                --execute \
+                --output-dir "$TEMPDIR" \
+                >"$log" 2>&1; then
+
                 echo -e "\033[0;32m[$label] $nb executed successfully.\033[0m"
             else
                 echo -e "\033[0;31m[$label] $nb FAILED. Log: $log\033[0m"
@@ -107,7 +146,7 @@ run_notebooks () {
         done
     done
 
-    return $failures
+    return "$failures"
 }
 
 basic_failures=0
@@ -116,14 +155,14 @@ not_basic_failures=0
 if [ -n "$LEGACY_PATH" ]; then
     run_notebooks "OTHER" "$LEGACY_PATH"
     not_basic_failures=$?
-elif [ "$ALL" -eq 1 ]; then
-    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
-    basic_failures=$?
-    run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
-    not_basic_failures=$?
 else
     run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
     basic_failures=$?
+
+    if [ "$INCLUDE_NOT_BASIC" -eq 1 ]; then
+        run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
+        not_basic_failures=$?
+    fi
 fi
 
 echo ""
