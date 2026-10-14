@@ -80,8 +80,8 @@ class AssessmentVisualization(BaseAssessmentVisualization):
         Returns:
             fig (plt.Figure): confusion matrix plot as a matplotlib Figure
 
-        Usage:
-            confusion_matrix = plotter.plot_confusion_matrix(y_true=y_true_list, y_pred=y_pred_list)
+        Example:
+            >>> confusion_matrix = plotter.plot_confusion_matrix(y_true=y_true_list, y_pred=y_pred_list)
         """
 
         if not isinstance(y_true, (pd.Series, np.ndarray, list)):
@@ -160,12 +160,12 @@ class AssessmentVisualization(BaseAssessmentVisualization):
         Returns:
             fig (plt.Figure): feature importance plot as a matplotlib Figure
 
-        Usage:
-            feature_importance_plot = plotter.feature_visualization(
-                feature_importances=model.feature_importances_,
-                feature_names=feature_names,
-                top_n=20
-            )
+        Example:
+            >>> feature_importance_plot = plotter.feature_visualization(
+            ...     feature_importances=model.feature_importances_,
+            ...     feature_names=feature_names,
+            ...     top_n=20
+            ... )
         """
         if len(feature_importances) != len(feature_names):
             raise ValueError(
