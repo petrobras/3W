@@ -4,6 +4,7 @@
 [![Code style][ruff-shield]][ruff]
 [![Versioning][semver-shield]][semver]
 [![Coverage Status][coveralls-shield]][coveralls]
+[![Documentation Status][read-the-docs]][read-the-docs]
 
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
@@ -15,6 +16,7 @@
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
 [coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev
 [coveralls-shield]: https://coveralls.io/repos/github/rafaelpadilla/3W/badge.svg?branch=dev
+[read-the-docs]: https://threewtoolkit.readthedocs.io/en/latest/
 
 # Table of Content
 
@@ -131,6 +133,8 @@ The 3W Toolkit is a software package written in Python 3 that contains resources
 * [3W Dataset](#3w-dataset) overview generation;
 * Experimentation and comparative analysis of Machine Learning-based approaches and algorithms for specific problems related to undesirable events that occur in offshore oil wells during their respective drilling, completion and production phases;
 * Standardization of key points of the Machine Learning-based algorithm development pipeline.
+
+> 📖 **Official Documentation**: For installation instructions, detailed API reference, and user guides, check out our [Read the Docs](https://threewtoolkit.readthedocs.io/en/latest/) page.
 
 It is important to note that there are arbitrary choices in this toolkit, but they have been carefully made to allow adequate comparative analysis without compromising the ability to experiment with different approaches and algorithms.
 
