@@ -11,7 +11,7 @@ set -u
 #   ./bin/nb_test [--all | --not-basic] [<path>]
 #
 # Categories:
-#   DEMOS_BASIC     - Notebooks the project is committed to keep working
+#   DEMOS_BASIC     - Notebooks the project is committed to keeping working
 #                      across 3W Toolkit releases: toolkit/demos,
 #                      dataset/demos/_basic and benchmarks/*/demo/_basic
 #                      (once created). A failure here is an ERROR
@@ -20,20 +20,18 @@ set -u
 #                      A failure here is a WARNING only and does not
 #                      affect the exit code.
 #
-# Parameter:
-#   (none)       - Default. Tests DEMOS_BASIC only.
-#   --all        - Tests DEMOS_BASIC + DEMOS_NOT_BASIC.
-#   --not-basic  - Tests DEMOS_NOT_BASIC only.
-#   <path>       - Legacy mode: run every *.ipynb found under an arbitrary
-#                  path, reported as a single, non-categorized WARNING batch.
+# Options:
+#   (none)       - Default. Test DEMOS_BASIC only.
+#   --all        - Test DEMOS_BASIC + DEMOS_NOT_BASIC.
+#   --not-basic  - Test DEMOS_NOT_BASIC only.
+#   <path>       - Legacy mode: run every *.ipynb found under the given
+#                  path, reported as a single uncategorized WARNING batch.
 #
 # Requirements:
-#   Install the development and notebook extras BEFORE running this script.
-#   The notebook extra contains dependencies required by NOT_BASIC notebooks.
-#   From the project root, run one of:
+#   Install the "notebooks" extra BEFORE running this script. It contains the
+#   dependencies required by the notebooks under test:
 #
-#     uv sync --extra dev --extra notebooks
-#     uv pip install -e ".[dev,notebooks]"
+#     uv sync --extra notebooks
 #
 #   The script automatically prefers the project's .venv when it exists, so
 #   there is no need to activate the virtual environment manually.
@@ -42,27 +40,45 @@ ALL=0
 NOT_BASIC=0
 LEGACY_PATH=""
 
-case "${INCLUDE_NOT_BASIC:-False}" in
-    True|true|TRUE|1|yes|YES)
-        INCLUDE_NOT_BASIC=1
-        ;;
-    False|false|FALSE|0|no|NO|"")
-        INCLUDE_NOT_BASIC=0
-        ;;
-    *)
-        echo "Invalid value for INCLUDE_NOT_BASIC: ${INCLUDE_NOT_BASIC}"
-        echo "Use True or False."
-        exit 2
-        ;;
-esac
+usage() {
+    echo "Usage: $0 [--all | --not-basic] [<path>]" >&2
+}
 
 for arg in "$@"; do
     case "$arg" in
-        --all) ALL=1 ;;
-        --not-basic) NOT_BASIC=1 ;;
-        *) LEGACY_PATH="$arg" ;;
+        --all)
+            ALL=1
+            ;;
+        --not-basic)
+            NOT_BASIC=1
+            ;;
+        -*)
+            echo "Unknown option: $arg" >&2
+            usage
+            exit 2
+            ;;
+        *)
+            if [ -n "$LEGACY_PATH" ]; then
+                echo "Only one path may be provided." >&2
+                usage
+                exit 2
+            fi
+            LEGACY_PATH="$arg"
+            ;;
     esac
 done
+
+if [ "$ALL" -eq 1 ] && [ "$NOT_BASIC" -eq 1 ]; then
+    echo "Options --all and --not-basic cannot be combined." >&2
+    usage
+    exit 2
+fi
+
+if [ -n "$LEGACY_PATH" ] && { [ "$ALL" -eq 1 ] || [ "$NOT_BASIC" -eq 1 ]; }; then
+    echo "A path cannot be combined with --all or --not-basic." >&2
+    usage
+    exit 2
+fi
 
 cd "$(dirname "$0")/.."
 
@@ -197,17 +213,12 @@ elif [ "$NOT_BASIC" -eq 1 ]; then
 else
     run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
     basic_failures=$?
-
-    if [ "$INCLUDE_NOT_BASIC" -eq 1 ]; then
-        run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
-        not_basic_failures=$?
-    fi
 fi
 
 echo ""
 echo "Summary:"
-echo "  Basic demos failures (ERROR):      $basic_failures"
-echo "  Non-basic demos failures (WARNING): $not_basic_failures"
+echo "  Basic demo failures (ERROR):        $basic_failures"
+echo "  Non-basic demo failures (WARNING):  $not_basic_failures"
 
 if [ "$basic_failures" -gt 0 ]; then
     echo -e "\033[0;31mBasic demos have failing notebooks. This must be fixed before release.\033[0m"
@@ -215,7 +226,7 @@ if [ "$basic_failures" -gt 0 ]; then
 fi
 
 if [ "$not_basic_failures" -gt 0 ]; then
-    echo -e "\033[0;33mSome non-basic demos failed. Please review, but this does not block the build.\033[0m"
+    echo -e "\033[0;33mSome non-basic demos failed. Please review them, but this does not block the build.\033[0m"
 fi
 
 exit 0
