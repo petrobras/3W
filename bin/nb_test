@@ -8,10 +8,10 @@ set -u
 # runners have no GPU and limited job/disk time.
 #
 # Usage:
-#   ./bin/nb_test [--all] [<path>]
+#   ./bin/nb_test [--all | --not-basic] [<path>]
 #
 # Categories:
-#   DEMOS_BASIC     - Notebooks the project is committed to keep working
+#   DEMOS_BASIC     - Notebooks the project is committed to keeping working
 #                      across 3W Toolkit releases: toolkit/demos,
 #                      dataset/demos/_basic and benchmarks/*/demo/_basic
 #                      (once created). A failure here is an ERROR
@@ -20,27 +20,65 @@ set -u
 #                      A failure here is a WARNING only and does not
 #                      affect the exit code.
 #
-# Parameter:
-#   (none)  - Default. Tests DEMOS_BASIC only.
-#   --all   - Tests DEMOS_BASIC + DEMOS_NOT_BASIC (DEMOS_ALL).
-#   <path>  - Legacy mode: run every *.ipynb found under an arbitrary
-#             path, reported as a single, non-categorized WARNING batch.
+# Options:
+#   (none)       - Default. Test DEMOS_BASIC only.
+#   --all        - Test DEMOS_BASIC + DEMOS_NOT_BASIC.
+#   --not-basic  - Test DEMOS_NOT_BASIC only.
+#   <path>       - Legacy mode: run every *.ipynb found under the given
+#                  path, reported as a single uncategorized WARNING batch.
+#
+# Requirements:
+#   Install the "notebooks" extra BEFORE running this script. It contains the
+#   dependencies required by the notebooks under test:
+#
+#     uv sync --extra notebooks
+#
+#   The script automatically prefers the project's .venv when it exists, so
+#   there is no need to activate the virtual environment manually.
 
-LEGACY_PATH="${1:-}"
+ALL=0
+NOT_BASIC=0
+LEGACY_PATH=""
 
-case "${INCLUDE_NOT_BASIC:-False}" in
-    True|true|TRUE|1|yes|YES)
-        INCLUDE_NOT_BASIC=1
-        ;;
-    False|false|FALSE|0|no|NO|"")
-        INCLUDE_NOT_BASIC=0
-        ;;
-    *)
-        echo "Invalid value for INCLUDE_NOT_BASIC: ${INCLUDE_NOT_BASIC}"
-        echo "Use True or False."
-        exit 2
-        ;;
-esac
+usage() {
+    echo "Usage: $0 [--all | --not-basic] [<path>]" >&2
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --all)
+            ALL=1
+            ;;
+        --not-basic)
+            NOT_BASIC=1
+            ;;
+        -*)
+            echo "Unknown option: $arg" >&2
+            usage
+            exit 2
+            ;;
+        *)
+            if [ -n "$LEGACY_PATH" ]; then
+                echo "Only one path may be provided." >&2
+                usage
+                exit 2
+            fi
+            LEGACY_PATH="$arg"
+            ;;
+    esac
+done
+
+if [ "$ALL" -eq 1 ] && [ "$NOT_BASIC" -eq 1 ]; then
+    echo "Options --all and --not-basic cannot be combined." >&2
+    usage
+    exit 2
+fi
+
+if [ -n "$LEGACY_PATH" ] && { [ "$ALL" -eq 1 ] || [ "$NOT_BASIC" -eq 1 ]; }; then
+    echo "A path cannot be combined with --all or --not-basic." >&2
+    usage
+    exit 2
+fi
 
 cd "$(dirname "$0")/.."
 
@@ -64,10 +102,17 @@ DEMOS_NOT_BASIC=(
 )
 
 
-# Resolve the Python interpreter. On WSL running against a Windows conda/uv
-# env, "python" is not on PATH but "python.exe" is.
-PYTHON=python
-command -v "$PYTHON" >/dev/null 2>&1 || PYTHON=python.exe
+# Resolve the Python interpreter. Prefer the project's virtual environment.
+PROJECT_ROOT="$(pwd)"
+if [ -x "$PROJECT_ROOT/.venv/Scripts/python.exe" ]; then
+    PYTHON="$PROJECT_ROOT/.venv/Scripts/python.exe"
+elif [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+    PYTHON="$PROJECT_ROOT/.venv/bin/python"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON=python
+else
+    PYTHON=python.exe
+fi
 
 TEMPDIR="$(mktemp -d)"
 trap 'rm -rf -- "$TEMPDIR"' EXIT
@@ -130,13 +175,15 @@ run_notebooks () {
             # the same basename do not overwrite each other's logs.
             local safe_name="${nb//\//_}"
             local log="$LOGDIR/${label}_${safe_name}.log"
+            local nb_dir="$(dirname "$nb")"
+            local nb_file="$(basename "$nb")"
 
-            if "$PYTHON" -m nbconvert \
-                "$nb" \
+            if (cd "$nb_dir" && "$PYTHON" -m nbconvert \
+                "$nb_file" \
                 --to notebook \
                 --execute \
                 --output-dir "$TEMPDIR" \
-                >"$log" 2>&1; then
+                >"$log" 2>&1); then
 
                 echo -e "\033[0;32m[$label] $nb executed successfully.\033[0m"
             else
@@ -155,20 +202,23 @@ not_basic_failures=0
 if [ -n "$LEGACY_PATH" ]; then
     run_notebooks "OTHER" "$LEGACY_PATH"
     not_basic_failures=$?
+elif [ "$ALL" -eq 1 ]; then
+    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
+    basic_failures=$?
+    run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
+    not_basic_failures=$?
+elif [ "$NOT_BASIC" -eq 1 ]; then
+    run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
+    not_basic_failures=$?
 else
     run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
     basic_failures=$?
-
-    if [ "$INCLUDE_NOT_BASIC" -eq 1 ]; then
-        run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
-        not_basic_failures=$?
-    fi
 fi
 
 echo ""
 echo "Summary:"
-echo "  Basic demos failures (ERROR):      $basic_failures"
-echo "  Non-basic demos failures (WARNING): $not_basic_failures"
+echo "  Basic demo failures (ERROR):        $basic_failures"
+echo "  Non-basic demo failures (WARNING):  $not_basic_failures"
 
 if [ "$basic_failures" -gt 0 ]; then
     echo -e "\033[0;31mBasic demos have failing notebooks. This must be fixed before release.\033[0m"
@@ -176,7 +226,7 @@ if [ "$basic_failures" -gt 0 ]; then
 fi
 
 if [ "$not_basic_failures" -gt 0 ]; then
-    echo -e "\033[0;33mSome non-basic demos failed. Please review, but this does not block the build.\033[0m"
+    echo -e "\033[0;33mSome non-basic demos failed. Please review them, but this does not block the build.\033[0m"
 fi
 
 exit 0
