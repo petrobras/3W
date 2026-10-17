@@ -1,0 +1,37 @@
+{
+ "inst": {
+  "dtype": "int32",
+  "shape": [
+   962002
+  ],
+  "sha256": "45e797be0afea427ab992679949e04b3b45d69cb1d5e108504e7b53da2b16a6f"
+ },
+ "r": {
+  "dtype": "int32",
+  "shape": [
+   962002
+  ],
+  "sha256": "57a35d910f705aca7f1bed8297d9e1d6abade1481c799b41db1c600a3b18a869"
+ },
+ "y": {
+  "dtype": "int8",
+  "shape": [
+   962002
+  ],
+  "sha256": "84ca2ee2b333c1bc98d3e687ab6711065faebc57fd847ac9e0a454b6eadcb0d5"
+ },
+ "elig": {
+  "dtype": "bool",
+  "shape": [
+   962002
+  ],
+  "sha256": "c5bc6f09b95767a800b44a72522275b3a86b8f9f74b44218d4419d486f366e76"
+ },
+ "state": {
+  "dtype": "int8",
+  "shape": [
+   962002
+  ],
+  "sha256": "479ac80bfb2f1385b92a3a9c06dfd5b907ed4c20bbc8693ccbe38481b479efbb"
+ }
+}

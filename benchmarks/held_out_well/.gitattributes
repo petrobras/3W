@@ -1,0 +1,3 @@
+# The bytes of the protocol files are hashed (SHA-256) and compared, so git
+# must not convert their line endings (the repository default is text=auto).
+protocol/** -text
