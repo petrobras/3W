@@ -1,0 +1,8 @@
+{
+ "n_instances": 1119,
+ "n_decisions": 962002,
+ "eligible_decisions": 961578,
+ "labelled_decisions": 962002,
+ "labelled_eligible_decisions": 961578,
+ "seconds": 43.5
+}
