@@ -1,0 +1,4 @@
+# Needed only to run the baselines (python -m held_out_well baselines).
+# The 3W Toolkit, installed from the repository root, brings numpy,
+# pandas, scikit-learn and pyarrow.
+lightgbm>=4.0
