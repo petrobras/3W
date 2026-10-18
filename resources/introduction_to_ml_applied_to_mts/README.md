@@ -16,6 +16,77 @@ The material in this notebook was presented at the **4th Workshop on 3W** (Days 
 **[▶ Watch the workshop recording Part #1](https://www.youtube.com/watch?v=0ugu1piqtxc&list=PLrdqjADUU50kf0kjnM-JngcyU0mEFL6U1)**
 **[▶ Watch the workshop recording Part #2](https://www.youtube.com/watch?v=o5KZyREfPKs&list=PLrdqjADUU50kf0kjnM-JngcyU0mEFL6U1)**
 
+🗒️ Presenting or teaching this material? [`Presentation.md`](Presentation.md) is a speaker guide (in Portuguese) with an agenda, talking points for each notebook, a demo checklist and fallbacks.
+
+## 📖 Companion Book
+
+This resource is the practical companion of the book:
+
+> Lopes, L. G. O.; Vieira, T. M. A.; Lima Junior, E. T.; Lira, W. W. M.; Aranha, P. E.; Vargas, R. E. V. (2026). **Aprendizado de Mundo Aberto em Poços de Petróleo: da detecção baseada em regras à explicabilidade por agentes de linguagem.** Maceió: Laboratório de Computação Científica e Visualização, Universidade Federal de Alagoas. ISBN 978-65-02-28836-8. DOI: [10.5281/zenodo.22306796](https://doi.org/10.5281/zenodo.22306796). Licensed under CC BY 4.0.
+
+The book (in Portuguese) tells how the detection, segmentation and explanation of undesirable events in oil wells was attacked by successive approximations, over several years. **Appendix E** ("Roteiro prático com o repositório 3W") uses this resource as an executable learning path for the concepts of Part I of the book, and each notebook points to the chapters that give its theoretical background:
+
+| Notebook | Book chapters exercised |
+|---|---|
+| `1_data_treatment` | Ch. 3 — the 3W dataset, pitfalls, preprocessing (windowing, scaling) — and Ch. 4 — validation |
+| `2_visualization_techniques` | Chs. 3 and 6 — t-SNE, UMAP and the caveats on projections |
+| `3_introduction_to_unsupervised_learning` | Chs. 5, 6 and 7 — LSTM autoencoder, reconstruction-error threshold, one-class SVM |
+| `4_introduction_to_supervised_learning` | Chs. 4 and 8 — trees, SVM, MLP and evaluation metrics |
+| `5_clustering_methods` | Chs. 6 and 9 — K-means, DBSCAN, MeanShift, silhouette, adjusted Rand index |
+
+**This resource is a learning path, not a reproduction of the book's experiments** (those are described in the book's Appendix D). Its settings are deliberately reduced to fit the time of a class; the main differences are:
+
+| Aspect | This resource | Book |
+|---|---|---|
+| Sensors | 3 (`P-PDG`, `P-TPT`, `T-TPT`) | 4 or 5, depending on the chapter |
+| Window | 300 points, subsampled 1:5 (covers 1500 s) | 200 to 500 points at the original frequency |
+| Instances per class | Up to 50 files | All available |
+| Partition | 3 folds, split by instance; training with real + simulated (+ drawn) events, test with real events only | Temporal 80/20 split; simulated events only for classes with few real instances; drawn events never used |
+| Autoencoder latent space | 16 to 32 dimensions, 64 LSTM units | 4 to 128 dimensions, depending on the chapter |
+| Classes | Subset `{0, 3, 4, 8}` in the supervised notebook | All ten |
+
+Each difference is a decision you can reverse by editing `src/config.py` and re-running — measuring the effect of each one teaches more than any table of ready-made results. Every notebook ends with the guided exercises proposed in Appendix E.
+
+If you use this material in your work, please cite the book (BibTeX below) and the [3W Project](../../README.md).
+
+```bibtex
+@book{lopes2026mundoaberto,
+  author    = {Lopes, Lucas Gouveia Omena and Vieira, Thales Miranda de Almeida and Lima Junior, Eduardo Toledo de and Lira, William Wagner Matos and Aranha, Pedro Esteves and Vargas, Ricardo Emanuel Vaz},
+  title     = {Aprendizado de Mundo Aberto em Po{\c{c}}os de Petr{\'o}leo: da detec{\c{c}}{\~a}o baseada em regras {\`a} explicabilidade por agentes de linguagem},
+  year      = {2026},
+  publisher = {Laborat{\'o}rio de Computa{\c{c}}{\~a}o Cient{\'i}fica e Visualiza{\c{c}}{\~a}o, Universidade Federal de Alagoas},
+  address   = {Macei{\'o}},
+  isbn      = {978-65-02-28836-8},
+  doi       = {10.5281/zenodo.22306796}
+}
+```
+
+## 🧰 Relationship with the 3W Toolkit
+
+The [3W Toolkit](../../toolkit/ThreeWToolkit/README.md) is now the official package of the project, so this resource reuses it wherever the results do not change, instead of reinventing the wheel:
+
+| Used from `ThreeWToolkit` | Where |
+|---|---|
+| `dataset.ParquetDataset` / `ParquetDatasetConfig` — file discovery, provenance (`real`, `simulated`, `drawn`) and reading | `src/data_loader.py` |
+| `metrics.accuracy_score` and `metrics.balanced_accuracy_score` | `src/supervised_classification.py` |
+| `data_visualization.CorrelationHeatmap` | `src/visualization.py` |
+
+The following stay local to `src/` on purpose, because the toolkit equivalent would change the results or does not offer the same behavior:
+
+| Local component | Toolkit counterpart | Why it stays |
+|---|---|---|
+| Scaling (`minmax`, `standard`, `robust`, `normalizer`) | `preprocessing.Normalize` (L1/L2/max norms) | Different transformations |
+| `DataPreprocessor.create_time_windows` | `feature_extraction.Windowing` | The workshop windowing returns one dataframe per window with metadata and allows `min_window_size < window_size`; the toolkit (by default) pads the start of the signal, takes fractional overlaps and returns a multi-indexed dataframe |
+| Missing-value filling in `DataLoader` | `preprocessing.ImputeMissing` | `ImputeMissing` raises an error when a sensor is entirely missing in an event, and sensors absent from an event are frequent in 3W |
+| `CrossValidator` (real/simulated-aware folds) | `utils.KFoldSplitter` | The toolkit splitter works on `BaseDataset` objects and has no notion of "train with simulated, test only with real" |
+| Resizing to 500 points (clustering) | `clustering.TimeSeriesResampler` | The toolkit resampler slices or averages by a step size and keeps variable lengths |
+| t-SNE/UMAP, K-means/MeanShift/DBSCAN suite, data augmentation, one-class SVM | — | Not offered by the toolkit |
+| LSTM autoencoder (PyTorch) | `models.MLP`, `trainer.TorchTrainer` | No recurrent autoencoder in the toolkit |
+
+To go further with the toolkit itself, follow the [Introduction to 3WToolkit v2.0.0](../introduction_to_3w_toolkit_v2.0.0/README.md) tutorials. The toolkit also has a `clustering` sub-package for instance-level clustering of time series; see its [demos](../../toolkit/demos/).
+
+> **ℹ️ Versions**: the dataset is read by `ThreeWToolkit.dataset.ParquetDataset`, which expects the 3W Dataset **2.0.0** in `../../dataset/` (it is downloaded from Figshare when missing).
+
 ## ⚠️ **Configuration Disclaimer**
 
 > **📋 Important Note**: All configurations shown in this documentation (sensor variables, data shapes, window sizes, etc.) are **examples for demonstration purposes**. The pipeline is **fully configurable** and can be adapted to:
@@ -32,10 +103,10 @@ The material in this notebook was presented at the **4th Workshop on 3W** (Days 
 graph TB
     subgraph "Input Data"
         A["📁 Raw 3W Dataset<br/>
-        Shape: Variable × 3 features<br/>
+        Shape: Variable × 4 columns<br/>
         Type: Parquet files<br/>
         Classes: 0-9 + transients<br/>
-        Features: [P-TPT, T-TPT, class]"]
+        Features: [P-PDG, P-TPT, T-TPT, class]"]
     end
     
     subgraph "Data Processing Layer"
@@ -51,12 +122,12 @@ graph TB
         Metadata: JSON configuration"]
         
         D["🗂️ Windowed Data<br/>
-        Shape: (n_windows, 300, 2)<br/>
+        Shape: (n_windows, 300, 3)<br/>
         Type: Pickle/Parquet<br/>
         Files: train/test per fold"]
         
         E["🗂️ Raw Data<br/>
-        Shape: (n_samples, variable_length, 2)<br/>
+        Shape: (n_samples, variable_length, 3)<br/>
         Type: Pickle/Parquet<br/>
         Files: train/test per fold"]
     end
@@ -89,15 +160,15 @@ graph TB
         - Interactive plots<br/>
         - Class separability metrics"]
         
-        K["🤖 Classification Results<br/>
-        - Trained models (.pkl)<br/>
-        - Performance metrics (dict)<br/>
-        - Feature importance arrays"]
-        
-        L["🔍 Anomaly Detection Results<br/>
-        - Autoencoder model (.h5)<br/>
+        K["🔍 Anomaly Detection Results<br/>
+        - Autoencoder model (PyTorch, .pt via save())<br/>
         - Reconstruction errors (n_samples,)<br/>
         - Anomaly thresholds (float)"]
+        
+        L["🤖 Classification Results<br/>
+        - Trained models<br/>
+        - Performance metrics (dict)<br/>
+        - Feature importance arrays"]
         
         M["🧩 Clustering Results<br/>
         - Cluster labels (n_samples,)<br/>
@@ -179,7 +250,10 @@ For all results generated by this ML pipeline to be **consistent**, we recommend
    ```
 
 > **📋 Environment Notes**: 
-> - All package dependencies are managed centrally via the project's `pyproject.toml`
+> - All package dependencies are managed centrally via the project's `pyproject.toml`. The workshop code uses the installed [3W Toolkit](../../toolkit/ThreeWToolkit/README.md) (`ThreeWToolkit`); see the toolkit's [installation guide](../introduction_to_3w_toolkit_v2.0.0/2_installation.ipynb) for other installation methods.
+> - Notebook 2 (UMAP) needs the optional `resources` extra. Use `uv pip install -e "../../.[resources]"` instead of the install line above (or run it afterwards).
+> - TensorFlow is **not** required: the LSTM autoencoder of notebook 3 is written in PyTorch, the same framework used by the toolkit.
+> - The 3W Dataset 2.0.0 is expected in `../../dataset/`; if it is missing, `ParquetDataset` downloads it from Figshare on first use.
 
 ### Execution Order
 1. **Start with Data Treatment**: Run `1_data_treatment.ipynb` first to prepare MTS data
@@ -239,19 +313,25 @@ All pipeline parameters are centralized in `src/config.py`:
 
 ```python
 # Key Configuration Parameters
-TARGET_FEATURES = ['P-TPT', 'T-TPT', 'class']
+TARGET_FEATURES = ['P-PDG', 'P-TPT', 'T-TPT', 'class']
+NON_REAL_EVENT_TYPES = ['simulated', 'drawn']  # loaded after the real events, up to MAX_FILES_PER_CLASS
+MAX_FILES_PER_CLASS = 50
+SAMPLING_RATE = 5       # keeps one row in five: a 300-point window covers 1500 s
 WINDOW_SIZE = 300
+WINDOW_STRIDE = 150     # 50% overlap
 N_FOLDS = 3
 DEFAULT_SCALING_METHOD = 'minmax'
 RANDOM_SEED = 42
 ```
 
+> **Three parameters change the nature of the experiment** (see Appendix E of the [companion book](#-companion-book)): `SAMPLING_RATE` (compare with the book by the *time covered* by a window, not by its number of points), `WINDOW_STRIDE` (overlapping windows are harmless here only because folds are split by instance, not by window) and `NON_REAL_EVENT_TYPES` (use `['simulated']` to exclude hand-drawn events, closer to the book's protocol). `MAX_FILES_PER_CLASS` controls memory usage: it is the first one to reduce if notebook 1 fails.
+
 ## 📈 Expected Outputs
 
 ### Performance Metrics
-- **Classification**: Accuracy, F1-score, ROC-AUC per class
-- **Novelty Detection**: Detection rate, false alarm rate
-- **Clustering**: Silhouette score, cluster purity, interpretability
+- **Classification**: Accuracy and balanced accuracy per fold and model (the latter is the metric recommended by the book under class imbalance)
+- **Novelty Detection**: Detection rate, false alarm rate, ROC AUC
+- **Clustering**: Silhouette score, adjusted Rand index, clustering accuracy (Hungarian assignment)
 - **Visualization**: Cluster separability, dimensionality reduction quality
 
 ### File Structure After Execution
@@ -296,8 +376,8 @@ processed_data/
 
 - **Data Dependencies**: Notebook 1 must be run before others to prepare MTS data
 - **Memory Requirements**: Large multivariate time series datasets may require sampling
-- **Execution Time**: Full pipeline can take several hours depending on MTS complexity
-- **Reproducibility**: Random seeds are set for consistent results across temporal analyses
+- **Execution Time**: With the default configuration the whole pipeline takes about 10-15 minutes on an 8-thread CPU; increasing `MAX_FILES_PER_CLASS` or lowering `SAMPLING_RATE` makes it much longer
+- **Reproducibility**: Random seeds are set (`RANDOM_SEED = 42`), including the window sampling of notebook 3, so repeated executions give the same numbers on the same dataset and package versions
 
 
 ## 📚 Notebook Pipeline Description
@@ -327,7 +407,7 @@ processed_data/
   - Feature correlation analysis across time series
   - Class separability insights in reduced space
 
-### 4️⃣ **Unsupervised Learning** (`3_introduction_to_unsupervised_learning.ipynb`)
+### 3️⃣ **Unsupervised Learning** (`3_introduction_to_unsupervised_learning.ipynb`)
 **Purpose**: Novelty detection and anomaly identification in MTS
 - **Input**: Windowed data from `processed_data/cv_splits/windowed/`
 - **Processing**:
@@ -339,7 +419,7 @@ processed_data/
   - Anomaly scores and thresholds for temporal deviations
   - Detection performance metrics for MTS anomalies
 
-### 3️⃣ **Supervised Learning** (`4_introduction_to_supervised_learning.ipynb`)
+### 4️⃣ **Supervised Learning** (`4_introduction_to_supervised_learning.ipynb`)
 **Purpose**: Multi-class fault classification in multivariate time series
 - **Input**: Windowed data from `processed_data/cv_splits/windowed/`
 - **Processing**:
@@ -399,26 +479,26 @@ flowchart TD
 # Step-by-step data transformations
 
 # 1. Raw Data → Data Treatment
-raw_data = load_parquet_files()              # Shape: (variable, 3)
-scaled_data = apply_scaling(raw_data)        # Shape: (variable, 3) 
-windowed_data = create_windows(scaled_data)  # Shape: (n_windows, 300, 2)
+raw_data = load_parquet_files()              # Shape: (variable, 4) -> P-PDG, P-TPT, T-TPT, class
+scaled_data = apply_scaling(raw_data)        # Shape: (variable, 4) 
+windowed_data = create_windows(scaled_data)  # Shape: (n_windows, 300, 3)
 cv_splits = stratified_split(windowed_data)  # 3 folds
 
 # 2. Windowed Data → Analysis Notebooks
 # Notebook 2: Visualization
-flattened = flatten_windows(windowed_data)   # Shape: (n_windows, 600)
+flattened = flatten_windows(windowed_data)   # Shape: (n_windows, 900)
 embeddings = reduce_dimensions(flattened)    # Shape: (n_windows, 2)
 
 # 3: Unsupervised Learning
-normal_data = filter_class_0(windowed_data)  # Shape: (n_normal, 300, 2)
-autoencoder = train_lstm_ae(normal_data)     # tensorflow.keras.Model
+normal_data = filter_class_0(windowed_data)  # Shape: (n_normal, 300, 3)
+autoencoder = train_lstm_ae(normal_data)     # torch.nn.Module (PyTorch)
 
 # 4: Supervised Learning  
-X_train, y_train = prepare_classification()  # Shape: (n_train, 600), (n_train,)
+X_train, y_train = prepare_classification()  # Shape: (n_train, 900), (n_train,)
 models = train_classifiers(X_train, y_train) # sklearn estimators
 
 # 5. Raw Data → Clustering Analysis
-resized_series = resize_to_500pts(raw_data)  # Shape: (n_samples, 1000)
+resized_series = resize_to_500pts(raw_data)  # Shape: (n_samples, 1500)
 clusters = apply_clustering(resized_series)  # Shape: (n_samples,)
 ```
 
@@ -431,30 +511,33 @@ MEMORY_REQUIREMENTS = {
     "Warning - Notebook 1 depends on the maximum number of files per anomaly"
     "notebook_1": {
         "peak_memory": "4-6 GB (up to 50 files per class)",
-        "processing_time": "5-15 minutes",
+        "processing_time": "~1-2 minutes",
         "disk_space": "500 MB - 2 GB"
     },
     "notebook_2": {
         "peak_memory": "2-5 GB", 
-        "processing_time": "2-5 minutes",
+        "processing_time": "~1-2 minutes",
         "output_size": "10-50 MB"
     },
     "notebook_3": {
         "peak_memory": "2-5 GB",
-        "processing_time": "10-30 minutes", 
+        "processing_time": "~4-6 minutes", 
         "model_size": "1-100 MB"
     },
     "notebook_4": {
         "peak_memory": "2-5 GB",
-        "processing_time": "20-60 minutes",
+        "processing_time": "~3 minutes",
         "model_size": "10-200 MB"
     },
     "notebook_5": {
         "peak_memory": "2-5 GB",
-        "processing_time": "5-15 minutes",
+        "processing_time": "< 1 minute",
         "output_size": "5-20 MB"
     }
 }
+
+# Processing times were measured with the default configuration on an 8-thread CPU
+# (no GPU); slower machines can take considerably longer.
 
 DATA_VOLUME_SCALING = {
     "small_dataset": "< 1000 samples per class",
