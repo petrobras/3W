@@ -1452,7 +1452,9 @@ class DimensionalityReductionVisualizer:
         try:
             import umap
         except ImportError:
-            print("❌ UMAP not available. Install with: uv pip install -e '../../.[resources]'")
+            print(
+                "❌ UMAP not available. Install with: uv pip install -e '../../.[resources]'"
+            )
             return None
 
         if configs is None:
@@ -1611,7 +1613,7 @@ class DimensionalityReductionVisualizer:
                     ax.text(
                         0.02,
                         0.98,
-                        f"⚡ {result['time']:.1f}s",
+                        f"{result['time']:.1f}s",
                         transform=ax.transAxes,
                         fontsize=9,
                         verticalalignment="top",
@@ -2500,11 +2502,12 @@ class AnomalyDetectionVisualizer:
         self, normal_scores, anomaly_scores, anomaly_classes=None, fold_name="Best Fold"
     ):
         """
-        Plot comprehensive SVM decision function analysis.
+        Plot comprehensive SVM anomaly score analysis.
 
         Args:
-            normal_scores (np.array): SVM decision function scores for normal data
-            anomaly_scores (np.array): SVM decision function scores for anomaly data
+            normal_scores (np.array): SVM anomaly scores for normal data
+                (``-decision_function``: positive = outside the boundary = anomaly)
+            anomaly_scores (np.array): SVM anomaly scores for anomaly data
             anomaly_classes (list): Class labels for anomaly data
             fold_name (str): Name of the fold being analyzed
         """
@@ -2514,9 +2517,10 @@ class AnomalyDetectionVisualizer:
 
         print(f"🏆 Best Performing Fold (Distance-Based): {fold_name}")
 
-        # ⚠️  IMPORTANT: For SVM, we work with DECISION FUNCTION SCORES directly
-        # Positive scores = Normal (inside boundary)
-        # Negative scores = Anomaly (outside boundary)
+        # The scores are anomaly scores, as returned by
+        # DistanceAnomalyDetector.evaluate_performance():
+        # Negative scores = Normal (inside the boundary)
+        # Positive scores = Anomaly (outside the boundary)
 
         # Create proper SVM visualization
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
@@ -2546,7 +2550,7 @@ class AnomalyDetectionVisualizer:
             alpha=0.8,
             label="Decision Boundary (score=0)",
         )
-        ax.set_xlabel("SVM Decision Function Score")
+        ax.set_xlabel("SVM Anomaly Score (-decision function)")
         ax.set_ylabel("Density")
         ax.set_title("Distribution of SVM Decision Scores")
         ax.legend()
@@ -2563,45 +2567,22 @@ class AnomalyDetectionVisualizer:
         ax.axhline(
             0, color="black", linestyle="--", alpha=0.8, label="Decision Boundary"
         )
-        ax.set_ylabel("SVM Decision Score")
+        ax.set_ylabel("SVM Anomaly Score")
         ax.set_title("Score Distribution Summary")
         ax.grid(True, alpha=0.3)
 
-        # Plot 3: ROC Curve - FIXED VERSION
+        # Plot 3: ROC Curve
         # For ROC: Normal=0, Anomaly=1 (standard convention)
         y_true = np.concatenate(
             [np.zeros(len(normal_scores)), np.ones(len(anomaly_scores))]
         )
 
-        # For One-Class SVM decision function:
-        # - Positive scores = Normal (inliers)
-        # - Negative scores = Anomaly (outliers)
-        # For ROC curve, we need "anomaly probability scores" where higher = more anomalous
-        y_scores = np.concatenate([-normal_scores, -anomaly_scores])
+        # Higher score = more anomalous, which is what the ROC curve expects
+        y_scores = np.concatenate([normal_scores, anomaly_scores])
 
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-        roc_auc_raw = auc(fpr, tpr)
-
-        # FIX FOR INVERTED ROC: If AUC < 0.5, the scores are backwards
-        # In that case, use 1 - AUC to get the correct interpretation
-        if roc_auc_raw < 0.5:
-            roc_auc = 1 - roc_auc_raw
-            print(
-                f"   • ROC was inverted (AUC < 0.5), corrected: {roc_auc_raw:.3f} → {roc_auc:.3f}"
-            )
-            # Also flip the ROC curve
-            fpr = 1 - fpr[::-1]
-            tpr = 1 - tpr[::-1]
-        else:
-            roc_auc = roc_auc_raw
-            print(f"   • ROC AUC (correct): {roc_auc:.3f}")
-
-        # Debug: Print some values to verify
-        print(f"   • Sample normal scores: {normal_scores[:5]}")
-        print(f"   • Sample anomaly scores: {anomaly_scores[:5]}")
-        print(f"   • Converted normal anomaly scores: {-normal_scores[:5]}")
-        print(f"   • Converted anomaly anomaly scores: {-anomaly_scores[:5]}")
-
+        roc_auc = auc(fpr, tpr)
+        print(f"   • ROC AUC: {roc_auc:.3f}")
         ax = axes[1, 0]
         ax.plot(fpr, tpr, color="red", lw=2, label=f"ROC Curve (AUC = {roc_auc:.3f})")
         ax.plot(
@@ -2617,7 +2598,7 @@ class AnomalyDetectionVisualizer:
         ax.set_ylim([0.0, 1.05])
         ax.set_xlabel("False Positive Rate")
         ax.set_ylabel("True Positive Rate")
-        ax.set_title("ROC Curve (SVM Decision Function)")
+        ax.set_title("ROC Curve (SVM Anomaly Score)")
         ax.legend(loc="lower right")
         ax.grid(True, alpha=0.3)
 
@@ -2625,8 +2606,8 @@ class AnomalyDetectionVisualizer:
         ax = axes[1, 1]
 
         # Calculate performance at decision boundary (score = 0)
-        normal_correct = np.sum(normal_scores > 0)
-        anomaly_correct = np.sum(anomaly_scores < 0)
+        normal_correct = np.sum(normal_scores < 0)
+        anomaly_correct = np.sum(anomaly_scores > 0)
 
         # Show some key statistics
         metrics_text = f"""SVM Performance Summary:
