@@ -28,10 +28,21 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score
+
+# 3W Toolkit imports
+from ThreeWToolkit.metrics import accuracy_score, balanced_accuracy_score
 
 # Local imports
 from .data_augmentation import quick_balance_classes
+
+
+def _add_balanced_accuracy(fold_results, X_test, y_test):
+    """Add the test balanced accuracy (mean per-class recall) to each fold result."""
+    for result in fold_results:
+        result["test_balanced_accuracy"] = balanced_accuracy_score(
+            y_test, result["model"].predict(X_test)
+        )
+
 
 # ============================================================
 # UTILITY FUNCTIONS FOR STUDENT NOTEBOOKS
@@ -1270,7 +1281,6 @@ def tree_based_fold_analysis(
     """
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.metrics import accuracy_score
     import time
     import pandas as pd
 
@@ -1384,6 +1394,7 @@ def tree_based_fold_analysis(
             )
 
             # Store fold results
+            _add_balanced_accuracy(fold_results, X_test_fold, y_test_fold)
             fold_tree_results[fold_name] = fold_results
 
             # Add to summary data
@@ -1394,6 +1405,7 @@ def tree_based_fold_analysis(
                         "Model": result["model_name"],
                         "Train Acc": f"{result['train_accuracy']:.3f}",
                         "Test Acc": f"{result['test_accuracy']:.3f}",
+                        "Test Bal. Acc": f"{result['test_balanced_accuracy']:.3f}",
                         "Overfitting": f"{result['train_accuracy'] - result['test_accuracy']:.3f}",
                         "Time (s)": f"{result['training_time']:.3f}",
                     }
@@ -1488,7 +1500,6 @@ def svm_based_fold_analysis(
         dict: Results containing fold_results, summary_df, and best_overall model
     """
     from sklearn.svm import SVC
-    from sklearn.metrics import accuracy_score
     import time
     import pandas as pd
 
@@ -1603,6 +1614,7 @@ def svm_based_fold_analysis(
             )
 
             # Store fold results
+            _add_balanced_accuracy(fold_results, X_test_fold, y_test_fold)
             fold_svm_results[fold_name] = fold_results
 
             # Add to summary data
@@ -1613,6 +1625,7 @@ def svm_based_fold_analysis(
                         "Model": result["model_name"],
                         "Train Acc": f"{result['train_accuracy']:.3f}",
                         "Test Acc": f"{result['test_accuracy']:.3f}",
+                        "Test Bal. Acc": f"{result['test_balanced_accuracy']:.3f}",
                         "Overfitting": f"{result['train_accuracy'] - result['test_accuracy']:.3f}",
                         "Time (s)": f"{result['training_time']:.3f}",
                         "Samples": result["train_samples"],
@@ -1711,7 +1724,6 @@ def neural_network_based_fold_analysis(
         dict: Results containing fold_results, summary_df, and best_overall model
     """
     from sklearn.neural_network import MLPClassifier
-    from sklearn.metrics import accuracy_score
     import time
     import pandas as pd
 
@@ -1890,6 +1902,7 @@ def neural_network_based_fold_analysis(
                 print(f"Done ({reg_test_acc:.3f})")
 
             # Store fold results
+            _add_balanced_accuracy(fold_results, X_test_fold, y_test_fold)
             fold_nn_results[fold_name] = fold_results
 
             # Add to summary data
@@ -1900,6 +1913,7 @@ def neural_network_based_fold_analysis(
                         "Model": result["model_name"],
                         "Train Acc": f"{result['train_accuracy']:.3f}",
                         "Test Acc": f"{result['test_accuracy']:.3f}",
+                        "Test Bal. Acc": f"{result['test_balanced_accuracy']:.3f}",
                         "Overfitting": f"{result['train_accuracy'] - result['test_accuracy']:.3f}",
                         "Time (s)": f"{result['training_time']:.3f}",
                         "Samples": result["train_samples"],
