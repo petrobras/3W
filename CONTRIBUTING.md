@@ -112,7 +112,7 @@ Jupyter Notebooks play an important role in the 3W Project as a way to demonstra
   Add self-contained educational material, tutorials, and course-style notebooks in `3W/resources/`, preferably under a versioned or topic-specific subdirectory.
 
 - **Technical documents**  
-  The `3W/docs/` folder is reserved for academic materials such as papers, theses in `.pdf` format. Do not place notebooks here.
+  The `3W/pdfs/` folder is reserved for academic materials such as papers, theses in `.pdf` format. Do not place notebooks here.
 
 ## Executing examples
 
