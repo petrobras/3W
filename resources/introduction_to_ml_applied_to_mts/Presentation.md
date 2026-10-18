@@ -32,7 +32,7 @@ Frase para abrir: *"Hoje vocês vão ver o mesmo conjunto de dados contar histó
 - [ ] Clonar o repositório e criar o ambiente (instruções no [README](README.md#-usage-instructions)):
   ```bash
   uv venv .venv
-  uv pip install -e "../../.[resources]"   # o extra "resources" instala o UMAP
+  uv pip install -e "../../.[notebooks,resources]" jupyter   # "resources" instala o UMAP; "notebooks" o kernel e o nbconvert
   ```
 - [ ] Conferir que o **3W Dataset 2.0.0** está em `../../dataset/` (cerca de 2.228 arquivos Parquet). Se faltar, `ParquetDataset` baixa do Figshare no primeiro uso — **não deixe isso para a hora da aula** (o download é grande).
 - [ ] **Executar os cinco notebooks de ponta a ponta** (`1` primeiro; os demais em qualquer ordem) e conferir que não há erros. Isso também gera `processed_data/`, de que os notebooks 2–5 dependem.
@@ -219,7 +219,7 @@ Versão curta (≈ 1 h): abertura (10 min) + Notebook 1 (15) + Notebook 3, só o
 
 | Sintoma | Causa provável | O que fazer |
 |---|---|---|
-| `ModuleNotFoundError: ThreeWToolkit` | Ambiente sem o toolkit instalado | `uv pip install -e "../../.[resources]"` no ambiente do kernel; reiniciar o kernel |
+| `ModuleNotFoundError: ThreeWToolkit` | Ambiente sem o toolkit instalado | `uv pip install -e "../../.[notebooks,resources]" jupyter` no ambiente do kernel; reiniciar o kernel |
 | `ModuleNotFoundError: umap` | Extra `resources` ausente | Instalar o extra; ou pular a seção de UMAP do Notebook 2 |
 | Notebook 1 trava ou estoura memória | `MAX_FILES_PER_CLASS` alto para a máquina | Reduzir `MAX_FILES_PER_CLASS` (ex.: 20) e reexecutar |
 | Dataset ausente / download lento | `../../dataset/` vazio | Baixar antes (Figshare, versão 2.0.0); na aula, usar a cópia pré-executada |
@@ -248,7 +248,7 @@ Resumo, para quem já conhecia a versão anterior deste recurso, do que passou a
 | `dataset.ParquetDataset` / `ParquetDatasetConfig` | `src/data_loader.py` (`DataLoader`) | A descoberta e a leitura dos arquivos passam pelo toolkit. Os arquivos carregados e os DataFrames são os mesmos de antes. A procedência (**real**, **simulada**, **desenhada**) agora é explícita na saída do Notebook 1 (antes, desenhados eram contados como simulados). Se o dataset 2.0.0 faltar em `../../dataset/`, o toolkit o baixa do Figshare. |
 | `metrics.accuracy_score` | `src/supervised_classification.py` | Mesmos valores de acurácia de antes (o toolkit usa o scikit-learn por baixo). |
 | `metrics.balanced_accuracy_score` | `src/supervised_classification.py` | **Novo:** as tabelas por dobra do Notebook 4 ganharam a coluna `Test Bal. Acc` — base para a discussão de acurácia × acurácia balanceada (Cap. 4). |
-| `pyproject.toml` do repositório | O recurso usa o toolkit instalado (`uv pip install -e "../../.[resources]"`). O extra `resources` instala o UMAP. **TensorFlow não é mais necessário.** |
+| `pyproject.toml` do repositório | O recurso usa o toolkit instalado (`uv pip install -e "../../.[notebooks,resources]" jupyter`). O extra `resources` instala o UMAP e o `notebooks` o kernel e o `nbconvert`. **TensorFlow não é mais necessário.** |
 | Tutoriais do toolkit | Notebooks 1, 2, 3, 4 e 5 | Cada notebook aponta para o tutorial ou demo correspondente do toolkit (`ParquetDataset`, visualização, treino e avaliação, *pipelines*, agrupamento por instância). |
 
 Efeitos colaterais de usar o toolkit: ao ser importado, ele configura o log em nível INFO; por isso `src/__init__.py` rebaixa o log raiz para WARNING, para as saídas dos notebooks ficarem legíveis.
