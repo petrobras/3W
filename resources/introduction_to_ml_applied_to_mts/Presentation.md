@@ -186,7 +186,7 @@ Versão curta (≈ 1 h): abertura (10 min) + Notebook 1 (15) + Notebook 3, só o
 ## 10. Notebook 5 — `5_clustering_methods` (35 min)
 
 **Objetivo:** descobrir estrutura sem rótulos e medir se ela faz sentido.
-**Livro:** Cap. 6 (§*Agrupamento* e §*Avaliar agrupamentos sem rótulos*) e Cap. 9 (ciclo de mundo aberto); Ap. E, §*Caderno 5*. **Toolkit:** o sub-pacote `ThreeWToolkit.clustering` faz agrupamento **por instância** (DTW, hierárquico); veja as demos [06](../../toolkit/demos/06_clustering_pipeline_examples.ipynb) e [07](../../toolkit/demos/07_clustering_real_vs_simulated_examples.ipynb).
+**Livro:** Cap. 6 (§*Agrupamento* e §*Avaliar agrupamentos sem rótulos*) e Cap. 9 (ciclo de mundo aberto); Ap. E, §*Caderno 5*. **Toolkit:** o sub-pacote `ThreeWToolkit.clustering` faz agrupamento **por instância** (DTW, hierárquico); veja as demos [clustering_pipeline_examples](../../toolkit/demos/clustering_pipeline_examples.ipynb) e [clustering_real_vs_simulated_examples](../../toolkit/demos/clustering_real_vs_simulated_examples.ipynb).
 
 **Roteiro**
 
