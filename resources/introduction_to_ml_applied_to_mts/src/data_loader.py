@@ -6,20 +6,28 @@ containing sensor data for fault detection in oil wells.
 """
 
 import os
-from glob import glob
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from typing import List, Tuple, Dict
 from collections import Counter
 
+from ThreeWToolkit.dataset import ParquetDataset, ParquetDatasetConfig
+
+from . import config
+
+CLASS_FOLDERS = [str(i) for i in range(10)]
+
 
 class DataLoader:
     """
     A class for loading and organizing the 3W dataset.
 
-    The 3W dataset contains sensor data from oil wells organized in folders
-    representing different fault classes (0-9).
+    File discovery and reading are delegated to the official 3W Toolkit
+    (`ThreeWToolkit.dataset.ParquetDataset`). The dataset is organized in
+    folders representing the fault classes (0-9), and each file is an event
+    of one of three provenances: real (`WELL`), simulated (`SIMULATED`) or
+    hand-drawn (`DRAWN`).
     """
 
     def __init__(self, dataset_path: str = "../../dataset/"):
@@ -32,6 +40,25 @@ class DataLoader:
         self.dataset_path = dataset_path
         self.class_folders = []
         self.stats = {}
+
+    def _open_events(self, class_folders: List[str], event_types: List[str]):
+        """Open the 3W events of the given classes and provenances (sorted by path)."""
+        return ParquetDataset(
+            ParquetDatasetConfig(
+                path=self.dataset_path,
+                target_class=[int(c) for c in class_folders],
+                event_type=event_types,
+                target_column=None,
+            )
+        )
+
+    @staticmethod
+    def _group_by_class(dataset: ParquetDataset) -> Dict[str, List[int]]:
+        """Map each class folder to the indices of its events in `dataset`."""
+        groups: Dict[str, List[int]] = {}
+        for idx, event in enumerate(dataset.files_events):
+            groups.setdefault(event.parent.name, []).append(idx)
+        return groups
 
     def explore_structure(self) -> Dict[str, int | str | List[str]]:
         """
@@ -48,34 +75,39 @@ class DataLoader:
             "total_files": 0,
             "real_files": 0,
             "simulated_files": 0,
+            "drawn_files": 0,
         }
 
-        for folder_name in sorted(os.listdir(self.dataset_path)):
-            if folder_name not in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+        per_type = {
+            event_type: self._group_by_class(
+                self._open_events(CLASS_FOLDERS, [event_type])
+            )
+            for event_type in ("real", "simulated", "drawn")
+        }
+
+        for folder_name in CLASS_FOLDERS:
+            if not os.path.isdir(os.path.join(self.dataset_path, folder_name)):
                 continue
 
             self.class_folders.append(folder_name)
             structure_info["classes"].append(folder_name)
-            folder_path = os.path.join(self.dataset_path, folder_name)
 
-            if os.path.isdir(folder_path):
-                files = os.listdir(folder_path)
-                parquet_files = [f for f in files if f.endswith(".parquet")]
-                structure_info["total_files"] += len(parquet_files)
+            n_real = len(per_type["real"].get(folder_name, []))
+            n_simulated = len(per_type["simulated"].get(folder_name, []))
+            n_drawn = len(per_type["drawn"].get(folder_name, []))
+            total = n_real + n_simulated + n_drawn
+            structure_info["total_files"] += total
 
-                print(f"Class {folder_name}: {len(parquet_files)} parquet files")
+            print(f"Class {folder_name}: {total} parquet files")
 
-                # Show file types (real vs simulated)
-                real_files = [f for f in parquet_files if "WELL" in f]
-                simulated_files = [f for f in parquet_files if "WELL" not in f]
+            structure_info["real_files"] += n_real
+            structure_info["simulated_files"] += n_simulated
+            structure_info["drawn_files"] += n_drawn
 
-                structure_info["real_files"] += len(real_files)
-                structure_info["simulated_files"] += len(simulated_files)
-
-                print(f"  └── Real data: {len(real_files)} files")
-                print(f"  └── Simulated data: {len(simulated_files)} files")
-                print()
-
+            print(f"  └── Real data: {n_real} files")
+            print(f"  └── Simulated data: {n_simulated} files")
+            print(f"  └── Hand-drawn data: {n_drawn} files")
+            print()
         print(f"Total classes found: {len(self.class_folders)}")
         print(f"Classes: {self.class_folders}")
 
@@ -141,59 +173,51 @@ class DataLoader:
         }
 
         # Process each class folder
-        for class_folder in tqdm(sorted(class_folders), desc="Processing classes"):
-            folder_path = os.path.join(self.dataset_path, class_folder)
-            parquet_files = glob(os.path.join(folder_path, "*.parquet"))
+        selected = sorted(class_folders)
+        real_events = self._open_events(selected, ["real"])
+        other_events = self._open_events(selected, list(config.NON_REAL_EVENT_TYPES))
+        real_groups = self._group_by_class(real_events)
+        other_groups = self._group_by_class(other_events)
 
-            # Separate files into real and simulated first for prioritization
-            real_files = []
-            simulated_files = []
-
-            for file_path in parquet_files:
-                filename = os.path.basename(file_path)
-                if self._is_real_data(filename):
-                    real_files.append(file_path)
-                else:
-                    simulated_files.append(file_path)
+        for class_folder in tqdm(selected, desc="Processing classes"):
+            real_idx = real_groups.get(class_folder, [])
+            simulated_idx = other_groups.get(class_folder, [])
+            n_available = len(real_idx) + len(simulated_idx)
 
             # Update available counts
-            stats["classes_count"][class_folder]["real_available"] = len(real_files)
+            stats["classes_count"][class_folder]["real_available"] = len(real_idx)
             stats["classes_count"][class_folder]["simulated_available"] = len(
-                simulated_files
+                simulated_idx
             )
-            stats["classes_count"][class_folder]["total_available"] = len(parquet_files)
-            stats["total_files_available"] += len(parquet_files)
-            stats["real_files_available"] += len(real_files)
-            stats["simulated_files_available"] += len(simulated_files)
+            stats["classes_count"][class_folder]["total_available"] = n_available
+            stats["total_files_available"] += n_available
+            stats["real_files_available"] += len(real_idx)
+            stats["simulated_files_available"] += len(simulated_idx)
 
             # Prioritize real files, then add simulated files up to the limit
-            files_to_load = []
-            files_to_load.extend(real_files[:max_files_per_class])  # Real files first
+            files_to_load = [
+                (real_events, i, True) for i in real_idx[:max_files_per_class]
+            ]
 
             remaining_slots = max_files_per_class - len(files_to_load)
             if remaining_slots > 0:
                 files_to_load.extend(
-                    simulated_files[:remaining_slots]
-                )  # Fill with simulated
+                    (other_events, i, False) for i in simulated_idx[:remaining_slots]
+                )
 
             # Load the selected files
             loaded_real_count = 0
             loaded_simulated_count = 0
-            file_counter = 0
 
-            for file_path in tqdm(
+            for source, idx, is_real_data in tqdm(
                 files_to_load, desc=f"Class {class_folder}", leave=False
             ):
+                filename = source.files_events[idx].name
                 try:
-                    df = self._load_and_clean_file(file_path, stats, file_counter)
-                    file_counter += 1
+                    df = self._clean_events(source[idx].signal, stats)
 
                     if df is None or len(df) == 0:
                         continue
-
-                    # Categorize as real or simulated data based on filename patterns
-                    filename = os.path.basename(file_path)
-                    is_real_data = self._is_real_data(filename)
 
                     stats["total_samples"] += len(df)
                     stats["total_files_loaded"] += 1
@@ -214,7 +238,7 @@ class DataLoader:
                         stats["file_tracking"]["simulated"].append(filename)
 
                 except Exception as e:
-                    print(f"ERROR: Error loading {file_path}: {str(e)}")
+                    print(f"ERROR: Error loading {filename}: {str(e)}")
                     stats["empty_files"] += 1
                     continue
 
@@ -246,43 +270,11 @@ class DataLoader:
         self.stats = stats
         return dfs_3w, classes_3w, stats
 
-    def _is_real_data(self, filename: str) -> bool:
-        """
-        Determine if a file contains real or simulated data based on filename patterns.
-
-        Args:
-            filename (str): Name of the file
-
-        Returns:
-            bool: True if real data, False if simulated
-        """
-        # Based on 3W dataset conventions:
-        # Real data: Contains 'WELL' in filename
-        # Simulated data: Starts with 'SIMULATED' or 'OLGA'
-        # Hand-dcompleten data: Starts with 'DRAWN' or 'DESENHADA'
-
-        filename_upper = filename.upper()
-
-        # Check for simulated patterns first
-        if (
-            filename_upper.startswith("SIMULATED")
-            or filename_upper.startswith("OLGA")
-            or filename_upper.startswith("DRAWN")
-            or filename_upper.startswith("DESENHADA")
-        ):
-            return False
-
-        # Check for real data patterns
-        if "WELL" in filename_upper:
-            return True
-
-        # Default assumption for other patterns (could be refined)
-        # If it doesn't match simulated patterns and contains well-like patterns, consider real
-        return True
-
     def get_separated_data(self) -> Dict[str, List[pd.DataFrame] | List[str]]:
         """
-        Get real and simulated data separately.
+        Get real and non-real (simulated and hand-drawn) data separately.
+
+        The provenances treated as non-real are set in `config.NON_REAL_EVENT_TYPES`.
 
         Returns:
             Dictionary containing separated real and simulated data
@@ -295,25 +287,19 @@ class DataLoader:
             "simulated": self.stats["simulated_data"],
         }
 
-    def _load_and_clean_file(
-        self, file_path: str, stats: Dict[str, int | float | str], file_counter: int = 0
+    def _clean_events(
+        self, df: pd.DataFrame, stats: Dict[str, int | float | str]
     ) -> pd.DataFrame:
         """
-        Load and clean a single parquet file.
+        Clean the dataframe of a single event.
 
         Args:
-            file_path (str): Path to the parquet file
+            df (pd.DataFrame): Raw signals of the event (including the class column)
             stats (Dict): Statistics dictionary to update
-            file_counter (int): Current file number for debugging
 
         Returns:
-            pd.DataFrame: Cleaned dataframe or None if file is invalid
+            pd.DataFrame: Cleaned dataframe or None if the event is invalid
         """
-        from . import config
-
-        # Load data
-        df = pd.read_parquet(file_path)
-
         # Skip files without any data
         if len(df) == 0:
             stats["empty_files"] += 1

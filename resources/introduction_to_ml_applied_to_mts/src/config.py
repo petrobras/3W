@@ -12,6 +12,10 @@ Parameter Ranges and Validation:
 # Dataset settings
 TARGET_FEATURES = ["P-PDG", "P-TPT", "T-TPT", "class"]
 CLASS_COLUMN = "class"
+# Event provenances loaded after the real ones, up to MAX_FILES_PER_CLASS.
+# Options: "simulated", "drawn". Use ["simulated"] to exclude hand-drawn events
+# (see the companion book, appendix "Reproduction conditions").
+NON_REAL_EVENT_TYPES = ["simulated", "drawn"]
 MAX_FILES_PER_CLASS = (
     50  # Range: 50-500, Maximum files to load per class (memory optimization)
 )
