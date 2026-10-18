@@ -237,7 +237,45 @@ Versão curta (≈ 1 h): abertura (10 min) + Notebook 1 (15) + Notebook 3, só o
 - **"O toolkit já faz tudo isto?"** Parte: carga, métricas, visualização, *pipelines* e agrupamento por instância. O recurso mantém localmente o que o toolkit não oferece ou faria de outra forma (README, seção *Relationship with the 3W Toolkit*).
 - **"Onde está o código do autoencoder do livro?"** Este recurso traz uma versão didática em PyTorch; os experimentos do livro estão descritos no Ap. D.
 
-## 14. Referências
+## 14. Changelog: o que do 3W Toolkit foi incorporado
+
+Resumo, para quem já conhecia a versão anterior deste recurso, do que passou a vir do [3W Toolkit](../../toolkit/ThreeWToolkit/README.md) (agora o pacote oficial) e do que continua local. Regra seguida: **só se substituiu o que não altera os resultados**; o que mudaria foi mantido (e explicado no [README](README.md#-relationship-with-the-3w-toolkit)).
+
+### Acrescentado a partir do toolkit
+
+| Componente do toolkit | Onde entra | O que muda para quem apresenta |
+|---|---|---|
+| `dataset.ParquetDataset` / `ParquetDatasetConfig` | `src/data_loader.py` (`DataLoader`) | A descoberta e a leitura dos arquivos passam pelo toolkit. Os arquivos carregados e os DataFrames são os mesmos de antes. A procedência (**real**, **simulada**, **desenhada**) agora é explícita na saída do Notebook 1 (antes, desenhados eram contados como simulados). Se o dataset 2.0.0 faltar em `../../dataset/`, o toolkit o baixa do Figshare. |
+| `metrics.accuracy_score` | `src/supervised_classification.py` | Mesmos valores de acurácia de antes (o toolkit usa o scikit-learn por baixo). |
+| `metrics.balanced_accuracy_score` | `src/supervised_classification.py` | **Novo:** as tabelas por dobra do Notebook 4 ganharam a coluna `Test Bal. Acc` — base para a discussão de acurácia × acurácia balanceada (Cap. 4). |
+| `data_visualization.CorrelationHeatmap` | `src/visualization.py` (`plot_correlation_matrix`) | Mesmo gráfico, agora feito pelo toolkit. |
+| Dependências e ambiente | `pyproject.toml` do repositório | O recurso usa o toolkit instalado (`uv pip install -e "../../.[resources]"`). O extra `resources` instala o UMAP. **TensorFlow não é mais necessário.** |
+| Tutoriais do toolkit | Notebooks 1, 2, 3, 4 e 5 | Cada notebook aponta para o tutorial ou demo correspondente do toolkit (`ParquetDataset`, visualização, treino e avaliação, *pipelines*, agrupamento por instância). |
+
+Efeitos colaterais de usar o toolkit: ao ser importado, ele configura o log em nível INFO; por isso `src/__init__.py` rebaixa o log raiz para WARNING, para as saídas dos notebooks ficarem legíveis.
+
+### Avaliado e mantido local (e por quê)
+
+| Local | Equivalente no toolkit | Motivo |
+|---|---|---|
+| Escalonamento (`minmax`, `standard`, `robust`, `normalizer`) | `preprocessing.Normalize` | O toolkit usa normas L1/L2/máx.; a transformação é outra. |
+| `create_time_windows` | `feature_extraction.Windowing` | O toolkit preenche o início do sinal, usa sobreposição fracionária e devolve DataFrame com índice múltiplo; o recurso devolve um DataFrame por janela com metadados e aceita janela mínima menor que a janela. |
+| Preenchimento de ausentes (*ffill* + *bfill*) | `preprocessing.ImputeMissing` | O toolkit dá erro se um sensor estiver inteiramente ausente num evento, o que é frequente no 3W. |
+| `CrossValidator` | `utils.KFoldSplitter` | O divisor do toolkit trabalha com `BaseDataset` e não conhece "treinar com simulado, testar só com real". |
+| Redimensionamento para 500 pontos | `clustering.TimeSeriesResampler` | Método diferente (fatiar/média por passo). |
+| t-SNE/UMAP, K-means/MeanShift/DBSCAN, aumento de dados, OCSVM | — | O toolkit não oferece. |
+| Autoencoder LSTM | `models.MLP`, `trainer.TorchTrainer` | O toolkit não tem autoencoder recorrente. O modelo agora é escrito em **PyTorch**, o framework do toolkit. |
+
+### Outras mudanças que afetam a apresentação
+
+- **Autoencoder em PyTorch** (antes TensorFlow/Keras): mesma API e mesmas decisões de estabilidade; os números do Notebook 3 mudaram em relação às gravações do workshop.
+- **Reprodutibilidade:** a amostragem de janelas do Notebook 3 agora usa semente fixa; execuções repetidas dão os mesmos números.
+- **Correções:** `boxplot(labels=...)` (quebrava com o matplotlib atual), gráfico do OCSVM (acurácias complementares e "ROC invertido"), chamadas de gráfico de K-means com assinatura antiga (avisos no Notebook 5) e instalação de pacotes via `subprocess` no Notebook 2.
+- **Conteúdo:** cada notebook ganhou referências ao livro (capítulos e seções) e termina com os exercícios do Ap. E; o README ganhou a citação do livro e a tabela de diferenças em relação aos experimentos dele.
+
+---
+
+## 15. Referências
 
 - **Livro:** Lopes, L. G. O. et al. (2026). *Aprendizado de Mundo Aberto em Poços de Petróleo.* DOI [10.5281/zenodo.22306796](https://doi.org/10.5281/zenodo.22306796). Cap. 3 (dados), 4 (avaliação), 5 (aprendizado profundo), 6 (novidade e agrupamento), 7 (sistema dual), 8 (ensemble binário), 9 (mundo aberto), 12 (Mahalanobis), 16 (síntese); Ap. D (reprodução) e Ap. E (prática).
 - **3W Project:** [github.com/petrobras/3W](https://github.com/petrobras/3W); [3W Dataset](../../dataset/README.md); [3W Toolkit](../../toolkit/ThreeWToolkit/README.md); [3W Dataset no Figshare](https://figshare.com/projects/3W_Dataset/251195).
