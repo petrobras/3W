@@ -7,6 +7,7 @@ sensor data and scaling methods in the 3W dataset.
 
 import os
 import time
+import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -1503,16 +1504,19 @@ class DimensionalityReductionVisualizer:
             try:
                 start_time = time.time()
 
-                reducer = umap.UMAP(
-                    n_components=2,
-                    n_neighbors=min(config["n_neighbors"], X_scaled.shape[0] - 1),
-                    min_dist=config["min_dist"],
-                    metric=config["metric"],
-                    random_state=42,
-                    n_epochs=200,
-                )
+                # Setting random_state (reproducibility) makes UMAP run single-threaded
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message="n_jobs value 1")
+                    reducer = umap.UMAP(
+                        n_components=2,
+                        n_neighbors=min(config["n_neighbors"], X_scaled.shape[0] - 1),
+                        min_dist=config["min_dist"],
+                        metric=config["metric"],
+                        random_state=42,
+                        n_epochs=200,
+                    )
 
-                X_umap = reducer.fit_transform(X_scaled)
+                    X_umap = reducer.fit_transform(X_scaled)
                 elapsed_time = time.time() - start_time
 
                 results.append(
