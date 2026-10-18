@@ -1212,32 +1212,8 @@ class ClusteringVisualizer:
             )
             visualizations_count += 1
 
-        # 2. K-means Analysis (if results provided)
-        if kmeans_results:
-            print("🎯 2. Generating K-means Analysis Plots...")
-            try:
-                if "optimization_results" in kmeans_results:
-                    results = kmeans_results["optimization_results"]
-                    optimal_k = kmeans_results["optimal_k"]
-                    analysis_type = kmeans_results.get("analysis_type", "scaled")
-
-                    if analysis_type == "pca50":
-                        self.plot_kmeans_analysis(
-                            results={"pca50": results.get("pca50", results)},
-                            optimal_k_pca50=optimal_k,
-                            clustering_data=clustering_data,
-                            use_pca_only=True,
-                        )
-                    else:
-                        self.plot_kmeans_analysis(
-                            results=results,
-                            optimal_k_scaled=optimal_k,
-                            clustering_data=clustering_data,
-                            use_scaled_only=True,
-                        )
-                    visualizations_count += 1
-            except Exception as e:
-                print(f"   ⚠️ K-means visualization error: {str(e)}")
+        # 2. K-means analysis plots are produced explicitly in the notebook with
+        # plot_kmeans_analysis, which needs the PCA projection, labels and centroids.
 
         # 3. Advanced Methods Comparison (if available)
         if advanced_results and hasattr(self, "_plot_multi_algorithm_comparison"):
