@@ -69,7 +69,14 @@ The [3W Toolkit](../../toolkit/ThreeWToolkit/README.md) is now the official pack
 |---|---|
 | `dataset.ParquetDataset` / `ParquetDatasetConfig` — file discovery, provenance (`real`, `simulated`, `drawn`) and reading | `src/data_loader.py` |
 | `metrics.accuracy_score` and `metrics.balanced_accuracy_score` | `src/supervised_classification.py` |
-| `data_visualization.CorrelationHeatmap` | `src/visualization.py` |
+
+Helpers that the toolkit already covers were **removed** from `src/` (none was used by the notebooks):
+
+| Removed from `src/` | Use instead (`ThreeWToolkit`) |
+|---|---|
+| `DataVisualizer.plot_correlation_matrix` | `data_visualization.CorrelationHeatmap` |
+| `DataVisualizer.plot_time_series_comparison` | `data_visualization.PlotMultipleSeries` |
+| `DataPreprocessor.split_train_test_by_class`, `train_test_split_dataframes`, `analyze_split_distribution`, `validate_split_balance`, `validate_dataframe_split_balance` | `utils.TrainTestSplitter` and `utils.KFoldSplitter` (the notebooks use `CrossValidator`, see below) |
 
 The following stay local to `src/` on purpose, because the toolkit equivalent would change the results or does not offer the same behavior:
 

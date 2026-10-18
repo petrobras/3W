@@ -74,7 +74,7 @@ Versão curta (≈ 1 h): abertura (10 min) + Notebook 1 (15) + Notebook 3, só o
 - *O conjunto 3W:* série temporal **multivariada**, rotulada por instância, em três procedências — **real** (`WELL-*`), **simulada** (`SIMULATED-*`) e **desenhada** (`DRAWN-*`), com dez classes (0 = normal; 1–9 = tipos de evento). Mostre a pasta `dataset/` e o [README do dataset](../../dataset/README.md).
 - *O livro:* conta a passagem de três hipóteses que a prática desmente — (1) o conjunto de classes é fechado; (2) detectar é o mesmo que localizar no tempo; (3) uma decisão correta sem justificativa é utilizável. Este recurso exercita a **Parte I** (fundamentos) e o Ap. E mapeia cada caderno a capítulos.
 - *O que este recurso é:* um **roteiro de aprendizagem** com configurações reduzidas para caber numa aula. **Não** reproduz os experimentos do livro (esses estão no Ap. D). A tabela de diferenças está no [README](README.md#-companion-book).
-- *O 3W Toolkit:* agora é o pacote oficial; o recurso usa o `ParquetDataset`, as métricas e o `CorrelationHeatmap` dele. Para um tutorial completo do toolkit, indique [Introduction to 3WToolkit v2.0.0](../introduction_to_3w_toolkit_v2.0.0/README.md).
+- *O 3W Toolkit:* agora é o pacote oficial; o recurso usa o `ParquetDataset` e as métricas dele, e remove do `src/` os auxiliares que o toolkit já cobre (por exemplo, use o `CorrelationHeatmap` direto). Para um tutorial completo do toolkit, indique [Introduction to 3WToolkit v2.0.0](../introduction_to_3w_toolkit_v2.0.0/README.md).
 
 **Pergunta para a plateia:** *"Quem já treinou um classificador em dados industriais e obteve 99% de acurácia?"* (Prepare o gancho para o Notebook 4.)
 
@@ -248,11 +248,20 @@ Resumo, para quem já conhecia a versão anterior deste recurso, do que passou a
 | `dataset.ParquetDataset` / `ParquetDatasetConfig` | `src/data_loader.py` (`DataLoader`) | A descoberta e a leitura dos arquivos passam pelo toolkit. Os arquivos carregados e os DataFrames são os mesmos de antes. A procedência (**real**, **simulada**, **desenhada**) agora é explícita na saída do Notebook 1 (antes, desenhados eram contados como simulados). Se o dataset 2.0.0 faltar em `../../dataset/`, o toolkit o baixa do Figshare. |
 | `metrics.accuracy_score` | `src/supervised_classification.py` | Mesmos valores de acurácia de antes (o toolkit usa o scikit-learn por baixo). |
 | `metrics.balanced_accuracy_score` | `src/supervised_classification.py` | **Novo:** as tabelas por dobra do Notebook 4 ganharam a coluna `Test Bal. Acc` — base para a discussão de acurácia × acurácia balanceada (Cap. 4). |
-| `data_visualization.CorrelationHeatmap` | `src/visualization.py` (`plot_correlation_matrix`) | Mesmo gráfico, agora feito pelo toolkit. |
-| Dependências e ambiente | `pyproject.toml` do repositório | O recurso usa o toolkit instalado (`uv pip install -e "../../.[resources]"`). O extra `resources` instala o UMAP. **TensorFlow não é mais necessário.** |
+| `pyproject.toml` do repositório | O recurso usa o toolkit instalado (`uv pip install -e "../../.[resources]"`). O extra `resources` instala o UMAP. **TensorFlow não é mais necessário.** |
 | Tutoriais do toolkit | Notebooks 1, 2, 3, 4 e 5 | Cada notebook aponta para o tutorial ou demo correspondente do toolkit (`ParquetDataset`, visualização, treino e avaliação, *pipelines*, agrupamento por instância). |
 
 Efeitos colaterais de usar o toolkit: ao ser importado, ele configura o log em nível INFO; por isso `src/__init__.py` rebaixa o log raiz para WARNING, para as saídas dos notebooks ficarem legíveis.
+
+### Removido do `src/` (o toolkit já cobre)
+
+Nenhuma destas funções era usada pelos notebooks:
+
+| Removido | Use no lugar |
+|---|---|
+| `DataVisualizer.plot_correlation_matrix` | `data_visualization.CorrelationHeatmap` |
+| `DataVisualizer.plot_time_series_comparison` | `data_visualization.PlotMultipleSeries` |
+| `DataPreprocessor.split_train_test_by_class`, `train_test_split_dataframes`, `analyze_split_distribution`, `validate_split_balance`, `validate_dataframe_split_balance` | `utils.TrainTestSplitter` e `utils.KFoldSplitter` (os notebooks usam o `CrossValidator`) |
 
 ### Avaliado e mantido local (e por quê)
 
