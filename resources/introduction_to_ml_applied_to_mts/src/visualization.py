@@ -10,9 +10,10 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from collections import Counter
 from typing import List, Dict, Any, Tuple
+
+from ThreeWToolkit.data_visualization import CorrelationHeatmap
 
 
 class DataVisualizer:
@@ -580,21 +581,16 @@ class DataVisualizer:
             print("❌ No numeric columns found for correlation analysis")
             return
 
-        # Calculate correlation matrix
-        corr_matrix = numeric_data.corr()
-
-        # Create heatmap
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(
-            corr_matrix,
+        CorrelationHeatmap(
+            numeric_data,
+            title=title,
+            figsize=(10, 8),
             annot=True,
             cmap="coolwarm",
             center=0,
             square=True,
             linewidths=0.5,
-        )
-        plt.title(title, fontsize=14, fontweight="bold")
-        plt.tight_layout()
+        ).plot()
         plt.show()
 
     def plot_time_series_comparison(
