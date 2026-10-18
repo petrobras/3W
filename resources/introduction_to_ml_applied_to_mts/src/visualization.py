@@ -14,8 +14,6 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from typing import List, Dict, Any, Tuple
 
-from ThreeWToolkit.data_visualization import CorrelationHeatmap
-
 
 class DataVisualizer:
     """
@@ -562,73 +560,6 @@ class DataVisualizer:
         axes[1].tick_params(axis="x", rotation=45)
         axes[1].grid(True, alpha=0.3)
 
-        plt.tight_layout()
-        plt.show()
-
-    def plot_correlation_matrix(
-        self, data: pd.DataFrame, title: str = "Feature Correlation Matrix"
-    ) -> None:
-        """
-        Plot correlation matrix heatmap for numeric features.
-
-        Args:
-            data (pd.DataFrame): Input data
-            title (str): Plot title
-        """
-        # Get numeric columns only
-        numeric_data = data.select_dtypes(include=[np.number])
-
-        if numeric_data.empty:
-            print("❌ No numeric columns found for correlation analysis")
-            return
-
-        CorrelationHeatmap(
-            numeric_data,
-            title=title,
-            figsize=(10, 8),
-            annot=True,
-            cmap="coolwarm",
-            center=0,
-            square=True,
-            linewidths=0.5,
-        ).plot()
-        plt.show()
-
-    def plot_time_series_comparison(
-        self, data_dict: Dict[str, pd.DataFrame], column: str, max_samples: int = 1000
-    ) -> None:
-        """
-        Plot time series comparison of the same column across different scaling methods.
-
-        Args:
-            data_dict (Dict): Dictionary with method names and dataframes
-            column (str): Column to plot
-            max_samples (int): Maximum number of samples to plot (for performance)
-        """
-        plt.figure(figsize=(15, 8))
-
-        colors = plt.cm.Set3(np.linspace(0, 1, len(data_dict)))
-
-        for i, (method, data) in enumerate(data_dict.items()):
-            # Handle different column naming conventions
-            col_name = column if column in data.columns else f"{column}_scaled"
-
-            if col_name in data.columns:
-                # Subsample if data is too large
-                plot_data = data[col_name].dropna()
-                if len(plot_data) > max_samples:
-                    indices = np.linspace(0, len(plot_data) - 1, max_samples, dtype=int)
-                    plot_data = plot_data.iloc[indices]
-
-                plt.plot(
-                    plot_data, label=method, color=colors[i], alpha=0.7, linewidth=1
-                )
-
-        plt.title(f"Time Series Comparison - {column}", fontsize=14, fontweight="bold")
-        plt.xlabel("Sample Index")
-        plt.ylabel("Value")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.show()
 
