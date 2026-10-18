@@ -82,6 +82,9 @@ images = [
     "openpyxl>=3.1.5",
     "kaleido>=1.1.0",
 ]
+resources = [
+    "umap-learn>=0.5.7",
+]
 
 [tool.setuptools.packages.find]
 where = ["toolkit"]

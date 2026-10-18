@@ -1452,7 +1452,7 @@ class DimensionalityReductionVisualizer:
         try:
             import umap
         except ImportError:
-            print("❌ UMAP not available. Install with: pip install umap-learn")
+            print("❌ UMAP not available. Install with: uv pip install -e '../../.[resources]'")
             return None
 
         if configs is None:
