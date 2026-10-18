@@ -331,6 +331,9 @@ class UnsupervisedDataLoader:
         Returns:
             dict: {fold_name: {'train_normal': arrays, 'test_normal': arrays, 'test_anomaly': arrays, 'test_anomaly_classes': classes}}
         """
+        # Seeded generator: the same windows are sampled on every run
+        rng = np.random.default_rng(42)
+
         # Validate windowed directory
         if not os.path.exists(self.windowed_dir):
             raise FileNotFoundError(
@@ -384,7 +387,7 @@ class UnsupervisedDataLoader:
                     max_normal_samples
                     and len(train_normal_windows) > max_normal_samples
                 ):
-                    indices = np.random.choice(
+                    indices = rng.choice(
                         len(train_normal_windows), max_normal_samples, replace=False
                     )
                     train_normal_windows = [train_normal_windows[i] for i in indices]
@@ -393,7 +396,7 @@ class UnsupervisedDataLoader:
                     max_normal_samples
                     and len(test_normal_windows) > max_normal_samples // 2
                 ):
-                    indices = np.random.choice(
+                    indices = rng.choice(
                         len(test_normal_windows), max_normal_samples // 2, replace=False
                     )
                     test_normal_windows = [test_normal_windows[i] for i in indices]
@@ -402,7 +405,7 @@ class UnsupervisedDataLoader:
                     max_anomaly_samples
                     and len(test_anomaly_windows) > max_anomaly_samples
                 ):
-                    indices = np.random.choice(
+                    indices = rng.choice(
                         len(test_anomaly_windows), max_anomaly_samples, replace=False
                     )
                     test_anomaly_windows = [test_anomaly_windows[i] for i in indices]
