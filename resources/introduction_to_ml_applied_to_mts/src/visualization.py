@@ -539,7 +539,9 @@ class DataVisualizer:
             return
 
         # Pressure boxplot
-        bp1 = axes[0].boxplot(pressure_data, labels=valid_methods, patch_artist=True)
+        bp1 = axes[0].boxplot(
+            pressure_data, tick_labels=valid_methods, patch_artist=True
+        )
         for patch in bp1["boxes"]:
             patch.set_facecolor(self.color_palette["pressure"])
             patch.set_alpha(0.7)
@@ -549,7 +551,7 @@ class DataVisualizer:
         axes[0].grid(True, alpha=0.3)
 
         # Temperature boxplot
-        bp2 = axes[1].boxplot(temp_data, labels=valid_methods, patch_artist=True)
+        bp2 = axes[1].boxplot(temp_data, tick_labels=valid_methods, patch_artist=True)
         for patch in bp2["boxes"]:
             patch.set_facecolor(self.color_palette["temperature"])
             patch.set_alpha(0.7)
@@ -1967,7 +1969,7 @@ class AnomalyDetectionVisualizer:
         labels = ["Normal", "Anomaly"]
         colors = [self.colors["normal"], self.colors["anomaly"]]
 
-        box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
+        box_plot = ax.boxplot(data_to_plot, tick_labels=labels, patch_artist=True)
         for patch, color in zip(box_plot["boxes"], colors):
             patch.set_facecolor(color)
             patch.set_alpha(0.7)
@@ -2558,7 +2560,7 @@ class AnomalyDetectionVisualizer:
         ax = axes[0, 1]
         data_to_plot = [normal_scores, anomaly_scores]
         box_plot = ax.boxplot(
-            data_to_plot, labels=["Normal", "Anomaly"], patch_artist=True
+            data_to_plot, tick_labels=["Normal", "Anomaly"], patch_artist=True
         )
         box_plot["boxes"][0].set_facecolor("blue")
         box_plot["boxes"][1].set_facecolor("red")
