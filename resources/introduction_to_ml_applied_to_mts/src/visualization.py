@@ -7,10 +7,10 @@ sensor data and scaling methods in the 3W dataset.
 
 import os
 import time
+import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from collections import Counter
 from typing import List, Dict, Any, Tuple
 
@@ -539,7 +539,9 @@ class DataVisualizer:
             return
 
         # Pressure boxplot
-        bp1 = axes[0].boxplot(pressure_data, labels=valid_methods, patch_artist=True)
+        bp1 = axes[0].boxplot(
+            pressure_data, tick_labels=valid_methods, patch_artist=True
+        )
         for patch in bp1["boxes"]:
             patch.set_facecolor(self.color_palette["pressure"])
             patch.set_alpha(0.7)
@@ -549,7 +551,7 @@ class DataVisualizer:
         axes[0].grid(True, alpha=0.3)
 
         # Temperature boxplot
-        bp2 = axes[1].boxplot(temp_data, labels=valid_methods, patch_artist=True)
+        bp2 = axes[1].boxplot(temp_data, tick_labels=valid_methods, patch_artist=True)
         for patch in bp2["boxes"]:
             patch.set_facecolor(self.color_palette["temperature"])
             patch.set_alpha(0.7)
@@ -558,78 +560,6 @@ class DataVisualizer:
         axes[1].tick_params(axis="x", rotation=45)
         axes[1].grid(True, alpha=0.3)
 
-        plt.tight_layout()
-        plt.show()
-
-    def plot_correlation_matrix(
-        self, data: pd.DataFrame, title: str = "Feature Correlation Matrix"
-    ) -> None:
-        """
-        Plot correlation matrix heatmap for numeric features.
-
-        Args:
-            data (pd.DataFrame): Input data
-            title (str): Plot title
-        """
-        # Get numeric columns only
-        numeric_data = data.select_dtypes(include=[np.number])
-
-        if numeric_data.empty:
-            print("❌ No numeric columns found for correlation analysis")
-            return
-
-        # Calculate correlation matrix
-        corr_matrix = numeric_data.corr()
-
-        # Create heatmap
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(
-            corr_matrix,
-            annot=True,
-            cmap="coolwarm",
-            center=0,
-            square=True,
-            linewidths=0.5,
-        )
-        plt.title(title, fontsize=14, fontweight="bold")
-        plt.tight_layout()
-        plt.show()
-
-    def plot_time_series_comparison(
-        self, data_dict: Dict[str, pd.DataFrame], column: str, max_samples: int = 1000
-    ) -> None:
-        """
-        Plot time series comparison of the same column across different scaling methods.
-
-        Args:
-            data_dict (Dict): Dictionary with method names and dataframes
-            column (str): Column to plot
-            max_samples (int): Maximum number of samples to plot (for performance)
-        """
-        plt.figure(figsize=(15, 8))
-
-        colors = plt.cm.Set3(np.linspace(0, 1, len(data_dict)))
-
-        for i, (method, data) in enumerate(data_dict.items()):
-            # Handle different column naming conventions
-            col_name = column if column in data.columns else f"{column}_scaled"
-
-            if col_name in data.columns:
-                # Subsample if data is too large
-                plot_data = data[col_name].dropna()
-                if len(plot_data) > max_samples:
-                    indices = np.linspace(0, len(plot_data) - 1, max_samples, dtype=int)
-                    plot_data = plot_data.iloc[indices]
-
-                plt.plot(
-                    plot_data, label=method, color=colors[i], alpha=0.7, linewidth=1
-                )
-
-        plt.title(f"Time Series Comparison - {column}", fontsize=14, fontweight="bold")
-        plt.xlabel("Sample Index")
-        plt.ylabel("Value")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.show()
 
@@ -1454,7 +1384,9 @@ class DimensionalityReductionVisualizer:
         try:
             import umap
         except ImportError:
-            print("❌ UMAP not available. Install with: pip install umap-learn")
+            print(
+                "❌ UMAP not available. Install with: uv pip install -e '../../.[resources]'"
+            )
             return None
 
         if configs is None:
@@ -1503,16 +1435,19 @@ class DimensionalityReductionVisualizer:
             try:
                 start_time = time.time()
 
-                reducer = umap.UMAP(
-                    n_components=2,
-                    n_neighbors=min(config["n_neighbors"], X_scaled.shape[0] - 1),
-                    min_dist=config["min_dist"],
-                    metric=config["metric"],
-                    random_state=42,
-                    n_epochs=200,
-                )
+                # Setting random_state (reproducibility) makes UMAP run single-threaded
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message="n_jobs value 1")
+                    reducer = umap.UMAP(
+                        n_components=2,
+                        n_neighbors=min(config["n_neighbors"], X_scaled.shape[0] - 1),
+                        min_dist=config["min_dist"],
+                        metric=config["metric"],
+                        random_state=42,
+                        n_epochs=200,
+                    )
 
-                X_umap = reducer.fit_transform(X_scaled)
+                    X_umap = reducer.fit_transform(X_scaled)
                 elapsed_time = time.time() - start_time
 
                 results.append(
@@ -1613,7 +1548,7 @@ class DimensionalityReductionVisualizer:
                     ax.text(
                         0.02,
                         0.98,
-                        f"⚡ {result['time']:.1f}s",
+                        f"{result['time']:.1f}s",
                         transform=ax.transAxes,
                         fontsize=9,
                         verticalalignment="top",
@@ -1967,7 +1902,7 @@ class AnomalyDetectionVisualizer:
         labels = ["Normal", "Anomaly"]
         colors = [self.colors["normal"], self.colors["anomaly"]]
 
-        box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
+        box_plot = ax.boxplot(data_to_plot, tick_labels=labels, patch_artist=True)
         for patch, color in zip(box_plot["boxes"], colors):
             patch.set_facecolor(color)
             patch.set_alpha(0.7)
@@ -2502,11 +2437,12 @@ class AnomalyDetectionVisualizer:
         self, normal_scores, anomaly_scores, anomaly_classes=None, fold_name="Best Fold"
     ):
         """
-        Plot comprehensive SVM decision function analysis.
+        Plot comprehensive SVM anomaly score analysis.
 
         Args:
-            normal_scores (np.array): SVM decision function scores for normal data
-            anomaly_scores (np.array): SVM decision function scores for anomaly data
+            normal_scores (np.array): SVM anomaly scores for normal data
+                (``-decision_function``: positive = outside the boundary = anomaly)
+            anomaly_scores (np.array): SVM anomaly scores for anomaly data
             anomaly_classes (list): Class labels for anomaly data
             fold_name (str): Name of the fold being analyzed
         """
@@ -2516,9 +2452,10 @@ class AnomalyDetectionVisualizer:
 
         print(f"🏆 Best Performing Fold (Distance-Based): {fold_name}")
 
-        # ⚠️  IMPORTANT: For SVM, we work with DECISION FUNCTION SCORES directly
-        # Positive scores = Normal (inside boundary)
-        # Negative scores = Anomaly (outside boundary)
+        # The scores are anomaly scores, as returned by
+        # DistanceAnomalyDetector.evaluate_performance():
+        # Negative scores = Normal (inside the boundary)
+        # Positive scores = Anomaly (outside the boundary)
 
         # Create proper SVM visualization
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
@@ -2548,7 +2485,7 @@ class AnomalyDetectionVisualizer:
             alpha=0.8,
             label="Decision Boundary (score=0)",
         )
-        ax.set_xlabel("SVM Decision Function Score")
+        ax.set_xlabel("SVM Anomaly Score (-decision function)")
         ax.set_ylabel("Density")
         ax.set_title("Distribution of SVM Decision Scores")
         ax.legend()
@@ -2558,52 +2495,29 @@ class AnomalyDetectionVisualizer:
         ax = axes[0, 1]
         data_to_plot = [normal_scores, anomaly_scores]
         box_plot = ax.boxplot(
-            data_to_plot, labels=["Normal", "Anomaly"], patch_artist=True
+            data_to_plot, tick_labels=["Normal", "Anomaly"], patch_artist=True
         )
         box_plot["boxes"][0].set_facecolor("blue")
         box_plot["boxes"][1].set_facecolor("red")
         ax.axhline(
             0, color="black", linestyle="--", alpha=0.8, label="Decision Boundary"
         )
-        ax.set_ylabel("SVM Decision Score")
+        ax.set_ylabel("SVM Anomaly Score")
         ax.set_title("Score Distribution Summary")
         ax.grid(True, alpha=0.3)
 
-        # Plot 3: ROC Curve - FIXED VERSION
+        # Plot 3: ROC Curve
         # For ROC: Normal=0, Anomaly=1 (standard convention)
         y_true = np.concatenate(
             [np.zeros(len(normal_scores)), np.ones(len(anomaly_scores))]
         )
 
-        # For One-Class SVM decision function:
-        # - Positive scores = Normal (inliers)
-        # - Negative scores = Anomaly (outliers)
-        # For ROC curve, we need "anomaly probability scores" where higher = more anomalous
-        y_scores = np.concatenate([-normal_scores, -anomaly_scores])
+        # Higher score = more anomalous, which is what the ROC curve expects
+        y_scores = np.concatenate([normal_scores, anomaly_scores])
 
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-        roc_auc_raw = auc(fpr, tpr)
-
-        # FIX FOR INVERTED ROC: If AUC < 0.5, the scores are backwards
-        # In that case, use 1 - AUC to get the correct interpretation
-        if roc_auc_raw < 0.5:
-            roc_auc = 1 - roc_auc_raw
-            print(
-                f"   • ROC was inverted (AUC < 0.5), corrected: {roc_auc_raw:.3f} → {roc_auc:.3f}"
-            )
-            # Also flip the ROC curve
-            fpr = 1 - fpr[::-1]
-            tpr = 1 - tpr[::-1]
-        else:
-            roc_auc = roc_auc_raw
-            print(f"   • ROC AUC (correct): {roc_auc:.3f}")
-
-        # Debug: Print some values to verify
-        print(f"   • Sample normal scores: {normal_scores[:5]}")
-        print(f"   • Sample anomaly scores: {anomaly_scores[:5]}")
-        print(f"   • Converted normal anomaly scores: {-normal_scores[:5]}")
-        print(f"   • Converted anomaly anomaly scores: {-anomaly_scores[:5]}")
-
+        roc_auc = auc(fpr, tpr)
+        print(f"   • ROC AUC: {roc_auc:.3f}")
         ax = axes[1, 0]
         ax.plot(fpr, tpr, color="red", lw=2, label=f"ROC Curve (AUC = {roc_auc:.3f})")
         ax.plot(
@@ -2619,7 +2533,7 @@ class AnomalyDetectionVisualizer:
         ax.set_ylim([0.0, 1.05])
         ax.set_xlabel("False Positive Rate")
         ax.set_ylabel("True Positive Rate")
-        ax.set_title("ROC Curve (SVM Decision Function)")
+        ax.set_title("ROC Curve (SVM Anomaly Score)")
         ax.legend(loc="lower right")
         ax.grid(True, alpha=0.3)
 
@@ -2627,8 +2541,8 @@ class AnomalyDetectionVisualizer:
         ax = axes[1, 1]
 
         # Calculate performance at decision boundary (score = 0)
-        normal_correct = np.sum(normal_scores > 0)
-        anomaly_correct = np.sum(anomaly_scores < 0)
+        normal_correct = np.sum(normal_scores < 0)
+        anomaly_correct = np.sum(anomaly_scores > 0)
 
         # Show some key statistics
         metrics_text = f"""SVM Performance Summary:

@@ -332,9 +332,10 @@ class KMeansAnalyzer:
         analysis_type : str, default "scaled"
             Type of analysis - "scaled" for scaled data only, "pca50" for PCA 50D analysis
         clustering_data : dict, optional
-            Dictionary containing visualization data and labels
+            Unused; kept for backward compatibility
         visualizer : object, optional
-            Clustering visualization object with plot_kmeans_analysis method
+            Unused; kept for backward compatibility (plot the results with
+            `ClusteringVisualizer.plot_kmeans_analysis`)
 
         Returns:
         --------
@@ -391,29 +392,9 @@ class KMeansAnalyzer:
         print(f"   📊 Inertia: {inertia:.2f}")
         print(f"   🎯 Clusters Found: {n_clusters}")
 
-        # Step 3: Visualization (if visualizer and data provided)
-        if visualizer and clustering_data:
-            print("📊 Step 3: Generating visualizations...")
-            try:
-                if analysis_type == "pca50":
-                    # For PCA analysis, use PCA-only visualization
-                    visualizer.plot_kmeans_analysis(
-                        results={"pca50": results["pca50"]},
-                        optimal_k_pca50=optimal_k,
-                        clustering_data=clustering_data,
-                        use_pca_only=True,
-                    )
-                else:
-                    # For scaled analysis, use scaled-only visualization
-                    visualizer.plot_kmeans_analysis(
-                        results=results,
-                        optimal_k_scaled=optimal_k,
-                        clustering_data=clustering_data,
-                        use_scaled_only=True,
-                    )
-                print("   ✅ Visualizations generated successfully")
-            except Exception as e:
-                print(f"   ⚠️ Visualization warning: {str(e)}")
+        # Step 3: Visualization is done by the caller with
+        # `ClusteringVisualizer.plot_kmeans_analysis(...)`, which needs the PCA
+        # projection, labels and centroids (see notebook 5).
 
         # Return comprehensive results
         analysis_results = {
