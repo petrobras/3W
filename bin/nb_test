@@ -1,40 +1,34 @@
 #!/bin/bash
 set -u
 
-# Manual-only helper: this script is NOT executed by any CI workflow.
-# It exists to let contributors sanity-check notebooks locally before or
-# after 3W Toolkit changes, since some notebooks can take hours to run
-# (model training, large dataset processing) and standard GitHub-hosted
-# runners have no GPU and limited job/disk time.
+# This script tests (runs) Jupyter Notebooks and reports which tests failed.
+#
+# The following categories of Jupyter Notebooks are considered:
+#
+#   BASIC_DEMOS     - those that the 3W Project leaders intend to maintain without fail  
+#                     throughout updates to the 3W Dataset and the 3W Toolkit. Failures 
+#                     that occur when running Jupyter Notebook in this category are 
+#                     reported as ERRORS.
+#   NOT_BASIC_DEMOS - those that the 3W Project leaders expect the 3W Community to 
+#                     maintain without fail throughout updates to the 3W Dataset and the 
+#                     3W Toolkit. Failures that occur when running Jupyter Notebook in 
+#                     this category are reported as WARNINGS.
+#
+# To run this script, you need to install packages in the “notebooks” extra group:
+#
+#   uv sync --extra notebooks
 #
 # Usage:
-#   ./bin/nb_test [--all | --not-basic] [<path>]
 #
-# Categories:
-#   BASIC_DEMOS     - Notebooks the project is committed to keeping working
-#                      across 3W Toolkit releases: toolkit/demos,
-#                      dataset/demos/_basic and benchmarks/*/demo/_basic
-#                      (once created). A failure here is an ERROR
-#                      (non-zero exit code).
-#   NOT_BASIC_DEMOS - All other demos/tutorials (no such commitment).
-#                      A failure here is a WARNING only and does not
-#                      affect the exit code.
+#   uv run bash nb_test [--all|--not-basic|<path>]
 #
 # Options:
-#   (none)       - Default. Test BASIC_DEMOS only.
-#   --all        - Test BASIC_DEMOS + NOT_BASIC_DEMOS.
-#   --not-basic  - Test NOT_BASIC_DEMOS only.
-#   <path>       - Legacy mode: run every *.ipynb found under the given
-#                  path, reported as a single uncategorized WARNING batch.
 #
-# Requirements:
-#   Install the "notebooks" extra BEFORE running this script. It contains the
-#   dependencies required by the notebooks under test:
+#   (none)          - Default. Only BASIC_DEMOS are tested.
+#   --all           - BASIC_DEMOS and NOT_BASIC_DEMOS are tested.
+#   --not-basic     - Only NOT_BASIC_DEMOS are tested.
+#   <path>          - Only *.ipynb files found under the given path are tested.
 #
-#     uv sync --extra notebooks
-#
-#   The script automatically prefers the project's .venv when it exists, so
-#   there is no need to activate the virtual environment manually.
 
 ALL=0
 NOT_BASIC=0
@@ -82,8 +76,8 @@ fi
 
 cd "$(dirname "$0")/.."
 
-# benchmarks/*/demo/_basic and its sibling non-basic dirs don't exist yet;
-# only expand the glob into the arrays once they do.
+# The benchmarks/*/demo/_basic and its sibling not-basic dirs don't exist yet. Only 
+# expand the glob into the arrays once they do
 shopt -s nullglob
 BENCH_BASIC=(benchmarks/*/demo/_basic)
 shopt -u nullglob
@@ -101,8 +95,7 @@ NOT_BASIC_DEMOS=(
     "resources/introduction_to_ml_applied_to_mts"
 )
 
-
-# Resolve the Python interpreter. Prefer the project's virtual environment.
+# Resolve the Python interpreter. Prefer the project's virtual environment
 PROJECT_ROOT="$(pwd)"
 if [ -x "$PROJECT_ROOT/.venv/Scripts/python.exe" ]; then
     PYTHON="$PROJECT_ROOT/.venv/Scripts/python.exe"
@@ -117,10 +110,10 @@ fi
 TEMPDIR="$(mktemp -d)"
 trap 'rm -rf -- "$TEMPDIR"' EXIT
 
-# Notebooks may save arbitrary kernel names (e.g. "p310-forge") in their
-# metadata, which breaks execution on other contributors' machines. Register
-# a temporary kernelspec that always points to the resolved interpreter and
-# force nbconvert to use it regardless of each notebook's saved kernelspec.
+# Jupyter Notebooks may save arbitrary kernel names (e.g. "p310-forge") in their 
+# metadata, which breaks execution on other contributors' machines. So register a 
+# temporary kernelspec that always points to the resolved interpreter and force 
+# the nbconvert to use it regardless of each Jupyter Notebook's saved kernelspec
 KERNEL_NAME="nb_test"
 mkdir -p "$TEMPDIR/kernels/$KERNEL_NAME"
 cat > "$TEMPDIR/kernels/$KERNEL_NAME/kernel.json" <<EOF
@@ -132,18 +125,18 @@ cat > "$TEMPDIR/kernels/$KERNEL_NAME/kernel.json" <<EOF
 EOF
 export JUPYTER_PATH="$TEMPDIR"
 
-# Full nbconvert/traceback output is noisy; redirect it to per-notebook logs
-# here instead of the terminal. This directory is NOT auto-removed, so
-# failure logs remain available for inspection after the run.
+# Full nbconvert/traceback output is noisy. Redirect it to logs instead of the terminal. 
+# This directory is NOT auto-removed. So failure logs remain available for inspection 
+# after the test
 LOGDIR="$(mktemp -d)"
 
 echo "Saving executed notebooks to $TEMPDIR"
 echo "Saving execution logs to $LOGDIR"
 
-# Runs every *.ipynb found under the given directories. Notebooks living
-# under a "_basic" subdirectory of a NOT_BASIC_DEMOS dir are skipped, since
-# they belong to the corresponding BASIC_DEMOS entry instead.
-# Echoes one line per notebook (OK/FAIL) and returns the failure count.
+# Runs every *.ipynb found under the given directories. Notebooks living under a 
+# "_basic" subdirectory of a NOT_BASIC_DEMOS dir are skipped, since they belong to the 
+# BASIC_DEMOS category. Echoes one line per notebook (OK/FAIL) and returns the failure 
+# count
 run_notebooks () {
     local label="$1"
     shift
@@ -158,12 +151,11 @@ run_notebooks () {
             continue
         fi
 
-        # Collect the notebook list into an array first: piping "find" directly
+        # Collect the Jupyter Notebook list into an array first: piping "find" directly
         # into a "while read" loop shares stdin with jupyter-nbconvert's kernel
-        # subprocess, which can consume the pipe and silently skip notebooks.
-        #
-        # "_basic" notebooks are excluded only from NOT_BASIC searches, since
-        # they are already covered by BASIC_DEMOS.
+        # subprocess, which can consume the pipe and silently skip notebooks. "_basic" 
+        # Jupyter Notebooks are excluded only from NOT_BASIC searches, since they are 
+        # already covered by BASIC_DEMOS category
         if [ "$label" = "NOT_BASIC" ]; then
             mapfile -t nbs < <(
                 find "$dir" \
@@ -186,8 +178,8 @@ run_notebooks () {
         for nb in "${nbs[@]}"; do
             echo -e "\033[0;33m[$label] Testing $nb.\033[0m"
 
-            # Preserve the notebook path in the log filename so notebooks with
-            # the same basename do not overwrite each other's logs.
+            # Preserve the Jupyter Notebook path in the log filename so those with
+            # the same basename do not overwrite each other's logs
             local safe_name="${nb//\//_}"
             local log="$LOGDIR/${label}_${safe_name}.log"
             local nb_dir="$(dirname "$nb")"
