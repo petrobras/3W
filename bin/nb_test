@@ -113,12 +113,15 @@ trap 'rm -rf -- "$TEMPDIR"' EXIT
 # Jupyter Notebooks may save arbitrary kernel names (e.g. "p310-forge") in their 
 # metadata, which breaks execution on other contributors' machines. So register a 
 # temporary kernelspec that always points to the resolved interpreter and force 
-# the nbconvert to use it regardless of each Jupyter Notebook's saved kernelspec
+# the nbconvert to use it regardless of each Jupyter Notebook's saved kernelspec.
+# Convert the interpreter path on Windows and keep it unchanged elsewhere.
 KERNEL_NAME="nb_test"
+KERNEL_PYTHON="$(cygpath -m "$PYTHON" 2>/dev/null || printf '%s' "$PYTHON")"
+KERNEL_PYTHON="${KERNEL_PYTHON//\\//}"
 mkdir -p "$TEMPDIR/kernels/$KERNEL_NAME"
 cat > "$TEMPDIR/kernels/$KERNEL_NAME/kernel.json" <<EOF
 {
-  "argv": ["${PYTHON//\\//}", "-m", "ipykernel_launcher", "-f", "{connection_file}"],
+  "argv": ["$KERNEL_PYTHON", "-m", "ipykernel_launcher", "-f", "{connection_file}"],
   "display_name": "$KERNEL_NAME",
   "language": "python"
 }
