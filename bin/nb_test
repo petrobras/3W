@@ -121,11 +121,14 @@ trap 'rm -rf -- "$TEMPDIR"' EXIT
 # metadata, which breaks execution on other contributors' machines. Register
 # a temporary kernelspec that always points to the resolved interpreter and
 # force nbconvert to use it regardless of each notebook's saved kernelspec.
+# Convert the interpreter path on Windows; keep it unchanged elsewhere.
 KERNEL_NAME="nb_test"
+KERNEL_PYTHON="$(cygpath -m "$PYTHON" 2>/dev/null || printf '%s' "$PYTHON")"
+KERNEL_PYTHON="${KERNEL_PYTHON//\\//}"
 mkdir -p "$TEMPDIR/kernels/$KERNEL_NAME"
 cat > "$TEMPDIR/kernels/$KERNEL_NAME/kernel.json" <<EOF
 {
-  "argv": ["${PYTHON//\\//}", "-m", "ipykernel_launcher", "-f", "{connection_file}"],
+  "argv": ["$KERNEL_PYTHON", "-m", "ipykernel_launcher", "-f", "{connection_file}"],
   "display_name": "$KERNEL_NAME",
   "language": "python"
 }
