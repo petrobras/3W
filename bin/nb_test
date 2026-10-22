@@ -11,19 +11,19 @@ set -u
 #   ./bin/nb_test [--all | --not-basic] [<path>]
 #
 # Categories:
-#   DEMOS_BASIC     - Notebooks the project is committed to keeping working
+#   BASIC_DEMOS     - Notebooks the project is committed to keeping working
 #                      across 3W Toolkit releases: toolkit/demos,
 #                      dataset/demos/_basic and benchmarks/*/demo/_basic
 #                      (once created). A failure here is an ERROR
 #                      (non-zero exit code).
-#   DEMOS_NOT_BASIC - All other demos/tutorials (no such commitment).
+#   NOT_BASIC_DEMOS - All other demos/tutorials (no such commitment).
 #                      A failure here is a WARNING only and does not
 #                      affect the exit code.
 #
 # Options:
-#   (none)       - Default. Test DEMOS_BASIC only.
-#   --all        - Test DEMOS_BASIC + DEMOS_NOT_BASIC.
-#   --not-basic  - Test DEMOS_NOT_BASIC only.
+#   (none)       - Default. Test BASIC_DEMOS only.
+#   --all        - Test BASIC_DEMOS + NOT_BASIC_DEMOS.
+#   --not-basic  - Test NOT_BASIC_DEMOS only.
 #   <path>       - Legacy mode: run every *.ipynb found under the given
 #                  path, reported as a single uncategorized WARNING batch.
 #
@@ -88,13 +88,13 @@ shopt -s nullglob
 BENCH_BASIC=(benchmarks/*/demo/_basic)
 shopt -u nullglob
 
-DEMOS_BASIC=(
+BASIC_DEMOS=(
     "toolkit/demos"
     "dataset/demos/_basic"
     "${BENCH_BASIC[@]}"
 )
 
-DEMOS_NOT_BASIC=(
+NOT_BASIC_DEMOS=(
     "dataset/demos"
     "resources/introduction_to_3w_toolkit_v2.0.0"
     "resources/introduction_to_3w_dataset_v2.0.0"
@@ -141,8 +141,8 @@ echo "Saving executed notebooks to $TEMPDIR"
 echo "Saving execution logs to $LOGDIR"
 
 # Runs every *.ipynb found under the given directories. Notebooks living
-# under a "_basic" subdirectory of a DEMOS_NOT_BASIC dir are skipped, since
-# they belong to the corresponding DEMOS_BASIC entry instead.
+# under a "_basic" subdirectory of a NOT_BASIC_DEMOS dir are skipped, since
+# they belong to the corresponding BASIC_DEMOS entry instead.
 # Echoes one line per notebook (OK/FAIL) and returns the failure count.
 run_notebooks () {
     local label="$1"
@@ -163,7 +163,7 @@ run_notebooks () {
         # subprocess, which can consume the pipe and silently skip notebooks.
         #
         # "_basic" notebooks are excluded only from NOT_BASIC searches, since
-        # they are already covered by DEMOS_BASIC.
+        # they are already covered by BASIC_DEMOS.
         if [ "$label" = "NOT_BASIC" ]; then
             mapfile -t nbs < <(
                 find "$dir" \
@@ -219,15 +219,15 @@ if [ -n "$LEGACY_PATH" ]; then
     run_notebooks "OTHER" "$LEGACY_PATH"
     not_basic_failures=$?
 elif [ "$ALL" -eq 1 ]; then
-    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
+    run_notebooks "BASIC" "${BASIC_DEMOS[@]}"
     basic_failures=$?
-    run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
+    run_notebooks "NOT_BASIC" "${NOT_BASIC_DEMOS[@]}"
     not_basic_failures=$?
 elif [ "$NOT_BASIC" -eq 1 ]; then
-    run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
+    run_notebooks "NOT_BASIC" "${NOT_BASIC_DEMOS[@]}"
     not_basic_failures=$?
 else
-    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
+    run_notebooks "BASIC" "${BASIC_DEMOS[@]}"
     basic_failures=$?
 fi
 
