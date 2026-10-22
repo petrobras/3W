@@ -188,14 +188,13 @@ run_notebooks () {
             local nb_dir="$(dirname "$nb")"
             local nb_file="$(basename "$nb")"
 
-            # if (cd "$nb_dir" && "$PYTHON" -m nbconvert \
-            #     "$nb_file" \
-            #     --to notebook \
-            #     --execute \
-            #     --ExecutePreprocessor.kernel_name="$KERNEL_NAME" \
-            #     --output-dir "$TEMPDIR" \
-            #     >"$log" 2>&1); then
-            if false; then
+            if (cd "$nb_dir" && "$PYTHON" -m nbconvert \
+                "$nb_file" \
+                --to notebook \
+                --execute \
+                --ExecutePreprocessor.kernel_name="$KERNEL_NAME" \
+                --output-dir "$TEMPDIR" \
+                >"$log" 2>&1); then
                 echo -e "\033[0;32m[$label] $nb executed successfully\033[0m"
             else
                 echo -e "\033[0;31m[$label] $nb FAILED. Log in $log\033[0m"
