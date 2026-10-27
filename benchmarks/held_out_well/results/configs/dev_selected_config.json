@@ -1,0 +1,50 @@
+{
+ "cap": 20000,
+ "decision_array_sha256": {
+  "elig": "c5bc6f09b95767a800b44a72522275b3a86b8f9f74b44218d4419d486f366e76",
+  "inst": "45e797be0afea427ab992679949e04b3b45d69cb1d5e108504e7b53da2b16a6f",
+  "r": "57a35d910f705aca7f1bed8297d9e1d6abade1481c799b41db1c600a3b18a869",
+  "state": "479ac80bfb2f1385b92a3a9c06dfd5b907ed4c20bbc8693ccbe38481b479efbb",
+  "y": "84ca2ee2b333c1bc98d3e687ab6711065faebc57fd847ac9e0a454b6eadcb0d5"
+ },
+ "devstudy_json_sha256": "3c10518b3ff46b6507560ca8b7ec7ab305adb427650605ae014d47bfa6656e3b",
+ "devstudy_payload_sha256": "1e025e99897187338c451c4eae1cff6b7c43a4838bf13460ca6c71e510b7d8f7",
+ "leaves": 15,
+ "lr": 0.1,
+ "manifest_sha256": "a28c1ebddd698806a0f293b3307b4709f251dec086c618513254892a2dcfc206",
+ "mode": "final",
+ "models": {
+  "best": {
+   "alias": "all_aug",
+   "alpha": 1.0,
+   "aug": 1,
+   "binary": false,
+   "cols": "all",
+   "expect_dev": {
+    "metric": "macro_f1",
+    "tol": 0.01,
+    "value": 0.3603
+   },
+   "rounds": 20
+  },
+  "best_binary": {
+   "alias": "bin_all",
+   "alpha": 0.25,
+   "aug": 0,
+   "binary": true,
+   "cols": "all",
+   "expect_dev": {
+    "metric": "average_precision",
+    "tol": 0.01,
+    "value": 0.8241
+   },
+   "rounds": 50
+  }
+ },
+ "preregistration": "PREREGISTRATION-3W-BEST.md",
+ "seeds": [
+  0,
+  1,
+  2
+ ]
+}
