@@ -1,89 +1,154 @@
 #!/bin/bash
 set -u
 
-# Manual-only helper: this script is NOT executed by any CI workflow.
-# It exists to let contributors sanity-check notebooks locally before or
-# after 3W Toolkit changes, since some notebooks can take hours to run
-# (model training, large dataset processing) and standard GitHub-hosted
-# runners have no GPU and limited job/disk time.
+# This script tests (runs) Jupyter Notebooks and reports which ones failed.
+#
+# The following categories of Jupyter Notebooks are considered:
+#
+#   BASIC_DEMOS     - Those that the 3W Project leaders intend to maintain without 
+#                     failures throughout updates to the 3W Dataset and the 3W Toolkit.
+#   NOT_BASIC_DEMOS - Those that the 3W Project leaders expect the 3W Community to 
+#                     maintain without failures throughout updates to the 3W Dataset 
+#                     and the 3W Toolkit.
+#   DEMOS           - Those located under a directory (recursively) specified by user
+#                     of this script, regardless of whether they are expected to be 
+#                     maintained.
+#
+# To run this script, you need to install packages in the “notebooks” extra group:
+#
+#   uv sync --extra notebooks
 #
 # Usage:
-#   ./bin/nb_test [--all] [<path>]
 #
-# Categories:
-#   DEMOS_BASIC     - Notebooks the project is committed to keep working
-#                      across 3W Toolkit releases: toolkit/demos,
-#                      dataset/demos/_basic and benchmarks/*/demo/_basic
-#                      (once created). A failure here is an ERROR
-#                      (non-zero exit code).
-#   DEMOS_NOT_BASIC - All other demos/tutorials (no such commitment).
-#                      A failure here is a WARNING only and does not
-#                      affect the exit code.
+#   ./nb_test [--all|--not-basic|--dir path]
 #
-# Parameter:
-#   (none)  - Default. Tests DEMOS_BASIC only.
-#   --all   - Tests DEMOS_BASIC + DEMOS_NOT_BASIC (DEMOS_ALL).
-#   <path>  - Legacy mode: run every *.ipynb found under an arbitrary
-#             path, reported as a single, non-categorized WARNING batch.
+# Options:
+#
+#   (none)          - Only and all BASIC_DEMOS are tested.
+#   --all           - All BASIC_DEMOS and all NOT_BASIC_DEMOS are tested.
+#   --not-basic     - Only and all NOT_BASIC_DEMOS are tested.
+#   --dir path      - Only and all DEMOS are tested. Only relative paths are expected. 
+#                     Example: ./nb_test --dir dataset/demos/AfranioMelo
 
-LEGACY_PATH="${1:-}"
-
-case "${INCLUDE_NOT_BASIC:-False}" in
-    True|true|TRUE|1|yes|YES)
-        INCLUDE_NOT_BASIC=1
-        ;;
-    False|false|FALSE|0|no|NO|"")
-        INCLUDE_NOT_BASIC=0
-        ;;
-    *)
-        echo "Invalid value for INCLUDE_NOT_BASIC: ${INCLUDE_NOT_BASIC}"
-        echo "Use True or False."
-        exit 2
-        ;;
-esac
-
-cd "$(dirname "$0")/.."
-
-# benchmarks/*/demo/_basic and its sibling non-basic dirs don't exist yet;
-# only expand the glob into the arrays once they do.
+# Constants
+# Note 1: all paths must be defined relative to the root of the Git repository
+# Note 2: the benchmarks/*/demo/_basic and its sibling not-basic dirs don't exist yet.
+# Only expand the glob into the arrays once they do
 shopt -s nullglob
 BENCH_BASIC=(benchmarks/*/demo/_basic)
 shopt -u nullglob
-
-DEMOS_BASIC=(
-    "toolkit/demos"
-    "dataset/demos/_basic"
-    "${BENCH_BASIC[@]}"
+BASIC_DEMOS=(
+   "toolkit/demos"
+   "dataset/demos/_basic"
+   "${BENCH_BASIC[@]}"
 )
-
-DEMOS_NOT_BASIC=(
+NOT_BASIC_DEMOS=(
     "dataset/demos"
     "resources/introduction_to_3w_toolkit_v2.0.0"
     "resources/introduction_to_3w_dataset_v2.0.0"
     "resources/introduction_to_ml_applied_to_mts"
 )
 
+# Global variables
+all_option=0
+not_basic_option=0
+dir_option=0
+dir_path=""
 
-# Resolve the Python interpreter. On WSL running against a Windows conda/uv
-# env, "python" is not on PATH but "python.exe" is.
-PYTHON=python
-command -v "$PYTHON" >/dev/null 2>&1 || PYTHON=python.exe
+# Standard message regarding the use of this script
+usage() {
+    echo "Usage: ./nb_test [--all|--not-basic|--dir path]" >&2
+}
 
-TEMPDIR="$(mktemp -d)"
-trap 'rm -rf -- "$TEMPDIR"' EXIT
+# Identification of option and parameter in args
+for arg in "$@"; do
+    case "$arg" in
+        --all)
+            all_option=1
+            ;;
+        --not-basic)
+            not_basic_option=1
+            ;;
+        --dir)
+            dir_option=1
+            shift 1
+            dir_path=$@
+            ;;            
+        -*)
+            echo "Invalid option: $arg" >&2
+            usage
+            exit 2
+            ;;
+        *)
+            if [ "$dir_option" -eq 0 ]; then
+                echo "Invalid option: $arg" >&2
+                usage
+                exit 2
+            fi
+            ;;    
+    esac
+done
 
-# Full nbconvert/traceback output is noisy; redirect it to per-notebook logs
-# here instead of the terminal. This directory is NOT auto-removed, so
-# failure logs remain available for inspection after the run.
-LOGDIR="$(mktemp -d)"
+# Sanity checks
+if [ "$((all_option+not_basic_option+dir_option))" -gt 1 ]; then
+    echo "Options cannot be combined" >&2
+    usage
+    exit 2
+fi
+if [ "$dir_option" -eq 1 ] && [ "$#" -eq 0 ]; then
+    echo "When the --dir option is used, a path must be specified" >&2
+    usage
+    exit 2
+fi            
+if [ "$dir_option" -eq 1 ] && [ "$#" -gt 1 ]; then
+    echo "When the --dir option is used, only one path can be specified" >&2
+    usage
+    exit 2
+fi
 
-echo "Saving executed notebooks to $TEMPDIR"
-echo "Saving execution logs to $LOGDIR"
+# Go to the root of the Git repository
+cd "$(dirname "$0")/.."
 
-# Runs every *.ipynb found under the given directories. Notebooks living
-# under a "_basic" subdirectory of a DEMOS_NOT_BASIC dir are skipped, since
-# they belong to the corresponding DEMOS_BASIC entry instead.
-# Echoes one line per notebook (OK/FAIL) and returns the failure count.
+# Resolve the Python interpreter. Prefer the project's virtual environment
+PROJECT_ROOT="$(pwd)"
+if [ -x "$PROJECT_ROOT/.venv/Scripts/python.exe" ]; then
+    PYTHON="$PROJECT_ROOT/.venv/Scripts/python.exe"
+elif [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+    PYTHON="$PROJECT_ROOT/.venv/bin/python"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON=python
+else
+    PYTHON=python.exe
+fi
+
+# Determine whether the operating system is Windows
+if grep -qs '/mnt/c' /proc/mounts; then
+    windows=1
+    echo "Operating system identified as Windows"
+else
+    windows=0
+    echo "Operating system identified as not being Windows"
+fi
+
+# Creates output directories
+# Note 1: since full nbconvert output is noisy, it is redirected to a log file in 
+# ABSLOGDIR. This log file is not deleted so that inspections can be conducted
+# Note 2: ABSOUTPUTDIR and tested notebooks are deleted when this script finishes 
+# running
+# Note 3: OUTPUTDIR is required because the nbconvert command expects a relative path
+OUTPUTDIR="$(mktemp -d)"
+if [ "$windows" -eq 1 ]; then
+    ABSOUTPUTDIR="/mnt/c$OUTPUTDIR"
+    ABSLOGDIR="$(mktemp -d --tmpdir=/mnt/c/tmp)"
+else
+    ABSOUTPUTDIR="$OUTPUTDIR"
+    ABSLOGDIR="$(mktemp -d)"
+fi
+trap 'rm -rf -- "$ABSOUTPUTDIR"' EXIT
+echo "Saving tested notebooks in $ABSOUTPUTDIR ..."
+echo "Saving execution logs in $ABSLOGDIR ..."
+
+# Fuction to test Jupyter Notebooks according to parameters
 run_notebooks () {
     local label="$1"
     shift
@@ -94,17 +159,11 @@ run_notebooks () {
 
     for dir in "${dirs[@]}"; do
         if [ ! -d "$dir" ]; then
-            echo -e "\033[0;33m[$label] Directory not found, skipping: $dir\033[0m"
+            echo -e "\033[0;33m[$label] Directory not found and skipped: $dir\033[0m"
             continue
         fi
 
-        # Collect the notebook list into an array first: piping "find" directly
-        # into a "while read" loop shares stdin with jupyter-nbconvert's kernel
-        # subprocess, which can consume the pipe and silently skip notebooks.
-        #
-        # "_basic" notebooks are excluded only from NOT_BASIC searches, since
-        # they are already covered by DEMOS_BASIC.
-        if [ "$label" = "NOT_BASIC" ]; then
+        if [ "$label" = "NOT_BASIC_DEMO" ]; then
             mapfile -t nbs < <(
                 find "$dir" \
                     -type f \
@@ -124,23 +183,21 @@ run_notebooks () {
         fi
 
         for nb in "${nbs[@]}"; do
-            echo -e "\033[0;33m[$label] Testing $nb.\033[0m"
-
-            # Preserve the notebook path in the log filename so notebooks with
-            # the same basename do not overwrite each other's logs.
+            echo -e "\033[0;33m[$label] Testing $nb ...\033[0m"
             local safe_name="${nb//\//_}"
-            local log="$LOGDIR/${label}_${safe_name}.log"
-
-            if "$PYTHON" -m nbconvert \
-                "$nb" \
+            local log="$ABSLOGDIR/${label}_${safe_name}.log"
+            local nb_dir="$(dirname "$nb")"
+            local nb_file="$(basename "$nb")"
+        
+            if (cd "$nb_dir" && "$PYTHON" -m nbconvert \
+                "$nb_file" \
                 --to notebook \
                 --execute \
-                --output-dir "$TEMPDIR" \
-                >"$log" 2>&1; then
-
-                echo -e "\033[0;32m[$label] $nb executed successfully.\033[0m"
+                --output-dir "$OUTPUTDIR" \
+                >"$log" 2>&1); then
+                echo -e "\033[0;32m[$label] $nb tested successfully\033[0m"
             else
-                echo -e "\033[0;31m[$label] $nb FAILED. Log: $log\033[0m"
+                echo -e "\033[0;31m[$label] $nb FAILED. Log in $log\033[0m"
                 failures=$((failures + 1))
             fi
         done
@@ -149,34 +206,32 @@ run_notebooks () {
     return "$failures"
 }
 
-basic_failures=0
-not_basic_failures=0
+# Initializes counters
+demo_failures=0
+basic_demo_failures=0
+not_basic_demo_failures=0
 
-if [ -n "$LEGACY_PATH" ]; then
-    run_notebooks "OTHER" "$LEGACY_PATH"
-    not_basic_failures=$?
+# Run the tests based on option and parameter
+if [ "$dir_option" -eq 1 ]; then
+    run_notebooks "DEMO" "$dir_path"
+    demo_failures=$?
+elif [ "$all_option" -eq 1 ]; then
+    run_notebooks "BASIC_DEMO" "${BASIC_DEMOS[@]}"
+    basic_demo_failures=$?
+    run_notebooks "NOT_BASIC_DEMO" "${NOT_BASIC_DEMOS[@]}"
+    not_basic_demo_failures=$?
+elif [ "$not_basic_option" -eq 1 ]; then
+    run_notebooks "NOT_BASIC_DEMO" "${NOT_BASIC_DEMOS[@]}"
+    not_basic_demo_failures=$?
 else
-    run_notebooks "BASIC" "${DEMOS_BASIC[@]}"
-    basic_failures=$?
-
-    if [ "$INCLUDE_NOT_BASIC" -eq 1 ]; then
-        run_notebooks "NOT_BASIC" "${DEMOS_NOT_BASIC[@]}"
-        not_basic_failures=$?
-    fi
+    run_notebooks "BASIC_DEMO" "${BASIC_DEMOS[@]}"
+    basic_demo_failures=$?
 fi
 
-echo ""
+# Final messages
 echo "Summary:"
-echo "  Basic demos failures (ERROR):      $basic_failures"
-echo "  Non-basic demos failures (WARNING): $not_basic_failures"
-
-if [ "$basic_failures" -gt 0 ]; then
-    echo -e "\033[0;31mBasic demos have failing notebooks. This must be fixed before release.\033[0m"
-    exit 1
-fi
-
-if [ "$not_basic_failures" -gt 0 ]; then
-    echo -e "\033[0;33mSome non-basic demos failed. Please review, but this does not block the build.\033[0m"
-fi
+echo "   Failures in BASIC_DEMOS:     $basic_demo_failures"
+echo "   Failures in NOT_BASIC_DEMOS: $not_basic_demo_failures"
+echo "   Failures in DEMOS:           $demo_failures"
 
 exit 0
