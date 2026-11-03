@@ -6,17 +6,32 @@
 
 ### 🧰 What the 3W Toolkit is
 
-The 3W Toolkit is a collection of tools to explore time series, train models and look for insights in them. It was designed around the 3W Dataset, but it is not limited to it: every step works on a pandas DataFrame wrapped in a `DatasetOutputs`, so the same tools apply to other time series datasets and to other problems and tasks (classification, regression, clustering).
+The **3W Toolkit** is designed to make time series analysis and machine learning workflows easier, faster, and more accessible. From raw data exploration to model evaluation, it brings together a comprehensive set of tools that helps you focus on what really matters: understanding your data, experimenting with different approaches, and extracting valuable insights.
 
-What it offers:
-- **Loading data**: the 3W Parquet files with filters by event class and source, CSV files, subsets and lazy transforms.
-- **Exploring data**: time series plots, correlation, FFT, seasonal decomposition, wavelet spectrograms, data quality heatmaps and the 3W chart.
-- **Preparing data**: cleaning, imputation, normalization, renaming, label filling and class remapping.
-- **Extracting features**: windowing, statistical, exponentially weighted and wavelet features, alone or combined.
-- **Training models**: scikit-learn models, an MLP and any PyTorch model, with train/test and k-fold splits.
-- **Evaluating models**: classification and regression metrics, assessment figures and HTML/LaTeX reports.
-- **Finding structure** (new): clustering of instances, for example to compare real and simulated events.
-- **Running it end to end**: one `PipelineConfig` from raw files to an evaluated model.
+Originally developed around the **3W Dataset**, the Toolkit goes far beyond it. Its modular architecture is built around pandas DataFrames wrapped in `DatasetOutputs`, allowing you to bring your own datasets and apply the same tools to a wide range of problems, including classification, regression, and clustering.
+
+**What can you do with it?**
+
+- **Load data effortlessly**: Work directly with 3W Parquet files, filter by event class and source, load CSV files, create subsets, and apply lazy transformations.
+
+- **Explore your data in depth**: Visualize time series, investigate correlations, analyze frequency components with FFT, perform seasonal decomposition, generate wavelet spectrograms, inspect data quality, and explore the 3W chart.
+
+- **Prepare data for modeling**: Apply common preprocessing operations such as cleaning, imputation, normalization, variable renaming, label filling, and class remapping.
+
+- **Extract features**: Transform raw time series into informative representations using windowing, statistical descriptors, exponentially weighted features, and wavelet-based features, individually or in combination.
+
+- **Training models**: Experiment with scikit-learn estimators, the built-in MLP implementation, or virtually any PyTorch model. Take advantage of ready-to-use train/test and k-fold splitting strategies.
+
+- **Evaluating models**: Assess classification and regression performance through a comprehensive set of metrics, visualizations, and automatically generated HTML and LaTeX reports.
+
+- **Finding structure** *(new)*: Apply clustering to uncover structure in your data, identify similarities between instances, and investigate relationships such as those between real and simulated events.
+
+- **Generate reports**: Turn your analysis and experimental results into structured, ready-to-share reports. Generate HTML and LaTeX reports to document model performance, summarize evaluation metrics and present results in a consistent and reproducible format.
+
+- **Automate the entire workflow**: Connect all these capabilities through a single `PipelineConfig`, taking you from raw data files to a fully evaluated model.
+
+
+Stop building the same infrastructure for every project. Start focusing on the data, the models, and the insights.
 
 
 ---
@@ -63,10 +78,10 @@ A `ParquetDataset` is the collection of instances; it holds the selected file pa
 
 Full class diagram of the current toolkit (JOSS paper):
 ![3W Toolkit class diagram (JOSS paper)](assets/diagrama_classes_joss-background.drawio.svg)
-
+<!--  
 Main modules of the toolkit in 2.0.0:
 ![3W Toolkit classes in groups (repository README)](assets/3w_classes_in_groups.jpg)
-
+-->
 
 ### ✨ What is new since the 2.0.0 workshop?
 
@@ -109,6 +124,21 @@ Main modules of the toolkit in 2.0.0:
 - Each config now lives next to its class. In 2.0.0 the notebooks imported configs from `core` (`from ThreeWToolkit.core.base_preprocessing import NormalizeConfig`). In 3.2.1 they come from the submodule (`from ThreeWToolkit.preprocessing import NormalizeConfig`).
 - Some enumerators were renamed: `TaskType` is now `TaskTypeEnum` and `DataSplit` is now `DataSplitEnum`.
 
+#### Why migrate from 2.0.0 to 3.2.1?
+
+- **Better modularity:** Clearer separation of responsibilities makes components easier to understand and reuse.
+- **Greater flexibility:** New building blocks for dataset transformations, preprocessing, feature extraction, and model training allow you to customize workflows without having to implement everything from scratch.
+- **Easier extensibility:** Dedicated interfaces and a more consistent architecture make it easier to integrate new models, develop custom components, and adapt the Toolkit to different use cases.
+- **New utilities**: Tools for saving and loading trained models, along with built-in data splitting strategies, including train/test splitting and k-fold cross-validation.
+
+### What carries over from 2.0.0?
+
+Existing functionality such as dataset loading, preprocessing, feature extraction, model training, visualization, assessment, metrics, and report generation has been maintained.
+
+Most changes involve updated class names, reorganized imports, and a more modular API. This means you can build on your existing knowledge of the Toolkit rather than starting from scratch.
+
+For a detailed mapping of old and new class names, check the migration reference in [Notebooks](#resources).
+
 #### Migrating code from 2.0.0
 
 1. Import each config from its submodule, not from `ThreeWToolkit.core`.
@@ -138,8 +168,9 @@ renamed.signal.columns  # has "pressure"
 The long form of this architecture is the [Architecture Overview](../../3W_TOOLKIT_CONTRIBUTING.md#architecture-overview) in the toolkit contributing guide.
 
 
-
+<!--  
 ### ✅ Classes the 2.0.0 already showed
+TIRAR OU SIMPLIFICAR
 
 These still exist in 3.2.1, under the names below. The feature extractors were renamed (see the table in [Notebooks](#resources)), and the configs moved next to their classes.
 
@@ -163,7 +194,7 @@ These still exist in 3.2.1, under the names below. The feature extractors were r
 | `pipeline`           | —                       | `Pipeline`                                                                    |
 | `utils`              | —                       | `ModelRecorder`                                                               |
 
-
+-->
 ---
 
 
