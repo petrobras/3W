@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           filter: blob:none
           sparse-checkout: |
@@ -20,7 +20,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -30,7 +30,7 @@ jobs:
           enable-caching: true
 
       - name: Make helper scripts executable
-        run: chmod +x bin/lint
+        run: chmod +x bin/lint bin/sync_agent_files
 
       - name: Create venv
         run: uv venv .venv
@@ -41,6 +41,9 @@ jobs:
       - name: Run lint
         run: uv run ./bin/lint
 
+      - name: Check agent skill copies
+        run: ./bin/sync_agent_files --check
+
   test:
     runs-on: ubuntu-latest
 
@@ -50,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           filter: blob:none
           sparse-checkout: |
@@ -59,7 +62,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
