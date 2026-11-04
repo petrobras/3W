@@ -172,6 +172,4 @@ output/
 
 # Ignore generated demo files for read the docs compilation
 toolkit/docs/source/_demos_gen/
-
-# Per-developer AI agent settings (skills themselves are versioned)
-.claude/settings.local.json
+uv.lock
