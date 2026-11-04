@@ -182,6 +182,22 @@ Good starting points for this session: `00_overview` for the full flow, `08_skle
 
 ## 🤝 Contributing
 
+<img src="assets/3w_contributing.jpg" width="60%">
+
+Open-source projects grow through collaboration, and the 3W project is no exception. Whether you are an experienced developer, a researcher, a student, or just getting started with programming, there is a place for you to contribute!
+
+Contributions come in many forms and at different levels of complexity:
+
+- **Getting started:** Improve documentation, fix typos, report bugs, share feedback, or suggest new features.
+- **Sharing knowledge:** Contribute tutorials, examples, dataset overviews, and practical use cases.
+- **Developing solutions:** Improve existing code, implement new features, add preprocessing methods, or develop new models and tools.
+
+Every contribution, no matter its size, helps make the project better and more useful for the entire community.
+
+### 🌟 Join the community
+
+<img src="assets/3w_repo_stars.jpg" width="60%">
+
 The rules come from three files. This section summarizes them:
 
 - [CONTRIBUTING.md](../../CONTRIBUTING.md): every kind of contribution (dataset, overviews, documentation, toolkit).
