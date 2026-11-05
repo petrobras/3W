@@ -954,6 +954,24 @@ class AdvancedClusteringSuite:
         return best_dbscan
 
 
+def hungarian_accuracy(y_true, y_pred):
+    """Accuracy of the best one-to-one matching between classes and clusters.
+
+    Each class is matched to one cluster (Hungarian algorithm) and the samples of
+    the other clusters, and of the noise, count as errors. A constant label
+    scores the share of the largest class.
+    """
+    from scipy.optimize import linear_sum_assignment
+
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    classes, clusters = np.unique(y_true), np.unique(y_pred)
+    counts = np.array(
+        [[np.sum((y_true == c) & (y_pred == k)) for k in clusters] for c in classes]
+    )
+    rows, cols = linear_sum_assignment(-counts)
+    return counts[rows, cols].sum() / len(y_true)
+
+
 def evaluate_clustering_accuracy(y_true, clustering_results, method_names=None):
     """
     Evaluate clustering accuracy against ground truth using Hungarian algorithm.
