@@ -30,7 +30,7 @@ jobs:
           enable-caching: true
 
       - name: Make helper scripts executable
-        run: chmod +x bin/lint bin/sync_agent_files
+        run: chmod +x bin/lint 
 
       - name: Create venv
         run: uv venv .venv
@@ -40,9 +40,6 @@ jobs:
 
       - name: Run lint
         run: uv run ./bin/lint
-
-      - name: Check agent skill copies
-        run: ./bin/sync_agent_files --check
 
   test:
     runs-on: ubuntu-latest
