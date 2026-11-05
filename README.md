@@ -14,9 +14,9 @@
 [ruff-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
-[coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev
-[coveralls-shield]: https://coveralls.io/repos/github/rafaelpadilla/3W/badge.svg?branch=dev
-[read-the-docs]: https://threewtoolkit.readthedocs.io/en/latest/
+[coveralls]: https://coveralls.io/github/petrobras/3W?branch=main
+[coveralls-shield]: https://coveralls.io/repos/github/petrobras/3W/badge.svg?branch=main
+[read-the-docs]: https://app.readthedocs.org/projects/threewtoolkit/badge/?version=latest
 
 # Table of Content
 
@@ -26,7 +26,6 @@
   * [Ambition](#ambition)
   * [Governance](#governance)
   * [Contributions](#contributions)
-  * [AI Coding Agents](#ai-coding-agents)
   * [Licenses](#licenses)
   * [Versioning](#versioning)
   * [Questions](#questions)
@@ -90,13 +89,6 @@ Before you can contribute to this project, you need to read and agree to the fol
 * [CONTRIBUTING GUIDE](CONTRIBUTING.md).
 
 It is also very important to know, participate and follow the discussions. See the discussions section.
-
-## AI Coding Agents
-
-This repository includes configuration files for AI coding agents, so that tools such as Claude Code, GitHub Copilot, Cursor, Gemini, Codex and others follow the project's conventions:
-
-* [AGENTS.md](AGENTS.md) holds the instructions shared by all agents. Claude Code, GitHub Copilot, Cursor and Codex read it directly; [GEMINI.md](GEMINI.md) only points to it, since Gemini CLI looks for its own file name;
-* [.agents/skills](.agents/skills) holds reusable task guides (`SKILL.md` files). The copy in `.claude/skills` is generated with `./bin/sync_agent_files` and must not be edited directly.
 
 ## Licenses
 
