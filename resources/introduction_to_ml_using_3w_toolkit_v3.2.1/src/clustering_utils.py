@@ -436,15 +436,13 @@ class AdvancedClusteringAnalyzer:
         ms_labels_pca = ms_pca.fit_predict(X_pca_50)
         n_clusters_ms_pca = len(set(ms_labels_pca)) - (1 if -1 in ms_labels_pca else 0)
 
-        # Mean Shift on normalized data (subset for speed)
-        subset_size = min(1000, len(X_normalized))
-        subset_indices = np.random.choice(len(X_normalized), subset_size, replace=False)
-        X_norm_subset = X_normalized[subset_indices]
-
-        ms_norm = MeanShift(
-            bandwidth=bandwidth_norm * 10, bin_seeding=True, max_iter=200
-        )
-        ms_labels_norm = ms_norm.fit_predict(X_norm_subset)
+        # Mean Shift on the normalized data (all samples, in their original order, so
+        # that the labels stay aligned with the ground truth). In 1500 dimensions
+        # `bin_seeding` degenerates: the grid seeds are farther than the bandwidth from
+        # every point and the result is a single cluster, whatever the bandwidth. So
+        # every point is a seed here, with the estimated bandwidth.
+        ms_norm = MeanShift(bandwidth=bandwidth_norm, bin_seeding=False, max_iter=200)
+        ms_labels_norm = ms_norm.fit_predict(X_normalized)
         n_clusters_ms_norm = len(set(ms_labels_norm)) - (
             1 if -1 in ms_labels_norm else 0
         )

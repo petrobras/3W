@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics.cluster import contingency_matrix
 
 
 class ClusteringVisualizer:
@@ -364,7 +365,6 @@ class ClusteringVisualizer:
             homogeneity_score,
             completeness_score,
             v_measure_score,
-            confusion_matrix,
         )
 
         print(
@@ -475,7 +475,7 @@ class ClusteringVisualizer:
                 )
 
             axes[data_idx, 0].set_title(
-                f"Mean Shift ({data_type.upper()})\\n{n_clusters_ms} clusters",
+                f"Mean Shift ({data_type.upper()})\n{n_clusters_ms} clusters",
                 fontweight="bold",
             )
             axes[data_idx, 0].set_xlabel("PCA Component 1")
@@ -493,7 +493,7 @@ class ClusteringVisualizer:
                     s=50,
                 )
                 axes[data_idx, 1].set_title(
-                    f"Ground Truth\\n{len(np.unique(y_true_numeric))} classes",
+                    f"Ground Truth\n{len(np.unique(y_true_numeric))} classes",
                     fontweight="bold",
                 )
                 axes[data_idx, 1].set_xlabel("PCA Component 1")
@@ -510,7 +510,7 @@ class ClusteringVisualizer:
                     s=50,
                 )
                 axes[data_idx, 1].set_title(
-                    "Ground Truth\\n(reference)", fontweight="bold"
+                    "Ground Truth\n(reference)", fontweight="bold"
                 )
                 axes[data_idx, 1].set_xlabel("PCA Component 1")
                 axes[data_idx, 1].set_ylabel("PCA Component 2")
@@ -541,17 +541,26 @@ class ClusteringVisualizer:
                 )
 
             # 4. Confusion Matrix
-            cm = confusion_matrix(y_true_numeric, ms_labels)
+            # Rows: the true classes. Columns: the clusters that exist (noise, -1, included)
+            cm = contingency_matrix(y_true_numeric, ms_labels)
+            row_labels, col_labels = np.unique(y_true_numeric), np.unique(ms_labels)
             cm_normalized = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
             im = axes[data_idx, 3].imshow(
                 cm_normalized, interpolation="nearest", cmap="Blues"
             )
             axes[data_idx, 3].set_title(
-                f"Confusion Matrix ({data_type.upper()})", fontweight="bold"
+                f"Class vs Cluster ({data_type.upper()})",
+                fontweight="bold",
             )
             axes[data_idx, 3].set_xlabel("Mean Shift Cluster")
             axes[data_idx, 3].set_ylabel("Ground Truth Class")
+            axes[data_idx, 3].set_xticks(range(len(col_labels)))
+            axes[data_idx, 3].set_xticklabels(
+                ["noise" if c < 0 else str(c) for c in col_labels]
+            )
+            axes[data_idx, 3].set_yticks(range(len(row_labels)))
+            axes[data_idx, 3].set_yticklabels([str(c) for c in row_labels])
 
             thresh = cm_normalized.max() / 2.0
             for i in range(cm_normalized.shape[0]):
@@ -612,7 +621,7 @@ class ClusteringVisualizer:
                 f"Quality Metrics ({data_type.upper()})", fontweight="bold"
             )
             axes[data_idx, 4].set_ylabel("Score")
-            axes[data_idx, 4].set_ylim(0, 1)
+            axes[data_idx, 4].set_ylim(0, 1.15)
             axes[data_idx, 4].tick_params(axis="x", rotation=45)
             axes[data_idx, 4].grid(True, alpha=0.3)
 
@@ -743,7 +752,6 @@ class ClusteringVisualizer:
             homogeneity_score,
             completeness_score,
             v_measure_score,
-            confusion_matrix,
         )
 
         print("📊 Creating DBSCAN Clustering Analysis & Comparison with Ground Truth")
@@ -816,14 +824,9 @@ class ClusteringVisualizer:
                 )
                 silhouette_avg = -1.0  # Invalid/not applicable
             else:
-                # For DBSCAN, exclude noise points (label -1) from silhouette calculation
-                non_noise_mask = dbscan_labels != -1
-                if np.sum(non_noise_mask) < 2:
-                    silhouette_avg = -1.0
-                else:
-                    silhouette_avg = silhouette_score(
-                        X_data[non_noise_mask], dbscan_labels[non_noise_mask]
-                    )
+                # Same definition that chose the parameters (`run_dbscan`): the noise points
+                # count as one more group, so that discarding points is not rewarded
+                silhouette_avg = silhouette_score(X_data, dbscan_labels)
 
             ari_score = adjusted_rand_score(y_true_numeric, dbscan_labels)
             nmi_score = normalized_mutual_info_score(y_true_numeric, dbscan_labels)
@@ -836,7 +839,9 @@ class ClusteringVisualizer:
             print(f"   • Noise Points: {n_noise}")
             print(f"   • Ground Truth Classes: {len(np.unique(y_true_numeric))}")
             if silhouette_avg >= 0:
-                print(f"   • Silhouette Score: {silhouette_avg:.3f}")
+                print(
+                    f"   • Silhouette Score: {silhouette_avg:.3f} (noise counted as a group)"
+                )
             else:
                 print("   • Silhouette Score: N/A (insufficient clusters)")
             print(f"   • Adjusted Rand Index: {ari_score:.3f}")
@@ -877,7 +882,7 @@ class ClusteringVisualizer:
                 )
 
             axes[data_idx, 0].set_title(
-                f"DBSCAN ({data_type.upper()})\\n{n_clusters_dbscan} clusters, {n_noise} noise",
+                f"DBSCAN ({data_type.upper()})\n{n_clusters_dbscan} clusters, {n_noise} noise",
                 fontweight="bold",
             )
             axes[data_idx, 0].set_xlabel("PCA Component 1")
@@ -895,7 +900,7 @@ class ClusteringVisualizer:
                     s=50,
                 )
                 axes[data_idx, 1].set_title(
-                    f"Ground Truth\\n{len(np.unique(y_true_numeric))} classes",
+                    f"Ground Truth\n{len(np.unique(y_true_numeric))} classes",
                     fontweight="bold",
                 )
                 axes[data_idx, 1].set_xlabel("PCA Component 1")
@@ -912,7 +917,7 @@ class ClusteringVisualizer:
                     s=50,
                 )
                 axes[data_idx, 1].set_title(
-                    "Ground Truth\\n(reference)", fontweight="bold"
+                    "Ground Truth\n(reference)", fontweight="bold"
                 )
                 axes[data_idx, 1].set_xlabel("PCA Component 1")
                 axes[data_idx, 1].set_ylabel("PCA Component 2")
@@ -970,17 +975,26 @@ class ClusteringVisualizer:
                 )
 
             # 4. Confusion Matrix
-            cm = confusion_matrix(y_true_numeric, dbscan_labels)
+            # Rows: the true classes. Columns: the clusters that exist (noise, -1, included)
+            cm = contingency_matrix(y_true_numeric, dbscan_labels)
+            row_labels, col_labels = np.unique(y_true_numeric), np.unique(dbscan_labels)
             cm_normalized = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
             im = axes[data_idx, 3].imshow(
                 cm_normalized, interpolation="nearest", cmap="Blues"
             )
             axes[data_idx, 3].set_title(
-                f"Confusion Matrix ({data_type.upper()})", fontweight="bold"
+                f"Class vs Cluster ({data_type.upper()})",
+                fontweight="bold",
             )
             axes[data_idx, 3].set_xlabel("DBSCAN Cluster")
             axes[data_idx, 3].set_ylabel("Ground Truth Class")
+            axes[data_idx, 3].set_xticks(range(len(col_labels)))
+            axes[data_idx, 3].set_xticklabels(
+                ["noise" if c < 0 else str(c) for c in col_labels]
+            )
+            axes[data_idx, 3].set_yticks(range(len(row_labels)))
+            axes[data_idx, 3].set_yticklabels([str(c) for c in row_labels])
 
             thresh = cm_normalized.max() / 2.0
             for i in range(cm_normalized.shape[0]):
@@ -1041,7 +1055,7 @@ class ClusteringVisualizer:
                 f"Quality Metrics ({data_type.upper()})", fontweight="bold"
             )
             axes[data_idx, 4].set_ylabel("Score")
-            axes[data_idx, 4].set_ylim(0, 1)
+            axes[data_idx, 4].set_ylim(0, 1.15)
             axes[data_idx, 4].tick_params(axis="x", rotation=45)
             axes[data_idx, 4].grid(True, alpha=0.3)
 
@@ -1124,15 +1138,9 @@ class ClusteringVisualizer:
                 silhouette_avg = -1.0  # N/A
                 silhouette_display = "N/A (insufficient clusters)"
             else:
-                non_noise_mask = dbscan_labels != -1
-                if np.sum(non_noise_mask) < 2:
-                    silhouette_avg = -1.0
-                    silhouette_display = "N/A (insufficient non-noise points)"
-                else:
-                    silhouette_avg = silhouette_score(
-                        X_data[non_noise_mask], dbscan_labels[non_noise_mask]
-                    )
-                    silhouette_display = f"{silhouette_avg:.3f}"
+                # Same definition as above: the noise points count as one more group
+                silhouette_avg = silhouette_score(X_data, dbscan_labels)
+                silhouette_display = f"{silhouette_avg:.3f}"
 
             ari_score = adjusted_rand_score(y_true_numeric, dbscan_labels)
 

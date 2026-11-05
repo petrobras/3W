@@ -77,7 +77,7 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 | 38–54 | Agrupar | Notebook 5: *Toolkit first: hierarchical DTW clustering of events*; K-means; MeanShift e DBSCAN | DTW + hierárquico do toolkit (ao vivo, 5 min); K-means, silhueta e Rand ajustado (8 min); MeanShift e DBSCAN em 3 min |
 | 54–60 | Discussão e fechamento da Aula 2 | Seção 11 | Mensagens 2 e 3; ponte para o livro; exercícios 3, 5 e 6 |
 
-**Se atrasar, corte nesta ordem:** (1) MeanShift e DBSCAN (uma frase: o DBSCAN rotula quase tudo como ruído em alta dimensão); (2) a curva ROC (fique na AUC e no aviso); (3) a tabela por dobra de cada família do Notebook 4 (fique na tabela final). **Não corte** o modelo de ponta a ponta nem a impressão digital do poço (Notebook 4), o aviso sobre o nível do sensor (Notebook 3) nem o contraste silhueta × Rand ajustado do Notebook 5.
+**Se atrasar, corte nesta ordem:** (1) MeanShift e DBSCAN (uma frase: os dois acham grupos compactos que não coincidem com as classes, com Rand ajustado em torno de 0,5); (2) a curva ROC (fique na AUC e no aviso); (3) a tabela por dobra de cada família do Notebook 4 (fique na tabela final). **Não corte** o modelo de ponta a ponta nem a impressão digital do poço (Notebook 4), o aviso sobre o nível do sensor (Notebook 3) nem o contraste silhueta × Rand ajustado do Notebook 5.
 
 **Oficina de dia inteiro:** os tempos completos por notebook são Notebook 1 (40 min), 2 (25), 3 (40), 4 (40) e 5 (35), mais abertura (15) e fechamento (20). As seções 6 a 10 trazem o roteiro completo de cada um, e o bloco *Na aula* de cada seção diz o que entra nas duas aulas.
 
@@ -224,11 +224,11 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 
 1. **Dados completos redimensionados para 500 pontos** (diferente dos notebooks anteriores, que usam janelas), PCA para visualização.
 2. **K-means:** cotovelo e silhueta para escolher K. *Cap. 9:* em mundo aberto, **K é exatamente o que não se conhece** — o livro treina uma floresta aleatória para *prever* K a partir de oito características do próprio conjunto. Aqui você verá o outro lado: o K sugerido pelos índices raramente coincide com o número de classes (K = 6 com o `Normalize`, K = 4 com o Min-Max por evento, para 3 classes).
-3. **MeanShift** (K emerge dos modos; exige a largura de banda) e **DBSCAN** (único que rotula ruído; em alta dimensão tende a rotular quase tudo como ruído — por isso o livro só o usa como comparação).
+3. **MeanShift** (K emerge dos modos; exige a largura de banda; nas 1.500 dimensões do espaço normalizado cada ponto é uma semente) e **DBSCAN** (único que rotula ruído; em alta dimensão o ruído depende muito do raio: com o menor raio da grade, 23% a 38% das séries viram ruído, e com o raio escolhido pela silhueta só 6%; o livro só o usa como comparação).
 4. **Avaliação:** silhueta (interna) e índice de Rand ajustado e acurácia com atribuição húngara (externas).
 5. **Mensagem do Ap. E:** este notebook é o ciclo de mundo aberto **sem a etapa de rejeição**; você encontra, em minutos, os dois achados do Cap. 9 — uma silhueta alta não garante que os grupos sejam as classes (K-means chega a silhueta 0,74 com o `Normalize`, mas o índice de Rand ajustado é só 0,50; com o Min-Max por evento a silhueta é 0,37 e o índice 0,73) e o número de grupos sugerido não coincide com o de classes. O Cap. 12 explica o porquê; **rodar antes de ler torna a explicação mais convincente**.
 
-**Pergunta para a plateia:** *"O DBSCAN rotulou grande parte dos pontos como ruído. O algoritmo falhou ou o espaço é inadequado?"*
+**Pergunta para a plateia:** *"A silhueta do DBSCAN é 0,82 e a do K-means 0,74, mas o Rand ajustado dos dois é cerca de 0,5. O que a silhueta mede, afinal?"*
 
 **Pontos de atenção**
 
