@@ -7,6 +7,7 @@ __maintainer__ = ["Lucas Lopes <lucas.lopes@lccv.ufal.br>"]
 
 import logging
 
+from .data_augmentation import DataAugmentor
 from .data_persistence import DataPersistence
 from . import config
 
@@ -15,6 +16,7 @@ from . import config
 logging.getLogger().setLevel(logging.WARNING)
 
 __all__ = [
+    "DataAugmentor",
     "DataPersistence",
     "config",
 ]
