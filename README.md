@@ -14,9 +14,9 @@
 [ruff-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.0-blue
-[coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev
-[coveralls-shield]: https://coveralls.io/repos/github/rafaelpadilla/3W/badge.svg?branch=dev
-[read-the-docs]: https://threewtoolkit.readthedocs.io/en/latest/
+[coveralls]: https://coveralls.io/github/petrobras/3W?branch=main
+[coveralls-shield]: https://coveralls.io/repos/github/petrobras/3W/badge.svg?branch=main
+[read-the-docs]: https://app.readthedocs.org/projects/threewtoolkit/badge/?version=latest
 
 # Table of Content
 

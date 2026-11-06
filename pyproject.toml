@@ -91,6 +91,9 @@ torch-extras = [
     "torchmetrics>=1.6.2",
     "timm>=1.0.15",
 ]
+resources = [
+    "umap-learn>=0.5.7",
+]
 
 [tool.setuptools.packages.find]
 where = ["toolkit"]

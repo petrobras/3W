@@ -47,6 +47,7 @@ NOT_BASIC_DEMOS=(
     "resources/introduction_to_3w_toolkit_v2.0.0"
     "resources/introduction_to_3w_dataset_v2.0.0"
     "resources/introduction_to_ml_applied_to_mts"
+    "resources/introduction_to_ml_using_3w_toolkit_v3.2.1"
 )
 
 # Global variables
