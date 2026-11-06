@@ -148,6 +148,22 @@ trap 'rm -rf -- "$ABSOUTPUTDIR"' EXIT
 echo "Saving tested notebooks in $ABSOUTPUTDIR ..."
 echo "Saving execution logs in $ABSLOGDIR ..."
 
+# Force a temporary kernelspec pointing to the resolved interpreter, so
+# notebook kernelspec metadata (e.g. "p310-forge") is ignored. cygpath
+# converts the path to Windows form under Git Bash.
+KERNEL_NAME="nb_test"
+KERNEL_PYTHON="$(cygpath -m "$PYTHON" 2>/dev/null || printf '%s' "$PYTHON")"
+KERNEL_PYTHON="${KERNEL_PYTHON//\\//}"
+mkdir -p "$OUTPUTDIR/kernels/$KERNEL_NAME"
+cat > "$OUTPUTDIR/kernels/$KERNEL_NAME/kernel.json" <<EOF
+{
+  "argv": ["$KERNEL_PYTHON", "-m", "ipykernel_launcher", "-f", "{connection_file}"],
+  "display_name": "$KERNEL_NAME",
+  "language": "python"
+}
+EOF
+export JUPYTER_PATH="$OUTPUTDIR"
+
 # Fuction to test Jupyter Notebooks according to parameters
 run_notebooks () {
     local label="$1"
@@ -193,6 +209,7 @@ run_notebooks () {
                 "$nb_file" \
                 --to notebook \
                 --execute \
+                --ExecutePreprocessor.kernel_name="$KERNEL_NAME" \
                 --output-dir "$OUTPUTDIR" \
                 >"$log" 2>&1); then
                 echo -e "\033[0;32m[$label] $nb tested successfully\033[0m"
