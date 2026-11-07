@@ -9,8 +9,8 @@
 [ruff-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [semver]: https://semver.org
 [semver-shield]: https://img.shields.io/badge/semver-2.0.1-blue
-[coveralls]: https://coveralls.io/github/rafaelpadilla/3W?branch=dev
-[coveralls-shield]: https://coveralls.io/repos/github/rafaelpadilla/3W/badge.svg?branch=dev
+[coveralls]: https://coveralls.io/github/petrobras/3W?branch=main
+[coveralls-shield]: https://coveralls.io/repos/github/petrobras/3W/badge.svg?branch=main
 
 <h1>
   <img src="https://raw.githubusercontent.com/petrobras/3W/main/images/3w_logo.png" width="45" style="vertical-align: middle; margin-right: 10px;" />
