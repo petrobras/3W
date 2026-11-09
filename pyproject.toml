@@ -23,7 +23,7 @@ dependencies = [
     "scipy>=1.15.2",
     "pandas>=2.2.3",
     "scikit-learn>=1.6.1",
-    "matplotlib>=3.10.1",
+    "matplotlib>=3.10.0",
     "seaborn>=0.13.2",
     "plotly>=6.0.0",
     "Pillow>=11.0.0",
@@ -82,6 +82,10 @@ notebooks = [
     "tornado>=6.5.5,<7",
     "nbconvert",
     "nbformat",
+    "missingno>=0.5.2",
+    "ydata-profiling>=4.18.0",
+    "setuptools<82",
+    "tensorflow",
 ]
 scikit-extras = [
     "scikit-image>=0.25.2",
