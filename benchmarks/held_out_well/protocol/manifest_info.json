@@ -1,0 +1,17 @@
+{
+ "protocol": "3W-HW-v1",
+ "test_attempt_index": 55,
+ "fold_attempt_index": 0,
+ "test_rejections_by_reason": {
+  "class 1": 22,
+  "class 3": 19,
+  "class 2": 4,
+  "class 5": 4,
+  "class 6": 5,
+  "test row share 0.446": 1
+ },
+ "n_wells": 40,
+ "index_sha256": "5a1eda1829ca73d3e91f574962f306624a6439f344293280491b04a8c224eb16",
+ "seed_sha256_of_signature": "f9f44cb41feef808ccd3aafd1cc29ec67a165fcd6baadff78a0db34f55733045",
+ "manifest_sha256": "a28c1ebddd698806a0f293b3307b4709f251dec086c618513254892a2dcfc206"
+}
