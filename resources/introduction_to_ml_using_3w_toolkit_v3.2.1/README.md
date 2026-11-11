@@ -164,7 +164,7 @@ graph TB
 ### Prerequisites
 
 - **Python ≥ 3.10** and [uv](https://docs.astral.sh/uv/) ([installation](https://docs.astral.sh/uv/getting-started/installation/)); no GPU is needed.
-- **About 2.3 GB of RAM** at the peak (notebook 1, default settings).
+- **About 2.5 GB of RAM** at the peak (notebook 1, default settings).
 - A clone of this repository: the notebooks read the dataset from `../../dataset/` and use the toolkit installed from the repository.
 
 For the results to be **consistent**, use a virtual environment with the dependencies of the project's [pyproject.toml](../../pyproject.toml). From this folder (`resources/introduction_to_ml_using_3w_toolkit_v3.2.1`):
@@ -219,13 +219,13 @@ python -c "import ThreeWToolkit; print(ThreeWToolkit.__version__)"
 
 | Notebook | Time (CPU, 8 threads) | Peak memory |
 |---|---|---|
-| 1 `1_data_treatment` | ≈ 1 min | 2.3 GB |
-| 2 `2_visualization_techniques` | ≈ 1 min | 1.1 GB |
-| 3 `3_introduction_to_unsupervised_learning` | 4–5 min | 0.9 GB |
-| 4 `4_introduction_to_supervised_learning` | 2–3 min | 1.9 GB |
-| 5 `5_clustering_methods` | < 1 min | 1.9 GB |
+| 1 `1_data_treatment` | 1–2 min | 2.5 GB |
+| 2 `2_visualization_techniques` | 1–2 min | 1.1 GB |
+| 3 `3_introduction_to_unsupervised_learning` | 3–5 min | 1.0 GB |
+| 4 `4_introduction_to_supervised_learning` | 2–3 min | 2.0 GB |
+| 5 `5_clustering_methods` | < 1 min | 2.0 GB |
 
-All five take about 8 to 10 minutes (measured with the default configuration, on CPU; the times vary with the load of the machine, and the first run also reads the dataset from disk, which is slower). `MAX_FILES_PER_CLASS` is the first parameter to reduce if notebook 1 runs out of memory.
+All five take about 10 minutes (measured with the default configuration, on CPU; the times vary with the load of the machine, and the first run also reads the dataset from disk, which is slower). `MAX_FILES_PER_CLASS` is the first parameter to reduce if notebook 1 runs out of memory.
 
 ### Quick Start
 
