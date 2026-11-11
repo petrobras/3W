@@ -21,7 +21,7 @@ CLASS_COLUMN = "class"
 # (see the companion book, appendix "Reproduction conditions").
 NON_REAL_EVENT_TYPES = ["simulated", "drawn"]
 MAX_FILES_PER_CLASS = (
-    50  # Range: 50-500, Maximum files to load per class (memory optimization)
+    50  # Range: 50-500, Maximum usable files to load per class (memory optimization)
 )
 # 50 files per class peak at about 2.3 GB of RAM (notebook 1, CPU, default settings)
 # Processing settings
