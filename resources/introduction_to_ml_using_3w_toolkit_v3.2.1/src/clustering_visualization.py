@@ -713,10 +713,12 @@ class ClusteringVisualizer:
             print(f"   • Silhouette score: {silhouette_display}")
             print(f"   • Agreement with GT (ARI): {ari_score:.3f}")
 
-            if ari_score > 0.5:
+            if ari_score > 0.8:
                 print("   ✅ Good agreement with ground truth")
+            elif ari_score > 0.5:
+                print("   ⚠️ Partial agreement (the groups only partly coincide with the classes)")
             elif ari_score > 0.2:
-                print("   ⚠️ Moderate agreement with ground truth")
+                print("   ⚠️ Weak agreement with ground truth")
             else:
                 print("   ❌ Poor agreement with ground truth")
 
@@ -1152,10 +1154,12 @@ class ClusteringVisualizer:
             print(f"   • Silhouette score: {silhouette_display}")
             print(f"   • Agreement with GT (ARI): {ari_score:.3f}")
 
-            if ari_score > 0.5:
+            if ari_score > 0.8:
                 print("   ✅ Good agreement with ground truth")
+            elif ari_score > 0.5:
+                print("   ⚠️ Partial agreement (the groups only partly coincide with the classes)")
             elif ari_score > 0.2:
-                print("   ⚠️ Moderate agreement with ground truth")
+                print("   ⚠️ Weak agreement with ground truth")
             else:
                 print("   ❌ Poor agreement with ground truth")
 
