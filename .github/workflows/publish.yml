@@ -18,7 +18,7 @@ jobs:
 
    steps:
      - name: Check out main branch
-       uses: actions/checkout@v4
+       uses: actions/checkout@v6
        with:
          fetch-depth: 2
 
@@ -71,7 +71,7 @@ jobs:
 
      - name: Set up Python
        if: steps.version_changed.outputs.changed == 'true'
-       uses: actions/setup-python@v5
+       uses: actions/setup-python@v7
        with:
          python-version: "3.11"
 
