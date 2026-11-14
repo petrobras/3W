@@ -700,6 +700,7 @@ class AnomalyDetectionVisualizer:
         anomaly_classes=None,
         threshold_percentile=95,
         threshold_std_multiplier=2,
+        calibration_errors=None,
     ):
         """
         Plot reconstruction error distributions with thresholds.
@@ -710,11 +711,17 @@ class AnomalyDetectionVisualizer:
             anomaly_classes (list): Class labels for anomaly data
             threshold_percentile (int): Percentile for threshold calculation
             threshold_std_multiplier (float): Standard deviation multiplier for threshold
+            calibration_errors (np.array): Errors of normal data that sets the
+                thresholds (for example the training windows). Without it, the
+                thresholds come from `normal_errors` (the test data).
         """
         # Calculate thresholds
-        threshold_pct = np.percentile(normal_errors, threshold_percentile)
-        threshold_std = np.mean(normal_errors) + threshold_std_multiplier * np.std(
-            normal_errors
+        reference_errors = (
+            normal_errors if calibration_errors is None else calibration_errors
+        )
+        threshold_pct = np.percentile(reference_errors, threshold_percentile)
+        threshold_std = np.mean(reference_errors) + threshold_std_multiplier * np.std(
+            reference_errors
         )
 
         # Create figure
@@ -1033,7 +1040,9 @@ class AnomalyDetectionVisualizer:
         plt.tight_layout()
         plt.show()
 
-    def plot_roc_analysis(self, normal_errors, anomaly_errors, anomaly_classes=None):
+    def plot_roc_analysis(
+        self, normal_errors, anomaly_errors, anomaly_classes=None, calibration_errors=None
+    ):
         """
         Plot ROC (Receiver Operating Characteristic) curve analysis.
 
@@ -1041,6 +1050,10 @@ class AnomalyDetectionVisualizer:
             normal_errors (np.array): Reconstruction errors for normal data
             anomaly_errors (np.array): Reconstruction errors for anomaly data
             anomaly_classes (list): Class labels for anomaly data
+            calibration_errors (np.array): Errors of normal data that sets the
+                percentile and mu + 2 sigma thresholds (for example the training
+                windows). The "Optimal (Youden)" threshold always uses the labels
+                of the test data: it is a reference, not a usable policy.
         """
         from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
@@ -1176,8 +1189,11 @@ class AnomalyDetectionVisualizer:
         threshold_methods = {}
 
         # Percentile-based thresholds
+        reference_errors = (
+            normal_errors if calibration_errors is None else calibration_errors
+        )
         for p in percentiles:
-            thresh = np.percentile(normal_errors, p)
+            thresh = np.percentile(reference_errors, p)
             predictions = y_scores > thresh
             tp = np.sum((predictions == 1) & (y_true == 1))
             fp = np.sum((predictions == 1) & (y_true == 0))
@@ -1196,7 +1212,7 @@ class AnomalyDetectionVisualizer:
             }
 
         # Statistical threshold
-        stat_thresh = np.mean(normal_errors) + 2 * np.std(normal_errors)
+        stat_thresh = np.mean(reference_errors) + 2 * np.std(reference_errors)
         predictions = y_scores > stat_thresh
         tp = np.sum((predictions == 1) & (y_true == 1))
         fp = np.sum((predictions == 1) & (y_true == 0))
@@ -1299,7 +1315,7 @@ class AnomalyDetectionVisualizer:
         }
 
     def plot_svm_analysis(
-        self, normal_scores, anomaly_scores, anomaly_classes=None, fold_name="Best Fold"
+        self, normal_scores, anomaly_scores, anomaly_classes=None, fold_name="Selected Fold"
     ):
         """
         Plot comprehensive SVM anomaly score analysis.
@@ -1315,7 +1331,10 @@ class AnomalyDetectionVisualizer:
         import numpy as np
         from sklearn.metrics import roc_curve
 
-        print(f"🏆 Best Performing Fold (Distance-Based): {fold_name}")
+        print(
+            f"🏆 Fold with the highest accuracy (Distance-Based): {fold_name} "
+            "(illustrative: chosen on the test data, so optimistic)"
+        )
 
         # The scores are anomaly scores (minus the OCSVM decision function):
         # Negative scores = Normal (inside the boundary)

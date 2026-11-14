@@ -25,7 +25,7 @@ Frase para abrir: *"Hoje vocês vão ver o mesmo conjunto de dados contar histó
 ## 2. Público e pré-requisitos
 
 - Python básico; noção de aprendizado de máquina; familiaridade com séries temporais ajuda. Conhecimento de petróleo e gás **não** é necessário (explique os sensores quando aparecerem).
-- Não é preciso GPU. Com a configuração padrão, a execução completa leva cerca de 10–15 minutos em uma CPU de 8 *threads*.
+- Não é preciso GPU. Com a configuração padrão, a execução completa leva cerca de 10 minutos em uma CPU de 8 *threads*.
 
 ## 3. Preparação
 
@@ -47,7 +47,8 @@ Frase para abrir: *"Hoje vocês vão ver o mesmo conjunto de dados contar histó
 
 - [ ] Abrir o Jupyter no kernel do ambiente criado e rodar `import src` na primeira célula do notebook 1 (confirma instalação do toolkit e do PyTorch).
 - [ ] Confirmar que `processed_data/cv_splits/windowed/` existe (use o bloco *Quick Start* do README).
-- [ ] Fechar aplicativos pesados: os notebooks 1 e 5 chegam a usar vários GB de RAM (`MAX_FILES_PER_CLASS = 50` ≈ 4–5 GB).
+- [ ] Fechar aplicativos pesados: os notebooks 1, 4 e 5 chegam a usar 2 a 2,5 GB de RAM (`MAX_FILES_PER_CLASS = 50`).
+- [ ] **Forma da gravação:** tela cheia (F11), sem a barra de favoritos e sem abas pessoais; deixe **abertas, em abas, as células-alvo** de cada notebook (não use a busca do navegador ao vivo, nem procure arquivos do `src/` durante a aula).
 
 ## 4. Roteiro das duas aulas (35 min + 1 h)
 
@@ -69,6 +70,16 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 
 ### Aula 2 (Parte 2 de 2, 1 h): classificação, anomalias e agrupamento
 
+**Abertura (30 s).** *"Classificação é quase toda do toolkit, agrupamento abre com o toolkit, e detecção de anomalias é o que o toolkit ainda não tem. Por isso o Notebook 3 é o que mais usa o `src/`."* O que vem do toolkit e o que não vem:
+
+| Notebook | Do toolkit | Fora do toolkit (e por quê) |
+|---|---|---|
+| 4 · Classificação | `SklearnModelsConfig` (os sete modelos), `metrics.*` (acurácia, acurácia balanceada, precisão, revocação, F1) e `AssessmentVisualization` (matriz de confusão) | Achatar as janelas, balancear o treino e as tabelas e painéis de comparação (`src/`): os *trainers* do toolkit trabalham com eventos, não com janelas achatadas. O experimento do poço usa `GroupKFold` do scikit-learn |
+| 3 · Anomalias | Só as métricas: `accuracy_score` e `roc_auc_score` | O OCSVM vem direto do scikit-learn (o `SklearnModelsConfig` o **recusa**: falta o método `score`); o autoencoder LSTM está em PyTorch no `src/` (o toolkit não tem autoencoder recorrente nem detectores de anomalia); limiares e curva ROC também ficam fora |
+| 5 · Agrupamento | O bloco inicial inteiro: `InstanceQualityFilter`, `TimeSeriesResampler`, `TimeSeriesScaler`, `DistanceComputer` (DTW), `HierarchicalClusterer`, `DendrogramPlot` e o `ParquetDataset` | K-means, MeanShift, DBSCAN, silhueta, Rand ajustado e acurácia húngara (scikit-learn e `src/`): o agrupamento do toolkit é por DTW em eventos, com outro objetivo |
+
+**Ordem: Notebook 4, depois 3, depois 5** (a tabela abaixo já segue essa ordem). O motivo: o aviso sobre a AUC do Notebook 3 depende da impressão digital do poço, que o Notebook 4 mostra. Se inverter, avise a plateia de que a explicação da AUC fica para o fim.
+
 | Min | Bloco | Onde (seção do notebook) | Mostrar e rodar |
 |---|---|---|---|
 | 0–3 | Retomada da Aula 1 e gancho: "agora vamos treinar um modelo e ver o que o número esconde" | Seção 11 | Uma frase sobre a mensagem 1 |
@@ -78,6 +89,17 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 | 54–60 | Discussão e fechamento da Aula 2 | Seção 11 | Mensagens 2 e 3; ponte para o livro; exercícios 3, 5 e 6 |
 
 **Se atrasar, corte nesta ordem:** (1) MeanShift e DBSCAN (uma frase: os dois acham grupos compactos que não coincidem com as classes, com Rand ajustado em torno de 0,5); (2) a curva ROC (fique na AUC e no aviso); (3) a tabela por dobra de cada família do Notebook 4 (fique na tabela final). **Não corte** o modelo de ponta a ponta nem a impressão digital do poço (Notebook 4), o aviso sobre o nível do sensor (Notebook 3) nem o contraste silhueta × Rand ajustado do Notebook 5.
+
+**Ritmo (ensaio da Aula 2).** O Notebook 3 consumiu o tempo do 5:
+
+| Bloco | Planejado | No ensaio |
+|---|---|---|
+| Notebook 4 | 20 min | ≈ 17 min |
+| Notebook 3 | 15 min | ≈ 27 min |
+| Notebook 5 | 16 min | ≈ 5 min (cortado no K-means) |
+| Fechamento | 6 min | ausente |
+
+Para recuperar o tempo no Notebook 3, corte: a explicação longa da fronteira do OCSVM (≈ 4 min, com repetições), a arquitetura do autoencoder no `src/` (deixe só a saída do treino) e a comparação dos três limiares (fique no percentil 95). **Reserve os 6 min do fechamento** (seção 11): Mensagens 2 e 3, a ponte para o livro e os exercícios 3, 5 e 6.
 
 **Oficina de dia inteiro:** os tempos completos por notebook são Notebook 1 (40 min), 2 (25), 3 (40), 4 (40) e 5 (35), mais abertura (15) e fechamento (20). As seções 6 a 10 trazem o roteiro completo de cada um, e o bloco *Na aula* de cada seção diz o que entra nas duas aulas.
 
@@ -108,7 +130,7 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 
 **Roteiro** (o toolkit vem primeiro em cada passo)
 
-1. **Carga e procedência** (comece pela célula *Toolkit first*, que abre o `ParquetDataset` e plota um evento; depois a célula de *Step 1*, que escolhe os eventos com o mesmo `ParquetDataset`, no máximo `MAX_FILES_PER_CLASS` por classe). Mostre a tabela de contagens: arquivos reais, simulados e desenhados, disponíveis e carregados por classe. O toolkit não limita por classe nem subamostra, então `clean_event` (`src/events.py`) faz a subamostragem por `SAMPLING_RATE`. *Mensagem (Cap. 3, "Três procedências"):* misturar procedências sem declarar é a forma mais comum de inflar resultados. O recurso carrega **primeiro os reais** e completa o limite por classe com `config.NON_REAL_EVENT_TYPES` (simulados **e** desenhados, por padrão). O livro é mais estrito (nunca usa desenhados; simulados só em classes escassas) — mostre como aproximar isso com `NON_REAL_EVENT_TYPES = ["simulated"]`.
+1. **Carga e procedência** (comece pela célula *Toolkit first*, que abre o `ParquetDataset` e plota um evento; depois a célula de *Step 1*, que escolhe os eventos com o mesmo `ParquetDataset`, até `MAX_FILES_PER_CLASS` eventos utilizáveis por classe: um evento com um sensor inteiramente vazio é descartado e o seguinte entra no lugar). Mostre a tabela de contagens: arquivos reais, simulados e desenhados, disponíveis e carregados por classe; a classe 6 fica com 6 eventos porque nenhum dos seus 215 simulados/desenhados tem o sensor `T-TPT`, e as classes 2 e 7 ficam abaixo de 50 porque não têm mais eventos utilizáveis (nenhuma delas entra nos cadernos de ML além do 3). O toolkit não limita por classe nem subamostra, então `clean_event` (`src/events.py`) faz a subamostragem por `SAMPLING_RATE`. *Mensagem (Cap. 3, "Três procedências"):* misturar procedências sem declarar é a forma mais comum de inflar resultados. O recurso carrega **primeiro os reais** e completa o limite por classe com `config.NON_REAL_EVENT_TYPES` (simulados **e** desenhados, por padrão). O livro é mais estrito (nunca usa desenhados; simulados só em classes escassas) — mostre como aproximar isso com `NON_REAL_EVENT_TYPES = ["simulated"]`.
 2. **Análise dos dados brutos.** Mostre uma série típica. *Armadilhas do Cap. 3:* valores ausentes preenchidos por *forward/backward fill*; sensor **congelado** não vira `NaN` (é valor constante) e só se detecta olhando o desvio-padrão; a correlação entre sensores muda com o estado das válvulas (o 3W não distribui esse estado); e — **o achado mais incômodo** — em várias classes (2, 6, 7 e 8) o início da anomalia coincide com a perda dos medidores de fundo (`P-PDG`, `T-PDG`): um modelo pode aprender *"sensor de fundo sumiu → anomalia"*, regra que pontua bem e não serve na operação. Vale uma pausa: este recurso usa `P-PDG`.
 3. **Escalonamento** (comparação dos quatro métodos: o `Normalize` do toolkit aparece primeiro, depois `standard`, `minmax` e `robust`). Min-Max onde a saída do autoencoder é sigmoide (Cap. 7); *z-score* onde o modelo supõe dados aproximadamente gaussianos (Mahalanobis, Cap. 12). O padrão agora é o `Normalize` do toolkit, **ajustado só nos eventos de treino de cada dobra** e aplicado ao teste, como o livro recomenda; os escalonadores do scikit-learn continuam sendo ajustados por evento (`fit_transform` por dataframe), o que remove níveis absolutos. O escalonamento acontece **depois** de montar as dobras. O `ImputeMissing` do toolkit preenche ausentes antes.
 4. **Validação cruzada.** O `KFoldSplitter` do toolkit divide os eventos reais (estratificado por classe), e o próprio notebook acrescenta os simulados ao treino de cada dobra. Política: treino com real + simulado (+ desenhado), teste só com real; dobras **por instância**, não por janela. *Cap. 3 e 4:* janelas sobrepostas de uma mesma instância em treino e teste vazam informação; janelas de um mesmo poço dos dois lados fazem o modelo aprender o poço. O livro prefere divisão temporal 80/20 ou avaliação por poço.
@@ -163,10 +185,10 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 
 **Roteiro**
 
-1. **Avaliação por dobra.** Treina-se com os normais de cada dobra; testa-se com normais e anomalias (classes 3, 4 e 8) da mesma dobra.
-2. **OCSVM.** A janela é achatada num vetor de 900 posições, padronizada e passada ao OCSVM. *Gancho com o livro (Cap. 8):* a mesma família de método obteve **0,65** de acurácia contra **0,87** do *ensemble* binário — e a razão aparece ao olhar a dimensão do vetor: em 900 dimensões as distâncias se concentram.
+1. **Avaliação por dobra.** Treina-se com os normais de cada dobra; testa-se com normais e anomalias (classes 3, 4 e 8) da mesma dobra. *Nomenclatura:* treinar só com normais e detectar o que foge é **detecção de novidade** (semissupervisionado de uma classe), não agrupamento, que é não supervisionado de fato.
+2. **OCSVM.** A janela é achatada num vetor de 900 posições, padronizada e passada ao OCSVM. *Gancho com o livro (Cap. 8):* a mesma família de método obteve **0,65** de acurácia contra **0,87** do *ensemble* binário — e a razão aparece ao olhar a dimensão do vetor: em 900 dimensões as distâncias se concentram. (O RBF não "entende" série temporal: aqui a janela achatada é só um vetor de 900 valores.)
 3. **Autoencoder LSTM** (`StableLSTMAutoencoder`). Cada escolha de estabilidade existe porque a alternativa falha (Ap. E): ativação `tanh`; inicialização ortogonal nos pesos recorrentes; corte de gradiente (`clipnorm = 1,0`); taxa de aprendizado `0,0005`; saída sigmoide (casa com o Min-Max); sementes fixas. *Uma perda que vira `NaN` no meio do treino costuma ser culpada nos dados — é sintoma dessas escolhas.* O sistema do Cap. 7, em operação, usa ReLU e funciona por ter um gargalo bem mais estreito (4 dimensões): **as escolhas interagem**.
-4. **O limiar.** `AnomalyDetector` implementa o **percentil 95** dos erros normais e **μ + 2σ**. *Mensagem:* o limiar move o compromisso detecção × alarme falso mais que a arquitetura. Mostre a curva ROC e onde cada limiar cai.
+4. **O limiar.** `AnomalyDetector` implementa dois limiares **diferentes**: o **percentil 95** dos erros normais e **μ + 2σ**. Não são a mesma coisa: numa normal o percentil 95 fica em μ + 1,645σ e μ + 2σ cobre ≈ 97,7%, e o erro de reconstrução nem é normal (é assimétrico), por isso os dois limiares diferem. *Mensagem:* o limiar move o compromisso detecção × alarme falso mais que a arquitetura. **O limiar sai dos normais de treino; os normais de teste servem para medir se ele generaliza.** Por isso a acurácia nos normais de teste (≈ 0,94) fica abaixo de 0,95, e vale mostrar que o limiar calibrado no treino não se transfere perfeitamente. O limiar "ótimo" da curva ROC é o do **índice de Youden** (maximiza TPR − FPR): diga o nome. Os rótulos "dobra com a maior acurácia" e "maior acurácia média" escolhem pelo teste: servem para ilustrar, mas o número é otimista e não é o desempenho esperado. Mostre a curva ROC e onde cada limiar cai.
 
 **Perguntas para a plateia**
 
@@ -178,7 +200,9 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 - É o notebook mais demorado (≈ 3–6 min na CPU). Mostre as saídas prontas e rode apenas a célula de arquitetura/treino de uma dobra, se quiser demonstrar.
 - Com sementes fixas os números se repetem entre execuções na mesma máquina e versões de pacotes; entre máquinas podem variar um pouco (ponto flutuante).
 - Não compare os números daqui com os do livro: janelas, sensores, latente e partição são diferentes (tabela no README).
-- **Cuidado com a AUC.** Com o `Normalize` do toolkit (níveis absolutos mantidos) o autoencoder separa quase perfeitamente (AUC ≈ 1,0; acurácia nas anomalias 1,0). Com o Min-Max por evento do livro, que apaga os níveis, a mesma execução dá AUC 0,96 no autoencoder e 0,97 no OCSVM (0,99 com o `Normalize`). A diferença mede quanto da detecção vem do nível dos sensores, e não do padrão temporal. A célula de aviso do notebook explica como reproduzir. Parte desse nível é também uma impressão digital do poço (veja o Notebook 4, passo 7).
+- **Tenha a lista das classes à mão:** 0 normal; 1 aumento abrupto de BSW; 2 fechamento espúrio da DHSV; 3 golfada severa; 4 instabilidade de fluxo; 5 perda rápida de produtividade; 6 restrição rápida no PCK; 7 incrustação no PCK; 8 hidrato na linha de produção; 9 hidrato na linha de serviço.
+- No espaço latente (t-SNE), quem fica **fora da distribuição** dos normais são as **anomalias**, não os normais.
+- **Cuidado com a AUC.** Com o `Normalize` do toolkit (níveis absolutos mantidos) o autoencoder separa quase perfeitamente (AUC ≈ 1,0; acurácia nas anomalias 1,0). Com o Min-Max por evento do livro, que apaga os níveis, a mesma execução dá AUC 0,96 no autoencoder e 0,97 no OCSVM (0,99 com o `Normalize`). **Não diga "muito bom" para a AUC de 0,99:** ela não é desempenho do método. A diferença mede quanto da detecção vem do nível dos sensores, e não do padrão temporal. A célula de aviso do notebook explica como reproduzir. Parte desse nível é também uma impressão digital do poço (veja o Notebook 4, passo 7).
 
 **Exercícios (Ap. E):** `SAMPLING_RATE` 5 → 1; percentil 95 × μ + 2σ no mesmo erro; Mahalanobis na penúltima camada de um classificador do Notebook 4.
 
@@ -186,7 +210,7 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 
 ## 9. Notebook 4 — `4_introduction_to_supervised_learning` (Aula 2, 20 min)
 
-**Na aula (20 min).** *8 min:* a seção *Toolkit first: one model, end to end* (um modelo, as métricas e a matriz de confusão, tudo do toolkit; roda ao vivo). *6 min:* as tabelas por dobra, com `Test Acc` e `Test Bal. Acc` lado a lado, e a variabilidade entre dobras (só saídas). *6 min:* a seção *Does the sensor level identify the well?* (passo 7 do roteiro; roda em cerca de 15 s, mas use a saída gravada). **Pule:** a análise detalhada de SVM e de redes neurais (cite só a tabela final) e a explicação do laço de treino (um laço único treina os sete modelos em cada dobra). Antes de comparar algoritmos, diga que os números são otimistas porque as dobras são por evento.
+**Na aula (20 min).** *8 min:* a seção *Toolkit first: one model, end to end* (um modelo, as métricas e a matriz de confusão, tudo do toolkit; roda ao vivo). *6 min:* as tabelas por dobra, com `Test Acc` e `Test Bal. Acc` lado a lado, e a variabilidade entre dobras (só saídas). *6 min:* a seção *Does the sensor level identify the well?* (passo 7 do roteiro; roda em cerca de 15 s, mas use a saída gravada). **Pule:** a análise detalhada de SVM e de redes neurais (cite só a tabela final) e a explicação do laço de treino (um laço único treina os sete modelos em cada dobra). **Antes de comparar os sete modelos** (e não no fim), diga que os números são otimistas porque as dobras são por evento. Compare `Test Acc` com `Test Bal. Acc` (Mensagem 2).
 
 **Objetivo:** treinar e comparar seis modelos clássicos e aprender a avaliá-los.
 **Livro:** Cap. 4 (matriz de confusão, acurácia balanceada, validação) e Cap. 8; Ap. E, §*Caderno 4*. **Toolkit:** o notebook abre com **um modelo de ponta a ponta só com o toolkit** (`SklearnModelsConfig`, `ThreeWToolkit.metrics` — acurácia, acurácia balanceada, precisão, revocação e F1 — e `AssessmentVisualization` para a matriz de confusão); depois repete isso por dobra e por algoritmo com o nosso laço (balanceamento do treino, tabelas e painéis de sobreajuste e consistência, que o toolkit não tem). Para `SklearnModels`, `MLP`, `ModelTrainer`, `ModelAssessment` e `Pipeline`, veja os tutoriais [7](../introduction_to_3w_toolkit_v2.0.0/7_model_training_and_evaluation.ipynb) e [8](../introduction_to_3w_toolkit_v2.0.0/8_pipeline_integration.ipynb).
@@ -197,16 +221,29 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 2. Modelos: árvore de decisão, floresta aleatória, SVM linear e RBF, e três redes densas (rasa, profunda, regularizada).
 3. **Balancear o treino e não o teste.** A assimetria é deliberada: balancear o teste *muda a pergunta* (mede-se sob uma distribuição que não existe na operação). Para o desbalanceamento na avaliação, use acurácia balanceada.
 4. **Acurácia × acurácia balanceada.** As tabelas por dobra mostram `Test Acc` e `Test Bal. Acc` lado a lado. *Cap. 4:* um detector inútil atinge 99,7% de acurácia.
-5. **Variabilidade entre dobras.** Aponte para a tabela final: a diferença **entre dobras** costuma ser maior que a diferença **entre algoritmos**. É o argumento do livro a favor de avaliar poço a poço e reportar a tabela completa, não só a média.
+5. **Variabilidade entre dobras.** Aponte para a tabela final: a diferença **entre dobras** costuma ser maior que a diferença **entre algoritmos**. Gancho: a saída *share of the test windows* mostra a fração das janelas de teste de cada dobra que pertence às classes 3, 4 e 8 (14,1%, 20,3% e 39,4% nesta versão): as dobras são bem desiguais. É o argumento do livro a favor de avaliar poço a poço e reportar a tabela completa, não só a média.
 6. **A classe 4** aparece entre as selecionadas: é a classe sintomática do fundo de todas as tabelas do livro (argumento de taxonomia do Cap. 16).
-7. **O nível do sensor é uma impressão digital do poço** (seção *Does the sensor level identify the well?*). O `Normalize` do toolkit mantém o nível absoluto de cada sensor, e esse nível depende do poço. Numa amostra de 113 eventos reais de 12 poços, uma floresta acerta de qual poço é uma janela em ≈ 96% dos casos com o `Normalize`, contra ≈ 57% com o Min-Max por evento (acaso: 8%). Com dobras **por evento** o `Normalize` chega a 0,90 de acurácia balanceada; com dobras **por poço** (poço inédito no teste) cai para ≈ 0,30, perto do Min-Max (≈ 0,23). Retirar só o nível de cada evento, mantendo a escala global, foi o melhor em poço inédito (≈ 0,47). *Cap. 4:* a divisão deve respeitar a unidade que o modelo encontrará na operação. Ressalva: amostra pequena (a classe 3 vem de 2 poços e a classe 8 tem 8 eventos), um modelo e uma semente; é indício, não ranking de escalonadores.
+7. **O nível do sensor é uma impressão digital do poço** (seção *Does the sensor level identify the well?*; ≈ 5 min, a parte mais forte da Aula 2). Roteiro em quatro passos:
+   - **A ideia (30 s).** *"O `Normalize` do toolkit usa média e desvio globais, então mantém o nível absoluto de cada sensor. Cada poço tem o seu nível: profundidade, completação, instrumentação. Esse nível funciona como uma impressão digital do poço."*
+   - **Teste 1: a janela entrega o poço? (1 min).** Uma floresta tenta adivinhar **de qual poço** vem uma janela (não a falha). São 12 poços, então no chute o acerto é 8%. Com o `Normalize`: ≈ 96%. Com o Min-Max por evento, que apaga o nível: ≈ 57% (sobra a forma da série).
+   - **Teste 2: o que isso faz com a avaliação (1,5 min).** *Dobras por evento:* eventos do mesmo poço caem no treino e no teste, e o modelo já "conhece" o poço do teste. *Dobras por poço* (`GroupKFold` com `groups=wells`): o poço inteiro vai para o teste, que é a situação real (um poço novo na operação). Acurácia balanceada:
+
+     | Escalonamento | Dobras por evento | Dobras por poço |
+     |---|---|---|
+     | `Normalize` (toolkit) | 0,90 | 0,30 |
+     | Min-Max por evento | 0,57 | 0,23 |
+     | Sem o nível de cada evento, mantendo a escala global | 0,69 | 0,47 |
+
+     Frase-chave: *"De 0,90 para 0,30. A maior parte do acerto vinha de reconhecer o poço, não a falha."*
+   - **A ressalva e a lição (1 min).** A amostra é pequena: 113 eventos reais de 12 poços, com desvios grandes por poço (± 0,21), um modelo e uma semente. É um indício, não um ranking de escalonadores. *Cap. 4:* a divisão deve respeitar a unidade que o modelo encontrará na operação; por isso os números altos do Notebook 4 e a AUC ≈ 1 do Notebook 3 não valem para um poço novo. Analogia: *"É como corrigir prova reconhecendo a letra do aluno: funciona na turma que você conhece e falha na turma nova."*
+   - **Números de apoio** (tabela de eventos da seção): classe 0 = 37 eventos de 7 poços; classe 3 = 32 eventos de **2** poços; classe 4 = 36 eventos de 5 poços; classe 8 = **8** eventos de 5 poços.
 
 **Pergunta para a plateia:** *"Qual modelo é o melhor?"* — e só depois mostrar a tabela com desvio e consistência.
 
 **Pontos de atenção**
 
 - **Os números do Notebook 4 são otimistas:** as dobras são por evento, então o mesmo poço aparece no treino e no teste (passo 7 do roteiro). Diga isso antes de comparar algoritmos.
-- As árvores e a floresta chegam a ≈ 0,99 no treino e a 0,92–0,98 no teste; a lacuna é maior na dobra 3 (0,08 na árvore). Com o `Normalize` do toolkit os níveis absolutos dos sensores são mantidos e as médias por dobra sobem (árvore 0,94, floresta 0,96, SVM RBF 0,96, redes 0,94–0,97) em relação ao Min-Max por evento (0,73–0,86); por isso a variação entre dobras é pequena e o contraste dramático de antes some. Ainda é um bom momento para falar de generalização entre poços, apontando a dobra 3.
+- As árvores e a floresta chegam a ≈ 0,99 no treino e a 0,91–0,98 no teste; a lacuna é maior na dobra 3 (0,09 na árvore). Com o `Normalize` do toolkit os níveis absolutos dos sensores são mantidos e as médias por dobra sobem (árvore 0,95, floresta 0,96, SVM RBF 0,97, redes 0,97–0,98) em relação ao Min-Max por evento (0,73–0,86); por isso a variação entre dobras é pequena e o contraste dramático de antes some. Ainda é um bom momento para falar de generalização entre poços, apontando a dobra 3.
 - Notebook ≈ 2–3 min na CPU.
 
 **Exercícios (Ap. E):** política de procedência do livro; `selected_classes = None` e comparação das classes 4 e 5.
@@ -215,7 +252,14 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 
 ## 10. Notebook 5 — `5_clustering_methods` (Aula 2, 16 min)
 
-**Na aula (16 min).** 5 min na seção *Toolkit first: hierarchical DTW clustering of events* (qualidade, DTW, hierárquico e dendrograma; ao vivo, e diga que um Rand ajustado baixo é esperado porque o objetivo ali é selecionar instâncias); 8 min em K-means (cotovelo, silhueta, Rand ajustado) e no contraste **silhueta alta × Rand baixo**; 3 min em MeanShift e DBSCAN. **Pule:** o K-means em PCA 50D, a seção *Advanced Clustering* e o algoritmo húngaro.
+**Na aula (16 min), em quatro blocos** (o notebook muda de pergunta no meio, e é aí que a plateia se perde):
+
+- **Bloco A — Toolkit: DTW + hierárquico em eventos (5 min, ao vivo).** Até 15 eventos reais por classe (3, 4 e 8), só o sensor `P-TPT`. Pergunta: *"quais eventos se parecem?"* O objetivo no toolkit é selecionar instâncias bem comportadas, não recuperar as classes: o Rand ajustado baixo é esperado, não uma falha. Só um sensor porque o DTW é caro e aqui é aplicado a séries univariadas; o dendrograma é só a forma de desenhar a árvore.
+- **Bloco B — muda a pergunta e os dados (1 min).** Agora cada evento inteiro vira um ponto: a série completa redimensionada para 500 pontos × 3 sensores = 1.500 dimensões (**não são janelas**). Dados: dobra 1, treino e teste juntos, **classes 3, 4 e 8** ("completo" quer dizer série completa, não todas as classes): 150 eventos, que incluem simulados e desenhados. Diga a frase: *"aqui entram simulados e desenhados, ao contrário dos notebooks 2 a 4"* (não há vazamento, porque o notebook é não supervisionado).
+- **Bloco C — K-means, MeanShift e DBSCAN (8 + 3 min).** O K escolhido pela silhueta não é 3 (K = 8 nesta versão). O MeanShift acha 11–12 grupos; o DBSCAN marca pontos como ruído, e quanto vira ruído depende muito do raio. Não entre em cada número: o padrão é *grupos compactos, mas que não são as classes*.
+- **Bloco D — a tabela-resumo (2 min), o momento-chave.** Põe os métodos lado a lado com três referências. A linha que mais ensina é *the true classes*: as classes verdadeiras têm silhueta ≈ 0,43, **menor** que a dos grupos do K-means (≈ 0,74). A silhueta mede compacidade, não significado.
+
+**Pule:** o K-means em PCA 50D, a seção *Advanced Clustering* e o algoritmo húngaro (no ensaio o notebook ficou incompleto aos 49 min).
 
 **Objetivo:** descobrir estrutura sem rótulos e medir se ela faz sentido.
 **Livro:** Cap. 6 (§*Agrupamento* e §*Avaliar agrupamentos sem rótulos*) e Cap. 9 (ciclo de mundo aberto); Ap. E, §*Caderno 5*. **Toolkit:** o notebook **abre** com o sub-pacote `ThreeWToolkit.clustering`, que faz agrupamento **por instância** (qualidade, DTW, hierárquico, dendrograma) em 15 eventos reais por classe; um índice de Rand ajustado baixo contra as classes é esperado, porque o objetivo ali é selecionar instâncias bem comportadas. Só depois vêm K-means, MeanShift e DBSCAN. Veja as demos [clustering_pipeline_examples](../../toolkit/demos/06_clustering_pipeline_examples.ipynb) e [clustering_real_vs_simulated_examples](../../toolkit/demos/07_clustering_real_vs_simulated_examples.ipynb).
@@ -223,16 +267,16 @@ Em cada notebook o **toolkit vem primeiro**; o que fazemos além dele (escalonad
 **Roteiro**
 
 1. **Dados completos redimensionados para 500 pontos** (diferente dos notebooks anteriores, que usam janelas), PCA para visualização.
-2. **K-means:** cotovelo e silhueta para escolher K. *Cap. 9:* em mundo aberto, **K é exatamente o que não se conhece** — o livro treina uma floresta aleatória para *prever* K a partir de oito características do próprio conjunto. Aqui você verá o outro lado: o K sugerido pelos índices raramente coincide com o número de classes (K = 6 com o `Normalize`, K = 4 com o Min-Max por evento, para 3 classes).
-3. **MeanShift** (K emerge dos modos; exige a largura de banda; nas 1.500 dimensões do espaço normalizado cada ponto é uma semente) e **DBSCAN** (único que rotula ruído; em alta dimensão o ruído depende muito do raio: com o menor raio da grade, 23% a 38% das séries viram ruído, e com o raio escolhido pela silhueta só 6%; o livro só o usa como comparação).
+2. **K-means:** cotovelo e silhueta para escolher K. *Cap. 9:* em mundo aberto, **K é exatamente o que não se conhece** — o livro treina uma floresta aleatória para *prever* K a partir de oito características do próprio conjunto. Aqui você verá o outro lado: o K sugerido pelos índices raramente coincide com o número de classes (K = 8 com o `Normalize`, K = 4 com o Min-Max por evento, para 3 classes).
+3. **MeanShift** (K emerge dos modos; exige a largura de banda; nas 1.500 dimensões do espaço normalizado cada ponto é uma semente) e **DBSCAN** (único que rotula ruído; em alta dimensão o ruído depende muito do raio: com o menor raio da grade, 23% a 40% das séries viram ruído, e com o raio escolhido pela silhueta só 6%; o livro só o usa como comparação).
 4. **Avaliação:** silhueta (interna) e índice de Rand ajustado e acurácia com atribuição húngara (externas).
-5. **Mensagem do Ap. E:** este notebook é o ciclo de mundo aberto **sem a etapa de rejeição**; você encontra, em minutos, os dois achados do Cap. 9 — uma silhueta alta não garante que os grupos sejam as classes (K-means chega a silhueta 0,74 com o `Normalize`, mas o índice de Rand ajustado é só 0,50; com o Min-Max por evento a silhueta é 0,37 e o índice 0,73) e o número de grupos sugerido não coincide com o de classes. O Cap. 12 explica o porquê; **rodar antes de ler torna a explicação mais convincente**.
+5. **Mensagem do Ap. E:** este notebook é o ciclo de mundo aberto **sem a etapa de rejeição**; você encontra, em minutos, os dois achados do Cap. 9 — uma silhueta alta não garante que os grupos sejam as classes (K-means chega a silhueta 0,74 com o `Normalize`, mas o índice de Rand ajustado é só 0,48; com o Min-Max por evento a silhueta é 0,37 e o índice 0,73) e o número de grupos sugerido não coincide com o de classes. O Cap. 12 explica o porquê; **rodar antes de ler torna a explicação mais convincente**.
 
-**Pergunta para a plateia:** *"A silhueta do DBSCAN é 0,82 e a do K-means 0,74, mas o Rand ajustado dos dois é cerca de 0,5. O que a silhueta mede, afinal?"*
+**Pergunta para a plateia:** *"Se as classes reais têm silhueta pior que a do K-means, o que a silhueta está medindo?"* (a silhueta do DBSCAN é 0,83 e a do K-means 0,74, mas o Rand ajustado dos dois é cerca de 0,5)
 
 **Pontos de atenção**
 
-- Rápido (< 1 min). Algumas mensagens de "baixa concordância com a verdade" são **esperadas** — são o objetivo didático.
+- Rápido (< 1 min). As mensagens de concordância fraca ou parcial com a verdade (Rand ajustado ≈ 0,5) são **esperadas** — são o objetivo didático.
 
 **Exercício (Ap. E):** trocar o espaço de entrada pelo **espaço latente do autoencoder** do Notebook 3 e recalcular silhueta e Rand ajustado.
 
