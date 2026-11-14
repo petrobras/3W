@@ -151,10 +151,18 @@ class Normalize(BasePreprocessing):
             col for col in signal.columns if col not in self.config.exclude_features
         ]
 
-        if len(columns_to_normalize) > 0:
-            signal.loc[:, columns_to_normalize] = (
+        if columns_to_normalize:
+            normalized = (
                 signal.loc[:, columns_to_normalize]
-                - self.global_average.loc[columns_to_normalize]
-            ) / self.global_moment.loc[columns_to_normalize]
+                .sub(self.global_average.loc[columns_to_normalize])
+                .div(self.global_moment.loc[columns_to_normalize])
+                .astype(np.float64)
+            )
 
-        return DatasetOutputs(signal=signal, label=data.label, metadata=data.metadata)
+            signal[columns_to_normalize] = normalized
+
+        return DatasetOutputs(
+            signal=signal,
+            label=data.label,
+            metadata=data.metadata,
+        )
