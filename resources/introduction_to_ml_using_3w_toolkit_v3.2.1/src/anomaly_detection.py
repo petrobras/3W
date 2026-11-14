@@ -15,8 +15,11 @@ class AnomalyDetector:
         self.threshold = None
         self.normal_errors = None
         self.anomaly_errors = None
+        self.calibration_errors = None
 
-    def compute_reconstruction_errors(self, autoencoder, normal_data, anomaly_data):
+    def compute_reconstruction_errors(
+        self, autoencoder, normal_data, anomaly_data, calibration_data=None
+    ):
         """
         Compute reconstruction errors for normal and anomaly data.
 
@@ -24,6 +27,9 @@ class AnomalyDetector:
             autoencoder: Trained autoencoder model
             normal_data (np.array): Normal data
             anomaly_data (np.array): Anomaly data
+            calibration_data (np.array): Normal data used only to set the threshold
+                (for example the training windows). When it is given, the threshold
+                does not look at the test data.
 
         Returns:
             tuple: (normal_errors, anomaly_errors)
@@ -36,6 +42,13 @@ class AnomalyDetector:
 
         print("🔴 Computing reconstruction errors for anomaly data...")
         self.anomaly_errors = autoencoder.get_reconstruction_errors(anomaly_data)
+
+        self.calibration_errors = None
+        if calibration_data is not None:
+            print("🟢 Computing reconstruction errors for the calibration data...")
+            self.calibration_errors = autoencoder.get_reconstruction_errors(
+                calibration_data
+            )
 
         print("✅ Reconstruction errors computed:")
         print(f"   • Normal errors: {len(self.normal_errors)} samples")
@@ -53,6 +66,10 @@ class AnomalyDetector:
         """
         Determine anomaly threshold based on normal data reconstruction errors.
 
+        The errors of the calibration data (the training windows) are used when they
+        were computed; otherwise the threshold is set on the errors of the normal
+        test data, which is optimistic because it looks at the data it is applied to.
+
         Args:
             method (str): Method for threshold determination ('percentile' or 'std')
             percentile (float): Percentile for threshold (if method='percentile')
@@ -68,14 +85,21 @@ class AnomalyDetector:
         print(f"🎯 Determining Anomaly Threshold ({method})")
         print("=" * 40)
 
+        if self.calibration_errors is not None:
+            reference_errors = self.calibration_errors
+            print("   • Set on the errors of the calibration (training) data")
+        else:
+            reference_errors = self.normal_errors
+            print("   • Set on the errors of the normal test data (optimistic)")
+
         if method == "percentile":
-            self.threshold = np.percentile(self.normal_errors, percentile)
+            self.threshold = np.percentile(reference_errors, percentile)
             print(
                 f"📈 Threshold set at {percentile}th percentile: {self.threshold:.6f}"
             )
         elif method == "std":
-            mean_error = np.mean(self.normal_errors)
-            std_error = np.std(self.normal_errors)
+            mean_error = np.mean(reference_errors)
+            std_error = np.std(reference_errors)
             self.threshold = mean_error + 2 * std_error
             print(f"📈 Threshold set at mean + 2*std: {self.threshold:.6f}")
         else:

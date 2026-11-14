@@ -267,8 +267,8 @@ class KMeansAnalyzer:
         self.k_range = k_range or range(2, 16)
 
     def find_optimal_k(self, X_scaled, X_pca_50=None):
-        """Find optimal K using elbow method and silhouette analysis on SCALED data only"""
-        print("K-means: Finding Optimal K (using SCALED data for clustering)")
+        """Find optimal K using the elbow method and the silhouette on the data given"""
+        print("K-means: Finding Optimal K (elbow and silhouette)")
         print("=" * 60)
 
         results = {
@@ -696,18 +696,18 @@ class ClusteringEvaluator:
             )
 
             # Determine better approach
-            if (
+            silhouette_gap = (
                 metrics_pca["silhouette_score"]
-                > scaled_kmeans_results["silhouette_score"]
-            ):
+                - scaled_kmeans_results["silhouette_score"]
+            )
+            if silhouette_gap >= 0.01:
                 print("   🏆 PCA 50D performs better (higher silhouette score)")
-            elif (
-                metrics_pca["silhouette_score"]
-                < scaled_kmeans_results["silhouette_score"]
-            ):
+            elif silhouette_gap <= -0.01:
                 print("   🏆 Scaled Data performs better (higher silhouette score)")
             else:
-                print("   🤝 Both methods perform similarly")
+                print(
+                    "   🤝 Both spaces give practically the same silhouette (difference < 0.01)"
+                )
 
         return kmeans_results_pca
 

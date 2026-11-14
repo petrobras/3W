@@ -164,7 +164,7 @@ graph TB
 ### Prerequisites
 
 - **Python ≥ 3.10** and [uv](https://docs.astral.sh/uv/) ([installation](https://docs.astral.sh/uv/getting-started/installation/)); no GPU is needed.
-- **About 2.3 GB of RAM** at the peak (notebook 1, default settings).
+- **About 2.5 GB of RAM** at the peak (notebook 1, default settings).
 - A clone of this repository: the notebooks read the dataset from `../../dataset/` and use the toolkit installed from the repository.
 
 For the results to be **consistent**, use a virtual environment with the dependencies of the project's [pyproject.toml](../../pyproject.toml). From this folder (`resources/introduction_to_ml_using_3w_toolkit_v3.2.1`):
@@ -219,13 +219,13 @@ python -c "import ThreeWToolkit; print(ThreeWToolkit.__version__)"
 
 | Notebook | Time (CPU, 8 threads) | Peak memory |
 |---|---|---|
-| 1 `1_data_treatment` | ≈ 1 min | 2.3 GB |
-| 2 `2_visualization_techniques` | ≈ 1 min | 1.1 GB |
-| 3 `3_introduction_to_unsupervised_learning` | 4–5 min | 0.9 GB |
-| 4 `4_introduction_to_supervised_learning` | 2–3 min | 1.9 GB |
-| 5 `5_clustering_methods` | < 1 min | 1.9 GB |
+| 1 `1_data_treatment` | 1–2 min | 2.5 GB |
+| 2 `2_visualization_techniques` | 1–2 min | 1.1 GB |
+| 3 `3_introduction_to_unsupervised_learning` | 3–5 min | 1.0 GB |
+| 4 `4_introduction_to_supervised_learning` | 2–3 min | 2.0 GB |
+| 5 `5_clustering_methods` | < 1 min | 2.0 GB |
 
-All five take about 8 to 10 minutes (measured with the default configuration, on CPU; the times vary with the load of the machine, and the first run also reads the dataset from disk, which is slower). `MAX_FILES_PER_CLASS` is the first parameter to reduce if notebook 1 runs out of memory.
+All five take about 10 minutes (measured with the default configuration, on CPU; the times vary with the load of the machine, and the first run also reads the dataset from disk, which is slower). `MAX_FILES_PER_CLASS` is the first parameter to reduce if notebook 1 runs out of memory.
 
 ### Quick Start
 
@@ -266,11 +266,11 @@ Results with the default configuration and `RANDOM_SEED = 42`, on the same datas
 
 | Notebook | What it shows |
 |---|---|
-| 1 | 400 events kept (235 real, 165 simulated/drawn; 84 discarded because a sensor is entirely missing); 3 folds; 85,092 windows (69,128 for training and 15,964 for test, summed over the folds) |
+| 1 | 434 events kept (242 real, 192 simulated/drawn; 255 events read and discarded because a sensor is entirely missing); 50 per class, except class 2 (37), class 6 (6) and class 7 (41), which do not have more usable events; 3 folds; 90,489 windows (74,241 for training and 16,248 for test, summed over the folds) |
 | 2 | 30 `StatisticalFeatures` against the 900 values of a flattened window; four t-SNE and four UMAP configurations that tell different stories |
-| 3 | One-class SVM: mean overall accuracy 0.926 over 3 folds. LSTM autoencoder: 0.964, with an AUC close to 1.0 that is explained by the absolute sensor levels kept by `Normalize` (the notebook shows the comparison with the per-event Min-Max) |
-| 4 | Mean test accuracy over 3 folds: simple MLP 0.976, regularized MLP 0.975, deep MLP 0.970, RBF SVM 0.968, random forest 0.963, decision tree 0.944, linear SVM 0.919 (the least consistent). The sensor level identifies the well in about 96 % of the windows with `Normalize` (57 % with a per-event Min-Max), and balanced accuracy falls from about 0.90 (folds by event) to about 0.30 (folds by well); a small sample, so only an indication |
-| 5 | Toolkit DTW + hierarchical clustering of 39 real events (low agreement with the classes, which is expected: the goal is to select events). K-means: K = 6 for 3 classes, silhouette 0.738, adjusted Rand index 0.503. MeanShift: 11 clusters in PCA 50D (silhouette 0.679, adjusted Rand index 0.535) and 12 on the normalized data (0.755 and 0.522). DBSCAN, with the radius chosen by the silhouette: 4 clusters and 9 noise points on the normalized data (adjusted Rand index 0.523) and 5 clusters and 5 noise points in PCA 50D (0.516). The groups are compact, but none of the methods recovers the 3 classes (adjusted Rand index about 0.5); one very different event (class 8) sits far from all the others in the PCA plot. A table before the advanced section puts them side by side with the accuracy of the best class-to-cluster matching: 0.70 for all six (K-means with K = 3 gets 0.82; a constant label gets 0.35) |
+| 3 | One-class SVM: mean overall accuracy 0.926 over 3 folds. LSTM autoencoder: 0.959 (the threshold is the 95th percentile of the errors on the training windows, so the accuracy on the normal test windows, 0.937, falls a little below 0.95), with an AUC close to 1.0 that is explained by the absolute sensor levels kept by `Normalize` (the notebook shows the comparison with the per-event Min-Max) |
+| 4 | Mean test accuracy over 3 folds: regularized MLP 0.979, deep MLP 0.974, simple MLP 0.972, RBF SVM 0.968, random forest 0.964, decision tree 0.950, linear SVM 0.906 (the least consistent). The sensor level identifies the well in about 96 % of the windows with `Normalize` (57 % with a per-event Min-Max), and balanced accuracy falls from about 0.90 (folds by event) to about 0.30 (folds by well); a small sample, so only an indication |
+| 5 | Toolkit DTW + hierarchical clustering of 39 real events (low agreement with the classes, which is expected: the goal is to select events). K-means: K = 8 for 3 classes, silhouette 0.737, adjusted Rand index 0.480. MeanShift: 12 clusters in PCA 50D (silhouette 0.682, adjusted Rand index 0.510) and 11 on the normalized data (0.769 and 0.500). DBSCAN, with the radius chosen by the silhouette: 5 clusters and 9 noise points on the normalized data (adjusted Rand index 0.499) and 6 clusters and 5 noise points in PCA 50D (0.492). The groups are compact, but none of the methods recovers the 3 classes (adjusted Rand index about 0.5); one very different event (class 8) sits far from all the others in the PCA plot. A table before the advanced section puts them side by side with the accuracy of the best class-to-cluster matching: 0.67 for all six (K-means with K = 3 gets 0.83; a constant label gets 0.33) |
 
 After notebook 1, `processed_data/` (ignored by git) holds:
 
@@ -290,7 +290,7 @@ Each pickle holds `{"dataframes": [...], "classes": [...]}`.
 ## 📚 Notebook Description
 
 ### 1️⃣ `1_data_treatment.ipynb` — events, scaling, folds and windows
-- Opens the events with `ParquetDataset` (counts per provenance, one event plotted with `PlotMultipleSeries` and `CorrelationHeatmap`), chooses up to `MAX_FILES_PER_CLASS` events per class (real first) and cleans them (`src/events.py`).
+- Opens the events with `ParquetDataset` (counts per provenance, one event plotted with `PlotMultipleSeries` and `CorrelationHeatmap`), reads events until it has `MAX_FILES_PER_CLASS` usable ones per class (real first; an event with a sensor entirely missing is discarded and the next one takes its place) and cleans them (`src/events.py`). Class 6 ends with 6 events because none of its 215 simulated/drawn events has the `T-TPT` sensor.
 - Compares the toolkit `Normalize` with the scikit-learn scalers on one event.
 - Splits the real events with `KFoldSplitter`, builds the folds (training with real + simulated, test with real), scales each fold with the statistics of its training events (`ImputeMissing` under `try/except`, then `Normalize`).
 - Windows every event with `Windowing`, and saves everything to `processed_data/`.
