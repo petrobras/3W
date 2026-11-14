@@ -58,6 +58,7 @@ class PipelineConfig(BasePipelineConfig):
     num_folds: int | None = Field(
         default=None,
         gt=1,
+        validate_default=True,
         description="Number of folds for cross-validation. Required if task is 'cross_validation'.",
     )
     stratify_by: list[str] = Field(
