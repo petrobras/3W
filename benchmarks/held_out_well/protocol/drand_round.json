@@ -1,0 +1,11 @@
+{
+ "chain_hash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+ "round": 32846926,
+ "signature": "a15d289b9f26f087fa3b229a95e7717220b46e94baa69a2d8192ea8a9e42e7ca4da5ed6d1391f441419f98d5d15000d1",
+ "randomness_sha256_of_signature": "f9f44cb41feef808ccd3aafd1cc29ec67a165fcd6baadff78a0db34f55733045",
+ "fetched_utc": "2026-10-07T03:36:29Z",
+ "endpoints_agreeing": [
+  "api.drand.sh v2",
+  "api2.drand.sh v1"
+ ]
+}
