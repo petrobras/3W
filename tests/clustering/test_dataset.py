@@ -9,7 +9,7 @@ from ThreeWToolkit.dataset import ParquetDatasetConfig
 @pytest.fixture(scope="session")
 def parquet_dataset_path() -> Path:
     """Point to the directory where the 3W dataset is stored."""
-    return Path(__file__).parent.parent / "dataset"
+    return Path(__file__).parent.parent.parent / "dataset"
 
 
 _COLUMNS = [
