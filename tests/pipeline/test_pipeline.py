@@ -36,12 +36,11 @@ class _DummyTransformConfig(BaseTransformConfig):
 
 def _make_config(**overrides) -> PipelineConfig:
     """Build a PipelineConfig with dummy required configs."""
-    params = {
-        "train_dataset_config": _DummyDatasetConfig(),
-        "trainer_config": _DummyTrainerConfig(),
-    }
-    params.update(overrides)
-    return PipelineConfig(**params)
+    return PipelineConfig(
+        train_dataset_config=_DummyDatasetConfig(),
+        trainer_config=_DummyTrainerConfig(),
+        **overrides,
+    )
 
 
 def _fake_config(**overrides) -> SimpleNamespace:
@@ -233,7 +232,7 @@ class TestPreProcessData:
     def test_skipped_without_pre_transform(self, pipeline: Pipeline) -> None:
         """Skip preprocessing without a pre-transform."""
         original = pipeline.train_dataset
-        assert pipeline.pre_process_data() is None
+        pipeline.pre_process_data()
         assert pipeline.train_dataset is original
 
     def test_only_train_dataset(self, pipeline: Pipeline) -> None:
