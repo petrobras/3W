@@ -1,0 +1,80 @@
+#!/bin/bash
+set -eu
+
+# Copy agent skills from .agents/skills to tool-specific directories.
+#
+# .agents/skills/ is the only place where skills are edited. Some agents do
+# not read it, so this script mirrors it into the directories they do read:
+#
+#   .claude/skills/  Claude Code
+#
+# Usage:
+#   ./bin/sync_agent_files          # update the copies
+#   ./bin/sync_agent_files --check  # exit 1 if a copy is outdated
+
+cd "$(dirname "$0")"/..
+
+SOURCE=".agents/skills"
+TARGETS=(".claude/skills")
+EXCLUDES=(--exclude=__pycache__ --exclude="*.pyc" --exclude=.DS_Store)
+
+CHECK=false
+case "${1:-}" in
+    --check)
+        CHECK=true
+        ;;
+    "")
+        ;;
+    *)
+        echo "Usage: $0 [--check]"
+        exit 2
+        ;;
+esac
+
+if [ ! -d "${SOURCE}" ]; then
+    echo "Source directory not found: ${SOURCE}"
+    exit 2
+fi
+
+# Replace a target directory with a fresh copy of the source.
+sync_target() {
+    local target="$1"
+
+    rm -rf "${target}"
+    mkdir -p "$(dirname "${target}")"
+    cp -R "${SOURCE}" "${target}"
+    find "${target}" \
+        \( -name __pycache__ -o -name "*.pyc" -o -name .DS_Store \) \
+        -exec rm -rf {} +
+}
+
+outdated=false
+
+for target in "${TARGETS[@]}"; do
+    if [ -d "${target}" ]; then
+        # "diff" exits non-zero when the trees differ, which is not an error
+        # here: the output is the report we want.
+        differences="$(diff -r "${EXCLUDES[@]}" --brief "${SOURCE}" "${target}" || true)"
+    else
+        differences="${target} (missing)"
+    fi
+
+    if [ -z "${differences}" ]; then
+        echo "${target}: up to date"
+        continue
+    fi
+
+    if [ "${CHECK}" = true ]; then
+        outdated=true
+        echo "${target}: outdated"
+        echo "${differences}" | sed "s/^/  - /"
+    else
+        sync_target "${target}"
+        echo "${target}: updated"
+    fi
+done
+
+if [ "${outdated}" = true ]; then
+    echo "Run \`./bin/sync_agent_files\` and commit the result."
+    exit 1
+fi
