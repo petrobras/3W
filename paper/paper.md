@@ -73,14 +73,15 @@ Developed in Python, the toolkit integrates easily with Python-based systems and
 The **3W Toolkit** has evolved across architecture, software design, data structures, and features. Among other improvements, the current version currently processes `.parquet` files for better memory efficiency and faster queries, streamlines large-scale workflows, and includes machine learning features for time-series anomaly detection and event classification. It now uses a modular, object-oriented package with dedicated sub-modules. Unlike the initial standalone scripts and Jupyter Notebooks for parsing raw sensor streams, the current release is a standardized package managed through modern dependency structures (pyproject.toml) and installed via PyPI.
 
 # State of the field
-Petrobras launched the **3W Community**, an international collaboration of researchers, startups, companies, and independent data scientists developing artificial intelligence and machine learning tools for early offshore oil-well event detection. With the widespread adoption of the [**3W Dataset**](https://github.com/petrobras/3W) among research institutions, the **3W Toolkit** was designed to streamline these efforts.
-While time-series toolkits (e.g., `sktime`, `tsfresh`) provide foundational algorithms, they lack domain-specific knowledge of oil-well variables, multi-source telemetry differences (simulated vs. real events), and 3W operational constraints. Rather than competing with general-purpose tools, the **3W Toolkit** connects raw sensor data to standard machine learning paradigms, keeping comparisons within the 3W Community reproducible and aligned with industry standards.
+Petrobras launched the **3W Community**, an international collaboration of researchers, startups, companies, and independent data scientists developing artificial intelligence and machine learning tools for early offshore oil-well event detection. With the widespread adoption of the [**3W Dataset**](https://github.com/petrobras/3W) among research institutions, the **3W Toolkit** was designed to streamline these efforts. While time-series toolkits (e.g., `sktime` [@sktime] , `tsfresh` [@tsfresh]) provide foundational algorithms, they lack domain-specific knowledge of oil-well variables, multi-source telemetry differences, and 3W operational constraints. Specifically, the **3W Toolkit** performs tasks that more general purpose packages cannot do: 
 
-There are currently no other specialized Python packages, frameworks, or toolkits 
-built specifically to address the heterogeneous composition and multi-source nature
-of the **3W Dataset**. Without a unified framework like the **3W Toolkit**, researchers must create isolated ingestion scripts, causing inconsistent handling of real, simulated, 
-and hand-drawn synthetic instances. The **3W Toolkit** therefore consolidates one-off scripts into a reproducible platform.
+* **Multi-source ingestion:** Automatically fetches and validates the 3W Dataset, parses its taxonomy of `real`, `simulated`, and `drawn` instances.
 
+* **Valve-aware cleaning:** Identifies and masks frozen or out-of-range continuous telemetry across events using interquartile (IQR) bounds, while explicitly preserving discrete valve-state variables (e.g., `ESTADO-DHSV`, `ESTADO-M1`) that legitimately remain constant over long periods—signals.
+
+* **Transient-to-steady fault windowing:** Resolves label transitions between normal operation, transient stages and faults, applying causal start-padding (`pad_start`) so sliding-window evaluations remain synchronized across different window sizes.
+
+Rather than competing with general-purpose tools, the **3W Toolkit** connects raw sensor data to standard machine learning paradigms, keeping comparisons within the 3W Community reproducible and aligned with industry standards. There are currently no other specialized Python packages, frameworks, or toolkits built specifically to address the heterogeneous composition and multi-source nature of the **3W Dataset**. Without a unified framework like the **3W Toolkit**, researchers must create isolated ingestion scripts, causing inconsistent handling of real, simulated, and hand-drawn synthetic instances. The **3W Toolkit** therefore consolidates one-off scripts into a reproducible platform.
 
 
 
