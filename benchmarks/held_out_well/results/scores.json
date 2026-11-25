@@ -1,0 +1,4583 @@
+{
+ "protocol": "3W-HW-v1",
+ "note": "Produced by held_out_well.scoring.report from the saved predictions of each entry; bootstrap B=2000, seed 611.",
+ "entries": {
+  "simple": {
+   "predictions_sha256": "33e7517769c21bb57240a15fbcbc0593d2e42f0311e1bc9ea1b5cd7e0b5738b1",
+   "alarm_threshold": 0.67,
+   "threshold_recomputed_equal": true,
+   "test": {
+    "n_wells": 10,
+    "point": {
+     "episode_coverage": 0.209091,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0.5,
+     "false_alarms_per_normal_day": 1.055407,
+     "normal_time_occupation": 0.003808,
+     "normal_eligibility": 0.999777,
+     "event_eligibility": 1,
+     "episodes_total": 110,
+     "episodes_unobservable": 0,
+     "normal_days": 43.585069,
+     "coverage_c1": 1,
+     "coverage_c2": 1,
+     "coverage_c3": 0,
+     "coverage_c4": 0.012658,
+     "coverage_c5": 1,
+     "coverage_c6": 0,
+     "coverage_c7": 0.4,
+     "coverage_c8": 1,
+     "coverage_c9": 0.333333,
+     "event_decisions": 100612,
+     "normal_decisions": 125525,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.472046,
+     "average_precision": 0.447415,
+     "onset_delay_median_s": 94,
+     "auroc_exact": 0.472047,
+     "average_precision_exact": 0.447545
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.046291,
+      0.8975,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      2000
+     ],
+     "onset_detection_300s": [
+      0.055556,
+      0.783784,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.248027,
+      2.960222,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.000829,
+      0.011626,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999329,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      1,
+      1,
+      2000
+     ],
+     "episodes_total": [
+      20.975,
+      223,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      11.790078,
+      86.794028,
+      2000
+     ],
+     "coverage_c1": [
+      1,
+      1,
+      1283
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1809
+     ],
+     "coverage_c3": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c4": [
+      0,
+      0.027778,
+      1775
+     ],
+     "coverage_c5": [
+      1,
+      1,
+      1301
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1316
+     ],
+     "coverage_c7": [
+      0,
+      0.5,
+      1781
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1281
+     ],
+     "coverage_c9": [
+      0,
+      0.5,
+      1793
+     ],
+     "event_decisions": [
+      17403.7,
+      199320.175,
+      2000
+     ],
+     "normal_decisions": [
+      33955.425,
+      249966.8,
+      2000
+     ],
+     "auroc": [
+      0.368699,
+      0.764778,
+      2000
+     ],
+     "average_precision": [
+      0.216722,
+      0.758245,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   },
+   "dev_oof": {
+    "n_wells": 30,
+    "point": {
+     "episode_coverage": 0.22372,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0.197368,
+     "false_alarms_per_normal_day": 0.911061,
+     "normal_time_occupation": 0.003863,
+     "normal_eligibility": 0.999717,
+     "event_eligibility": 0.999217,
+     "episodes_total": 371,
+     "episodes_unobservable": 0,
+     "normal_days": 125.128819,
+     "coverage_c1": 0.666667,
+     "coverage_c2": 1,
+     "coverage_c3": 0.83871,
+     "coverage_c4": 0.075758,
+     "coverage_c5": 0.5,
+     "coverage_c6": 0,
+     "coverage_c7": 0.225806,
+     "coverage_c8": 1,
+     "coverage_c9": 0.4,
+     "event_decisions": 375070,
+     "normal_decisions": 360371,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.537831,
+     "average_precision": 0.56288,
+     "onset_delay_median_s": 108,
+     "auroc_exact": 0.537833,
+     "average_precision_exact": 0.563094
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.097435,
+      0.488016,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      2000
+     ],
+     "onset_detection_300s": [
+      0.085354,
+      0.4,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.361298,
+      2.207486,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.001404,
+      0.008966,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999427,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      0.998497,
+      0.999844,
+      2000
+     ],
+     "episodes_total": [
+      124,
+      687.075,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      47.280122,
+      239.059392,
+      2000
+     ],
+     "coverage_c1": [
+      0.5,
+      1,
+      1757
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1996
+     ],
+     "coverage_c3": [
+      0.83871,
+      0.83871,
+      1247
+     ],
+     "coverage_c4": [
+      0,
+      0.331379,
+      1995
+     ],
+     "coverage_c5": [
+      0.166667,
+      1,
+      1761
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1303
+     ],
+     "coverage_c7": [
+      0,
+      0.97,
+      1967
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1999
+     ],
+     "coverage_c9": [
+      0,
+      0.568323,
+      1981
+     ],
+     "event_decisions": [
+      181955.75,
+      625564.7,
+      2000
+     ],
+     "normal_decisions": [
+      136166.75,
+      688491.05,
+      2000
+     ],
+     "auroc": [
+      0.38458,
+      0.742633,
+      2000
+     ],
+     "average_precision": [
+      0.340689,
+      0.807497,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  },
+  "volatility": {
+   "predictions_sha256": "889a88b2b6eb8b1961dd0d905c1e0bd9edec9789b43dd94b60e30700ef3841cf",
+   "alarm_threshold": 0.8300000000000001,
+   "threshold_recomputed_equal": true,
+   "test": {
+    "n_wells": 10,
+    "point": {
+     "episode_coverage": 0.190909,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0.166667,
+     "false_alarms_per_normal_day": 0.412985,
+     "normal_time_occupation": 0.004421,
+     "normal_eligibility": 0.999777,
+     "event_eligibility": 1,
+     "episodes_total": 110,
+     "episodes_unobservable": 0,
+     "normal_days": 43.585069,
+     "coverage_c1": 0,
+     "coverage_c2": 1,
+     "coverage_c3": 0,
+     "coverage_c4": 0.012658,
+     "coverage_c5": 1,
+     "coverage_c6": 0,
+     "coverage_c7": 0.4,
+     "coverage_c8": 1,
+     "coverage_c9": 0,
+     "event_decisions": 100612,
+     "normal_decisions": 125525,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.537037,
+     "average_precision": 0.563429,
+     "onset_delay_median_s": 268,
+     "auroc_exact": 0.537038,
+     "average_precision_exact": 0.563641
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.028571,
+      0.866711,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      2000
+     ],
+     "onset_detection_300s": [
+      0,
+      0.277833,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.048162,
+      1.38539,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.000368,
+      0.015936,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999329,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      1,
+      1,
+      2000
+     ],
+     "episodes_total": [
+      20.975,
+      223,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      11.790078,
+      86.794028,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1809
+     ],
+     "coverage_c3": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c4": [
+      0,
+      0.027778,
+      1775
+     ],
+     "coverage_c5": [
+      1,
+      1,
+      1301
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1316
+     ],
+     "coverage_c7": [
+      0,
+      0.5,
+      1781
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1281
+     ],
+     "coverage_c9": [
+      0,
+      0,
+      1793
+     ],
+     "event_decisions": [
+      17403.7,
+      199320.175,
+      2000
+     ],
+     "normal_decisions": [
+      33955.425,
+      249966.8,
+      2000
+     ],
+     "auroc": [
+      0.327597,
+      0.832677,
+      2000
+     ],
+     "average_precision": [
+      0.237068,
+      0.816761,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   },
+   "dev_oof": {
+    "n_wells": 30,
+    "point": {
+     "episode_coverage": 0.229111,
+     "carried_in_share_of_covered": 0.011765,
+     "onset_detection_300s": 0.118421,
+     "false_alarms_per_normal_day": 0.887086,
+     "normal_time_occupation": 0.0325,
+     "normal_eligibility": 0.999717,
+     "event_eligibility": 0.999217,
+     "episodes_total": 371,
+     "episodes_unobservable": 0,
+     "normal_days": 125.128819,
+     "coverage_c1": 0,
+     "coverage_c2": 1,
+     "coverage_c3": 0.967742,
+     "coverage_c4": 0.098485,
+     "coverage_c5": 0.5,
+     "coverage_c6": 0,
+     "coverage_c7": 0.032258,
+     "coverage_c8": 1,
+     "coverage_c9": 0.4,
+     "event_decisions": 375070,
+     "normal_decisions": 360371,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.79921,
+     "average_precision": 0.758678,
+     "onset_delay_median_s": 203,
+     "auroc_exact": 0.799207,
+     "average_precision_exact": 0.758669
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.059256,
+      0.551523,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0.068986,
+      2000
+     ],
+     "onset_detection_300s": [
+      0.039585,
+      0.264165,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.229154,
+      2.88183,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.00496,
+      0.11732,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999427,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      0.998497,
+      0.999844,
+      2000
+     ],
+     "episodes_total": [
+      124,
+      687.075,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      47.280122,
+      239.059392,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1757
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1996
+     ],
+     "coverage_c3": [
+      0.967742,
+      0.967742,
+      1247
+     ],
+     "coverage_c4": [
+      0,
+      0.520833,
+      1995
+     ],
+     "coverage_c5": [
+      0.166667,
+      1,
+      1761
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1303
+     ],
+     "coverage_c7": [
+      0,
+      0.485,
+      1967
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1999
+     ],
+     "coverage_c9": [
+      0,
+      1,
+      1981
+     ],
+     "event_decisions": [
+      181955.75,
+      625564.7,
+      2000
+     ],
+     "normal_decisions": [
+      136166.75,
+      688491.05,
+      2000
+     ],
+     "auroc": [
+      0.67065,
+      0.86366,
+      2000
+     ],
+     "average_precision": [
+      0.593401,
+      0.870603,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  },
+  "rf": {
+   "predictions_sha256": "ca4eeccde18212f9ecf383c3ab2911c230eb79c25bb076a3d90c920dcd617fad",
+   "alarm_threshold": 0.7232543945312528,
+   "threshold_recomputed_equal": true,
+   "test": {
+    "n_wells": 10,
+    "point": {
+     "episode_coverage": 0.309091,
+     "carried_in_share_of_covered": 0.117647,
+     "onset_detection_300s": 0.333333,
+     "false_alarms_per_normal_day": 2.936786,
+     "normal_time_occupation": 0.029293,
+     "normal_eligibility": 0.999777,
+     "event_eligibility": 1,
+     "episodes_total": 110,
+     "episodes_unobservable": 0,
+     "normal_days": 43.585069,
+     "coverage_c1": 0,
+     "coverage_c2": 1,
+     "coverage_c3": 1,
+     "coverage_c4": 0.164557,
+     "coverage_c5": 1,
+     "coverage_c6": 0,
+     "coverage_c7": 0.4,
+     "coverage_c8": 1,
+     "coverage_c9": 0,
+     "event_decisions": 100612,
+     "normal_decisions": 125525,
+     "macro_f1": 0.265509,
+     "macro_f1_event_classes": 0.212697,
+     "balanced_accuracy": 0.306554,
+     "accuracy": 0.642535,
+     "f1_c0": 0.74082,
+     "f1_c1": 0,
+     "f1_c2": 0.664606,
+     "f1_c3": 0,
+     "f1_c4": 0.426349,
+     "f1_c5": 0,
+     "f1_c6": 0,
+     "f1_c7": 0,
+     "f1_c8": 0.823318,
+     "f1_c9": 0,
+     "auroc": 0.740418,
+     "average_precision": 0.732728,
+     "onset_delay_median_s": 62,
+     "per_well_macro_f1_mean": 0.49645,
+     "per_well_macro_f1_sd": 0.296006,
+     "auroc_exact": 0.740411,
+     "average_precision_exact": 0.733248
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.116483,
+      0.866711,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0.25,
+      2000
+     ],
+     "onset_detection_300s": [
+      0,
+      0.56,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.037651,
+      13.766646,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.000039,
+      0.139057,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999329,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      1,
+      1,
+      2000
+     ],
+     "episodes_total": [
+      20.975,
+      223,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      11.790078,
+      86.794028,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1809
+     ],
+     "coverage_c3": [
+      1,
+      1,
+      1283
+     ],
+     "coverage_c4": [
+      0.069767,
+      0.277778,
+      1775
+     ],
+     "coverage_c5": [
+      1,
+      1,
+      1301
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1316
+     ],
+     "coverage_c7": [
+      0,
+      0.5,
+      1781
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1281
+     ],
+     "coverage_c9": [
+      0,
+      0,
+      1793
+     ],
+     "event_decisions": [
+      17403.7,
+      199320.175,
+      2000
+     ],
+     "normal_decisions": [
+      33955.425,
+      249966.8,
+      2000
+     ],
+     "macro_f1": [
+      0.145456,
+      0.498748,
+      2000
+     ],
+     "macro_f1_event_classes": [
+      0.059755,
+      0.453981,
+      2000
+     ],
+     "balanced_accuracy": [
+      0.220475,
+      0.538773,
+      2000
+     ],
+     "accuracy": [
+      0.33736,
+      0.874717,
+      2000
+     ],
+     "f1_c0": [
+      0.313996,
+      0.937296,
+      2000
+     ],
+     "f1_c1": [
+      0,
+      0,
+      1283
+     ],
+     "f1_c2": [
+      0.153025,
+      0.990783,
+      1809
+     ],
+     "f1_c3": [
+      0,
+      0,
+      1283
+     ],
+     "f1_c4": [
+      0,
+      0.669028,
+      1775
+     ],
+     "f1_c5": [
+      0,
+      0,
+      1301
+     ],
+     "f1_c6": [
+      0,
+      0,
+      1316
+     ],
+     "f1_c7": [
+      0,
+      0,
+      1781
+     ],
+     "f1_c8": [
+      0.823318,
+      0.823318,
+      1281
+     ],
+     "f1_c9": [
+      0,
+      0,
+      1793
+     ],
+     "auroc": [
+      0.535546,
+      0.933315,
+      2000
+     ],
+     "average_precision": [
+      0.631853,
+      0.832684,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      107779,
+      0,
+      1105,
+      13,
+      159,
+      0,
+      0,
+      3310,
+      12860,
+      299
+     ],
+     [
+      481,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      7,
+      0,
+      2365,
+      0,
+      3,
+      0,
+      0,
+      158,
+      0,
+      0
+     ],
+     [
+      595,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      0
+     ],
+     [
+      9995,
+      0,
+      4,
+      0,
+      5194,
+      3287,
+      0,
+      529,
+      0,
+      0
+     ],
+     [
+      2,
+      0,
+      0,
+      326,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      82,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      45619,
+      0,
+      1110,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      29963,
+      0
+     ],
+     [
+      887,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "per_well_macro_f1": {
+     "WELL-00001": 0.18236233040702315,
+     "WELL-00004": 0.4008308451836499,
+     "WELL-00011": 0.5724201423105796,
+     "WELL-00013": 0.9873271889400922,
+     "WELL-00015": 0.35660377358490564,
+     "WELL-00023": 0.10720923234862029,
+     "WELL-00026": 0.41165883549034155,
+     "WELL-00035": 1,
+     "WELL-00037": 0.44918907821802506,
+     "WELL-00041": 0.49689939221917134
+    }
+   },
+   "dev_oof": {
+    "n_wells": 30,
+    "point": {
+     "episode_coverage": 0.078167,
+     "carried_in_share_of_covered": 0.103448,
+     "onset_detection_300s": 0.131579,
+     "false_alarms_per_normal_day": 0.919053,
+     "normal_time_occupation": 0.01491,
+     "normal_eligibility": 0.999717,
+     "event_eligibility": 0.999217,
+     "episodes_total": 371,
+     "episodes_unobservable": 0,
+     "normal_days": 125.128819,
+     "coverage_c1": 0,
+     "coverage_c2": 0.875,
+     "coverage_c3": 0.032258,
+     "coverage_c4": 0,
+     "coverage_c5": 0.6,
+     "coverage_c6": 0,
+     "coverage_c7": 0.064516,
+     "coverage_c8": 1,
+     "coverage_c9": 0.2,
+     "event_decisions": 375070,
+     "normal_decisions": 360371,
+     "macro_f1": 0.277514,
+     "macro_f1_event_classes": 0.220117,
+     "balanced_accuracy": 0.377317,
+     "accuracy": 0.580025,
+     "f1_c0": 0.679287,
+     "f1_c1": 0,
+     "f1_c2": 0.105444,
+     "f1_c3": 0,
+     "f1_c4": 0,
+     "f1_c5": 0.424722,
+     "f1_c6": 0,
+     "f1_c7": 0,
+     "f1_c8": 0.942147,
+     "f1_c9": 0.068509,
+     "auroc": 0.641869,
+     "average_precision": 0.710068,
+     "onset_delay_median_s": 126.5,
+     "per_well_macro_f1_mean": 0.543871,
+     "per_well_macro_f1_sd": 0.361719,
+     "auroc_exact": 0.641861,
+     "average_precision_exact": 0.710527
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.032555,
+      0.247881,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0.25,
+      2000
+     ],
+     "onset_detection_300s": [
+      0.048187,
+      0.273819,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.229707,
+      2.03033,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.004118,
+      0.046197,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999427,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      0.998497,
+      0.999844,
+      2000
+     ],
+     "episodes_total": [
+      124,
+      687.075,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      47.280122,
+      239.059392,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1757
+     ],
+     "coverage_c2": [
+      0.5,
+      1,
+      1996
+     ],
+     "coverage_c3": [
+      0.032258,
+      0.032258,
+      1247
+     ],
+     "coverage_c4": [
+      0,
+      0,
+      1995
+     ],
+     "coverage_c5": [
+      0,
+      1,
+      1761
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1303
+     ],
+     "coverage_c7": [
+      0,
+      0.105263,
+      1967
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1999
+     ],
+     "coverage_c9": [
+      0,
+      0.377976,
+      1981
+     ],
+     "event_decisions": [
+      181955.75,
+      625564.7,
+      2000
+     ],
+     "normal_decisions": [
+      136166.75,
+      688491.05,
+      2000
+     ],
+     "macro_f1": [
+      0.207109,
+      0.41065,
+      2000
+     ],
+     "macro_f1_event_classes": [
+      0.143147,
+      0.383154,
+      2000
+     ],
+     "balanced_accuracy": [
+      0.285893,
+      0.441173,
+      2000
+     ],
+     "accuracy": [
+      0.382318,
+      0.785088,
+      2000
+     ],
+     "f1_c0": [
+      0.436351,
+      0.842352,
+      2000
+     ],
+     "f1_c1": [
+      0,
+      0,
+      1757
+     ],
+     "f1_c2": [
+      0,
+      0.921536,
+      1996
+     ],
+     "f1_c3": [
+      0,
+      0,
+      1247
+     ],
+     "f1_c4": [
+      0,
+      0,
+      1995
+     ],
+     "f1_c5": [
+      0,
+      0.444507,
+      1761
+     ],
+     "f1_c6": [
+      0,
+      0,
+      1303
+     ],
+     "f1_c7": [
+      0,
+      0,
+      1967
+     ],
+     "f1_c8": [
+      0.899574,
+      0.982383,
+      1999
+     ],
+     "f1_c9": [
+      0,
+      0.154378,
+      1997
+     ],
+     "auroc": [
+      0.473909,
+      0.827876,
+      2000
+     ],
+     "average_precision": [
+      0.492693,
+      0.890757,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      326207,
+      43,
+      14592,
+      2,
+      3403,
+      894,
+      0,
+      2045,
+      11228,
+      1957
+     ],
+     [
+      1966,
+      0,
+      58,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      138,
+      0,
+      892,
+      0,
+      11,
+      106,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      18267,
+      0,
+      72,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      62850,
+      0,
+      80,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0
+     ],
+     [
+      7576,
+      0,
+      0,
+      0,
+      0,
+      3168,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      501,
+      0,
+      78,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      176153,
+      0,
+      0,
+      18,
+      316,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      564,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      96017,
+      0
+     ],
+     [
+      5846,
+      0,
+      0,
+      77,
+      0,
+      6,
+      0,
+      0,
+      0,
+      290
+     ]
+    ],
+    "per_well_macro_f1": {
+     "WELL-00002": 0.21530981560569848,
+     "WELL-00003": 0.9160591189260197,
+     "WELL-00005": 0.4233877094354738,
+     "WELL-00006": 0.31329848821395695,
+     "WELL-00007": 0.14311270125223613,
+     "WELL-00008": 1,
+     "WELL-00009": 0.4957983193277311,
+     "WELL-00010": 0.13881235711354709,
+     "WELL-00012": 0.9770379543964449,
+     "WELL-00014": 0.03832877313291541,
+     "WELL-00016": 0.27579077940872443,
+     "WELL-00019": 0.7849334738907789,
+     "WELL-00020": 0.21072882552174796,
+     "WELL-00021": 0.3352259822848058,
+     "WELL-00022": 0.12276481917397818,
+     "WELL-00024": 0.1073504036176838,
+     "WELL-00025": 0.7027127098508436,
+     "WELL-00027": 0.9968527206309769,
+     "WELL-00028": 0.46359271854370876,
+     "WELL-00029": 0.9995643343815513,
+     "WELL-00030": 0.444913020558777,
+     "WELL-00031": 0.48122615331252167,
+     "WELL-00032": 0.9991405219049461,
+     "WELL-00033": 1,
+     "WELL-00034": 1,
+     "WELL-00036": 1,
+     "WELL-00038": 1,
+     "WELL-00039": 0.011116725618999495,
+     "WELL-00040": 0.36621454993834773,
+     "WELL-00042": 0.35287159406102137
+    }
+   }
+  },
+  "lgbm": {
+   "predictions_sha256": "39aed1182c691b61059e190171f221246f66d4e865c2479e170bc4aef749055d",
+   "alarm_threshold": 0.9700000000000001,
+   "threshold_recomputed_equal": true,
+   "test": {
+    "n_wells": 10,
+    "point": {
+     "episode_coverage": 0.6,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0.4,
+     "false_alarms_per_normal_day": 0.390042,
+     "normal_time_occupation": 0.001251,
+     "normal_eligibility": 0.999777,
+     "event_eligibility": 1,
+     "episodes_total": 110,
+     "episodes_unobservable": 0,
+     "normal_days": 43.585069,
+     "coverage_c1": 0,
+     "coverage_c2": 1,
+     "coverage_c3": 0,
+     "coverage_c4": 0.658228,
+     "coverage_c5": 0,
+     "coverage_c6": 0,
+     "coverage_c7": 0,
+     "coverage_c8": 0,
+     "coverage_c9": 0,
+     "event_decisions": 100612,
+     "normal_decisions": 125525,
+     "macro_f1": 0.291775,
+     "macro_f1_event_classes": 0.241952,
+     "balanced_accuracy": 0.277421,
+     "accuracy": 0.620628,
+     "f1_c0": 0.740178,
+     "f1_c1": 0.169872,
+     "f1_c2": 0.925461,
+     "f1_c3": 0,
+     "f1_c4": 0.635284,
+     "f1_c5": 0,
+     "f1_c6": 0,
+     "f1_c7": 0,
+     "f1_c8": 0.418066,
+     "f1_c9": 0.028889,
+     "auroc": 0.581476,
+     "average_precision": 0.626451,
+     "onset_delay_median_s": 173,
+     "per_well_macro_f1_mean": 0.53503,
+     "per_well_macro_f1_sd": 0.31665,
+     "auroc_exact": 0.581475,
+     "average_precision_exact": 0.626546
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.124816,
+      0.850027,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      1990
+     ],
+     "onset_detection_300s": [
+      0,
+      0.675676,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0,
+      2.19773,
+      2000
+     ],
+     "normal_time_occupation": [
+      0,
+      0.006534,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999329,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      1,
+      1,
+      2000
+     ],
+     "episodes_total": [
+      20.975,
+      223,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      11.790078,
+      86.794028,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1809
+     ],
+     "coverage_c3": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c4": [
+      0.333333,
+      0.930233,
+      1775
+     ],
+     "coverage_c5": [
+      0,
+      0,
+      1301
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1316
+     ],
+     "coverage_c7": [
+      0,
+      0,
+      1781
+     ],
+     "coverage_c8": [
+      0,
+      0,
+      1281
+     ],
+     "coverage_c9": [
+      0,
+      0,
+      1793
+     ],
+     "event_decisions": [
+      17403.7,
+      199320.175,
+      2000
+     ],
+     "normal_decisions": [
+      33955.425,
+      249966.8,
+      2000
+     ],
+     "macro_f1": [
+      0.201681,
+      0.492839,
+      2000
+     ],
+     "macro_f1_event_classes": [
+      0.115604,
+      0.446869,
+      2000
+     ],
+     "balanced_accuracy": [
+      0.195008,
+      0.505637,
+      2000
+     ],
+     "accuracy": [
+      0.319514,
+      0.910375,
+      2000
+     ],
+     "f1_c0": [
+      0.376258,
+      0.952569,
+      2000
+     ],
+     "f1_c1": [
+      0.169872,
+      0.169872,
+      1283
+     ],
+     "f1_c2": [
+      0.916743,
+      0.994652,
+      1809
+     ],
+     "f1_c3": [
+      0,
+      0,
+      1283
+     ],
+     "f1_c4": [
+      0,
+      0.878003,
+      1775
+     ],
+     "f1_c5": [
+      0,
+      0,
+      1301
+     ],
+     "f1_c6": [
+      0,
+      0,
+      1316
+     ],
+     "f1_c7": [
+      0,
+      0,
+      1781
+     ],
+     "f1_c8": [
+      0.418066,
+      0.418066,
+      1281
+     ],
+     "f1_c9": [
+      0,
+      0.064198,
+      1793
+     ],
+     "auroc": [
+      0.307886,
+      0.967558,
+      2000
+     ],
+     "average_precision": [
+      0.355913,
+      0.917639,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      119202,
+      90,
+      25,
+      0,
+      3027,
+      0,
+      587,
+      19,
+      2575,
+      0
+     ],
+     [
+      428,
+      53,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      297,
+      0,
+      2210,
+      0,
+      26,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      600,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      6669,
+      0,
+      0,
+      0,
+      10270,
+      2070,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      320,
+      0,
+      8,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      82,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      46729,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      21364,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      8599,
+      0
+     ],
+     [
+      874,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      13
+     ]
+    ],
+    "per_well_macro_f1": {
+     "WELL-00001": 0.21840972569907668,
+     "WELL-00004": 0.3315765806222028,
+     "WELL-00011": 0.8771425750432877,
+     "WELL-00013": 0.9936413813679421,
+     "WELL-00015": 0.40476190476190477,
+     "WELL-00023": 0.10629149980062759,
+     "WELL-00026": 0.44011009128476614,
+     "WELL-00035": 1,
+     "WELL-00037": 0.44918907821802506,
+     "WELL-00041": 0.5291754203231096
+    }
+   },
+   "dev_oof": {
+    "n_wells": 30,
+    "point": {
+     "episode_coverage": 0.059299,
+     "carried_in_share_of_covered": 0.090909,
+     "onset_detection_300s": 0.171053,
+     "false_alarms_per_normal_day": 0.998971,
+     "normal_time_occupation": 0.014061,
+     "normal_eligibility": 0.999717,
+     "event_eligibility": 0.999217,
+     "episodes_total": 371,
+     "episodes_unobservable": 0,
+     "normal_days": 125.128819,
+     "coverage_c1": 0.666667,
+     "coverage_c2": 0.875,
+     "coverage_c3": 0,
+     "coverage_c4": 0,
+     "coverage_c5": 0,
+     "coverage_c6": 0,
+     "coverage_c7": 0.064516,
+     "coverage_c8": 1,
+     "coverage_c9": 0,
+     "event_decisions": 375070,
+     "normal_decisions": 360371,
+     "macro_f1": 0.342981,
+     "macro_f1_event_classes": 0.296457,
+     "balanced_accuracy": 0.406294,
+     "accuracy": 0.566644,
+     "f1_c0": 0.668652,
+     "f1_c1": 0.068674,
+     "f1_c2": 0.491096,
+     "f1_c3": 0,
+     "f1_c4": 0.000306,
+     "f1_c5": 0.570974,
+     "f1_c6": 0,
+     "f1_c7": 0.002299,
+     "f1_c8": 0.933519,
+     "f1_c9": 0.008332,
+     "auroc": 0.580657,
+     "average_precision": 0.658093,
+     "onset_delay_median_s": 153,
+     "per_well_macro_f1_mean": 0.571532,
+     "per_well_macro_f1_sd": 0.347356,
+     "auroc_exact": 0.580658,
+     "average_precision_exact": 0.658113
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.02426,
+      0.196289,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0.235364,
+      2000
+     ],
+     "onset_detection_300s": [
+      0.072268,
+      0.355962,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.134388,
+      3.669396,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.000674,
+      0.05407,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999427,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      0.998497,
+      0.999844,
+      2000
+     ],
+     "episodes_total": [
+      124,
+      687.075,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      47.280122,
+      239.059392,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      1,
+      1757
+     ],
+     "coverage_c2": [
+      0.5,
+      1,
+      1996
+     ],
+     "coverage_c3": [
+      0,
+      0,
+      1247
+     ],
+     "coverage_c4": [
+      0,
+      0,
+      1995
+     ],
+     "coverage_c5": [
+      0,
+      0,
+      1761
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1303
+     ],
+     "coverage_c7": [
+      0,
+      0.97,
+      1967
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1999
+     ],
+     "coverage_c9": [
+      0,
+      0,
+      1981
+     ],
+     "event_decisions": [
+      181955.75,
+      625564.7,
+      2000
+     ],
+     "normal_decisions": [
+      136166.75,
+      688491.05,
+      2000
+     ],
+     "macro_f1": [
+      0.232123,
+      0.420636,
+      2000
+     ],
+     "macro_f1_event_classes": [
+      0.172508,
+      0.400899,
+      2000
+     ],
+     "balanced_accuracy": [
+      0.296094,
+      0.450704,
+      2000
+     ],
+     "accuracy": [
+      0.363111,
+      0.768867,
+      2000
+     ],
+     "f1_c0": [
+      0.41907,
+      0.839514,
+      2000
+     ],
+     "f1_c1": [
+      0,
+      0.070913,
+      1757
+     ],
+     "f1_c2": [
+      0,
+      0.942677,
+      1996
+     ],
+     "f1_c3": [
+      0,
+      0,
+      1247
+     ],
+     "f1_c4": [
+      0,
+      0.001866,
+      1995
+     ],
+     "f1_c5": [
+      0,
+      0.595945,
+      1761
+     ],
+     "f1_c6": [
+      0,
+      0,
+      1303
+     ],
+     "f1_c7": [
+      0,
+      0.004906,
+      1967
+     ],
+     "f1_c8": [
+      0.872667,
+      0.980942,
+      1999
+     ],
+     "f1_c9": [
+      0,
+      0.088374,
+      1997
+     ],
+     "auroc": [
+      0.410492,
+      0.808087,
+      2000
+     ],
+     "average_precision": [
+      0.454977,
+      0.881168,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      315597,
+      6040,
+      1544,
+      0,
+      7867,
+      376,
+      39,
+      16485,
+      12095,
+      328
+     ],
+     [
+      1485,
+      349,
+      0,
+      0,
+      190,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      137,
+      0,
+      910,
+      0,
+      6,
+      94,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      18156,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      183
+     ],
+     [
+      60308,
+      0,
+      0,
+      0,
+      11,
+      0,
+      0,
+      1712,
+      0,
+      919
+     ],
+     [
+      6251,
+      0,
+      10,
+      0,
+      0,
+      4483,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      484,
+      0,
+      95,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      173556,
+      1751,
+      0,
+      0,
+      956,
+      0,
+      0,
+      224,
+      0,
+      0
+     ],
+     [
+      1454,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      95127,
+      0
+     ],
+     [
+      6181,
+      0,
+      0,
+      0,
+      0,
+      6,
+      0,
+      0,
+      0,
+      32
+     ]
+    ],
+    "per_well_macro_f1": {
+     "WELL-00002": 0.2694294234737585,
+     "WELL-00003": 0.9699992941675833,
+     "WELL-00005": 0.2826453463109412,
+     "WELL-00006": 0.3087223128148628,
+     "WELL-00007": 0.16527015542750395,
+     "WELL-00008": 1,
+     "WELL-00009": 0.9821428571428571,
+     "WELL-00010": 0.13881235711354709,
+     "WELL-00012": 0.49453551912568305,
+     "WELL-00014": 0.04101955842198253,
+     "WELL-00016": 0.34609979976374555,
+     "WELL-00019": 0.7153415424065067,
+     "WELL-00020": 0.30589390298235575,
+     "WELL-00021": 0.3352259822848058,
+     "WELL-00022": 0.12515793726471983,
+     "WELL-00024": 0.10703726775632089,
+     "WELL-00025": 0.9981079704017672,
+     "WELL-00027": 0.5241419440884447,
+     "WELL-00028": 0.46216717645289074,
+     "WELL-00029": 0.7758022282470591,
+     "WELL-00030": 0.444913020558777,
+     "WELL-00031": 0.8245054271815182,
+     "WELL-00032": 0.9991405219049461,
+     "WELL-00033": 1,
+     "WELL-00034": 1,
+     "WELL-00036": 1,
+     "WELL-00038": 1,
+     "WELL-00039": 0.9090909090909091,
+     "WELL-00040": 0.36621454993834773,
+     "WELL-00042": 0.2545398584179748
+    }
+   }
+  },
+  "small_lgbm": {
+   "earlier_name": "best",
+   "predictions_sha256": "ef6c74e4f6e82c55e5c6565155876c59e3cea7d312ea6cc2c522102a3b896c3d",
+   "alarm_threshold": 0.9628283560276032,
+   "threshold_recomputed_equal": true,
+   "test": {
+    "n_wells": 10,
+    "point": {
+     "episode_coverage": 0.654545,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0.4,
+     "false_alarms_per_normal_day": 0.550647,
+     "normal_time_occupation": 0.003354,
+     "normal_eligibility": 0.999777,
+     "event_eligibility": 1,
+     "episodes_total": 110,
+     "episodes_unobservable": 0,
+     "normal_days": 43.585069,
+     "coverage_c1": 0,
+     "coverage_c2": 1,
+     "coverage_c3": 0,
+     "coverage_c4": 0.708861,
+     "coverage_c5": 0,
+     "coverage_c6": 0,
+     "coverage_c7": 0,
+     "coverage_c8": 0.333333,
+     "coverage_c9": 0.333333,
+     "event_decisions": 100612,
+     "normal_decisions": 125525,
+     "macro_f1": 0.257653,
+     "macro_f1_event_classes": 0.208293,
+     "balanced_accuracy": 0.34945,
+     "accuracy": 0.500621,
+     "f1_c0": 0.701892,
+     "f1_c1": 0.122133,
+     "f1_c2": 0.878781,
+     "f1_c3": 0,
+     "f1_c4": 0.000105,
+     "f1_c5": 0,
+     "f1_c6": 0,
+     "f1_c7": 0.000328,
+     "f1_c8": 0.627694,
+     "f1_c9": 0.245597,
+     "auroc": 0.751193,
+     "average_precision": 0.725843,
+     "onset_delay_median_s": 194,
+     "per_well_macro_f1_mean": 0.450199,
+     "per_well_macro_f1_sd": 0.381994,
+     "auroc_exact": 0.751141,
+     "average_precision_exact": 0.725889
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.294118,
+      0.878054,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      1999
+     ],
+     "onset_detection_300s": [
+      0,
+      0.675676,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0,
+      3.134666,
+      2000
+     ],
+     "normal_time_occupation": [
+      0,
+      0.02008,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999329,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      1,
+      1,
+      2000
+     ],
+     "episodes_total": [
+      20.975,
+      223,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      11.790078,
+      86.794028,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1809
+     ],
+     "coverage_c3": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c4": [
+      0.416667,
+      0.953488,
+      1775
+     ],
+     "coverage_c5": [
+      0,
+      0,
+      1301
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1316
+     ],
+     "coverage_c7": [
+      0,
+      0,
+      1781
+     ],
+     "coverage_c8": [
+      0.333333,
+      0.333333,
+      1281
+     ],
+     "coverage_c9": [
+      0,
+      0.5,
+      1793
+     ],
+     "event_decisions": [
+      17403.7,
+      199320.175,
+      2000
+     ],
+     "normal_decisions": [
+      33955.425,
+      249966.8,
+      2000
+     ],
+     "macro_f1": [
+      0.164051,
+      0.483453,
+      2000
+     ],
+     "macro_f1_event_classes": [
+      0.072336,
+      0.439002,
+      2000
+     ],
+     "balanced_accuracy": [
+      0.245678,
+      0.546347,
+      2000
+     ],
+     "accuracy": [
+      0.230899,
+      0.768275,
+      2000
+     ],
+     "f1_c0": [
+      0.254513,
+      0.924942,
+      2000
+     ],
+     "f1_c1": [
+      0.121322,
+      0.122542,
+      1283
+     ],
+     "f1_c2": [
+      0.863234,
+      0.995413,
+      1809
+     ],
+     "f1_c3": [
+      0,
+      0,
+      1283
+     ],
+     "f1_c4": [
+      0,
+      0.000195,
+      1775
+     ],
+     "f1_c5": [
+      0,
+      0,
+      1301
+     ],
+     "f1_c6": [
+      0,
+      0,
+      1316
+     ],
+     "f1_c7": [
+      0,
+      0.001318,
+      1781
+     ],
+     "f1_c8": [
+      0.625791,
+      0.62865,
+      1281
+     ],
+     "f1_c9": [
+      0,
+      0.311517,
+      1793
+     ],
+     "auroc": [
+      0.503713,
+      0.95919,
+      2000
+     ],
+     "average_precision": [
+      0.569906,
+      0.904684,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      93564,
+      4507,
+      41,
+      0,
+      1,
+      9209,
+      3,
+      9045,
+      6506,
+      2649
+     ],
+     [
+      79,
+      402,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      38,
+      0,
+      2019,
+      0,
+      8,
+      0,
+      0,
+      387,
+      81,
+      0
+     ],
+     [
+      42,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      558,
+      0,
+      0
+     ],
+     [
+      1029,
+      0,
+      2,
+      0,
+      1,
+      13722,
+      0,
+      4255,
+      0,
+      0
+     ],
+     [
+      328,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      76,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      45532,
+      1187,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      13245,
+      0,
+      0,
+      16718,
+      0
+     ],
+     [
+      392,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      495
+     ]
+    ],
+    "per_well_macro_f1": {
+     "WELL-00001": 0.19628243009886645,
+     "WELL-00004": 0.03454412520057205,
+     "WELL-00011": 0.9239991157990941,
+     "WELL-00013": 0.9936413813679421,
+     "WELL-00015": 0.2815395580898076,
+     "WELL-00023": 0.10629149980062759,
+     "WELL-00026": 0.3143249290240096,
+     "WELL-00035": 1,
+     "WELL-00037": 0.15575833857772184,
+     "WELL-00041": 0.49560779461800186
+    }
+   },
+   "dev_oof": {
+    "n_wells": 30,
+    "point": {
+     "episode_coverage": 0.078167,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0.118421,
+     "false_alarms_per_normal_day": 0.391596,
+     "normal_time_occupation": 0.00999,
+     "normal_eligibility": 0.999717,
+     "event_eligibility": 0.999217,
+     "episodes_total": 371,
+     "episodes_unobservable": 0,
+     "normal_days": 125.128819,
+     "coverage_c1": 0,
+     "coverage_c2": 0.75,
+     "coverage_c3": 0.451613,
+     "coverage_c4": 0,
+     "coverage_c5": 0,
+     "coverage_c6": 0,
+     "coverage_c7": 0,
+     "coverage_c8": 0.818182,
+     "coverage_c9": 0,
+     "event_decisions": 375070,
+     "normal_decisions": 360371,
+     "macro_f1": 0.360333,
+     "macro_f1_event_classes": 0.312193,
+     "balanced_accuracy": 0.539395,
+     "accuracy": 0.630476,
+     "f1_c0": 0.697311,
+     "f1_c1": 0.068081,
+     "f1_c2": 0.183064,
+     "f1_c3": 0,
+     "f1_c4": 0.014456,
+     "f1_c5": 0.395616,
+     "f1_c6": 0,
+     "f1_c7": 0.57052,
+     "f1_c8": 0.901151,
+     "f1_c9": 0.052462,
+     "auroc": 0.679589,
+     "average_precision": 0.747076,
+     "onset_delay_median_s": 155,
+     "per_well_macro_f1_mean": 0.517981,
+     "per_well_macro_f1_sd": 0.297476,
+     "auroc_exact": 0.679601,
+     "average_precision_exact": 0.747169
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.021241,
+      0.210819,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      2000
+     ],
+     "onset_detection_300s": [
+      0.027778,
+      0.277801,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.033134,
+      1.497288,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.00033,
+      0.039543,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999427,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      0.998497,
+      0.999844,
+      2000
+     ],
+     "episodes_total": [
+      124,
+      687.075,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      47.280122,
+      239.059392,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1757
+     ],
+     "coverage_c2": [
+      0,
+      1,
+      1996
+     ],
+     "coverage_c3": [
+      0.451613,
+      0.451613,
+      1247
+     ],
+     "coverage_c4": [
+      0,
+      0,
+      1995
+     ],
+     "coverage_c5": [
+      0,
+      0,
+      1761
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1303
+     ],
+     "coverage_c7": [
+      0,
+      0,
+      1967
+     ],
+     "coverage_c8": [
+      0.4,
+      1,
+      1999
+     ],
+     "coverage_c9": [
+      0,
+      0,
+      1981
+     ],
+     "event_decisions": [
+      181955.75,
+      625564.7,
+      2000
+     ],
+     "normal_decisions": [
+      136166.75,
+      688491.05,
+      2000
+     ],
+     "macro_f1": [
+      0.239802,
+      0.52089,
+      2000
+     ],
+     "macro_f1_event_classes": [
+      0.171831,
+      0.502267,
+      2000
+     ],
+     "balanced_accuracy": [
+      0.370015,
+      0.654408,
+      2000
+     ],
+     "accuracy": [
+      0.450561,
+      0.774999,
+      2000
+     ],
+     "f1_c0": [
+      0.425527,
+      0.833433,
+      2000
+     ],
+     "f1_c1": [
+      0.040646,
+      0.18995,
+      1757
+     ],
+     "f1_c2": [
+      0.023649,
+      0.860097,
+      1996
+     ],
+     "f1_c3": [
+      0,
+      0,
+      1247
+     ],
+     "f1_c4": [
+      0,
+      0.060139,
+      1995
+     ],
+     "f1_c5": [
+      0.001997,
+      0.875749,
+      1761
+     ],
+     "f1_c6": [
+      0,
+      0,
+      1303
+     ],
+     "f1_c7": [
+      0,
+      0.883078,
+      1967
+     ],
+     "f1_c8": [
+      0.824288,
+      0.958519,
+      1999
+     ],
+     "f1_c9": [
+      0,
+      0.210641,
+      1997
+     ],
+     "auroc": [
+      0.464483,
+      0.858276,
+      2000
+     ],
+     "average_precision": [
+      0.537483,
+      0.886434,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      271069,
+      5882,
+      2587,
+      110,
+      4214,
+      17528,
+      584,
+      35680,
+      18849,
+      3868
+     ],
+     [
+      1521,
+      369,
+      116,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0
+     ],
+     [
+      27,
+      0,
+      1015,
+      0,
+      1,
+      104,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1497,
+      0,
+      1112,
+      0,
+      5064,
+      10661,
+      0,
+      5,
+      0,
+      0
+     ],
+     [
+      51466,
+      2386,
+      4615,
+      1037,
+      528,
+      0,
+      0,
+      1561,
+      0,
+      1357
+     ],
+     [
+      97,
+      0,
+      335,
+      0,
+      18,
+      10234,
+      0,
+      0,
+      43,
+      17
+     ],
+     [
+      257,
+      178,
+      144,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      86081,
+      1,
+      0,
+      0,
+      246,
+      1,
+      0,
+      85303,
+      0,
+      4855
+     ],
+     [
+      1617,
+      0,
+      18,
+      0,
+      0,
+      208,
+      0,
+      0,
+      94720,
+      18
+     ],
+     [
+      3466,
+      0,
+      0,
+      0,
+      29,
+      2257,
+      0,
+      0,
+      27,
+      440
+     ]
+    ],
+    "per_well_macro_f1": {
+     "WELL-00002": 0.2397503452771119,
+     "WELL-00003": 0.9150039478388765,
+     "WELL-00005": 0.24088541666666666,
+     "WELL-00006": 0.3754891928844695,
+     "WELL-00007": 0.03420523138832998,
+     "WELL-00008": 1,
+     "WELL-00009": 0.957288247558886,
+     "WELL-00010": 0.449287353651091,
+     "WELL-00012": 0.29366602687140114,
+     "WELL-00014": 0.20554155524083953,
+     "WELL-00016": 0.1360856339046029,
+     "WELL-00019": 0.41938666576586453,
+     "WELL-00020": 0.3059813645927262,
+     "WELL-00021": 0.3352259822848058,
+     "WELL-00022": 0.48852156066096364,
+     "WELL-00024": 0.13901541473390291,
+     "WELL-00025": 0.46826788607960224,
+     "WELL-00027": 0.7264832991210255,
+     "WELL-00028": 0.46359271854370876,
+     "WELL-00029": 0.6662821047090561,
+     "WELL-00030": 0.444913020558777,
+     "WELL-00031": 0.4802797324298497,
+     "WELL-00032": 0.9991405219049461,
+     "WELL-00033": 1,
+     "WELL-00034": 0.9935212180110139,
+     "WELL-00036": 0.8361138370951914,
+     "WELL-00038": 0.6862841262056564,
+     "WELL-00039": 0.6871247498332221,
+     "WELL-00040": 0.2968536251709986,
+     "WELL-00042": 0.2552447930170253
+    }
+   }
+  },
+  "event_detector": {
+   "earlier_name": "best_binary",
+   "predictions_sha256": "215e963432f676bd03bdf9f0fd469dc8c7b034a1c7c283e1ad0ff987ba998be3",
+   "alarm_threshold": 0.7493385672569284,
+   "threshold_recomputed_equal": true,
+   "test": {
+    "n_wells": 10,
+    "point": {
+     "episode_coverage": 0.054545,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0,
+     "false_alarms_per_normal_day": 0.183549,
+     "normal_time_occupation": 0.004796,
+     "normal_eligibility": 0.999777,
+     "event_eligibility": 1,
+     "episodes_total": 110,
+     "episodes_unobservable": 0,
+     "normal_days": 43.585069,
+     "coverage_c1": 1,
+     "coverage_c2": 0.142857,
+     "coverage_c3": 0,
+     "coverage_c4": 0,
+     "coverage_c5": 1,
+     "coverage_c6": 0,
+     "coverage_c7": 0,
+     "coverage_c8": 0,
+     "coverage_c9": 0.666667,
+     "event_decisions": 100612,
+     "normal_decisions": 125525,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.448657,
+     "average_precision": 0.423428,
+     "onset_delay_median_s": null,
+     "auroc_exact": 0.44867,
+     "average_precision_exact": 0.422805
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.015503,
+      0.322849,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      2000
+     ],
+     "onset_detection_300s": [
+      0,
+      0,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0,
+      1.160272,
+      2000
+     ],
+     "normal_time_occupation": [
+      0,
+      0.0286,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999329,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      1,
+      1,
+      2000
+     ],
+     "episodes_total": [
+      20.975,
+      223,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      11.790078,
+      86.794028,
+      2000
+     ],
+     "coverage_c1": [
+      1,
+      1,
+      1283
+     ],
+     "coverage_c2": [
+      0.076923,
+      1,
+      1809
+     ],
+     "coverage_c3": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c4": [
+      0,
+      0,
+      1775
+     ],
+     "coverage_c5": [
+      1,
+      1,
+      1301
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1316
+     ],
+     "coverage_c7": [
+      0,
+      0,
+      1781
+     ],
+     "coverage_c8": [
+      0,
+      0,
+      1281
+     ],
+     "coverage_c9": [
+      0,
+      1,
+      1793
+     ],
+     "event_decisions": [
+      17403.7,
+      199320.175,
+      2000
+     ],
+     "normal_decisions": [
+      33955.425,
+      249966.8,
+      2000
+     ],
+     "auroc": [
+      0.236345,
+      0.912545,
+      2000
+     ],
+     "average_precision": [
+      0.249325,
+      0.796267,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   },
+   "dev_oof": {
+    "n_wells": 30,
+    "point": {
+     "episode_coverage": 0.226415,
+     "carried_in_share_of_covered": 0.083333,
+     "onset_detection_300s": 0.039474,
+     "false_alarms_per_normal_day": 0.847127,
+     "normal_time_occupation": 0.024922,
+     "normal_eligibility": 0.999717,
+     "event_eligibility": 0.999217,
+     "episodes_total": 371,
+     "episodes_unobservable": 0,
+     "normal_days": 125.128819,
+     "coverage_c1": 0,
+     "coverage_c2": 1,
+     "coverage_c3": 0.774194,
+     "coverage_c4": 0.075758,
+     "coverage_c5": 1,
+     "coverage_c6": 0,
+     "coverage_c7": 0.322581,
+     "coverage_c8": 1,
+     "coverage_c9": 0.1,
+     "event_decisions": 375070,
+     "normal_decisions": 360371,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.818207,
+     "average_precision": 0.824127,
+     "onset_delay_median_s": 118,
+     "auroc_exact": 0.818137,
+     "average_precision_exact": 0.824235
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.098111,
+      0.559391,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0.220963,
+      2000
+     ],
+     "onset_detection_300s": [
+      0,
+      0.111111,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.276799,
+      2.431998,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.004338,
+      0.084154,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999427,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      0.998497,
+      0.999844,
+      2000
+     ],
+     "episodes_total": [
+      124,
+      687.075,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      47.280122,
+      239.059392,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1757
+     ],
+     "coverage_c2": [
+      1,
+      1,
+      1996
+     ],
+     "coverage_c3": [
+      0.774194,
+      0.774194,
+      1247
+     ],
+     "coverage_c4": [
+      0,
+      0.459906,
+      1995
+     ],
+     "coverage_c5": [
+      1,
+      1,
+      1761
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1303
+     ],
+     "coverage_c7": [
+      0.015,
+      0.491667,
+      1967
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1999
+     ],
+     "coverage_c9": [
+      0,
+      1,
+      1981
+     ],
+     "event_decisions": [
+      181955.75,
+      625564.7,
+      2000
+     ],
+     "normal_decisions": [
+      136166.75,
+      688491.05,
+      2000
+     ],
+     "auroc": [
+      0.659112,
+      0.893254,
+      2000
+     ],
+     "average_precision": [
+      0.679718,
+      0.920048,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  },
+  "tspulse": {
+   "predictions_sha256": "a663e04c4e2a72e72dfe82190b6f4b827acb5fccee652036c5f7592db98abf79",
+   "alarm_threshold": 0.8500000000000001,
+   "threshold_recomputed_equal": true,
+   "test": {
+    "n_wells": 10,
+    "point": {
+     "episode_coverage": 0.145455,
+     "carried_in_share_of_covered": 0.0625,
+     "onset_detection_300s": 0.266667,
+     "false_alarms_per_normal_day": 0.963633,
+     "normal_time_occupation": 0.006548,
+     "normal_eligibility": 0.999777,
+     "event_eligibility": 1,
+     "episodes_total": 110,
+     "episodes_unobservable": 0,
+     "normal_days": 43.585069,
+     "coverage_c1": 0,
+     "coverage_c2": 0.714286,
+     "coverage_c3": 0,
+     "coverage_c4": 0.037975,
+     "coverage_c5": 1,
+     "coverage_c6": 0,
+     "coverage_c7": 0.2,
+     "coverage_c8": 0.333333,
+     "coverage_c9": 0,
+     "event_decisions": 100612,
+     "normal_decisions": 125525,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.492565,
+     "average_precision": 0.440492,
+     "onset_delay_median_s": 205.5,
+     "auroc_exact": 0.492571,
+     "average_precision_exact": 0.440485
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.039594,
+      0.564103,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0.09375,
+      1998
+     ],
+     "onset_detection_300s": [
+      0,
+      0.453161,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.225757,
+      1.510667,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.001484,
+      0.010297,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999329,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      1,
+      1,
+      2000
+     ],
+     "episodes_total": [
+      20.975,
+      223,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      11.790078,
+      86.794028,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c2": [
+      0,
+      0.769231,
+      1809
+     ],
+     "coverage_c3": [
+      0,
+      0,
+      1283
+     ],
+     "coverage_c4": [
+      0,
+      0.069767,
+      1775
+     ],
+     "coverage_c5": [
+      1,
+      1,
+      1301
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1316
+     ],
+     "coverage_c7": [
+      0,
+      1,
+      1781
+     ],
+     "coverage_c8": [
+      0.333333,
+      0.333333,
+      1281
+     ],
+     "coverage_c9": [
+      0,
+      0,
+      1793
+     ],
+     "event_decisions": [
+      17403.7,
+      199320.175,
+      2000
+     ],
+     "normal_decisions": [
+      33955.425,
+      249966.8,
+      2000
+     ],
+     "auroc": [
+      0.345661,
+      0.56535,
+      2000
+     ],
+     "average_precision": [
+      0.127094,
+      0.750527,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   },
+   "dev_oof": {
+    "n_wells": 30,
+    "point": {
+     "episode_coverage": 0.229111,
+     "carried_in_share_of_covered": 0,
+     "onset_detection_300s": 0.052632,
+     "false_alarms_per_normal_day": 0.959012,
+     "normal_time_occupation": 0.006738,
+     "normal_eligibility": 0.999717,
+     "event_eligibility": 0.999217,
+     "episodes_total": 371,
+     "episodes_unobservable": 0,
+     "normal_days": 125.128819,
+     "coverage_c1": 0.333333,
+     "coverage_c2": 0.375,
+     "coverage_c3": 0.645161,
+     "coverage_c4": 0.117424,
+     "coverage_c5": 0.4,
+     "coverage_c6": 0,
+     "coverage_c7": 0.354839,
+     "coverage_c8": 1,
+     "coverage_c9": 0.4,
+     "event_decisions": 375070,
+     "normal_decisions": 360371,
+     "macro_f1": null,
+     "macro_f1_event_classes": null,
+     "balanced_accuracy": null,
+     "accuracy": null,
+     "f1_c0": null,
+     "f1_c1": null,
+     "f1_c2": null,
+     "f1_c3": null,
+     "f1_c4": null,
+     "f1_c5": null,
+     "f1_c6": null,
+     "f1_c7": null,
+     "f1_c8": null,
+     "f1_c9": null,
+     "auroc": 0.690253,
+     "average_precision": 0.638859,
+     "onset_delay_median_s": 143,
+     "auroc_exact": 0.690245,
+     "average_precision_exact": 0.638869
+    },
+    "ci95": {
+     "episode_coverage": [
+      0.123585,
+      0.420011,
+      2000
+     ],
+     "carried_in_share_of_covered": [
+      0,
+      0,
+      2000
+     ],
+     "onset_detection_300s": [
+      0.009174,
+      0.145833,
+      2000
+     ],
+     "false_alarms_per_normal_day": [
+      0.356969,
+      1.871667,
+      2000
+     ],
+     "normal_time_occupation": [
+      0.002562,
+      0.013148,
+      2000
+     ],
+     "normal_eligibility": [
+      0.999427,
+      1,
+      2000
+     ],
+     "event_eligibility": [
+      0.998497,
+      0.999844,
+      2000
+     ],
+     "episodes_total": [
+      124,
+      687.075,
+      2000
+     ],
+     "episodes_unobservable": [
+      0,
+      0,
+      2000
+     ],
+     "normal_days": [
+      47.280122,
+      239.059392,
+      2000
+     ],
+     "coverage_c1": [
+      0,
+      0.5,
+      1757
+     ],
+     "coverage_c2": [
+      0,
+      1,
+      1996
+     ],
+     "coverage_c3": [
+      0.645161,
+      0.645161,
+      1247
+     ],
+     "coverage_c4": [
+      0.009615,
+      0.221311,
+      1995
+     ],
+     "coverage_c5": [
+      0.333333,
+      0.5,
+      1761
+     ],
+     "coverage_c6": [
+      0,
+      0,
+      1303
+     ],
+     "coverage_c7": [
+      0.011111,
+      1,
+      1967
+     ],
+     "coverage_c8": [
+      1,
+      1,
+      1999
+     ],
+     "coverage_c9": [
+      0,
+      1,
+      1981
+     ],
+     "event_decisions": [
+      181955.75,
+      625564.7,
+      2000
+     ],
+     "normal_decisions": [
+      136166.75,
+      688491.05,
+      2000
+     ],
+     "auroc": [
+      0.48404,
+      0.792236,
+      2000
+     ],
+     "average_precision": [
+      0.418568,
+      0.791828,
+      2000
+     ]
+    },
+    "confusion": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  }
+ }
+}
